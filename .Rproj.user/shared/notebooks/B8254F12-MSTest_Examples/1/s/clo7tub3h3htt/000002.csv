@@ -1,0 +1,4 @@
+"0","# Install package if not installed"
+"0","if (is.element('MSTest',installed.packages()[,1])==FALSE){"
+"0","  install.packages(paste0(Dir,""/MSTest_1.0.tar.gz""), type = 'source', repos=NULL)"
+"0","}"

@@ -1,0 +1,226 @@
+---
+title: "MSTest: Examples"
+author: |
+  | Gabriel Rodriguez Rondon
+  | Jean-Marie Dufour
+  | McGill University
+date: "29-May-2020"
+output: pdf_document
+---
+
+## Load Package
+  
+Set \(Dir = \) to the folder/location where the  \("MSTest_1.0.tar.gz"\) file is found.
+```{r}
+rm(list=ls())
+# *** NOTE: change this to location of "MSTest_1.0.tar.gz"
+Dir <- "/Users/grodriguezrondon/Dropbox/Uni/Res/RAwork/Rpackage"
+```
+Note that in addition to the first time, the package may need to be re-installed after new updates. To do this run 'install.packages(paste0(Dir,"/MSTest_1.0.tar.gz"), type = 'source', repos=NULL)' without the if-statement.  
+  
+Once package has been installed we can load it. 
+```{r}
+# Install package if not installed
+if (is.element('MSTest',installed.packages()[,1])==FALSE){
+  install.packages(paste0(Dir,"/MSTest_1.0.tar.gz"), type = 'source', repos=NULL)
+}
+```
+Once package has been installed we can load it. 
+  
+```{r}
+# load package
+library(MSTest)
+```
+## Load Data
+The package includes 3 datasets that can be used as examples. The three datasets are:  
+  
+* hamilton82GNP: Data from 1951 - 1982 used in Hamilton (1989) and Hansen (1992; 1996)
+* carhuplo10GNP: Data from 1951 - 2010 used by Carrasco, Hu and Ploberger (2014)
+* kasshi18GNP: Data from 1951 - 2018 used in Kasahara and Shimotsu (2019)
+  
+```{r}
+GNPdata <- hamilton82GNP # this can be hamilton82GNP, carhuplo10GNP or kasshi18GNP
+GNPdata2 <- carhuplo10GNP # this can be hamilton82GNP, carhuplo10GNP or kasshi18GNP
+
+Y       <- GNPdata$GNP_logdiff
+Y2       <- GNPdata2$GNP_logdiff
+
+date    <- GNPdata$DATE 
+plot(as.Date(date),Y,xlab='Time',ylab='GNP - log difference',type = 'l')
+```
+## Simulated Data
+```{r}
+n = 500
+mu = c(0,2)
+std = c(1,2.5)
+p = 0.9
+q = 0.5
+phi = c(0.5,0.25)
+th = c(mu,p,q,std,phi)
+Y_simu = simu_ARMS_dgp(n,th)
+plot(Y_simu, type = 'l')
+
+
+arms_mdl = ARMSmdl(Y_simu,ar = 2,k=2)
+arms_mdl$coef
+
+Y_simu = simu_AR_dgp(n, mu = 5, std = 1, phi = c(0.5,0.25))
+plot(Y_simu, type = 'l')
+
+ar_mdl = ARmdl(Y_simu,ar=2)
+ar_mdl$coef
+```
+
+## Moment-Based Test  
+  
+Optional Arguments are:  
+  
+* p: number of AR(p) lags (default:  1)
+* N: Total number of Monte Carlo simulations for p-val calculations (default: 100 which includes the test-stat)
+* N2: Number of simulations for distribution approximation (eq. 16 in Dufour & Luger 2017) (default: 10000)
+* N3: Number of values to evaluate for nuissance parameters when using 'randSearch_paramCI' in MaxMC (default: 100000).
+  
+# Monte-Carlo moment-based test.  
+  
+This takes a few seconds only.  
+  
+```{r}
+start <- Sys.time()
+DLMCtest(Y, p = 4)
+end   <- Sys.time()
+print(end - start)
+```
+# Maximized Monte-Carlo moment-based test.  
+  
+In addition to parameters above, available optimization methods can be set using 'searchType'. Allowed options are:  
+  
+* randSearch_paramCI: This searches over the 95% C.I.of consistent esitmate. This gives similar reuslts to MMC results in Dufour & Luger (2017)
+* GenSA: Uses Generalized Simulated Annealing optimization algorithm.
+* GA: Uses Genetic Algorithms.
+* PSO: Uses Particle Swarm Optimization  
+  
+```{r}
+start <- Sys.time()
+DLMMCtest(Y, p = 4, searchType = 'randSearch_paramCI')
+end   <- Sys.time()
+print(end - start)
+
+start <- Sys.time()
+DLMMCtest(Y, p = 4, searchType = 'GenSA')
+end   <- Sys.time()
+print(end - start)
+```
+## Carrasco Hu Ploberger (2014) Test 
+  
+Optional Arguments are:    
+   
+* p: number of AR(p) lags (default:  1 )
+* N: Total number simulations (default: 3000)
+* rho: bound for rho (default: 0.7)  
+  
+# Main CHP test
+
+This version of the test derives the asymptotic distribution of the test under the null and can thus take some time. To get results that are similar to those in the CHP (2014) paper set \(N = 3000\). This should currently take about 2 hours. For convinience, the example below has \(N = 100\) which only takes about 5 mins.  
+  
+```{r}
+start <- Sys.time()
+chp1 <- CHPtest(Y, p = 4, N = 3000, var_switch = 0)
+end   <- Sys.time()
+print(end - start)
+
+
+start <- Sys.time()
+chp2 <- CHPtest(Y2, p = 4, N = 3000, var_switch = 0)
+end   <- Sys.time()
+print(end - start)
+
+
+start <- Sys.time()
+chp3 <- CHPtest(Y, p = 4, N = 20, var_switch = 0)
+end   <- Sys.time()
+print(end - start)
+
+
+start <- Sys.time()
+chp4 <- CHPtest(Y2, p = 4, N = 1000, var_switch = 0)
+end   <- Sys.time()
+print(end - start)
+
+
+start <- Sys.time()
+chp5 <- CHPtest(Y, p = 4, N = 20, var_switch = 1)
+end   <- Sys.time()
+print(end - start)
+
+
+start <- Sys.time()
+chp6 <- CHPtest(Y2, p = 4, N = 20, var_switch = 1)
+end   <- Sys.time()
+print(end - start)
+
+```
+# Monte-Carlo version of CHP Test  
+  
+This method makes use of asymptotic distribution of the test under the null and is therefore much faster and  takes only a few seconds regadless of the size of \(N\). 
+  
+```{r}
+start <- Sys.time()
+CHPMCtest(Y, p = 4, N = 3000)  
+end   <- Sys.time()
+print(end - start)
+```
+  
+## Hensen Test  
+  
+Optional Arguments are:  
+  
+* p: Number of AR(p) (default is 1).
+* ix: List of Markov Switching parameters. 1 = just mean c(1,2) = mean and first param,  (default: 1).
+* iv: Idicates if Variance is also Markov Switching. 1 for true (default: 0).
+* iq: Indicator that bounds q by 1-p (default: 0).
+* gn: Number of different values to evaluate for each param (default: 20)
+* rep: (default: 1000)  
+  
+This takes about 15-20 mins.  
+  
+```{r}
+start <- Sys.time()
+HLRtest(Y,p = 4, iv = 1)
+end   <- Sys.time()
+print(end - start)
+```
+## LR-Test  
+  
+Optional Arguments are:  
+  
+* ar: Number of AR(p) (default is NULL (i.e. no AR)).
+* k: number of regimes (default: 2). 
+* N: number of simulations is N-1.  
+  
+# Monte-Carlo Likelihood-Ratio Test  
+  
+This takes only a few seconds  
+  
+```{r}
+start <- Sys.time()
+LRMC_test <-  LRMC_ARMS(Y, ar = 4, k = 2, N = 100)
+LRMC_test$pval
+end   <- Sys.time()
+print(end - start)
+```
+# Maximized Monte-Carlo Likelihood-Ratio Test  
+  
+Optimization methods include: 
+* GenSa: Uses Generalized Simulated Annealing optimization algorithm.
+* randSearch: Does a random search around consistent estimates.  
+  
+This takes about 8 mins  
+  
+```{r}
+start <- Sys.time()
+LRMMC_test <-  LRMMC_ARMS(Y, ar = 2, k = 2, N = 100, method = "GenSA")
+LRMMC_test$pval
+end   <- Sys.time()
+print(end - start)
+```
+
