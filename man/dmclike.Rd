@@ -2,17 +2,10 @@
 % Please edit documentation in R/HLR.R
 \name{dmclike}
 \alias{dmclike}
-\title{dmclike
-
-This function ...}
+\title{dmclike}
 \usage{
 dmclike(th)
 }
-\arguments{
-\item{oder}{is the order of Autoregressive and moving average components}
-}
 \description{
 dmclike
-
-This function ...
 }

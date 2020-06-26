@@ -2,10 +2,6 @@ HLRenv <- new.env()
 # ------------------------------------------------------------------------------------------
 #' @title HLR Test
 #'
-#' This function ...
-#'
-#' @param oder is the order of Autoregressive and moving average components
-#' @references Dufour and Luger (2017)
 #' @export
 HLRtest <- function(Y,p=1,ix=1,iv=0,iq=0,gn=20,reps=1000){
   # Estimate Model under Null Hypothesis
@@ -75,10 +71,6 @@ HLRtest <- function(Y,p=1,ix=1,iv=0,iq=0,gn=20,reps=1000){
 # ------------------------------------------------------------------------------------------
 #' @title HLR param search
 #'
-#' This function ...
-#'
-#' @param oder is the order of Autoregressive and moving average components
-#' @references Dufour and Luger (2017)
 #' @export
 HLRparamSearch <- function(gx,gp,gq,b,null){
   # load HLR environment variables
@@ -156,9 +148,6 @@ HLRparamSearch <- function(gx,gp,gq,b,null){
 # ------------------------------------------------------------------------------------------
 #' @title clike
 #'
-#' This function ...
-#'
-#' @param oder is the order of Autoregressive and moving average components
 #' @export
 clike <- function(b){
   # gets values at which likelihood function should be evaluated
@@ -190,9 +179,6 @@ clike <- function(b){
 # ------------------------------------------------------------------------------------------
 #' @title glike
 #'
-#' This function ...
-#'
-#' @param oder is the order of Autoregressive and moving average components
 #' @export
 glike <- function(th){
   # get global varibales 
@@ -223,9 +209,6 @@ glike <- function(th){
 # ------------------------------------------------------------------------------------------
 #' @title dmclike
 #'
-#' This function ...
-#'
-#' @param oder is the order of Autoregressive and moving average components
 #' @export
 # Gradient optimation function i.e likelihood function.
 dmclike <-function(th){
@@ -304,9 +287,6 @@ dmclike <-function(th){
 # ------------------------------------------------------------------------------------------
 #' @title marklike
 #'
-#' This function ...
-#'
-#' @param oder is the order of Autoregressive and moving average components
 #' @export
 marklike <- function(ths){
   # computes likelihood at each time t
@@ -356,9 +336,6 @@ marklike <- function(ths){
 # ------------------------------------------------------------------------------------------
 #' @title mglike
 #'
-#' This function ...
-#'
-#' @param oder is the order of Autoregressive and moving average components
 #' @export
 mglike <- function(th){
   lik <- sum(glike(th))  
@@ -367,9 +344,6 @@ mglike <- function(th){
 # ------------------------------------------------------------------------------------------
 #' @title mclike
 #'
-#' This function ...
-#'
-#' @param oder is the order of Autoregressive and moving average components
 #' @export
 mclike <- function(th){
   # optimization function

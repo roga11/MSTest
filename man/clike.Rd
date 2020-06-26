@@ -2,17 +2,10 @@
 % Please edit documentation in R/HLR.R
 \name{clike}
 \alias{clike}
-\title{clike
-
-This function ...}
+\title{clike}
 \usage{
 clike(b)
 }
-\arguments{
-\item{oder}{is the order of Autoregressive and moving average components}
-}
 \description{
 clike
-
-This function ...
 }

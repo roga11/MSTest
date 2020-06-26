@@ -2,10 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{approx_dist_loop}
 \alias{approx_dist_loop}
-\title{Loop for \emph{approxDist}
-
-This function performs the loop in \emph{approxDist}. It is written in C++ for better 
-performance in terms of speed.}
+\title{Loop for \emph{approxDist}}
 \usage{
 approx_dist_loop(SN2)
 }
@@ -17,8 +14,6 @@ The four test statistics from smulated data in [0,1]. Used for NLS to get
 params needed to combine p-values
 }
 \description{
-Loop for \emph{approxDist}
-
 This function performs the loop in \emph{approxDist}. It is written in C++ for better 
 performance in terms of speed.
 }

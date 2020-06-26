@@ -2,12 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{calc_mcstat}
 \alias{calc_mcstat}
-\title{Calculate combined p-value test statistic 
-
-This function computes test-statistics for observed and simulated samples. 
-It begins by calculating it for the obsted data, then generates test-statistics from 
-simulated data to approximate null distribution and then calculates the p-values and 
-combines them according to eq. 17 or 18 of Dufour & Luger (2017).}
+\title{Calculate combined p-value test statistic}
 \usage{
 calc_mcstat(ezt, N, params)
 }
@@ -23,8 +18,6 @@ combining p-values.}
 The four test statistics (eq. 11 - 14 in paper)
 }
 \description{
-Calculate combined p-value test statistic 
-
 This function computes test-statistics for observed and simulated samples. 
 It begins by calculating it for the obsted data, then generates test-statistics from 
 simulated data to approximate null distribution and then calculates the p-values and 

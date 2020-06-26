@@ -2,9 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{bootCV}
 \alias{bootCV}
-\title{Bootstrap Critival Values CHP Test
-
-This bootstrap procedure is described on page 771 of CHP (2014)}
+\title{Bootstrap Critival Values CHP Test}
 \usage{
 bootCV(mdl, rho_b, N, var_switch)
 }
@@ -21,8 +19,6 @@ bootCV(mdl, rho_b, N, var_switch)
 Bootstrap critical values
 }
 \description{
-Bootstrap Critival Values CHP Test
-
 This bootstrap procedure is described on page 771 of CHP (2014)
 }
 \references{

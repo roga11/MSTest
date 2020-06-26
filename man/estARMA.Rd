@@ -6,12 +6,6 @@
 \usage{
 estARMA(Y, odr)
 }
-\arguments{
-\item{infile}{Path to the input file}
-}
-\value{
-A matrix of the infile
-}
 \description{
 ARMA model
 }

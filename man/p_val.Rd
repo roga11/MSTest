@@ -2,9 +2,7 @@
 % Please edit documentation in R/Methods.R
 \name{p_val}
 \alias{p_val}
-\title{Calculate MC P-Value
-
-This function calculates a Monte-Carlo p-value}
+\title{Calculate MC P-Value}
 \usage{
 p_val(test_stat, null_vec, type = c("geq", "leq", "abs", "two-tail"))
 }
@@ -20,8 +18,6 @@ left-tail test, "abs" for absolute vallue test and "two-tail" for two-tail test.
 MC p-value of test
 }
 \description{
-Calculate MC P-Value
-
 This function calculates a Monte-Carlo p-value
 }
 \references{

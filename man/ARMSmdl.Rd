@@ -6,12 +6,6 @@
 \usage{
 ARMSmdl(Y, ar = NULL, k = 2, method = "eval", mxit = 500)
 }
-\arguments{
-\item{infile}{Path to the input file}
-}
-\value{
-A matrix of the infile
-}
 \description{
 AR MS model
 }

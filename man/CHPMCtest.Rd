@@ -2,10 +2,7 @@
 % Please edit documentation in R/CHP.R
 \name{CHPMCtest}
 \alias{CHPMCtest}
-\title{CHP Monte Carlo Test
-
-This function performs a Monte Carlo test by drawing from the asymptotic distribution of 
-supTS and expTS test-statistics. It is recommended to use a large number of iterations.}
+\title{CHP Monte Carlo Test}
 \usage{
 CHPMCtest(Y, p = 1, N = 3000, rho_b = 0.7, var_switch = 0)
 }
@@ -21,8 +18,6 @@ CHPMCtest(Y, p = 1, N = 3000, rho_b = 0.7, var_switch = 0)
 \item{var_switch}{Indicator for switch in Variance (if = 0, only Mean is subject to switch)}
 }
 \description{
-CHP Monte Carlo Test
-
 This function performs a Monte Carlo test by drawing from the asymptotic distribution of 
 supTS and expTS test-statistics. It is recommended to use a large number of iterations.
 }

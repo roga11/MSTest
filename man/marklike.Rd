@@ -2,17 +2,10 @@
 % Please edit documentation in R/HLR.R
 \name{marklike}
 \alias{marklike}
-\title{marklike
-
-This function ...}
+\title{marklike}
 \usage{
 marklike(ths)
 }
-\arguments{
-\item{oder}{is the order of Autoregressive and moving average components}
-}
 \description{
 marklike
-
-This function ...
 }

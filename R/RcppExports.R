@@ -3,7 +3,7 @@
 
 #' @title Calc eq. 2.5 from CHP (2014) where both mean and variance can switch
 #'
-#' When alternative has bith switching mean and variance, we take the second 
+#' @description When alternative has bith switching mean and variance, we take the second 
 #' derivative of the log likelihood function w.r.t mu, phi and sigma.
 #' 
 #' Output from this function is used as input in \emph{chpStat}
@@ -24,7 +24,7 @@ calc_mu2t_mv <- function(mdl, rho, ltmt, hv) {
 
 #' @title Calc eq. 2.5 from CHP (2014) where only mean can switch
 #'
-#' When alternative only has Switching mean (and not variance), we only take the second 
+#' @description When alternative only has Switching mean (and not variance), we only take the second 
 #' derivative of the log likelihood function w.r.t mu and not phi or sigma.
 #' 
 #' Output from this function is used as input in \emph{chpStat}
@@ -44,7 +44,7 @@ calc_mu2t <- function(mdl, rho, ltmt) {
 
 #' @title CHP Test Statistic
 #' 
-#' Calculate supTS and expTS test-statistics from CHP (2014).
+#' @description Calculate supTS and expTS test-statistics from CHP (2014).
 #'
 #' @param mdl List containing model information
 #' @param rho_b bound for rho (nuisance param space)
@@ -63,7 +63,7 @@ chpStat <- function(mdl, rho_b, ltmt, var_switch) {
 
 #' @title Bootstrap Critival Values CHP Test
 #'
-#'This bootstrap procedure is described on page 771 of CHP (2014)
+#' @description This bootstrap procedure is described on page 771 of CHP (2014)
 #'
 #' @param mdl List containing model information
 #' @param rho_b bound for rho (nuisance param space)
@@ -82,7 +82,7 @@ bootCV <- function(mdl, rho_b, N, var_switch) {
 
 #' @title Asymptotic Distribution of Test Statistic
 #' 
-#' Can be used for hypothesis test using asymptotic critical values. Doing so is much 
+#' @description Can be used for hypothesis test using asymptotic critical values. Doing so is much 
 #' quicker than using empirical distribution. Results should also be comparable to Table A1
 #' in CHP (2014).
 #' 
@@ -98,7 +98,7 @@ CHPadist <- function(itn, tr, rho_b) {
 
 #' @title Calculate Moment-based test-statistics 
 #'
-#' This function computes the four momment-based test-statistics (eq. 11 - 14 in paper) 
+#' @description This function computes the four momment-based test-statistics (eq. 11 - 14 in paper) 
 #' for a given series. The series should be the residuals from an AR model. 
 #' 
 #'
@@ -116,7 +116,7 @@ calc_moments <- function(ehat) {
 
 #' @title Test-statistics from simulated data
 #'
-#' This function computes simulates residuals from a standard normal distribution
+#' @description This function computes simulates residuals from a standard normal distribution
 #' and calculates the four momment-based test-statistics (eq. 11 - 14 in paper) under the 
 #' null hypothesis using this simulated data.
 #' 
@@ -135,7 +135,7 @@ sim_moments <- function(t, totsim) {
 
 #' @title Combine p-values 
 #'
-#' This function is used to combine the p-values as in eq 17 and 18 of Dufour & Luger (2017).
+#' @description This function is used to combine the p-values as in eq 17 and 18 of Dufour & Luger (2017).
 #' The input parameter \emph{type} can be used to used to specify the method for combining 
 #' the pvalues. If set to "min" the min method of combining p-values is used as in Fisher (1932) 
 #' and Pearson (1933). If set to "prod" the product of p-values is used as in Tippett (1931) 
@@ -169,7 +169,7 @@ combine_stat <- function(s0, sN, params, N, type) {
 
 #' @title Calculate combined p-value test statistic 
 #'
-#' This function computes test-statistics for observed and simulated samples. 
+#' @description This function computes test-statistics for observed and simulated samples. 
 #' It begins by calculating it for the obsted data, then generates test-statistics from 
 #' simulated data to approximate null distribution and then calculates the p-values and 
 #' combines them according to eq. 17 or 18 of Dufour & Luger (2017).
@@ -191,7 +191,7 @@ calc_mcstat <- function(ezt, N, params) {
 
 #' @title Loop for \emph{approxDist}
 #'
-#' This function performs the loop in \emph{approxDist}. It is written in C++ for better 
+#' @description This function performs the loop in \emph{approxDist}. It is written in C++ for better 
 #' performance in terms of speed.
 #' 
 #' @param SN2 matrix of Tx4 test-statistics
@@ -209,7 +209,7 @@ approx_dist_loop <- function(SN2) {
 
 #' @title Evaluate Grid for GridSearch optimization. 
 #'
-#' This function performs the gridsearch loop over nuisance parameter space in 
+#' @description This function performs the gridsearch loop over nuisance parameter space in 
 #' \emph{calc_mmcpval}. It is written in C++ for better  performance in terms of speed.
 #' It is only used when calling gridSearch_paramCI or randSearch_paramCI as optimization 
 #' method.

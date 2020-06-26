@@ -2,13 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{combine_stat}
 \alias{combine_stat}
-\title{Combine p-values 
-
-This function is used to combine the p-values as in eq 17 and 18 of Dufour & Luger (2017).
-The input parameter \emph{type} can be used to used to specify the method for combining 
-the pvalues. If set to "min" the min method of combining p-values is used as in Fisher (1932) 
-and Pearson (1933). If set to "prod" the product of p-values is used as in Tippett (1931) 
-and Wilkinson (1951).}
+\title{Combine p-values}
 \usage{
 combine_stat(s0, sN, params, N, type)
 }
@@ -30,8 +24,6 @@ combining p-values.}
 The four test statistics (eq. 11 - 14 in paper)
 }
 \description{
-Combine p-values 
-
 This function is used to combine the p-values as in eq 17 and 18 of Dufour & Luger (2017).
 The input parameter \emph{type} can be used to used to specify the method for combining 
 the pvalues. If set to "min" the min method of combining p-values is used as in Fisher (1932) 

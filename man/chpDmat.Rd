@@ -2,9 +2,7 @@
 % Please edit documentation in R/CHP.R
 \name{chpDmat}
 \alias{chpDmat}
-\title{Derivative matrix
-
-This function organizes the first and second derivatives of the log Likelihoood.}
+\title{Derivative matrix}
 \usage{
 chpDmat(Mdl, var_switch = 1)
 }
@@ -21,7 +19,5 @@ calculated if only the Mean is subject to regime switch.}
 List containing relevant first and second derivatves of log likelihood function.
 }
 \description{
-Derivative matrix
-
 This function organizes the first and second derivatives of the log Likelihoood.
 }

@@ -94,6 +94,12 @@ DLMCtest(Y, p = 4)
 end   <- Sys.time()
 print(end - start)
 ```
+Use the following command to learn more from the help tab.
+```{r}
+?DLMCtest
+?DLMMCtest
+```
+
 ### Maximized Monte-Carlo moment-based test.  
   
 In addition to parameters above, available optimization methods can be set using 'searchType'. Allowed options are:  
@@ -117,7 +123,6 @@ print(end - start)
 ```
 Use the following command to learn more from the help tab.
 ```{r}
-?DLMCtest
 ?DLMMCtest
 ```
 
@@ -138,9 +143,14 @@ This version of the test requires performing a parametric bootstrap to get empir
   
 ```{r}
 start <- Sys.time()
-chp1 <- CHPtest(Y, p = 4, N = 3000, var_switch = 0)
+chp <- CHPtest(Y, p = 4, N = 3000, var_switch = 0)
+chp
 end   <- Sys.time()
 print(end - start)
+```
+Use the following command to learn more from the help tab.
+```{r}
+?CHPtest
 ```
 ### Monte-Carlo version of CHP Test  
   
@@ -152,6 +162,11 @@ CHPMCtest(Y, p = 4, N = 3000)
 end   <- Sys.time()
 print(end - start)
 ```
+Use the following command to learn more from the help tab.
+```{r}
+?CHPMCtest
+```
+
 # Likelihood-Ratio Test   
 
 ## Hensen Test  
@@ -175,7 +190,7 @@ HLRtest(Y,p = 4, iv = 1)
 end   <- Sys.time()
 print(end - start)
 ```
-## LR-Test  
+## LR Parametric Bootstrap Test  
 
 Parametric bootstrap of Likelihood-Ratio Test.    
   

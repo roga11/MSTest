@@ -1,7 +1,7 @@
 # ------------------------------------------------------------------------------------------
 #' @title CHP Test
 #'
-#' This function performs the CHP test as outline in Carrasco, M., Hu, L. and Ploberger, W. (2014).
+#' @description This function performs the CHP test as outline in Carrasco, M., Hu, L. and Ploberger, W. (2014).
 #' This function can be used to recreate results from Table III of the paper. Econometrica as the original 
 #' publisher and source code can be found here: https://www.econometricsociety.org/content/supplement-optimal-test-markov-switching-parameters.
 #'
@@ -48,7 +48,7 @@ CHPtest <- function(Y, p=1, N=3000, rho_b=0.7, var_switch = 0){
 # ------------------------------------------------------------------------------------------
 #' @title CHP Monte Carlo Test
 #'
-#' This function performs a Monte Carlo test by drawing from the asymptotic distribution of 
+#' @description This function performs a Monte Carlo test by drawing from the asymptotic distribution of 
 #' supTS and expTS test-statistics. It is recommended to use a large number of iterations.
 #'
 #' @param Y the series to be tested
@@ -91,7 +91,7 @@ CHPMCtest <- function(Y, p=1, N=3000, rho_b=0.7, var_switch = 0){
 # ------------------------------------------------------------------------------------------
 #' @title Derivative matrix
 #'
-#' This function organizes the first and second derivatives of the log Likelihoood. 
+#' @description This function organizes the first and second derivatives of the log Likelihoood. 
 #'
 #' @param Mdl is a list containing AR model components
 #' Specifically, it containg y, x, X (x plus constant), residuals, coefficients, stdev,

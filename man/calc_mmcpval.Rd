@@ -2,9 +2,7 @@
 % Please edit documentation in R/Methods.R
 \name{calc_mmcpval}
 \alias{calc_mmcpval}
-\title{Calculate MMC p-value
-
-This function calculates a Maximized Monte-Carlo p-value}
+\title{Calculate MMC p-value}
 \usage{
 calc_mmcpval(search_type = "randSearch_paramCI", optimOptions = NULL)
 }
@@ -20,8 +18,6 @@ nuissance parameter space.}
 MMC p-value of test
 }
 \description{
-Calculate MMC p-value
-
 This function calculates a Maximized Monte-Carlo p-value
 }
 \references{

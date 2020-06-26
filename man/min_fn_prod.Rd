@@ -2,10 +2,7 @@
 % Please edit documentation in R/moment_test.R
 \name{min_fn_prod}
 \alias{min_fn_prod}
-\title{Product of p-value minimizing function
-
-minimization function for nuissance parameters. This version uses the product 
-method of combining p-values as in Fisher (1932) and Pearson (1933).}
+\title{Product of p-value minimizing function}
 \usage{
 min_fn_prod(v)
 }
@@ -16,8 +13,6 @@ min_fn_prod(v)
 p-value for given parameter value.
 }
 \description{
-Product of p-value minimizing function
-
 minimization function for nuissance parameters. This version uses the product 
 method of combining p-values as in Fisher (1932) and Pearson (1933).
 }

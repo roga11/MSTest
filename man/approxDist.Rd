@@ -2,10 +2,7 @@
 % Please edit documentation in R/moment_test.R
 \name{approxDist}
 \alias{approxDist}
-\title{Approximate Distribuion 
-
-This function obtains the parameters needed in eq. 16 which is used for 
-combining p-values.}
+\title{Approximate Distribuion}
 \usage{
 approxDist(Tsize, N2)
 }
@@ -18,8 +15,6 @@ approxDist(Tsize, N2)
 params the paramters gamma in eq. 16 of Dufour & Luger (2017).
 }
 \description{
-Approximate Distribuion 
-
 This function obtains the parameters needed in eq. 16 which is used for 
 combining p-values.
 }

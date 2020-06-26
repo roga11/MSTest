@@ -2,12 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{calc_mu2t}
 \alias{calc_mu2t}
-\title{Calc eq. 2.5 from CHP (2014) where only mean can switch
-
-When alternative only has Switching mean (and not variance), we only take the second 
-derivative of the log likelihood function w.r.t mu and not phi or sigma.
-
-Output from this function is used as input in \emph{chpStat}}
+\title{Calc eq. 2.5 from CHP (2014) where only mean can switch}
 \usage{
 calc_mu2t(mdl, rho, ltmt)
 }
@@ -22,8 +17,6 @@ calc_mu2t(mdl, rho, ltmt)
 mu_2t from eq. 2.5 and used in test-statistic caluclation
 }
 \description{
-Calc eq. 2.5 from CHP (2014) where only mean can switch
-
 When alternative only has Switching mean (and not variance), we only take the second 
 derivative of the log likelihood function w.r.t mu and not phi or sigma.
 

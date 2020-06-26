@@ -2,17 +2,10 @@
 % Please edit documentation in R/HLR.R
 \name{glike}
 \alias{glike}
-\title{glike
-
-This function ...}
+\title{glike}
 \usage{
 glike(th)
 }
-\arguments{
-\item{oder}{is the order of Autoregressive and moving average components}
-}
 \description{
 glike
-
-This function ...
 }

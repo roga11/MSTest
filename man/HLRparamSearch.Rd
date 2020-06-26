@@ -2,20 +2,10 @@
 % Please edit documentation in R/HLR.R
 \name{HLRparamSearch}
 \alias{HLRparamSearch}
-\title{HLR param search
-
-This function ...}
+\title{HLR param search}
 \usage{
 HLRparamSearch(gx, gp, gq, b, null)
 }
-\arguments{
-\item{oder}{is the order of Autoregressive and moving average components}
-}
 \description{
 HLR param search
-
-This function ...
-}
-\references{
-Dufour and Luger (2017)
 }

@@ -2,10 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{calc_moments}
 \alias{calc_moments}
-\title{Calculate Moment-based test-statistics 
-
-This function computes the four momment-based test-statistics (eq. 11 - 14 in paper) 
-for a given series. The series should be the residuals from an AR model.}
+\title{Calculate Moment-based test-statistics}
 \usage{
 calc_moments(ehat)
 }
@@ -16,8 +13,6 @@ calc_moments(ehat)
 The four test statistics (eq. 11 - 14 in paper)
 }
 \description{
-Calculate Moment-based test-statistics 
-
 This function computes the four momment-based test-statistics (eq. 11 - 14 in paper) 
 for a given series. The series should be the residuals from an AR model.
 }

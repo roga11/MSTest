@@ -1,7 +1,7 @@
 # -----------------------------------------------------------------------------
 #' @title Calculate MC P-Value
 #' 
-#' This function calculates a Monte-Carlo p-value
+#' @description This function calculates a Monte-Carlo p-value
 #'
 #' @param test_stat test statistic under the alternative (e.g. S_0)
 #' @param null_vec series with test statistic under the null (i.e. vector S)
@@ -39,7 +39,7 @@ p_val <- function(test_stat, null_vec, type = c("geq", "leq", "abs", "two-tail")
 # -----------------------------------------------------------------------------
 #' @title Calculate MMC p-value
 #'
-#' This function calculates a Maximized Monte-Carlo p-value
+#' @description This function calculates a Maximized Monte-Carlo p-value
 #'
 #' @param search_type Type of optimization algorithm when searching nuissance 
 #' parameter space. Avaiable options are: GenSA, GA, PSO, randSearch_paramCI and 
@@ -153,7 +153,7 @@ calc_mmcpval <- function(search_type = 'randSearch_paramCI',
 # -----------------------------------------------------------------------------
 #' @title Simulate Auto-Regressive process
 #' 
-#' This function can be used to simulate a Auto-Regressive process
+#' @description This function can be used to simulate a Auto-Regressive process
 #'
 #' @param n sample size of process
 #' @param mu mean of process. This is the E[Y] and not the intercept of a model.
@@ -181,7 +181,7 @@ simu_AR_dgp = function(n, mu = 0, std = 1, phi, burnin = 200){
 # -----------------------------------------------------------------------------
 #' @title Simulate Auto-Regressive Markov-Switching process
 #' 
-#' This function can be used to simulate a Auto-Regressive Markov-Switching process
+#' @description This function can be used to simulate a Auto-Regressive Markov-Switching process
 #'
 #' @param n sample size of process
 #' @param th vector containing parameters of process. The first two values should 

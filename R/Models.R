@@ -1,8 +1,6 @@
 # -----------------------------------------------------------------------------
 #' @title AR model
 #'
-#' @param infile Path to the input file
-#' @return A matrix of the infile
 #' 
 #' @export
 ARmdl <- function(Y, ar=NULL){
@@ -53,8 +51,6 @@ ARmdl <- function(Y, ar=NULL){
 # -----------------------------------------------------------------------------
 #' @title AR MS model
 #'
-#' @param infile Path to the input file
-#' @return A matrix of the infile
 #' @export
 ARMSmdl <- function(Y, ar = NULL, k = 2, method="eval", mxit=500){
   if (is.null(ar)==T || (ar==0)){
@@ -117,8 +113,6 @@ ARMSmdl <- function(Y, ar = NULL, k = 2, method="eval", mxit=500){
 # -----------------------------------------------------------------------------
 #' @title ARMA model
 #'
-#' @param infile Path to the input file
-#' @return A matrix of the infile
 #' @export
 estARMA <- function(Y,odr){
   odr <- cbind(odr[1],0,odr[2])

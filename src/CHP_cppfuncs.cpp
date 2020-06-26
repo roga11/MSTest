@@ -4,7 +4,7 @@ using namespace Rcpp;
 // ------------------------------------------------------------------------------------------
 //' @title Calc eq. 2.5 from CHP (2014) where both mean and variance can switch
 //'
-//' When alternative has bith switching mean and variance, we take the second 
+//' @description When alternative has bith switching mean and variance, we take the second 
 //' derivative of the log likelihood function w.r.t mu, phi and sigma.
 //' 
 //' Output from this function is used as input in \emph{chpStat}
@@ -66,7 +66,7 @@ arma::vec calc_mu2t_mv(List mdl, double rho, List ltmt, arma::vec hv){
 // ------------------------------------------------------------------------------------------
 //' @title Calc eq. 2.5 from CHP (2014) where only mean can switch
 //'
-//' When alternative only has Switching mean (and not variance), we only take the second 
+//' @description When alternative only has Switching mean (and not variance), we only take the second 
 //' derivative of the log likelihood function w.r.t mu and not phi or sigma.
 //' 
 //' Output from this function is used as input in \emph{chpStat}
@@ -100,7 +100,7 @@ arma::vec calc_mu2t(List mdl, double rho, List ltmt){
 // ------------------------------------------------------------------------------------------
 //' @title CHP Test Statistic
 //' 
-//' Calculate supTS and expTS test-statistics from CHP (2014).
+//' @description Calculate supTS and expTS test-statistics from CHP (2014).
 //'
 //' @param mdl List containing model information
 //' @param rho_b bound for rho (nuisance param space)
@@ -203,7 +203,7 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,int var_switch){
 // ------------------------------------------------------------------------------------------
 //' @title Bootstrap Critival Values CHP Test
 //'
-//'This bootstrap procedure is described on page 771 of CHP (2014)
+//' @description This bootstrap procedure is described on page 771 of CHP (2014)
 //'
 //' @param mdl List containing model information
 //' @param rho_b bound for rho (nuisance param space)
@@ -247,7 +247,7 @@ arma::mat bootCV(List mdl,double rho_b, int N, int var_switch){
 // ------------------------------------------------------------------------------------------
 //' @title Asymptotic Distribution of Test Statistic
 //' 
-//' Can be used for hypothesis test using asymptotic critical values. Doing so is much 
+//' @description Can be used for hypothesis test using asymptotic critical values. Doing so is much 
 //' quicker than using empirical distribution. Results should also be comparable to Table A1
 //' in CHP (2014).
 //' 

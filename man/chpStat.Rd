@@ -2,9 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{chpStat}
 \alias{chpStat}
-\title{CHP Test Statistic
-
-Calculate supTS and expTS test-statistics from CHP (2014).}
+\title{CHP Test Statistic}
 \usage{
 chpStat(mdl, rho_b, ltmt, var_switch)
 }
@@ -21,8 +19,6 @@ chpStat(mdl, rho_b, ltmt, var_switch)
 Test Statistic
 }
 \description{
-CHP Test Statistic
-
 Calculate supTS and expTS test-statistics from CHP (2014).
 }
 \references{

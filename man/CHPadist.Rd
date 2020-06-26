@@ -2,11 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{CHPadist}
 \alias{CHPadist}
-\title{Asymptotic Distribution of Test Statistic
-
-Can be used for hypothesis test using asymptotic critical values. Doing so is much 
-quicker than using empirical distribution. Results should also be comparable to Table A1
-in CHP (2014).}
+\title{Asymptotic Distribution of Test Statistic}
 \usage{
 CHPadist(itn, tr, rho_b)
 }
@@ -21,8 +17,6 @@ CHPadist(itn, tr, rho_b)
 asymptotic distribution of test statistics
 }
 \description{
-Asymptotic Distribution of Test Statistic
-
 Can be used for hypothesis test using asymptotic critical values. Doing so is much 
 quicker than using empirical distribution. Results should also be comparable to Table A1
 in CHP (2014).

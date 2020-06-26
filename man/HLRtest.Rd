@@ -2,20 +2,10 @@
 % Please edit documentation in R/HLR.R
 \name{HLRtest}
 \alias{HLRtest}
-\title{HLR Test
-
-This function ...}
+\title{HLR Test}
 \usage{
 HLRtest(Y, p = 1, ix = 1, iv = 0, iq = 0, gn = 20, reps = 1000)
 }
-\arguments{
-\item{oder}{is the order of Autoregressive and moving average components}
-}
 \description{
 HLR Test
-
-This function ...
-}
-\references{
-Dufour and Luger (2017)
 }

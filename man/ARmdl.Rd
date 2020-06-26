@@ -6,12 +6,6 @@
 \usage{
 ARmdl(Y, ar = NULL)
 }
-\arguments{
-\item{infile}{Path to the input file}
-}
-\value{
-A matrix of the infile
-}
 \description{
 AR model
 }

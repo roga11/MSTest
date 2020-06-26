@@ -73,7 +73,7 @@ DLMCtest <- function(Y, p = NULL, x = NULL, N = 100, N2 = 10000){
 # -----------------------------------------------------------------------------
 #' @title Maximized Monte-Carlo Moment-based test for MS AR model
 #'
-#' This function performs the MMC version of the Moment-Based test for
+#' @description This function performs the MMC version of the Moment-Based test for
 #' MS AR models presented in Dufour & Luger (2017). It is useful when
 #' nuissance parameters are present in the null disribution. 
 #'
@@ -183,7 +183,7 @@ DLMMCtest <- function(Y,
 # -----------------------------------------------------------------------------
 #' @title Approximate Distribuion 
 #'
-#' This function obtains the parameters needed in eq. 16 which is used for 
+#' @description This function obtains the parameters needed in eq. 16 which is used for 
 #' combining p-values.
 #'
 #' @param Tsize sample size
@@ -220,7 +220,7 @@ approxDist<- function(Tsize,N2){
 # -----------------------------------------------------------------------------
 #' @title Product of p-value maximizing function 
 #' 
-#' maximization function for nuissance parameters. This version uses min method 
+#' @description maximization function for nuissance parameters. This version uses min method 
 #' of combining p-values as in  Fisher (1932) and Pearson (1933).
 #'
 #' @param v nuissance parameter values 
@@ -253,7 +253,8 @@ max_fn_prod <- function(v){
 }
 # -----------------------------------------------------------------------------
 #' @title Minimum p-value maximizing function 
-#' maximization function for nuissance parameters. This version uses product 
+#' 
+#' @description maximization function for nuissance parameters. This version uses product 
 #' method of combining p-values as in Tippett (1931) and Wilkinson (1951).
 #'
 #' @param v nuissance parameter values 
@@ -286,7 +287,7 @@ max_fn_min <- function(v){
 # -----------------------------------------------------------------------------
 #' @title Product of p-value minimizing function
 #' 
-#' minimization function for nuissance parameters. This version uses the product 
+#' @description minimization function for nuissance parameters. This version uses the product 
 #' method of combining p-values as in Fisher (1932) and Pearson (1933).
 #'
 #' @param v nuissance parameter values 
@@ -307,7 +308,7 @@ min_fn_prod <- function(v){
 # -----------------------------------------------------------------------------
 #' @title Minimum p-value minimizing min function
 #' 
-#' minimization function for nuissance parameters. This version uses min method 
+#' @description minimization function for nuissance parameters. This version uses min method 
 #' of combining p-values as in Tippett (1931) and Wilkinson (1951).
 #'
 #' @param v nuissance parameter values 

@@ -2,12 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{grid_eval}
 \alias{grid_eval}
-\title{Evaluate Grid for GridSearch optimization. 
-
-This function performs the gridsearch loop over nuisance parameter space in 
-\emph{calc_mmcpval}. It is written in C++ for better  performance in terms of speed.
-It is only used when calling gridSearch_paramCI or randSearch_paramCI as optimization 
-method.}
+\title{Evaluate Grid for GridSearch optimization.}
 \usage{
 grid_eval(y, x, mcgrid, N, params)
 }
@@ -20,8 +15,6 @@ grid_eval(y, x, mcgrid, N, params)
 maximized p-value over parameter space.
 }
 \description{
-Evaluate Grid for GridSearch optimization. 
-
 This function performs the gridsearch loop over nuisance parameter space in 
 \emph{calc_mmcpval}. It is written in C++ for better  performance in terms of speed.
 It is only used when calling gridSearch_paramCI or randSearch_paramCI as optimization 

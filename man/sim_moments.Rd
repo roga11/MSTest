@@ -2,11 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{sim_moments}
 \alias{sim_moments}
-\title{Test-statistics from simulated data
-
-This function computes simulates residuals from a standard normal distribution
-and calculates the four momment-based test-statistics (eq. 11 - 14 in paper) under the 
-null hypothesis using this simulated data.}
+\title{Test-statistics from simulated data}
 \usage{
 sim_moments(t, totsim)
 }
@@ -19,8 +15,6 @@ sim_moments(t, totsim)
 The four test statistics (eq. 11 - 14 in paper)
 }
 \description{
-Test-statistics from simulated data
-
 This function computes simulates residuals from a standard normal distribution
 and calculates the four momment-based test-statistics (eq. 11 - 14 in paper) under the 
 null hypothesis using this simulated data.

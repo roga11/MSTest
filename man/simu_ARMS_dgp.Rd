@@ -2,9 +2,7 @@
 % Please edit documentation in R/Methods.R
 \name{simu_ARMS_dgp}
 \alias{simu_ARMS_dgp}
-\title{Simulate Auto-Regressive Markov-Switching process
-
-This function can be used to simulate a Auto-Regressive Markov-Switching process}
+\title{Simulate Auto-Regressive Markov-Switching process}
 \usage{
 simu_ARMS_dgp(n, th, burnin = 200)
 }
@@ -23,7 +21,5 @@ and so dropping some of the initial observations avoids these types of issues.}
 AR-MS series
 }
 \description{
-Simulate Auto-Regressive Markov-Switching process
-
 This function can be used to simulate a Auto-Regressive Markov-Switching process
 }

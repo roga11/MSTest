@@ -2,11 +2,7 @@
 % Please edit documentation in R/moment_test.R
 \name{DLMMCtest}
 \alias{DLMMCtest}
-\title{Maximized Monte-Carlo Moment-based test for MS AR model
-
-This function performs the MMC version of the Moment-Based test for
-MS AR models presented in Dufour & Luger (2017). It is useful when
-nuissance parameters are present in the null disribution.}
+\title{Maximized Monte-Carlo Moment-based test for MS AR model}
 \usage{
 DLMMCtest(
   Y,
@@ -42,8 +38,6 @@ gridSearch_paramCI. Default is set to randSearch_paramCI to match results in pap
 List with model and test results.
 }
 \description{
-Maximized Monte-Carlo Moment-based test for MS AR model
-
 This function performs the MMC version of the Moment-Based test for
 MS AR models presented in Dufour & Luger (2017). It is useful when
 nuissance parameters are present in the null disribution.

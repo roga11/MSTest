@@ -2,10 +2,7 @@
 % Please edit documentation in R/moment_test.R
 \name{min_fn_min}
 \alias{min_fn_min}
-\title{Minimum p-value minimizing min function
-
-minimization function for nuissance parameters. This version uses min method 
-of combining p-values as in Tippett (1931) and Wilkinson (1951).}
+\title{Minimum p-value minimizing min function}
 \usage{
 min_fn_min(v)
 }
@@ -16,8 +13,6 @@ min_fn_min(v)
 p-value for given parameter value.
 }
 \description{
-Minimum p-value minimizing min function
-
 minimization function for nuissance parameters. This version uses min method 
 of combining p-values as in Tippett (1931) and Wilkinson (1951).
 }

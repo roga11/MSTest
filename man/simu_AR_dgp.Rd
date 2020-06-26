@@ -2,9 +2,7 @@
 % Please edit documentation in R/Methods.R
 \name{simu_AR_dgp}
 \alias{simu_AR_dgp}
-\title{Simulate Auto-Regressive process
-
-This function can be used to simulate a Auto-Regressive process}
+\title{Simulate Auto-Regressive process}
 \usage{
 simu_AR_dgp(n, mu = 0, std = 1, phi, burnin = 200)
 }
@@ -25,7 +23,5 @@ and so dropping some of the initial observations avoids these types of issues.}
 AR-MS series
 }
 \description{
-Simulate Auto-Regressive process
-
 This function can be used to simulate a Auto-Regressive process
 }

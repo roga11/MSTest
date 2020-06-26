@@ -2,11 +2,7 @@
 % Please edit documentation in R/CHP.R
 \name{CHPtest}
 \alias{CHPtest}
-\title{CHP Test
-
-This function performs the CHP test as outline in Carrasco, M., Hu, L. and Ploberger, W. (2014).
-This function can be used to recreate results from Table III of the paper. Econometrica as the original 
-publisher and source code can be found here: https://www.econometricsociety.org/content/supplement-optimal-test-markov-switching-parameters.}
+\title{CHP Test}
 \usage{
 CHPtest(Y, p = 1, N = 3000, rho_b = 0.7, var_switch = 0)
 }
@@ -25,8 +21,6 @@ CHPtest(Y, p = 1, N = 3000, rho_b = 0.7, var_switch = 0)
 
 }
 \description{
-CHP Test
-
 This function performs the CHP test as outline in Carrasco, M., Hu, L. and Ploberger, W. (2014).
 This function can be used to recreate results from Table III of the paper. Econometrica as the original 
 publisher and source code can be found here: https://www.econometricsociety.org/content/supplement-optimal-test-markov-switching-parameters.
