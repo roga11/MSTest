@@ -1,10 +1,10 @@
 #' @title Kasaharra 2018 US GDP data
 #'
-#' This data is used in Kasahara & Shimotsu (2018) working paper. The series ranges from 
-#' 1960Q1 to 2014Q4. 
+#'  
 #' 
 #' @format 
-#' \describe{
+#' \describe{ This data is used in Kasahara & Shimotsu (2018) working paper. The series ranges from 
+#' 1960Q1 to 2014Q4.
 #'   \item{DATE}{Vector of dates}
 #'   \item{GNP_logdiff}{log difference of US GDP series}
 #' }
@@ -15,12 +15,12 @@
 # -----------------------------------------------------------------------------
 #' @title Carasco 2010 GNP
 #'
-#' This dataset is the extension of the GNP series used in CHP (2014). Specifically, 
-#' the series \emph{GNP_logdiff} from this dataset is used. This series ranges from 
-#' 1951Q2 to 2010Q4. 
+#' 
 #' 
 #' @format 
-#' \describe{
+#' \describe{This dataset is the extension of the GNP series used in CHP (2014). Specifically, 
+#' the series \emph{GNP_logdiff} from this dataset is used. This series ranges from 
+#' 1951Q2 to 2010Q4. 
 #'   \item{DATE}{Vector of dates}
 #'   \item{GNP}{US GNP series}
 #'   \item{GNP_logdiff}{log difference of US GNP series}
@@ -36,12 +36,11 @@
 # -----------------------------------------------------------------------------
 #' @title Hamilton 1984 GNP
 #' 
-#' This data set is used in Hansen (1992) to test the US GNP model proposed by 
-#' Hamilton (1989). Secifically, the series \emph{GNP_logdiff}. This series ranges from 
-#' 1951Q2 to 1984Q4. 
 #'
 #' @format 
-#' \describe{
+#' \describe{This data set is used in Hansen (1992) to test the US GNP model proposed by 
+#' Hamilton (1989). Secifically, the series \emph{GNP_logdiff}. This series ranges from 
+#' 1951Q2 to 1984Q4. 
 #'   \item{DATE}{Vector of dates}
 #'   \item{GNP}{US GNP seies}
 #'   \item{GNP_logdiff}{US GNP log difference}

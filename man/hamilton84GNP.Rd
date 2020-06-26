@@ -3,13 +3,11 @@
 \docType{data}
 \name{hamilton84GNP}
 \alias{hamilton84GNP}
-\title{Hamilton 1984 GNP
-
-This data set is used in Hansen (1992) to test the US GNP model proposed by 
-Hamilton (1989). Secifically, the series \emph{GNP_logdiff}. This series ranges from 
-1951Q2 to 1984Q4.}
+\title{Hamilton 1984 GNP}
 \format{
-\describe{
+\describe{This data set is used in Hansen (1992) to test the US GNP model proposed by 
+Hamilton (1989). Secifically, the series \emph{GNP_logdiff}. This series ranges from 
+1951Q2 to 1984Q4. 
   \item{DATE}{Vector of dates}
   \item{GNP}{US GNP seies}
   \item{GNP_logdiff}{US GNP log difference}
@@ -23,10 +21,6 @@ hamilton84GNP
 }
 \description{
 Hamilton 1984 GNP
-
-This data set is used in Hansen (1992) to test the US GNP model proposed by 
-Hamilton (1989). Secifically, the series \emph{GNP_logdiff}. This series ranges from 
-1951Q2 to 1984Q4.
 }
 \references{
 Hansen, B. E. (1992). The likelihood ratio test under nonstandard 

@@ -3,12 +3,10 @@
 \docType{data}
 \name{kasshi14GDP}
 \alias{kasshi14GDP}
-\title{Kasaharra 2018 US GDP data
-
-This data is used in Kasahara & Shimotsu (2018) working paper. The series ranges from 
-1960Q1 to 2014Q4.}
+\title{Kasaharra 2018 US GDP data}
 \format{
-\describe{
+\describe{ This data is used in Kasahara & Shimotsu (2018) working paper. The series ranges from 
+1960Q1 to 2014Q4.
   \item{DATE}{Vector of dates}
   \item{GNP_logdiff}{log difference of US GDP series}
 }
@@ -21,9 +19,6 @@ kasshi14GDP
 }
 \description{
 Kasaharra 2018 US GDP data
-
-This data is used in Kasahara & Shimotsu (2018) working paper. The series ranges from 
-1960Q1 to 2014Q4.
 }
 \references{
 Kasahara, H., & Shimotsu, K. (2018). Testing the number of regimes in Markov regime 

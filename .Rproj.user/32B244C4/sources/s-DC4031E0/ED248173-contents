@@ -8,50 +8,41 @@ date: "29-May-2020"
 output: pdf_document
 ---
 
-## Load Package
-
-Set \(Dir = \) to the folder/location where the  \("MSTest_1.0.tar.gz"\) file is found.
+## Install Latest Version of Package
+THe follwoing block of code can be used to download and install the latest version of the MSTest R package from its github repository (https://github.com/roga11/MSTest). Installing packages directly from github requires using \textit{devtools}. The code below will check if devtools is already installed and install it if it is not.  
+  
+The package does not need to be re-installed every time. Just when new updates are avaiable. If you already have the latest version installed, you may proceed to the next section.
 ```{r}
 rm(list=ls())
-# Install package if not installed
 if (is.element('devtools',installed.packages()[,1])==FALSE){
   install.packages('devtools')
 }
-# *** NOTE: change this to location of "MSTest_1.0.tar.gz"
-#Dir <- "/Users/grodriguezrondon/Dropbox/Uni/Res/RAwork/Rpackage"
-devtools::install_github(roga11/MSTest)
+devtools::install_github('roga11/MSTest')
 ```
-Note that in addition to the first time, the package may need to be re-installed after new updates. To do this run 'install.packages(paste0(Dir,"/MSTest_1.0.tar.gz"), type = 'source', repos=NULL)' without the if-statement.  
-  
-Once package has been installed we can load it. 
+## Load Package
+
+Once package has been installed it can be loaded. 
 ```{r}
-# Install package if not installed
-#if (is.element('MSTest',installed.packages()[,1])==FALSE){
-#  install.packages(paste0(Dir,"/MSTest_1.0.tar.gz"), type = 'source', repos=NULL)
-#}
-```
-Once package has been installed we can load it. 
-  
-```{r}
-# load package
 library(MSTest)
 ```
 ## Load Data
+
 The package includes 3 datasets that can be used as examples. The three datasets are:  
   
 * hamilton84GNP: Data from 1951Q2 - 1984Q4 used in Hamilton (1989) and Hansen (1992; 1996)
 * carhuplo10GNP: Data from 1951Q2 - 2010Q4 used by Carrasco, Hu and Ploberger (2014)
 * kasshi14GDP: Data from 1960Q1 - 2014Q4 used in Kasahara and Shimotsu (2019)
   
+They can be loaded using the following code. 
 ```{r}
 GNPdata <- hamilton84GNP # this can be hamilton82GNP, carhuplo10GNP or kasshi18GNP
-GNPdata2 <- kasshi14GDP # this can be hamilton82GNP, carhuplo10GNP or kasshi18GNP
-
 Y       <- GNPdata$GNP_logdiff
-Y2       <- GNPdata2$GNP_logdiff
-
 date    <- GNPdata$DATE 
 plot(as.Date(date),Y,xlab='Time',ylab='GNP - log difference',type = 'l')
+```
+You an also learn more about these dataset and their sources by using the following line(s) and .
+```{r}
+?hamilton84GNP
 ```
 ## Simulated Data
 ```{r}

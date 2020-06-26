@@ -1,5 +1,0 @@
-"0","start <- Sys.time()"
-"0","CHPMCtest(Y, p = 4, N = 3000)  "
-"2","Error in CHPMCtest(Y, p = 4, N = 3000) : 
-  could not find function ""CHPMCtest""
-"

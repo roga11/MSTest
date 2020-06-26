@@ -3,13 +3,11 @@
 \docType{data}
 \name{carhuplo10GNP}
 \alias{carhuplo10GNP}
-\title{Carasco 2010 GNP
-
-This dataset is the extension of the GNP series used in CHP (2014). Specifically, 
-the series \emph{GNP_logdiff} from this dataset is used. This series ranges from 
-1951Q2 to 2010Q4.}
+\title{Carasco 2010 GNP}
 \format{
-\describe{
+\describe{This dataset is the extension of the GNP series used in CHP (2014). Specifically, 
+the series \emph{GNP_logdiff} from this dataset is used. This series ranges from 
+1951Q2 to 2010Q4. 
   \item{DATE}{Vector of dates}
   \item{GNP}{US GNP series}
   \item{GNP_logdiff}{log difference of US GNP series}
@@ -23,10 +21,6 @@ carhuplo10GNP
 }
 \description{
 Carasco 2010 GNP
-
-This dataset is the extension of the GNP series used in CHP (2014). Specifically, 
-the series \emph{GNP_logdiff} from this dataset is used. This series ranges from 
-1951Q2 to 2010Q4.
 }
 \references{
 Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
