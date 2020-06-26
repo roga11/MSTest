@@ -46,10 +46,10 @@ CHPtest <- function(Y, p=1, N=3000, rho_b=0.7, var_switch = 0){
   return(output)
 } 
 # ------------------------------------------------------------------------------------------
-#' @title CHP Asymptotic Test
+#' @title CHP Monte Carlo Test
 #'
-#' This function performs a asymptotic test version of the CHP. We use the asymptotic 
-#' critical values developed by authors in order to do this. 
+#' This function performs a Monte Carlo test by drawing from the asymptotic distribution of 
+#' supTS and expTS test-statistics. It is recommended to use a large number of iterations.
 #'
 #' @param Y the series to be tested
 #' @param p Number of autoregressive lags AR(p)
@@ -61,7 +61,7 @@ CHPtest <- function(Y, p=1, N=3000, rho_b=0.7, var_switch = 0){
 #' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
 #' 
 #' @export
-CHP_asymtest <- function(Y, p=1, N=3000, rho_b=0.7, var_switch = 0){
+CHPMCtest <- function(Y, p=1, N=3000, rho_b=0.7, var_switch = 0){
   # ** Consider adding MMC to this MC approach
   # --------------- Begin by estimating model under H0
   Mdl   <- ARmdl(Y,p)

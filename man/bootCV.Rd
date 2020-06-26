@@ -2,7 +2,9 @@
 % Please edit documentation in R/RcppExports.R
 \name{bootCV}
 \alias{bootCV}
-\title{Bootstrap Critival Values CHP Test}
+\title{Bootstrap Critival Values CHP Test
+
+This bootstrap procedure is described on page 771 of CHP (2014)}
 \usage{
 bootCV(mdl, rho_b, N, var_switch)
 }
@@ -20,4 +22,10 @@ Bootstrap critical values
 }
 \description{
 Bootstrap Critival Values CHP Test
+
+This bootstrap procedure is described on page 771 of CHP (2014)
+}
+\references{
+Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
+“Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
 }

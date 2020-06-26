@@ -25,11 +25,6 @@ method of combining p-values as in Fisher (1932) and Pearson (1933).
 Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
 tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
 
-Tippett, L. (1931). The Method of Statistics. London: Williams & Norgate.
-
-Wilkinson, B. (1951). A statistical consideration in psychological research. 
-Psychology Bulletin 48:156–158.
-
 Pearson, K. (1933). On a method of determining whether a sample of size n
  supposed to have been drawn from a parent population having a known probability integral has probably been drawn at random. Biometrika 25:379–410.
 

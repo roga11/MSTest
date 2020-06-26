@@ -3,22 +3,35 @@
 \docType{data}
 \name{carhuplo10GNP}
 \alias{carhuplo10GNP}
-\title{Carasco 2010 GNP}
+\title{Carasco 2010 GNP
+
+This dataset is the extension of the GNP series used in CHP (2014). Specifically, 
+the series \emph{GNP_logdiff} from this dataset is used. This series ranges from 
+1951Q2 to 2010Q4.}
 \format{
 \describe{
-  \item{DATE}{Date}
-  \item{GNP}{US GNP}
-  \item{GNP_logdiff}{US GNP log difference}
-  ...
+  \item{DATE}{Vector of dates}
+  \item{GNP}{US GNP series}
+  \item{GNP_logdiff}{log difference of US GNP series}
 }
 }
 \source{
-\url{}
+\url{https://www.econometricsociety.org/content/supplement-optimal-test-markov-switching-parameters}
 }
 \usage{
 carhuplo10GNP
 }
 \description{
 Carasco 2010 GNP
+
+This dataset is the extension of the GNP series used in CHP (2014). Specifically, 
+the series \emph{GNP_logdiff} from this dataset is used. This series ranges from 
+1951Q2 to 2010Q4.
+}
+\references{
+Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
+“Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 
+
+\bold{82 (2)}: 765–784.
 }
 \keyword{datasets}

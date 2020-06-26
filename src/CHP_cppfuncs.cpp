@@ -1,7 +1,24 @@
 #include <RcppArmadillo.h>
 //[[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
-
+// ------------------------------------------------------------------------------------------
+//' @title Calc eq. 2.5 from CHP (2014) where both mean and variance can switch
+//'
+//' When alternative has bith switching mean and variance, we take the second 
+//' derivative of the log likelihood function w.r.t mu, phi and sigma.
+//' 
+//' Output from this function is used as input in \emph{chpStat}
+//'
+//' @param mdl List containing model information
+//' @param rho_b bound for rho (nuisance param space)
+//' @param ltmt List conatining derivatives (i.e. is the output when using \emph{chpDmat})
+//' 
+//' @return mu_2t from eq. 2.5 and used in test-statistic caluclation
+//' 
+//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
+//' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+//' 
+//' @export
 // [[Rcpp::export]]
 arma::vec calc_mu2t_mv(List mdl, double rho, List ltmt, arma::vec hv){
   // calc mu2t (eq. 2.5) for test with switch in mean and variance 
@@ -46,10 +63,25 @@ arma::vec calc_mu2t_mv(List mdl, double rho, List ltmt, arma::vec hv){
   }
   return(mu2t);
 }
-
+// ------------------------------------------------------------------------------------------
+//' @title Calc eq. 2.5 from CHP (2014) where only mean can switch
+//'
+//' When alternative only has Switching mean (and not variance), we only take the second 
+//' derivative of the log likelihood function w.r.t mu and not phi or sigma.
+//' 
+//' Output from this function is used as input in \emph{chpStat}
+//'
+//' @param mdl List containing model information
+//' @param rho_b bound for rho (nuisance param space)
+//' @param ltmt List conatining derivatives (i.e. is the output when using \emph{chpDmat})
+//' 
+//' @return mu_2t from eq. 2.5 and used in test-statistic caluclation
+//' 
+//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
+//' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+//' @export
 // [[Rcpp::export]]
 arma::vec calc_mu2t(List mdl, double rho, List ltmt){
-  // calc mu2t (eq. 2.5) for test with switch in mean only
   int nn              = mdl["n"];
   arma::mat ltmx      = ltmt["ltmx"];
   double mtmu         = ltmt["mtmu"];
@@ -65,8 +97,10 @@ arma::vec calc_mu2t(List mdl, double rho, List ltmt){
   mu2t = (mtmu+pow(ltmu,2))/2+mu2t;
   return(mu2t);
 }
-
+// ------------------------------------------------------------------------------------------
 //' @title CHP Test Statistic
+//' 
+//' Calculate supTS and expTS test-statistics from CHP (2014).
 //'
 //' @param mdl List containing model information
 //' @param rho_b bound for rho (nuisance param space)
@@ -74,6 +108,10 @@ arma::vec calc_mu2t(List mdl, double rho, List ltmt){
 //' @param var_switch variance switch indicator
 //' 
 //' @return Test Statistic
+//' 
+//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
+//' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+//' 
 //' @export
 // [[Rcpp::export]]
 arma::vec chpStat(List mdl, double rho_b, List ltmt,int var_switch){
@@ -162,8 +200,10 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,int var_switch){
   return(chps);
 }
 
-
+// ------------------------------------------------------------------------------------------
 //' @title Bootstrap Critival Values CHP Test
+//'
+//'This bootstrap procedure is described on page 771 of CHP (2014)
 //'
 //' @param mdl List containing model information
 //' @param rho_b bound for rho (nuisance param space)
@@ -171,6 +211,10 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,int var_switch){
 //' @param var_switch variance switch indicator
 //' 
 //' @return Bootstrap critical values
+//' 
+//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
+//' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+//' 
 //' @export
 // [[Rcpp::export]]
 arma::mat bootCV(List mdl,double rho_b, int N, int var_switch){
@@ -200,7 +244,19 @@ arma::mat bootCV(List mdl,double rho_b, int N, int var_switch){
   arma::mat boot_out = join_rows(sort(supb),sort(expb));
   return(boot_out);  
 }
-
+// ------------------------------------------------------------------------------------------
+//' @title Asymptotic Distribution of Test Statistic
+//' 
+//' Can be used for hypothesis test using asymptotic critical values. Doing so is much 
+//' quicker than using empirical distribution. Results should also be comparable to Table A1
+//' in CHP (2014).
+//' 
+//' @param itn number of bootstrap iterations 
+//' @param tr sample size of each series
+//' @param rho_b 
+//' 
+//' @return asymptotic distribution of test statistics
+//' @export
 // [[Rcpp::export]]
 arma::mat CHPadist(int itn,int tr,double rho_b){
   arma::vec crt1(itn,arma::fill::zeros);  // stores the supTS statistic

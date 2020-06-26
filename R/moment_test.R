@@ -84,7 +84,7 @@ DLMCtest <- function(Y, p = NULL, x = NULL, N = 100, N2 = 10000){
 #' @param N2 number of simulations when approximating distribution used to combine 
 #' p-values (eq. 16).
 #' @param N3 number of parameter values to try for nuissance params. Used only 
-#' when caling gridSearch_paramCI or randSearch_paramCI.
+#' when calling gridSearch_paramCI or randSearch_paramCI.
 #' @param searchType Type of optimization algorithm when searching nuissance 
 #' parameter space. Avaiable options are: GenSA, GA, PSO, randSearch_paramCI and 
 #' gridSearch_paramCI. Default is set to randSearch_paramCI to match results in paper.
@@ -188,6 +188,7 @@ DLMMCtest <- function(Y,
 #'
 #' @param Tsize sample size
 #' @param N2 number of draws (simulations)
+#' 
 #' @return params the paramters gamma in eq. 16 of Dufour & Luger (2017). 
 #' 
 #' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
@@ -227,9 +228,6 @@ approxDist<- function(Tsize,N2){
 #' 
 #' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
 #' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
-#' @references Tippett, L. (1931). The Method of Statistics. London: Williams & Norgate.
-#' @references Wilkinson, B. (1951). A statistical consideration in psychological research. 
-#' Psychology Bulletin 48:156–158.
 #' @references Pearson, K. (1933). On a method of determining whether a sample of size n
 #'  supposed to have been drawn from a parent population having a known probability integral has probably been drawn at random. Biometrika 25:379–410.
 #' @references Fisher, R. (1932). Statistical Methods for Research Workers. Edinburgh: 
@@ -266,10 +264,6 @@ max_fn_prod <- function(v){
 #' @references Tippett, L. (1931). The Method of Statistics. London: Williams & Norgate.
 #' @references Wilkinson, B. (1951). A statistical consideration in psychological research. 
 #' Psychology Bulletin 48:156–158.
-#' @references Pearson, K. (1933). On a method of determining whether a sample of size n
-#'  supposed to have been drawn from a parent population having a known probability integral has probably been drawn at random. Biometrika 25:379–410.
-#' @references Fisher, R. (1932). Statistical Methods for Research Workers. Edinburgh: 
-#' Oliver and Boyd.
 #' 
 #' @export
 max_fn_min <- function(v){
@@ -300,9 +294,6 @@ max_fn_min <- function(v){
 #' 
 #' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
 #' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
-#' @references Tippett, L. (1931). The Method of Statistics. London: Williams & Norgate.
-#' @references Wilkinson, B. (1951). A statistical consideration in psychological research. 
-#' Psychology Bulletin 48:156–158.
 #' @references Pearson, K. (1933). On a method of determining whether a sample of size n
 #'  supposed to have been drawn from a parent population having a known probability integral has probably been drawn at random. Biometrika 25:379–410.
 #' @references Fisher, R. (1932). Statistical Methods for Research Workers. Edinburgh: 
@@ -327,10 +318,6 @@ min_fn_prod <- function(v){
 #' @references Tippett, L. (1931). The Method of Statistics. London: Williams & Norgate.
 #' @references Wilkinson, B. (1951). A statistical consideration in psychological research. 
 #' Psychology Bulletin 48:156–158.
-#' @references Pearson, K. (1933). On a method of determining whether a sample of size n
-#'  supposed to have been drawn from a parent population having a known probability integral has probably been drawn at random. Biometrika 25:379–410.
-#' @references Fisher, R. (1932). Statistical Methods for Research Workers. Edinburgh: 
-#' Oliver and Boyd.
 #' 
 #' @export
 min_fn_min <- function(v){

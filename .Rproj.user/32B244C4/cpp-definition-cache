@@ -5,7 +5,7 @@
                 "column" : 11,
                 "file" : "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack/MSTest/src/CHP_cppfuncs.cpp",
                 "kind" : 6,
-                "line" : 6,
+                "line" : 23,
                 "name" : "calc_mu2t_mv(Rcpp::List, double, Rcpp::List, arma::vec)",
                 "parent_name" : "",
                 "usr" : "c:@F@calc_mu2t_mv#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#S0_#$@N@arma@S@Col>#d#"
@@ -14,7 +14,7 @@
                 "column" : 11,
                 "file" : "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack/MSTest/src/CHP_cppfuncs.cpp",
                 "kind" : 6,
-                "line" : 51,
+                "line" : 84,
                 "name" : "calc_mu2t(Rcpp::List, double, Rcpp::List)",
                 "parent_name" : "",
                 "usr" : "c:@F@calc_mu2t#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#S0_#"
@@ -23,7 +23,7 @@
                 "column" : 11,
                 "file" : "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack/MSTest/src/CHP_cppfuncs.cpp",
                 "kind" : 6,
-                "line" : 79,
+                "line" : 117,
                 "name" : "chpStat(Rcpp::List, double, Rcpp::List, int)",
                 "parent_name" : "",
                 "usr" : "c:@F@chpStat#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#S0_#I#"
@@ -32,7 +32,7 @@
                 "column" : 11,
                 "file" : "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack/MSTest/src/CHP_cppfuncs.cpp",
                 "kind" : 6,
-                "line" : 176,
+                "line" : 220,
                 "name" : "bootCV(Rcpp::List, double, int, int)",
                 "parent_name" : "",
                 "usr" : "c:@F@bootCV#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#I#I#"
@@ -41,14 +41,14 @@
                 "column" : 11,
                 "file" : "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack/MSTest/src/CHP_cppfuncs.cpp",
                 "kind" : 6,
-                "line" : 205,
+                "line" : 261,
                 "name" : "CHPadist(int, int, double)",
                 "parent_name" : "",
                 "usr" : "c:@F@CHPadist#I#I#d#"
             }
         ],
         "file" : "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack/MSTest/src/CHP_cppfuncs.cpp",
-        "file_last_write" : 1593066186.000000
+        "file_last_write" : 1593121113.000000
     },
     {
         "definitions" : [
@@ -56,7 +56,7 @@
                 "column" : 11,
                 "file" : "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack/MSTest/src/MSMC_cppfuncs.cpp",
                 "kind" : 6,
-                "line" : 6,
+                "line" : 20,
                 "name" : "calc_moments(arma::vec)",
                 "parent_name" : "",
                 "usr" : "c:@F@calc_moments#$@N@arma@S@Col>#d#"
@@ -65,7 +65,7 @@
                 "column" : 11,
                 "file" : "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack/MSTest/src/MSMC_cppfuncs.cpp",
                 "kind" : 6,
-                "line" : 34,
+                "line" : 63,
                 "name" : "sim_moments(int, int)",
                 "parent_name" : "",
                 "usr" : "c:@F@sim_moments#I#I#"
@@ -74,7 +74,7 @@
                 "column" : 11,
                 "file" : "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack/MSTest/src/MSMC_cppfuncs.cpp",
                 "kind" : 6,
-                "line" : 46,
+                "line" : 105,
                 "name" : "combine_stat(arma::vec, arma::mat, arma::mat, int, std::string)",
                 "parent_name" : "",
                 "usr" : "c:@F@combine_stat#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#I#$@N@std@N@__1@S@basic_string>#C#$@N@std@N@__1@S@char_traits>#C#$@N@std@N@__1@S@allocator>#C#"
@@ -83,7 +83,7 @@
                 "column" : 11,
                 "file" : "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack/MSTest/src/MSMC_cppfuncs.cpp",
                 "kind" : 6,
-                "line" : 74,
+                "line" : 151,
                 "name" : "calc_mcstat(arma::vec, int, arma::mat)",
                 "parent_name" : "",
                 "usr" : "c:@F@calc_mcstat#$@N@arma@S@Col>#d#I#$@N@arma@S@Mat>#d#"
@@ -92,7 +92,7 @@
                 "column" : 11,
                 "file" : "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack/MSTest/src/MSMC_cppfuncs.cpp",
                 "kind" : 6,
-                "line" : 89,
+                "line" : 180,
                 "name" : "approx_dist_loop(arma::mat)",
                 "parent_name" : "",
                 "usr" : "c:@F@approx_dist_loop#$@N@arma@S@Mat>#d#"
@@ -101,14 +101,14 @@
                 "column" : 11,
                 "file" : "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack/MSTest/src/MSMC_cppfuncs.cpp",
                 "kind" : 6,
-                "line" : 103,
+                "line" : 209,
                 "name" : "grid_eval(arma::vec, arma::mat, arma::mat, int, arma::mat)",
                 "parent_name" : "",
                 "usr" : "c:@F@grid_eval#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#I#S1_#"
             }
         ],
         "file" : "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack/MSTest/src/MSMC_cppfuncs.cpp",
-        "file_last_write" : 1592953725.000000
+        "file_last_write" : 1593182162.000000
     },
     {
         "definitions" : [

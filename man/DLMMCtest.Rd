@@ -32,7 +32,7 @@ DLMMCtest(
 p-values (eq. 16).}
 
 \item{N3}{number of parameter values to try for nuissance params. Used only 
-when caling gridSearch_paramCI or randSearch_paramCI.}
+when calling gridSearch_paramCI or randSearch_paramCI.}
 
 \item{searchType}{Type of optimization algorithm when searching nuissance 
 parameter space. Avaiable options are: GenSA, GA, PSO, randSearch_paramCI and 

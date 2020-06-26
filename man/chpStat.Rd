@@ -2,7 +2,9 @@
 % Please edit documentation in R/RcppExports.R
 \name{chpStat}
 \alias{chpStat}
-\title{CHP Test Statistic}
+\title{CHP Test Statistic
+
+Calculate supTS and expTS test-statistics from CHP (2014).}
 \usage{
 chpStat(mdl, rho_b, ltmt, var_switch)
 }
@@ -20,4 +22,10 @@ Test Statistic
 }
 \description{
 CHP Test Statistic
+
+Calculate supTS and expTS test-statistics from CHP (2014).
+}
+\references{
+Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
+“Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
 }

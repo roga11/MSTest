@@ -1,8 +1,0 @@
-"0","GNPdata <- hamilton82GNP # this can be hamilton82GNP, carhuplo10GNP or kasshi18GNP"
-"0","GNPdata2 <- carhuplo10GNP # this can be hamilton82GNP, carhuplo10GNP or kasshi18GNP"
-"0",""
-"0","Y       <- GNPdata$GNP_logdiff"
-"0","Y2       <- GNPdata2$GNP_logdiff"
-"0",""
-"0","date    <- GNPdata$DATE "
-"0","plot(as.Date(date),Y,xlab='Time',ylab='GNP - log difference',type = 'l')"
