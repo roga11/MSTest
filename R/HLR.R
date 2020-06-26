@@ -1,3 +1,4 @@
+HLRenv <- new.env()
 # ------------------------------------------------------------------------------------------
 #' @title HLR Test
 #'
@@ -6,7 +7,6 @@
 #' @param oder is the order of Autoregressive and moving average components
 #' @references Dufour and Luger (2017)
 #' @export
-HLRenv <- new.env()
 HLRtest <- function(Y,p=1,ix=1,iv=0,iq=0,gn=20,reps=1000){
   # Estimate Model under Null Hypothesis
   odr     <- c(p,0)
