@@ -6,7 +6,7 @@ LRMMCenv <- new.env()
 #' @param infile Path to the input file
 #' @return A matrix of the infile
 #' @export
-LRMC_simu = function(mdl,k,N){
+LRBoot_simu = function(mdl,k,N){
   LRT_N = matrix(0,N,1)
   if (mdl$ar>0){
     phi = mdl$coef[2:length(mdl$coef)]
@@ -47,10 +47,6 @@ LRMC_fn_simu = function(w,mdl,k,N){
 }
 # -----------------------------------------------------------------------------
 #' @title LRMC ARMS maximization function 
-#' This function ...
-#'
-#' @param infile Path to the input file
-#' @return A matrix of the infile
 #' @export
 LRMMC_ARMS_fn_max = function(w){
   if (min(Mod(as.complex(polyroot(rbind(1,as.matrix(w))))))<1){
@@ -67,23 +63,16 @@ LRMMC_ARMS_fn_max = function(w){
 }
 # -----------------------------------------------------------------------------
 #' @title LRMC ARMMC minimization function
-#' This function ...
-#'
-#' @param infile Path to the input file
-#' @return A matrix of the infile
 #' @export
 LRMMC_ARMS_fn_min = function(w){
   n_pval = -LRMMC_ARMS_fn_max(w)
   return(n_pval)
 }
 # -----------------------------------------------------------------------------
-#' @title LRMC ARMS
-#' This function ...
+#' @title Likelihood Ratio Parametric Bootstrap
 #'
-#' @param infile Path to the input file
-#' @return A matrix of the infile
 #' @export
-LRMC_ARMS = function(Y, ar = NULL, k = 2, N = 100){
+LRBoot_ARMS = function(Y, ar = NULL, k = 2, N = 100){
   # --------------- Likelihood-Ratio Monte-Carlo test for Autoregressive Markov-Switching 
   mdl_h0 = ARmdl(Y,ar)
   mdl_h1 = ARMSmdl(Y,ar,k)
@@ -94,7 +83,7 @@ LRMC_ARMS = function(Y, ar = NULL, k = 2, N = 100){
   # calc test stat
   LRT_0 = -2*(l_0-l_1)
   # empirical Monte-Carlo simulations using null model 
-  LRT_N = LRMC_simu(mdl_h0,k,N-1)
+  LRT_N = LRBoot_simu(mdl_h0,k,N-1)
   # calculate p-value
   pval = p_val(LRT_0, LRT_N, type = 'geq')
   # format function output 
@@ -108,10 +97,7 @@ LRMC_ARMS = function(Y, ar = NULL, k = 2, N = 100){
 }
 # -----------------------------------------------------------------------------
 #' @title LR MMC ARMS
-#' This function ...
 #'
-#' @param infile Path to the input file
-#' @return A matrix of the infile
 #' @export
 LRMMC_ARMS = function(Y,ar = NULL, k = 2,N = 100, method = "GenSA", controls=NULL){
   # ---------------- Likelihood-Ratio MMC test for Autoregressive Markov-Switching 
@@ -340,7 +326,7 @@ calcPower_mc = function(mu,sig, p11 = 0.9, p22 = 0.9, phi = 0.9 ,sampsize = 100,
     cl <- parallel::makeCluster(parcontrols$cores)
     res = list()
     doParallel::registerDoParallel(cl)
-    res = foreach(xi = 1:nrow(th),.export=c("simu_AR_dgp","simu_ARMS_dgp","ARmdl","ARMSmdl", "LRMC_simu", "LRMC_ARMS"),.packages = "Rcpp",.noexport = c("transMat_cpp", "randInitVal_cpp","ms_logLikel_cpp","EM_hamilton_cpp","msmdl_cpp")) %dopar% {
+    res = foreach(xi = 1:nrow(th),.export=c("simu_AR_dgp","simu_ARMS_dgp","ARmdl","ARMSmdl", "LRBoot_simu", "LRMC_ARMS"),.packages = "Rcpp",.noexport = c("transMat_cpp", "randInitVal_cpp","ms_logLikel_cpp","EM_hamilton_cpp","msmdl_cpp")) %dopar% {
       sourceCpp(paste0(Dir,"LRMMC_ARMSmdl/code/LRMMC_cppfuncs.cpp"))
       mdl_h0 = ARmdl(simuLst[[xi]],nar)
       mdl_h1 = ARMSmdl(simuLst[[xi]],nar,k)
@@ -393,7 +379,7 @@ calcSize_mc = function(sampsize=100, N=99, srep=100, phi=0.9, parcontrols=NULL, 
     st = Sys.time()
     cl <- parallel::makeCluster(parcontrols$cores)
     doParallel::registerDoParallel(cl)
-    res = foreach(xi = 1:nrow(th),.export=c("simu_AR_dgp","simu_ARMS_dgp","ARmdl","ARMSmdl", "LRMC_simu", "LRMC_ARMS"),.packages = "Rcpp",.noexport = c("transMat_cpp", "randInitVal_cpp","ms_logLikel_cpp","EM_hamilton_cpp","msmdl_cpp")) %dopar% {
+    res = foreach(xi = 1:nrow(th),.export=c("simu_AR_dgp","simu_ARMS_dgp","ARmdl","ARMSmdl", "LRBoot_simu", "LRMC_ARMS"),.packages = "Rcpp",.noexport = c("transMat_cpp", "randInitVal_cpp","ms_logLikel_cpp","EM_hamilton_cpp","msmdl_cpp")) %dopar% {
       sourceCpp(paste0(Dir,"LRMMC_ARMSmdl/code/LRMMC_cppfuncs.cpp"))
       mdl_h0 = ARmdl(simuLst[[xi]],nar)
       mdl_h1 = ARMSmdl(simuLst[[xi]],nar,k)

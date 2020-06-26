@@ -2,18 +2,10 @@
 % Please edit documentation in R/MS_LR.R
 \name{LRMMC_ARMS_fn_max}
 \alias{LRMMC_ARMS_fn_max}
-\title{LRMC ARMS maximization function 
-This function ...}
+\title{LRMC ARMS maximization function}
 \usage{
 LRMMC_ARMS_fn_max(w)
 }
-\arguments{
-\item{infile}{Path to the input file}
-}
-\value{
-A matrix of the infile
-}
 \description{
-LRMC ARMS maximization function 
-This function ...
+LRMC ARMS maximization function
 }

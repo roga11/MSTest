@@ -97,7 +97,7 @@ ARMSmdl <- function(Y, ar = NULL, k = 2, method="eval", mxit=500){
   ARMSmdl_out$x <- x
   ARMSmdl_out$n <- n
   ARMSmdl_out$ar <- ar
-  if (all((phi>0))){
+  if (all((phi!=0))){
     ARMSmdl_out$coef <- cbind(ARMSmdl_tmp$MScoef,t(matrix(rep(phi,k),nrow = length(phi),ncol=k)))
   }else{
     ARMSmdl_out$coef <- ARMSmdl_tmp$MScoef

@@ -2,18 +2,10 @@
 % Please edit documentation in R/MS_LR.R
 \name{LRMMC_ARMS_fn_min}
 \alias{LRMMC_ARMS_fn_min}
-\title{LRMC ARMMC minimization function
-This function ...}
+\title{LRMC ARMMC minimization function}
 \usage{
 LRMMC_ARMS_fn_min(w)
 }
-\arguments{
-\item{infile}{Path to the input file}
-}
-\value{
-A matrix of the infile
-}
 \description{
 LRMC ARMMC minimization function
-This function ...
 }

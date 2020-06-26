@@ -2,18 +2,10 @@
 % Please edit documentation in R/MS_LR.R
 \name{LRMMC_ARMS}
 \alias{LRMMC_ARMS}
-\title{LR MMC ARMS
-This function ...}
+\title{LR MMC ARMS}
 \usage{
 LRMMC_ARMS(Y, ar = NULL, k = 2, N = 100, method = "GenSA", controls = NULL)
 }
-\arguments{
-\item{infile}{Path to the input file}
-}
-\value{
-A matrix of the infile
-}
 \description{
 LR MMC ARMS
-This function ...
 }

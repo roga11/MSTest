@@ -155,6 +155,8 @@ print(end - start)
 # Likelihood-Ratio Test   
 
 ## Hensen Test  
+
+This test was developed by Hansen (1992; 1996).  
   
 Optional Arguments are:  
   
@@ -174,6 +176,8 @@ end   <- Sys.time()
 print(end - start)
 ```
 ## LR-Test  
+
+Parametric bootstrap of Likelihood-Ratio Test.    
   
 Optional Arguments are:  
   
@@ -181,30 +185,15 @@ Optional Arguments are:
 * k: number of regimes (default: 2). 
 * N: number of simulations is N-1.  
   
-# Monte-Carlo Likelihood-Ratio Test  
-  
 This takes only a few seconds  
   
 ```{r}
 start <- Sys.time()
-LRMC_test <-  LRMC_ARMS(Y, ar = 4, k = 2, N = 100)
-LRMC_test$pval
+LR_test <-  LRBoot_ARMS(Y, ar = 4, k = 2, N = 100)
+print(paste0('p-value: ',toString(round(LR_test$pval,2))))
+print('coefficients')
+LR_test$msmdl_h1$coef
+print(paste0('standard deviation: ',toString(round(LR_test$msmdl_h1$stdev,4))))
 end   <- Sys.time()
 print(end - start)
 ```
-# Maximized Monte-Carlo Likelihood-Ratio Test  
-  
-Optimization methods include: 
-* GenSa: Uses Generalized Simulated Annealing optimization algorithm.
-* randSearch: Does a random search around consistent estimates.  
-  
-This takes about 8 mins  
-  
-```{r}
-start <- Sys.time()
-LRMMC_test <-  LRMMC_ARMS(Y, ar = 2, k = 2, N = 100, method = "GenSA")
-LRMMC_test$pval
-end   <- Sys.time()
-print(end - start)
-```
-
