@@ -14,7 +14,7 @@ LRBoot_simu = function(mdl,k,N){
     phi = 0
   }
   for (xxi in 1:N){
-    y0 = as.matrix(simu_AR_dgp(n = mdl$n, mu = mean(mdl$y), std = mdl$stdev,phi))
+    y0 = as.matrix(simuAR(n = mdl$n, mu = mean(mdl$y), std = mdl$stdev,phi))
     mdl_h0_tmp = ARmdl(y0, mdl$ar)
     mdl_h1_tmp = ARMSmdl(y0, mdl$ar, k)
     # test stat
@@ -34,7 +34,7 @@ LRMC_fn_simu = function(w,mdl,k,N){
   # Uses "iter" (i.e. iteration method) with max iterations set to 100 for speed
   LRT_N = matrix(0,N,1)
   for (xxi in 1:N){
-    y0 = simu_AR_dgp(n = mdl$n, mu = mean(mdl$y),std = mdl$stdev,w)
+    y0 = simuAR(n = mdl$n, mu = mean(mdl$y),std = mdl$stdev,w)
     mdl_h0_tmp = ARmdl(y0, mdl$ar)
     # ***NOTE: Estimation of alternative model, when performing MMC test only, is
     #          performed using 100 iterations of EM algo only, due to speed 
@@ -207,13 +207,13 @@ calcPower_mmc = function(mu,sig, p11 = 0.9, p22 = 0.9, phi = 0.9 , sampsize = 10
   for (xrep in 1:srep){
     simuLst  = list()
     for (xth in 1:nrow(th)){
-      simuLst[[xth]] = as.matrix(simu_ARMS_dgp(th_n[xth],th_par[xth,]))
+      simuLst[[xth]] = as.matrix(simuARMS(th_n[xth],th_par[xth,]))
     }
     st = Sys.time()
     cl <- parallel::makeCluster(parcontrols$cores)
     res = list()
     doParallel::registerDoParallel(cl)
-    res = foreach(xi = 1:nrow(th),.export=c("simu_AR_dgp","simu_ARMS_dgp","ARmdl","ARMSmdl", "LRMC_fn_simu", "LRMMC_ARMS_fn_max", "LRMMC_ARMS_fn_min", "LRMMC_ARMS", "LRMMC_opt"),.packages = "Rcpp",.noexport = c("transMat_cpp", "randInitVal_cpp","ms_logLikel_cpp","EM_hamilton_cpp","msmdl_cpp")) %dopar% {
+    res = foreach(xi = 1:nrow(th),.export=c("simuAR","simuARMS","ARmdl","ARMSmdl", "LRMC_fn_simu", "LRMMC_ARMS_fn_max", "LRMMC_ARMS_fn_min", "LRMMC_ARMS", "LRMMC_opt"),.packages = "Rcpp",.noexport = c("transMat_cpp", "randInitVal_cpp","ms_logLikel_cpp","EM_hamilton_cpp","msmdl_cpp")) %dopar% {
       sourceCpp(paste0(Dir,"LRMMC_ARMSmdl/code/LRMMC_cppfuncs.cpp"))
       mdl_h0 = ARmdl(simuLst[[xi]],nar)
       mdl_h1 = ARMSmdl(simuLst[[xi]],nar,k)
@@ -261,12 +261,12 @@ calcSize_mmc = function(sampsize=100, N=99, srep=100, phi=0.9, parcontrols=NULL,
   for (xrep in 1:srep){
     simuLst  = list()
     for (xth in 1:nrow(th)){
-      simuLst[[xth]] = as.matrix(simu_AR_dgp(th[xth,1],mu=0,std=1,th[xth,2]))
+      simuLst[[xth]] = as.matrix(simuAR(th[xth,1],mu=0,std=1,th[xth,2]))
     }
     st = Sys.time()
     cl <- parallel::makeCluster(parcontrols$cores)
     doParallel::registerDoParallel(cl)
-    res = foreach(xi = 1:nrow(th),.export=c("simu_AR_dgp","simu_ARMS_dgp","ARmdl","ARMSmdl", "LRMC_fn_simu", "LRMMC_ARMS_fn_max", "LRMMC_ARMS_fn_min", "LRMMC_ARMS", "LRMMC_opt"),.packages = "Rcpp",.noexport = c("transMat_cpp", "randInitVal_cpp","ms_logLikel_cpp","EM_hamilton_cpp","msmdl_cpp")) %dopar% {
+    res = foreach(xi = 1:nrow(th),.export=c("simuAR","simuARMS","ARmdl","ARMSmdl", "LRMC_fn_simu", "LRMMC_ARMS_fn_max", "LRMMC_ARMS_fn_min", "LRMMC_ARMS", "LRMMC_opt"),.packages = "Rcpp",.noexport = c("transMat_cpp", "randInitVal_cpp","ms_logLikel_cpp","EM_hamilton_cpp","msmdl_cpp")) %dopar% {
       sourceCpp(paste0(Dir,"LRMMC_ARMSmdl/code/LRMMC_cppfuncs.cpp"))
       mdl_h0 = ARmdl(simuLst[[xi]],nar)
       mdl_h1 = ARMSmdl(simuLst[[xi]],nar,k)
@@ -320,13 +320,13 @@ calcPower_mc = function(mu,sig, p11 = 0.9, p22 = 0.9, phi = 0.9 ,sampsize = 100,
   for (xrep in 1:srep){
     simuLst  = list()
     for (xth in 1:nrow(th)){
-      simuLst[[xth]] = as.matrix(simu_ARMS_dgp(th_n[xth],th_par[xth,]))
+      simuLst[[xth]] = as.matrix(simuARMS(th_n[xth],th_par[xth,]))
     }
     st = Sys.time()
     cl <- parallel::makeCluster(parcontrols$cores)
     res = list()
     doParallel::registerDoParallel(cl)
-    res = foreach(xi = 1:nrow(th),.export=c("simu_AR_dgp","simu_ARMS_dgp","ARmdl","ARMSmdl", "LRBoot_simu", "LRMC_ARMS"),.packages = "Rcpp",.noexport = c("transMat_cpp", "randInitVal_cpp","ms_logLikel_cpp","EM_hamilton_cpp","msmdl_cpp")) %dopar% {
+    res = foreach(xi = 1:nrow(th),.export=c("simuAR","simuARMS","ARmdl","ARMSmdl", "LRBoot_simu", "LRMC_ARMS"),.packages = "Rcpp",.noexport = c("transMat_cpp", "randInitVal_cpp","ms_logLikel_cpp","EM_hamilton_cpp","msmdl_cpp")) %dopar% {
       sourceCpp(paste0(Dir,"LRMMC_ARMSmdl/code/LRMMC_cppfuncs.cpp"))
       mdl_h0 = ARmdl(simuLst[[xi]],nar)
       mdl_h1 = ARMSmdl(simuLst[[xi]],nar,k)
@@ -374,12 +374,12 @@ calcSize_mc = function(sampsize=100, N=99, srep=100, phi=0.9, parcontrols=NULL, 
   for (xrep in 1:srep){
     simuLst  = list()
     for (xth in 1:nrow(th)){
-      simuLst[[xth]] = as.matrix(simu_AR_dgp(th[xth,1],mu=0,std=1,th[xth,2]))
+      simuLst[[xth]] = as.matrix(simuAR(th[xth,1],mu=0,std=1,th[xth,2]))
     }
     st = Sys.time()
     cl <- parallel::makeCluster(parcontrols$cores)
     doParallel::registerDoParallel(cl)
-    res = foreach(xi = 1:nrow(th),.export=c("simu_AR_dgp","simu_ARMS_dgp","ARmdl","ARMSmdl", "LRBoot_simu", "LRMC_ARMS"),.packages = "Rcpp",.noexport = c("transMat_cpp", "randInitVal_cpp","ms_logLikel_cpp","EM_hamilton_cpp","msmdl_cpp")) %dopar% {
+    res = foreach(xi = 1:nrow(th),.export=c("simuAR","simuARMS","ARmdl","ARMSmdl", "LRBoot_simu", "LRMC_ARMS"),.packages = "Rcpp",.noexport = c("transMat_cpp", "randInitVal_cpp","ms_logLikel_cpp","EM_hamilton_cpp","msmdl_cpp")) %dopar% {
       sourceCpp(paste0(Dir,"LRMMC_ARMSmdl/code/LRMMC_cppfuncs.cpp"))
       mdl_h0 = ARmdl(simuLst[[xi]],nar)
       mdl_h1 = ARMSmdl(simuLst[[xi]],nar,k)

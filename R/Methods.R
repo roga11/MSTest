@@ -166,7 +166,7 @@ calc_mmcpval <- function(search_type = 'randSearch_paramCI',
 #' @return AR-MS series
 #' 
 #' @export
-simu_AR_dgp = function(n, mu = 0, std = 1, phi, burnin = 200){
+simuAR = function(n, mu = 0, std = 1, phi, burnin = 200){
   # -------------- Simulate series with autoregressive data generating process. 
   nphi = length(phi)
   series = matrix(0,n+burnin,1)
@@ -194,7 +194,7 @@ simu_AR_dgp = function(n, mu = 0, std = 1, phi, burnin = 200){
 #' @return AR-MS series
 #' 
 #' @export
-simu_ARMS_dgp = function(n, th, burnin = 200){
+simuARMS = function(n, th, burnin = 200){
   mu0 = th[1]
   mu1 = th[2]
   p = th[3]      
