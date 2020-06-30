@@ -219,7 +219,7 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,int var_switch){
 // [[Rcpp::export]]
 arma::mat bootCV(List mdl,double rho_b, int N, int var_switch){
   // calling required R functions 
-  Function simu_AR_dgp("simu_AR_dgp");
+  Function simuAR("simuAR");
   Function ARmdl("ARmdl");
   Function chpDmat("chpDmat");
   // define vars from Model list
@@ -233,7 +233,7 @@ arma::mat bootCV(List mdl,double rho_b, int N, int var_switch){
   arma::vec expb(N,arma::fill::zeros);  // stores the bootstrapped expTS critical value
   for (int itb=0; itb<N; itb++){
     // first simulate the series N (e.g., 3000) times according to ML estimators 
-    NumericVector ys = simu_AR_dgp(tt,mu,v0,phi);
+    NumericVector ys = simuAR(tt,mu,v0,phi);
     List  Mdlb  = ARmdl(ys,nar);
     List ltmtb  = chpDmat(Mdlb,var_switch);
     arma::vec cv4  = chpStat(Mdlb, rho_b, ltmtb, var_switch);
