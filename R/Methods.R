@@ -217,3 +217,58 @@ simuARMS = function(n, th, burnin = 200){
   randsamp = randsamp[(burnin+1):(burnin+n)]
   return(randsamp)
 }
+
+
+
+# -----------------------------------------------------------------------------
+#' @title Simulate Auto-Regressive Markov-Switching process (New)
+#' 
+#' @description This function can be used to simulate a Auto-Regressive Markov-Switching process
+#'
+#' @param n sample size of process
+#' @param th vector containing parameters of process. The first two values should 
+#' be the two means, the next 2 are the limiting probabilities of being in each state 
+#' (i.e. p and q), and the last two are the standard deviation in each state.
+#' @param burnin This parameter can be used to set the number of burnin observations. 
+#' Process with mean different from 0 can be very different at begining of simulation 
+#' and so dropping some of the initial observations avoids these types of issues.
+#' 
+#' @return AR-MS series
+#' 
+#' @export
+simu_MSAR = function(n, mu = 0, std = 0, w = NULL, phi = NULL, burnin = 0){
+  # ------ Clean and check variables
+  # Convert to np.array if inputs are intergers.
+  if (is.null(w)) {
+    stop('Transition matrix w must be included')
+  }
+  else{
+    if (is.matrix(w) == FALSE){
+      stop('Transition matrix should be a matrix.') 
+    }
+    else if ((all(dim(w))==FALSE) || (all(rowSums(w)==1) == FALSE)){
+      stop('Transition matrix must be square and rows should sum to 1.')
+    }
+  }
+  
+  # ------ Begin Simulation
+  randsamp = rep(0,n+burnin)
+  # Begin with state 1
+  state = 1
+  if (is.null(phi)){
+    for (xi in 1:(n+burnin)){
+      w_temp = w[state,]
+      state = which(runif(1) < cumsum(w_temp))[1]
+      randsamp[xi] = mu[state] + rnorm(1,0,std[state])
+    }
+  }else{
+    randsamp[0:length(phi)] = mu[state]*(1-sum(phi)) + rnorm(length(phi),0,std[state])
+    for (xi in (1+length(phi)):(n+burnin)){
+      w_temp = w[state,]
+      state = which(runif(1) < cumsum(w_temp))[1]
+      randsamp[xi] = mu[state]*(1-sum(phi)) + t(as.matrix(randsamp[(xi-1):(xi-length(phi))]))%*%as.matrix(phi) + rnorm(1,0,std[state])
+    }
+  }
+  randsamp = randsamp[(burnin+1):(burnin+n)]  
+  return(randsamp)
+}
