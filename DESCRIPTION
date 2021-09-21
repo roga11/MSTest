@@ -1,0 +1,15 @@
+Package: MSTest
+Type: Package
+Title: MSTest: An R-package For Testing Markov-Switching Models
+Version: 2.0
+Date: 2021-07-07
+Author: Gabriel Rodriguez Rondon, Jean-Marie Dufour
+Maintainer: Gabriel Rodriguez  <gabriel.rodriguezrondon@mcgill.ca>
+Description: This package allows the user to test the null hypothesis of a linear model against the alternative of a markov switching model. The package includes Likelihood Ratio (LR) type tests (Hansen 1996), The optimal test for markov switching parameters proposed by Carrasco et al. (2014), and the moment based test proposed by Dufour & Luger (2017).
+License: MIT
+Imports: Rcpp (>= 1.0.1), RcppArmadillo, numDeriv
+LinkingTo: Rcpp, RcppArmadillo, numDeriv
+LazyData: true
+RoxygenNote: 7.1.1
+Depends: R (>= 2.10)
+Encoding: UTF-8

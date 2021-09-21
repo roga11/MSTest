@@ -1,0 +1,85 @@
+
+
+# ====================================================================
+# ====== Dependencies
+# ====================================================================
+library(MSTest)
+library(foreach)
+library(doParallel)
+# ====================================================================
+# ====== Set Directory for results
+# ====================================================================
+setwd("/Users/grodriguezrondon/Dropbox/Res/structural_break/MC_LRT/sim_res")
+# ====================================================================
+# ====== Params
+# ====================================================================
+mu <- 0
+stdev <- 1
+ar <- 1
+n_ls <- c(100,200,500,1000)        
+phi_ls <- c(0.1, 0.9, 1)  
+P2 <- rbind(c(0.90, 0.10),c(0.10, 0.90))
+N <- 99
+Nsim <- 1000
+# ---------------------------------------
+# Size of Test H0: k=1 vs. H1: k=2
+# ---------------------------------------
+k1 <- 2
+k0 <- 1
+msmu <- TRUE
+msvar <- TRUE
+# ====================================================================
+# ====== Model
+# ====================================================================
+ar_mdl_k1 <- list()
+ar_mdl_k1[["mu"]] <- mu
+ar_mdl_k1[["stdev"]] <- stdev
+ar_mdl_k1[["ar"]] <- ar
+# ====================================================================
+# ====== Parallel Loop
+# ====================================================================
+nphi_ls <- list()
+nphi_ls$n <- n_ls
+nphi_ls$phi <- phi_ls
+combined_list <- expand.grid(nphi_ls)
+# ------------- Set up clusters 
+cores=detectCores()
+cl <- makeCluster(min(c(cores[1]-2,nrow(combined_list))))
+registerDoParallel(cl)
+# ------------- Set Seed
+finalMatrix <- foreach(i=1:nrow(combined_list)) %dopar% {
+  # ------------- load functions in environment
+  library(MSTest)
+  # ------------- parameter values for this loop
+  n <- combined_list[i,1]
+  phi <- combined_list[i,2]
+  # ------------- Model
+  ar_mdl_k1[["n"]] <- n
+  ar_mdl_k1[["phi"]] <- phi
+  # ------------- File name and columns titles
+  file_name <-paste0('LMC_LRT_simulation_results_size_of_test_h0_1_h1_2_n_',n,'_phi_',phi,'.txt')
+  res_line <- paste0("Iteration,","Attempts,","TimeSpent,","LMC_LRT_Pvalue")
+  write(res_line,file = file_name,append=TRUE)
+  # ------------- Begin looping 
+  for (xi in 1:Nsim){
+    LRTest_out <- NULL
+    attempt <- 0
+    startT <- proc.time()
+    while(is.null(LRTest_out)) {
+      y_out <- simuAR(ar_mdl_k1)
+      attempt <- attempt + 1
+      try(
+        LRTest_out <- LR_MCTest(y_out$y, ar, k0, k1, msmu, msvar, N = N, maxit = 300, thtol = 1e-6)
+      )
+    } 
+    endT <- proc.time()-startT 
+    # ------------- Save results
+    res_line <- paste0(xi,',',attempt,',',endT[3],',',LRTest_out$pval)
+    write(res_line, file = file_name, append = TRUE)
+  }
+}
+#stop cluster
+stopCluster(cl)
+
+
+
