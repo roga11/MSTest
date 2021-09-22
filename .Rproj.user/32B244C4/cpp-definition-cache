@@ -192,10 +192,10 @@
     },
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
-        "file_last_write": 1632332790.0,
+        "file_last_write": 1632333433.0,
         "definitions": [
             {
-                "usr": "c:@F@LR_samp_dist#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#b#b#I#I#d#",
+                "usr": "c:@F@LR_samp_dist#I#I#b#b#I#I#d#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "LR_samp_dist(Rcpp::List, int, bool, bool, int, int, double)",
