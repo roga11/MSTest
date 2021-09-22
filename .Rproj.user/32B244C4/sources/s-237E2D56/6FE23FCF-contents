@@ -85,7 +85,7 @@ List LR_MCTest(arma::vec Y, int ar, int k0 = 1, int k1 = 2, bool msmu = 1, bool 
   double logL1 = mdl_h1["logLike"];
   double LRT_0 = -2*(logL0-logL1);
   if (arma::is_finite(LRT_0)==FALSE){
-    Rcerr << "LRT is not finite. Please check series\n";
+    stop("LRT is not finite. Please check series\n");
   }
   arma::vec LRN = LR_samp_dist(mdl_h0, k1, msmu, msvar, N, maxit, thtol);
   double pval = MCpval(LRT_0, LRN, "geq");
@@ -118,7 +118,7 @@ List LR_BootTest(arma::vec Y, int ar, int k0 = 1, int k1 = 2, bool msmu = 1, boo
   double logL1 = mdl_h1["logLike"];
   double LRT_0 = -2*(logL0-logL1);
   if (arma::is_finite(LRT_0)==FALSE){
-    Rcerr << "LRT is not finite. Please check series\n";
+    stop("LRT is not finite. Please check series\n");
   }
   arma::vec LRN = LR_samp_dist(mdl_h0, k1, msmu, msvar, N, maxit, thtol);
   double B = N;

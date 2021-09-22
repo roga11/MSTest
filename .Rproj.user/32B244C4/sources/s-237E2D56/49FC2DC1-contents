@@ -57,7 +57,7 @@ finalMatrix <- foreach(i=1:nrow(combined_list)) %dopar% {
   ar_mdl_k1[["n"]] <- n
   ar_mdl_k1[["phi"]] <- phi
   # ------------- File name and columns titles
-  file_name <-paste0('LMC_LRT_simulation_results_size_of_test_h0_1_h1_2_n_',n,'_phi_',phi,'.txt')
+  file_name <-paste0('LMC_LRT_simulation_results_size_of_test_h0_',k0,'_h1_',k1,'_n_',n,'_phi_',phi,'.txt')
   res_line <- paste0("Iteration,","Attempts,","TimeSpent,","LMC_LRT_Pvalue")
   write(res_line,file = file_name,append=TRUE)
   # ------------- Begin looping 

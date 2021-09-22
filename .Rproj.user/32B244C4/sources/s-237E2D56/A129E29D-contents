@@ -1,7 +1,7 @@
-
+#install.packages("C:/Users/ghrod/Dropbox/Res/structural_break/MSTest_rpack_v2/MSTest_2.0.tar.gz", type = "source", repos=NULL)
 
 # ====================================================================
-# ====== Dependencies
+# ====== Depndencies
 # ====================================================================
 library(MSTest)
 library(foreach)
@@ -9,7 +9,10 @@ library(doParallel)
 # ====================================================================
 # ====== Set Directory for results
 # ====================================================================
+# Macbook
 setwd("/Users/grodriguezrondon/Dropbox/Res/structural_break/MC_LRT/sim_res")
+# Windows
+setwd("C:/Users/ghrod/Dropbox/Res/structural_break/MC_LRT/sim_res")
 # ====================================================================
 # ====== Params
 # ====================================================================
