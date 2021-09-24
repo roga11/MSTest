@@ -1,7 +1,7 @@
 [
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-        "file_last_write": 1631995118.0,
+        "file_last_write": 1632445446.0,
         "definitions": [
             {
                 "usr": "c:@F@sumfinite#$@N@arma@S@Mat>#d#I#",
@@ -153,7 +153,7 @@
                 "parent_name": "",
                 "name": "simuMS(Rcpp::List, Rcpp::String, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 664,
+                "line": 679,
                 "column": 6
             },
             {
@@ -162,7 +162,7 @@
                 "parent_name": "",
                 "name": "cov2corr(arma::mat)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 726,
+                "line": 741,
                 "column": 11
             },
             {
@@ -171,7 +171,7 @@
                 "parent_name": "",
                 "name": "simuVAR(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 736,
+                "line": 751,
                 "column": 6
             },
             {
@@ -180,7 +180,7 @@
                 "parent_name": "",
                 "name": "simuMSVAR(Rcpp::List, Rcpp::String, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 799,
+                "line": 814,
                 "column": 6
             }
         ]

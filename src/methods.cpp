@@ -592,8 +592,11 @@ List simuMSAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
   arma::vec std = mdl_h0["stdev"];
   int ar = mdl_h0["ar"];
   int k = mdl_h0["k"];
-  arma::vec intercept = mu*(1-sum(phi));
   arma::mat P = mdl_h0["P"];
+  //arma::vec intercept = mu*(1-sum(phi));
+  // vector for mean and standard dev at each time t
+  arma::vec mu_t(n+burnin, arma::fill::zeros);
+  arma::vec std_t(n+burnin, arma::fill::zeros);
   // pre-fill limiting probabilities (if type = 'mixture' P and pinf will be the same)
   arma::vec pinf(k, arma::fill::zeros);
   // Simulate data
@@ -601,7 +604,9 @@ List simuMSAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
   arma::vec state_series(n+burnin,arma::fill::zeros);
   // initialize assuming series begins in state 1 (use burnin to reduce dependence on this assumption)
   int state = 0;
-  series.subvec(0,ar-1) = intercept(state) + arma::randn(ar)*std(state);
+  series.subvec(0,ar-1) = mu(state) + arma::randn(ar)*std(state);
+  mu_t.subvec(0,ar-1) = mu(state);
+  std_t.subvec(0,ar-1) = std(state);
   // ----- Simulate series
   arma::vec repvec(k,arma::fill::ones);
   arma::vec state_ind = cumsum(repvec)-1;
@@ -614,7 +619,10 @@ List simuMSAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
       state_series(xt) = state;
       // generate new obs
       arma::vec ytmp = flipud(series.subvec((xt-ar),(xt-1)));
-      series(xt) = as_scalar(intercept(state) + trans(ytmp)*phi + arma::randn()*std(state));
+      arma::vec mu_lag = flipud(mu_t.subvec((xt-ar),(xt-1))); 
+      series(xt) = as_scalar(mu(state) + (trans(ytmp-mu_lag))*phi + arma::randn()*std(state));
+      mu_t(xt) = mu(state);
+      std_t(xt) = std(state);
     }
     pinf = limP(P, k);
   }
@@ -627,12 +635,17 @@ List simuMSAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
       state_series(xt) = state; 
       // generate new obs
       arma::vec ytmp = flipud(series.subvec((xt-ar),(xt-1)));
-      series(xt) = as_scalar(intercept(state) + trans(ytmp)*phi + arma::randn<arma::vec>(1)*std(state));
+      arma::vec mu_lag = flipud(mu_t.subvec((xt-ar),(xt-1))); 
+      series(xt) = as_scalar(mu(state) + (trans(ytmp-mu_lag))*phi + arma::randn()*std(state));
+      mu_t(xt) = mu(state);
+      std_t(xt) = std(state);
     }
   }
   // ----- Organize output
   arma::vec series_out = series.subvec(burnin,n+burnin-1);
   arma::vec state_series_out = state_series.subvec(burnin,n+burnin-1);
+  arma::vec mu_t_out = mu_t.subvec(burnin,n+burnin-1);
+  arma::vec std_t_out = std_t.subvec(burnin,n+burnin-1);
   List simu_output;
   simu_output["y"] = series_out;
   simu_output["St"] = state_series_out;
@@ -640,6 +653,8 @@ List simuMSAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
   simu_output["phi"] = phi;
   simu_output["mu"] = mu;
   simu_output["stdev"] = std;
+  simu_output["mu_t"] = mu_t_out;
+  simu_output["stdev_t"] = std_t_out;
   simu_output["P"] = P;
   simu_output["pinf"] = pinf;
   return(simu_output);
@@ -830,7 +845,7 @@ List simuMSVAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
     arma::mat C = chol(corr_mat_k, "lower");
     arma::mat eps_corr = trans(C*trans(eps_k));
     epsLs[xk] = eps_corr;
-    // get constant vec 
+    // get constant vec (*****NOTE: DO NOT USE CONSTANT! USE mu_St (Y_t-1 - mu_St-1)*PHI_1. SEE simuMSAR() FOR EXAMPLE)
     arma::vec mu_tmp = vectorise(trans(repmu*mu.row(xk)));
     arma::vec nu_k_tmp = (arma::eye(N*ar,N*ar) - F)*mu_tmp;
     arma::vec nu_k = nu_k_tmp.subvec(0,N-1);
