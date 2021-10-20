@@ -565,6 +565,7 @@ List simuAR(List mdl_h0, int burnin = 200){
   simu_output["phi"] = phi;
   simu_output["mu"] = mu;
   simu_output["stdev"] = std;
+  simu_output["mdl"] = mdl_h0;
   return(simu_output);
 }
 
@@ -657,6 +658,7 @@ List simuMSAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
   simu_output["stdev_t"] = std_t_out;
   simu_output["P"] = P;
   simu_output["pinf"] = pinf;
+  simu_output["mdl"] = mdl_h0;
   return(simu_output);
 }
 

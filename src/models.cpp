@@ -1129,6 +1129,7 @@ List MSARmdl(arma::vec Y, int ar = 0, int k = 2, bool msmu = 1, bool msvar = 1, 
   arma::vec sigma = EM_output["sigma"];
   MSARmdl_output["stdev"] = sqrt(sigma);
   MSARmdl_output["optim_options"] = optim_options;
+  MSARmdl_output["iterations"] = EM_output["iterations"];
   MSARmdl_output["initVals_used"] = EM_output["init_used"];
   if (getHess==TRUE){
     arma::mat Hess = as<arma::mat>(hessian(MSARmdl_output, k));

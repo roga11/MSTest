@@ -1,4 +1,5 @@
 
+
 # ==============================================================================
 #' @title Convert transition matrix to transition matrix consistent with AR model
 #'
@@ -249,3 +250,4 @@ MSARmdl_optim <- function(Y, ar, k, msmu =TRUE , msvar = TRUE, maxit = 10000, th
                          k = k)
   return(res)
 }
+

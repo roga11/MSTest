@@ -223,9 +223,9 @@ arma::vec combine_stat(arma::vec s0,arma::mat sN, arma::mat params, std::string 
   }
   if (type=="prod"){
     // MC p-value using Fisher (1932) &  Pearson (1933) combination method. 
-    F0 = 1 - (G0(0)*G0(1)*G0(2)*G0(3));
+    F0 = 1 - prod(G0.row(0));
     for (int isim = 0; isim<N; isim++){
-      Fx(isim) = 1 - (Gx(isim,0)*Gx(isim,1)*Gx(isim,2)*Gx(isim,3));
+      Fx(isim) = 1 - prod(Gx.row(isim));
     }
   }
   Fx(N) = F0;
