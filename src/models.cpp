@@ -62,6 +62,13 @@ List ARmdl(arma::vec Y, int ar, bool intercept = 1){
   // ----- log-likelihood
   double logLike = sum(log(dnorm(as<NumericVector>(wrap(u)), mu_u, stdev)));
   // ----- Organize output
+  double sigma = pow(stdev,2);
+  arma::vec theta(2,arma::fill::zeros);
+  theta(0) = mu;
+  theta(1) = sigma;
+  if (ar>0){
+    theta = join_vert(theta, phi);
+  }
   List ARmdl_out;
   ARmdl_out["y"] = y;
   ARmdl_out["X"] = X;
@@ -74,8 +81,9 @@ List ARmdl(arma::vec Y, int ar, bool intercept = 1){
   ARmdl_out["mu"] = mu;
   ARmdl_out["residuals"] = u;
   ARmdl_out["stdev"] = stdev;
-  ARmdl_out["sigma"] = pow(stdev,2);
+  ARmdl_out["sigma"] = sigma;
   ARmdl_out["se"] = se;
+  ARmdl_out["theta"] = theta;
   ARmdl_out["logLike"] = logLike;
   return(ARmdl_out);
 }
@@ -1086,8 +1094,10 @@ List MSARmdl(arma::vec Y, int ar = 0, int k = 2, bool msmu = 1, bool msvar = 1, 
   // =============================================================================
   List EM_output;
   int init_used = 0;
-  bool finite_check = TRUE;
-  while (finite_check==TRUE){
+  //bool finite_check = TRUE;
+  //bool initVal_check = TRUE;
+  bool converge_check= TRUE;
+  while (converge_check==TRUE){
     // ----- Initial values
     arma::vec theta_0 = initVals(theta, k, msmu, msvar);
     arma::mat P_0 = randTransMat(k, Tsize);
@@ -1099,13 +1109,19 @@ List MSARmdl(arma::vec Y, int ar = 0, int k = 2, bool msmu = 1, bool msvar = 1, 
     // ----- Estimate using EM algorithm 
     EM_output = EMest(theta_0, mdl_out, k, optim_options);
     double logLike_tmp = EM_output["logLike"];
-    finite_check =  (arma::is_finite(logLike_tmp)==FALSE) and init_used<=max_init; 
+    arma::vec theta_tmp = EM_output["theta"];
+    //finite_check =  (arma::is_finite(logLike_tmp)==FALSE) and (init_used<=max_init); 
+    converge_check = ((arma::is_finite(logLike_tmp)==FALSE) or (theta_tmp.is_finite()==FALSE)) and (init_used<max_init);
+    //initVal_check = init_used<max_init;
+    //converge_check = finite_check and initVal_check;
   }
   EM_output["init_used"] = init_used;  
   // =============================================================================
   // ---------- organize output
   // =============================================================================
   List MSARmdl_output;
+  //MSARmdl_output["check1"] = finite_check;
+  //MSARmdl_output["check2"] = initVal_check;
   MSARmdl_output["theta"] = EM_output["theta"];
   MSARmdl_output["mu"] = EM_output["mu"];
   MSARmdl_output["sigma"] = EM_output["sigma"];

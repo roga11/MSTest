@@ -83,9 +83,11 @@ List LR_MCTest(arma::vec Y, int ar, int k0 = 1, int k1 = 2, bool msmu = 1, bool 
   }
   double logL0 = mdl_h0["logLike"];
   double logL1 = mdl_h1["logLike"];
+  arma::vec theta_h0 = mdl_h0["theta"];
+  arma::vec theta_h1 = mdl_h1["theta"];
   double LRT_0 = -2*(logL0-logL1);
-  if (arma::is_finite(LRT_0)==FALSE){
-    stop("LRT_0 is not finite. Please check series");
+  if ((arma::is_finite(LRT_0)==FALSE) or (theta_h0.is_finite()==FALSE) or (theta_h1.is_finite()==FALSE)){
+    stop("LRT_0 or model parameters are not finite. Please check series");
   }
   arma::vec LRN = LR_samp_dist(mdl_h0, k1, msmu, msvar, N, maxit, thtol);
   double pval = MCpval(LRT_0, LRN, "geq");
@@ -116,9 +118,11 @@ List LR_BootTest(arma::vec Y, int ar, int k0 = 1, int k1 = 2, bool msmu = 1, boo
   }
   double logL0 = mdl_h0["logLike"];
   double logL1 = mdl_h1["logLike"];
+  arma::vec theta_h0 = mdl_h0["theta"];
+  arma::vec theta_h1 = mdl_h1["theta"];
   double LRT_0 = -2*(logL0-logL1);
-  if (arma::is_finite(LRT_0)==FALSE){
-    stop("LRT_0 is not finite. Please check series");
+  if ((arma::is_finite(LRT_0)==FALSE) or (theta_h0.is_finite()==FALSE) or (theta_h1.is_finite()==FALSE)){
+    stop("LRT_0 or model parameters are not finite. Please check series");
   }
   arma::vec LRN = LR_samp_dist(mdl_h0, k1, msmu, msvar, N, maxit, thtol);
   double B = N;

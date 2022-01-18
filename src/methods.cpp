@@ -605,9 +605,10 @@ List simuMSAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
   arma::vec state_series(n+burnin,arma::fill::zeros);
   // initialize assuming series begins in state 1 (use burnin to reduce dependence on this assumption)
   int state = 0;
+  arma::vec repar(ar, arma::fill::ones);
   series.subvec(0,ar-1) = mu(state) + arma::randn(ar)*std(state);
-  mu_t.subvec(0,ar-1) = mu(state);
-  std_t.subvec(0,ar-1) = std(state);
+  mu_t.subvec(0,ar-1) = mu(state)*repar;
+  std_t.subvec(0,ar-1) = std(state)*repar;
   // ----- Simulate series
   arma::vec repvec(k,arma::fill::ones);
   arma::vec state_ind = cumsum(repvec)-1;
@@ -627,21 +628,22 @@ List simuMSAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
     }
     pinf = limP(P, k);
   }
-  if (type == "mixture"){
-    pinf = P;
-    for (int xt = ar; xt<n+burnin; xt++){
+  // FIX 'mixture' TO WORK WITH AR (SPECIFICALLY, ADD FIRST AR OBSERVATIONS)
+  //if (type == "mixture"){
+  //  pinf = P;
+  //  for (int xt = ar; xt<n+burnin; xt++){
       // Get new state
-      arma::vec state_mat = cumsum(pinf);
-      state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
-      state_series(xt) = state; 
+  //    arma::vec state_mat = cumsum(pinf);
+  //    state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
+  //    state_series(xt) = state; 
       // generate new obs
-      arma::vec ytmp = flipud(series.subvec((xt-ar),(xt-1)));
-      arma::vec mu_lag = flipud(mu_t.subvec((xt-ar),(xt-1))); 
-      series(xt) = as_scalar(mu(state) + (trans(ytmp-mu_lag))*phi + arma::randn()*std(state));
-      mu_t(xt) = mu(state);
-      std_t(xt) = std(state);
-    }
-  }
+  //    arma::vec ytmp = flipud(series.subvec((xt-ar),(xt-1)));
+  //    arma::vec mu_lag = flipud(mu_t.subvec((xt-ar),(xt-1))); 
+  //    series(xt) = as_scalar(mu(state) + (trans(ytmp-mu_lag))*phi + arma::randn()*std(state));
+  //    mu_t(xt) = mu(state);
+  //    std_t(xt) = std(state);
+  //}
+  //}
   // ----- Organize output
   arma::vec series_out = series.subvec(burnin,n+burnin-1);
   arma::vec state_series_out = state_series.subvec(burnin,n+burnin-1);
