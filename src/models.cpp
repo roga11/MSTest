@@ -3,6 +3,35 @@
 //[[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 // ==============================================================================
+//' @title Markov-switching AR Log-likelihood objective function (used to find Hessian)
+//' 
+//' 
+//' @export
+// [[Rcpp::export]]
+double loglik_fun(arma::vec theta, List mdl){
+  // ============================================================================
+  // ---------- Initialize parameters
+  // ============================================================================
+  arma::vec y = mdl["y"];
+  //arma::mat X = mdl["X"];
+  arma::mat x = mdl["x"];
+  int ar = mdl["ar"];
+  int Tsize = y.n_elem;
+  // ============================================================================
+  // ---------- Compute Loglike
+  // ============================================================================
+  double logLike;
+  if (ar>0){
+    arma::mat repmu(Tsize,ar,arma::fill::ones);
+    logLike = sum(log((1/sqrt(2*arma::datum::pi*theta(1)))*exp(-pow((y - theta(0)) - (x-(theta(0)*repmu))*theta.subvec(2, 2+ar-1),2)/(2*theta(1)))));
+  }
+  if (ar==0){
+    logLike = sum(log((1/sqrt(2*arma::datum::pi*theta(1)))*exp(-pow(y - theta(0),2)/(2*theta(1)))));
+  }
+  return(logLike);
+}
+
+// ==============================================================================
 //' @title Fitting Autoregressive Model
 //' 
 //' @description This function estimates an autoregresive series
@@ -27,7 +56,9 @@ using namespace Rcpp;
 //' 
 //' @export
 // [[Rcpp::export]]
-List ARmdl(arma::vec Y, int ar, bool intercept = 1){
+List ARmdl(arma::vec Y, int ar, bool intercept = 1, bool getSE = 0){
+  Rcpp::Environment mstest("package:MSTest");
+  Rcpp::Function hessian = mstest["getHess"];
   // ----- transform data
   List lagged_vals = ts_lagged(Y, ar);
   arma::vec y = lagged_vals["y"];
@@ -55,12 +86,12 @@ List ARmdl(arma::vec Y, int ar, bool intercept = 1){
   double mu = b0(0)/(1-phisum);
   arma::vec u  = y - X*b0;
   double stdev  = as_scalar(sqrt((trans(u)*u)/(n-1)));
-  double mu_u = mean(u);
-  arma::mat repvec(n,1,arma::fill::ones);
-  arma::mat setmp = pow(stdev,2)*inv(trans(X)*X);
-  arma::vec se = sqrt(setmp.diag());
+  //double mu_u = mean(u);
+  //arma::mat repvec(n,1,arma::fill::ones);
+  //arma::mat setmp = pow(stdev,2)*inv(trans(X)*X);
+  //arma::vec se = sqrt(setmp.diag());
   // ----- log-likelihood
-  double logLike = sum(log(dnorm(as<NumericVector>(wrap(u)), mu_u, stdev)));
+  //double logLike = sum(log(dnorm(as<NumericVector>(wrap(u)), mu_u, stdev)));
   // ----- Organize output
   double sigma = pow(stdev,2);
   arma::vec theta(2,arma::fill::zeros);
@@ -82,9 +113,16 @@ List ARmdl(arma::vec Y, int ar, bool intercept = 1){
   ARmdl_out["residuals"] = u;
   ARmdl_out["stdev"] = stdev;
   ARmdl_out["sigma"] = sigma;
-  ARmdl_out["se"] = se;
+  //ARmdl_out["se"] = se;
   ARmdl_out["theta"] = theta;
+  double logLike = loglik_fun(theta,ARmdl_out);
   ARmdl_out["logLike"] = logLike;
+  if (getSE==TRUE){
+    arma::mat Hess = as<arma::mat>(hessian(ARmdl_out,1));
+    arma::vec theta_stderr = sqrt(diagvec(inv(-Hess)));
+    ARmdl_out["Hess"] = Hess; 
+    ARmdl_out["theta_stderr"] = theta_stderr;
+  }
   return(ARmdl_out);
 }
 // ==============================================================================
@@ -196,6 +234,7 @@ double MSloglik_fun(arma::vec theta, List mdl, int k){
   arma::vec sig = theta.subvec(1+msmu*(k-1),1+msmu*(k-1)+msvar*(k-1));
   // ----- Phi vector
   arma::vec phi(std::max(ar,1), arma::fill::zeros);
+  //arma::vec phi; //replace above line with this?
   if (ar>0){
     phi =  theta.subvec(2+msmu*(k-1)+msvar*(k-1), 2+msmu*(k-1)+msvar*(k-1)+ar-1);
   }
@@ -254,6 +293,7 @@ double MSloglik_fun(arma::vec theta, List mdl, int k){
   double logL = sum(logf);     //[eq. 22.4.7]
   return(logL);
 }
+
 // ==============================================================================
 //' @title Markov-switching AR Log-likelihood objective function Minization
 //' 
@@ -1046,10 +1086,12 @@ List EMest_VAR(arma::vec theta_0, List mdl, int k, List optim_options){
 //' 
 //' @export
 // [[Rcpp::export]]
-List MSARmdl(arma::vec Y, int ar = 0, int k = 2, bool msmu = 1, bool msvar = 1, int maxit = 10000, double thtol = 1.e-8, bool getHess = 0, int max_init= 100){
+List MSARmdl(arma::vec Y, int ar = 0, int k = 2, bool msmu = 1, bool msvar = 1, int maxit = 10000, double thtol = 1.e-8, bool getHess = 0, int max_init = 100){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function hessian = mstest["getHess"];
   Rcpp::Function transMatAR = mstest["transMatAR"];
+  Rcpp::Environment lmf("package:lmf");
+  Rcpp::Function nearPD = lmf["nearPD"];
   // =============================================================================
   // ---------- Initialize options
   // =============================================================================
@@ -1081,7 +1123,7 @@ List MSARmdl(arma::vec Y, int ar = 0, int k = 2, bool msmu = 1, bool msvar = 1, 
   mdl_out["msmu"] = msmu;
   mdl_out["msvar"] = msvar;
   // ----- Use OLS output in initial values
-  arma::vec y = mdl_out["y"];
+  //arma::vec y = mdl_out["y"];
   arma::vec phi = mdl_out["phi"];
   double mu = mdl_out["mu"];
   double stdev = mdl_out["stdev"];
@@ -1149,7 +1191,17 @@ List MSARmdl(arma::vec Y, int ar = 0, int k = 2, bool msmu = 1, bool msvar = 1, 
   MSARmdl_output["initVals_used"] = EM_output["init_used"];
   if (getHess==TRUE){
     arma::mat Hess = as<arma::mat>(hessian(MSARmdl_output, k));
+    arma::mat info_mat = inv(-Hess);
+    bool nearPD_used = FALSE;
+    if (any(diagvec(info_mat)<0)){
+      info_mat = as<arma::mat>(nearPD(info_mat));
+      nearPD_used = TRUE;
+    }
+    arma::vec theta_stderr = sqrt(diagvec(info_mat));
     MSARmdl_output["Hess"] = Hess; 
+    MSARmdl_output["theta_stderr"] = theta_stderr;
+    MSARmdl_output["info_mat"] = info_mat;
+    MSARmdl_output["nearPD_used"] = nearPD_used;
   }
   return(MSARmdl_output);
 }

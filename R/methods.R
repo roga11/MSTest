@@ -58,12 +58,14 @@ musigGrid <- function(mu, sig, k, ar, msmu, msvar){
   sig_stategrid <- as.matrix(expand.grid(lx))
   state_indicator = mu_stategrid[,1]
   # get matrix of mu and sigma
+  #mu_grid <- mu_stategrid
   mu_stategrid[] <- mu[mu_stategrid]
   sig_stategrid[] <- sig[sig_stategrid]
   sig_stategrid <- sig_stategrid[,1] # sig doesnt have AR seq
   musig_out <- list()
   musig_out[["mu"]] <- as.matrix(mu_stategrid)
   musig_out[["sig"]] <- as.matrix(sig_stategrid)
+  #musig_out[["mu_stategrid"]] <- as.matrix(mu_grid)
   musig_out[["state_ind"]] <- as.matrix(state_indicator)
   return(musig_out)
 }
@@ -115,6 +117,9 @@ musigVARGrid <- function(mu, sigma, k, ar, msmu, msvar){
   musig_out[["state_ind"]] <- as.matrix(state_indicator)
   return(musig_out)
 }
+
+
+
 # ==============================================================================
 #' @title Obtain Hessian matrix 
 #' 
@@ -128,9 +133,14 @@ musigVARGrid <- function(mu, sigma, k, ar, msmu, msvar){
 #' @return Hessian matrix
 #' 
 #' @export
-getHess <- function(EMmdl_out, k){
-  theta_EM = EMmdl_out$theta
-  hess <- numDeriv::hessian(MSloglik_fun, theta_EM, method = "Richardson", mdl = EMmdl_out, k = k)
+getHess <- function(mdl_out, k){
+  theta = mdl_out$theta
+  if (k==1){
+    hess <- numDeriv::hessian(loglik_fun, theta, method = "Richardson", mdl = mdl_out) 
+  }
+  if (k>1){
+    hess <- numDeriv::hessian(MSloglik_fun, theta, method = "Richardson", mdl = mdl_out, k = k) 
+  }
   return(hess)
 }
 # ==============================================================================
@@ -250,4 +260,7 @@ MSARmdl_optim <- function(Y, ar, k, msmu =TRUE , msvar = TRUE, maxit = 10000, th
                          k = k)
   return(res)
 }
+
+
+
 

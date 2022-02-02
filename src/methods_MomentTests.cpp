@@ -341,70 +341,6 @@ arma::mat approx_dist_loop(arma::mat SN2){
 //' 
 //' @export
 // [[Rcpp::export]]
-List DLMCtest(arma::vec Y, int ar = 0, int N = 99, int simdist_N = 10000){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function approxDistDL = mstest["approxDistDL"];
-  int Tsize = Y.n_elem;
-  arma::vec z(Tsize-ar, arma::fill::zeros);
-  List mdl_out;
-  if(ar>0){
-    bool intercept = TRUE;
-    mdl_out = ARmdl(Y, ar, intercept);
-    arma::vec y = mdl_out["y"];
-    arma::mat x = mdl_out["x"];
-    arma::vec phi = mdl_out["phi"];
-    z = y - x*phi;
-  }else{
-    z = Y;
-  }
-  // --------- Get parameters from approximated distribution ----------
-  arma::mat params = as<arma::mat>(approxDistDL(Tsize-ar, simdist_N));
-  // -------------------------- Get P-Values --------------------------
-  arma::vec eps = z - mean(z);
-  arma::vec Fmin = calc_DLmcstat(eps, N, params, "min");
-  arma::vec Fprod = calc_DLmcstat(eps, N, params, "prod");
-  // ----- Obtain p-value
-  double Fmin0 = Fmin(N);
-  double Fprod0 = Fprod(N);
-  arma::vec FminSim = Fmin.subvec(0,N-1);
-  arma::vec FprodSim = Fprod.subvec(0,N-1);
-  double pval_min = MCpval(Fmin0, FminSim, "geq");
-  double pval_prod = MCpval(Fprod0, FprodSim, "geq");
-  arma::mat LMC_ans = join_rows(Fmin,Fprod);
-  List DLtest_output;
-  DLtest_output["eps"] = eps;
-  if (ar>0){
-    DLtest_output["ARmdl"] = mdl_out;
-  }
-  DLtest_output["params"] = params;
-  DLtest_output["LMC_ans"] = LMC_ans;
-  DLtest_output["Fmin"] = Fmin0;
-  DLtest_output["Fprod"] = Fprod0;
-  DLtest_output["p-value_min"] = pval_min;
-  DLtest_output["p-value_prod"] = pval_prod;
-  return(DLtest_output);
-}
-// ==============================================================================
-//' @title Monte-Carlo Moment-based test for MS AR model
-//'
-//' This function performs the Local Monte-Carlo Moment-Based test for
-//' MS AR models presented in Dufour & Luger (2017) (i.e when no nuissance 
-//' parameters are present). 
-//'
-//' @param Y Series to be tested 
-//' @param p Order of autoregressive components AR(p).
-//' @param x exogenous variables if any. Test in Dufour & Luger is model for AR lags
-//' @param N number of samples
-//' @param N2 number of simulations when approximating distribution used to combine 
-//' p-values (eq. 16).
-//'
-//' @return List with model and test results.
-//' 
-//' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-//' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
-//' 
-//' @export
-// [[Rcpp::export]]
 List QMCtest(arma::vec Y, int ar = 0, int k0 = 1, int k1 = 2, int N = 99, int simdist_N = 10000, bool msmu = 1, bool msvar = 1, int maxit = 500, double thtol = 1e-8){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function approxDistQ = mstest["approxDistQ"];
@@ -464,7 +400,7 @@ List QMCtest(arma::vec Y, int ar = 0, int k0 = 1, int k1 = 2, int N = 99, int si
   return(Qtest_output);
 }
 // ==============================================================================
-//' @title MMC pvalue Function
+//' @title Dufour & Luger (2017) moment-based MMC test p-value function to be minimized
 //'
 //' 
 //' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
@@ -472,33 +408,43 @@ List QMCtest(arma::vec Y, int ar = 0, int k0 = 1, int k1 = 2, int N = 99, int si
 //' 
 //' @export
 // [[Rcpp::export]]
-double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x, int N = 99, Rcpp::String type = "min", int simdist_N = 10000){
-  Rcpp::Function polyroot("polyroot");  
-  Rcpp::Function Mod("Mod");  
+double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x, int N, int simdist_N, Rcpp::String pval_type, bool stationary_ind, double lambda){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function approxDistDL = mstest["approxDistDL"];
-  // ----- Stationary Inequality constraint
-  int ar = theta.n_elem;
-  arma::vec poly_fun(ar+1, arma::fill::ones);
-  poly_fun.subvec(1,ar) = -theta;
-  arma::vec roots = as<arma::vec>(Mod(wrap(as<ComplexVector>(polyroot(wrap(poly_fun))))));
-  bool ineq_constraint = roots.min()<1;
-  // ----- Transform data
-  arma::vec z = y - x*theta;
-  int Tsize = z.n_elem;
-  arma::mat params = as<arma::mat>(approxDistDL(Tsize, simdist_N));
-  // ----- Compute test stats
-  arma::vec eps = z - mean(z);
-  arma::vec Fx = calc_DLmcstat(eps, N, params, type);
-  // ----- Obtain p-value
-  double F0 = Fx(N);
-  arma::vec FN = Fx.subvec(0,N-1);
-  double pval = -MCpval(F0, FN, "geq") + ineq_constraint*100;
+  bool stationary_constraint = FALSE;
+  double pval;
+  // ----- Stationary constraint (i.e., only consider theta that result in stationary process) 
+  if (stationary_ind==TRUE){
+    Rcpp::Function polyroot("polyroot");  
+    Rcpp::Function Mod("Mod");  
+    int ar = theta.n_elem;
+    arma::vec poly_fun(ar+1, arma::fill::ones);
+    poly_fun.subvec(1,ar) = -theta;
+    arma::vec roots = as<arma::vec>(Mod(wrap(as<ComplexVector>(polyroot(wrap(poly_fun))))));
+    stationary_constraint = roots.min()<=1;
+  }
+  if (stationary_constraint){
+    // If stationary_ind == TRUE AND ineq_constraint == TRUE (i.e. non-stationary process), then pval = constraint
+    pval = lambda*stationary_constraint;
+  }else{
+    // If stationary_ind == FALSE OR ineq_constraint == FALSE (i.e. non-stationary process), then pval = -pval
+    // ----- Transform data
+    arma::vec z = y - x*theta;
+    int Tsize = z.n_elem;
+    arma::mat params = as<arma::mat>(approxDistDL(Tsize, simdist_N));
+    // ----- Compute test stats
+    arma::vec eps = z - mean(z);
+    arma::vec Fx = calc_DLmcstat(eps, N, params, pval_type);
+    // ----- Obtain p-value
+    double F0 = Fx(N);
+    arma::vec FN = Fx.subvec(0,N-1);
+    pval = -MCpval(F0, FN, "geq");
+  }
   return(pval);
 }
 
 // ==============================================================================
-//' @title Maximized Monte-Carlo Moment-based test for MS AR model
+//' @title Dufour & Luger (2017) moment-based MMC test p-value function to be maximized
 //'
 //' 
 //' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
@@ -506,47 +452,7 @@ double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x, int N = 99, Rcpp
 //' 
 //' @export
 // [[Rcpp::export]]
-List DLMMCtest(arma::vec Y, int ar = 1, int N = 99, Rcpp::String method = "GenSA", int simdist_N = 10000){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Environment gensa("package:GenSA");
-  Rcpp::Function approxDistDL = mstest["approxDistDL"];
-  Rcpp::Function GenSA = gensa["GenSA"];
-  int Tsize = Y.n_elem;
-  arma::vec z(Tsize-ar, arma::fill::zeros);
-  List mdl_out;
-  if(ar>0){
-    bool intercept = TRUE;
-    mdl_out = ARmdl(Y, ar, intercept);
-    arma::vec y = mdl_out["y"];
-    arma::mat x = mdl_out["x"];
-    arma::vec phi = mdl_out["phi"];
-    z = y - x*phi;
-  }else{
-    Rcerr << "No Nuisance parameters is model is not Autoregressive. Number of lags must be greater than 0.\n";
-  }
-  // --------- Get parameters from approximated distribution ----------
-  arma::mat params = as<arma::mat>(approxDistDL(Tsize-ar, simdist_N));
-  // -------------------------- Get P-Values --------------------------
-  arma::vec eps = z - mean(z);
-  arma::mat LMC_ans = calc_DLmcstat(eps, N, params);
-  // ----- Obtain p-value
-  double Fmin0 = LMC_ans(N,0);
-  double Fprod0 = LMC_ans(N,1);
-  arma::vec Fmin = LMC_ans.submat(0,0,N-1,0);
-  arma::vec Fprod = LMC_ans.submat(0,1,N-1,1);
-  double pval_min = MCpval(Fmin0, Fmin, "geq");
-  double pval_prod = MCpval(Fprod0, Fprod, "geq");
-  List DLtest_output;
-  DLtest_output["eps"] = eps;
-  if (ar>0){
-    DLtest_output["ARmdl"] = mdl_out;
-  }
-  DLtest_output["params"] = params;
-  DLtest_output["LMC_ans"] = LMC_ans;
-  DLtest_output["Fmin"] = Fmin0;
-  DLtest_output["Fprod"] = Fprod0;
-  DLtest_output["p-value_min"] = pval_min;
-  DLtest_output["p-value_prod"] = pval_prod;
-  return(DLtest_output);
+double DLMMCpval_fun_max(arma::vec theta, arma::vec y, arma::mat x, int N, int simdist_N, Rcpp::String pval_type, bool stationary_ind, double lambda){
+  double pval = -DLMMCpval_fun(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda);
+  return(pval);
 }
-

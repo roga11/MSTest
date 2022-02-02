@@ -269,24 +269,24 @@ simuMSVAR <- function(mdl_h0, type = "markov", burnin = 200L) {
 #' 
 #' 
 #' @export
-LR_samp_dist <- function(mdl_h0, k1, msmu, msvar, N, maxit = 500L, thtol = 1e-6) {
+LR_samp_dist <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol) {
     .Call(`_MSTest_LR_samp_dist`, mdl_h0, k1, msmu, msvar, N, maxit, thtol)
 }
 
-#' @title Monte Carlo Likelihood Ratio Test
+#' @title Monte Carlo Likelihood Ratio Test P-value Function 
 #' 
 #' 
 #' @export
-LR_MCTest <- function(Y, ar, k0 = 1L, k1 = 2L, msmu = 1L, msvar = 1L, N = 99L, maxit = 500L, thtol = 1e-6) {
-    .Call(`_MSTest_LR_MCTest`, Y, ar, k0, k1, msmu, msvar, N, maxit, thtol)
+MMCLRpval_fun <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, stationary_ind, lambda) {
+    .Call(`_MSTest_MMCLRpval_fun`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, stationary_ind, lambda)
 }
 
-#' @title Bootstrap Likelihood Ratio Test
+#' @title Monte Carlo Likelihood Ratio Test P-value Function 
 #' 
 #' 
 #' @export
-LR_BootTest <- function(Y, ar, k0 = 1L, k1 = 2L, msmu = 1L, msvar = 1L, N = 1000L, maxit = 500L, thtol = 1e-6) {
-    .Call(`_MSTest_LR_BootTest`, Y, ar, k0, k1, msmu, msvar, N, maxit, thtol)
+MMCLRpval_fun_max <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, stationary_ind, lambda) {
+    .Call(`_MSTest_MMCLRpval_fun_max`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, stationary_ind, lambda)
 }
 
 #' @title Calculate Dufour & Luger (2017) Moment-Based Test-Statistics 
@@ -448,53 +448,38 @@ approx_dist_loop <- function(SN2) {
 #' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
 #' 
 #' @export
-DLMCtest <- function(Y, ar = 0L, N = 99L, simdist_N = 10000L) {
-    .Call(`_MSTest_DLMCtest`, Y, ar, N, simdist_N)
-}
-
-#' @title Monte-Carlo Moment-based test for MS AR model
-#'
-#' This function performs the Local Monte-Carlo Moment-Based test for
-#' MS AR models presented in Dufour & Luger (2017) (i.e when no nuissance 
-#' parameters are present). 
-#'
-#' @param Y Series to be tested 
-#' @param p Order of autoregressive components AR(p).
-#' @param x exogenous variables if any. Test in Dufour & Luger is model for AR lags
-#' @param N number of samples
-#' @param N2 number of simulations when approximating distribution used to combine 
-#' p-values (eq. 16).
-#'
-#' @return List with model and test results.
-#' 
-#' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-#' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
-#' 
-#' @export
 QMCtest <- function(Y, ar = 0L, k0 = 1L, k1 = 2L, N = 99L, simdist_N = 10000L, msmu = 1L, msvar = 1L, maxit = 500L, thtol = 1e-8) {
     .Call(`_MSTest_QMCtest`, Y, ar, k0, k1, N, simdist_N, msmu, msvar, maxit, thtol)
 }
 
-#' @title MMC pvalue Function
+#' @title Dufour & Luger (2017) moment-based MMC test p-value function to be minimized
 #'
 #' 
 #' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
 #' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
 #' 
 #' @export
-DLMMCpval_fun <- function(theta, y, x, N = 99L, type = "min", simdist_N = 10000L) {
-    .Call(`_MSTest_DLMMCpval_fun`, theta, y, x, N, type, simdist_N)
+DLMMCpval_fun <- function(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda) {
+    .Call(`_MSTest_DLMMCpval_fun`, theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda)
 }
 
-#' @title Maximized Monte-Carlo Moment-based test for MS AR model
+#' @title Dufour & Luger (2017) moment-based MMC test p-value function to be maximized
 #'
 #' 
 #' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
 #' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
 #' 
 #' @export
-DLMMCtest <- function(Y, ar = 1L, N = 99L, method = "GenSA", simdist_N = 10000L) {
-    .Call(`_MSTest_DLMMCtest`, Y, ar, N, method, simdist_N)
+DLMMCpval_fun_max <- function(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda) {
+    .Call(`_MSTest_DLMMCpval_fun_max`, theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda)
+}
+
+#' @title Markov-switching AR Log-likelihood objective function (used to find Hessian)
+#' 
+#' 
+#' @export
+loglik_fun <- function(theta, mdl) {
+    .Call(`_MSTest_loglik_fun`, theta, mdl)
 }
 
 #' @title Fitting Autoregressive Model
@@ -520,8 +505,8 @@ DLMMCtest <- function(Y, ar = 1L, N = 99L, method = "GenSA", simdist_N = 10000L)
 #' - logLike: the log-likelihood 
 #' 
 #' @export
-ARmdl <- function(Y, ar, intercept = 1L) {
-    .Call(`_MSTest_ARmdl`, Y, ar, intercept)
+ARmdl <- function(Y, ar, intercept = 1L, getSE = 0L) {
+    .Call(`_MSTest_ARmdl`, Y, ar, intercept, getSE)
 }
 
 #' @title Fitting Vector Autoregressive Model

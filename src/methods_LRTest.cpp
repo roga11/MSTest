@@ -10,7 +10,7 @@ using namespace Rcpp;
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int maxit = 500, double thtol = 1e-6){
+arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int maxit, double thtol){
   int k0 = mdl_h0["k"];
   arma::vec LRT_N(N,arma::fill::zeros);
   int ar = mdl_h0["ar"];
@@ -64,76 +64,90 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
   }
   return(LRT_N);
 }
+
 // ==============================================================================
-//' @title Monte Carlo Likelihood Ratio Test
+//' @title Monte Carlo Likelihood Ratio Test P-value Function 
 //' 
 //' 
 //' @export
 // [[Rcpp::export]]
-List LR_MCTest(arma::vec Y, int ar, int k0 = 1, int k1 = 2, bool msmu = 1, bool msvar = 1, int N = 99, int maxit = 500, double thtol = 1e-6){
-  List mdl_h0;
-  List mdl_h1;
-  bool getHess = FALSE;
-  if (k0==1){
-    mdl_h0 = ARmdl(Y, ar);
-    mdl_h1 = MSARmdl(Y, ar, k1, msmu, msvar, maxit, thtol, getHess);  
-  }else if (k0>1){
-    mdl_h0 = MSARmdl(Y, ar, k0, msmu, msvar, maxit, thtol, getHess);  
-    mdl_h1 = MSARmdl(Y, ar, k1, msmu, msvar, maxit, thtol, getHess);  
+double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, double thtol, bool stationary_ind, double lambda){
+  // initialize variables 
+  double pval;
+  double logL0;
+  double logL1;
+  arma::mat P_h0;
+  arma::mat P_h1;
+  // define required variables from inputs
+  bool non_stationary_const = FALSE;
+  bool P_h0_colsum_const = FALSE;
+  bool P_h1_colsum_const = FALSE;
+  int k0 = mdl_h0["k"];
+  int k1 = mdl_h1["k"];
+  arma::vec theta_h0_tmp = mdl_h0["theta"];
+  arma::vec theta_h1_tmp = mdl_h1["theta"];
+  int theta_h0_length = theta_h0_tmp.n_elem;
+  int theta_h1_length = theta_h1_tmp.n_elem;
+  arma::vec theta_h0 = theta.subvec(0,theta_h0_length-1);
+  arma::vec theta_h1 = theta.subvec(theta_h0_length,theta_h0_length+theta_h1_length-1);
+  // ----- Stationary constraint (i.e., only consider theta that result in stationary process) 
+  if ((stationary_ind==TRUE) and (ar>0)){
+    Rcpp::Function polyroot("polyroot");  
+    Rcpp::Function Mod("Mod");  
+    arma::vec poly_fun_h0(ar+1, arma::fill::ones);
+    arma::vec poly_fun_h1(ar+1, arma::fill::ones);
+    poly_fun_h0.subvec(1,ar) = -theta_h0.subvec(2+msmu*(k0-1)+msvar*(k0-1), 2+msmu*(k0-1)+msvar*(k0-1)+ar-1);
+    poly_fun_h1.subvec(1,ar) = -theta_h1.subvec(2+msmu*(k1-1)+msvar*(k1-1), 2+msmu*(k1-1)+msvar*(k1-1)+ar-1);
+    arma::vec roots_h0 = as<arma::vec>(Mod(wrap(as<ComplexVector>(polyroot(wrap(poly_fun_h0))))));
+    arma::vec roots_h1 = as<arma::vec>(Mod(wrap(as<ComplexVector>(polyroot(wrap(poly_fun_h1))))));
+    non_stationary_const = ((roots_h0.min()<=1) or (roots_h1.min()<=1));
   }
-  double logL0 = mdl_h0["logLike"];
-  double logL1 = mdl_h1["logLike"];
-  arma::vec theta_h0 = mdl_h0["theta"];
-  arma::vec theta_h1 = mdl_h1["theta"];
-  double LRT_0 = -2*(logL0-logL1);
-  if ((arma::is_finite(LRT_0)==FALSE) or (theta_h0.is_finite()==FALSE) or (theta_h1.is_finite()==FALSE)){
-    stop("LRT_0 or model parameters are not finite. Please check series");
+  // ----- Checking that P matrix columns sum to 1
+  if (k0>1){
+    P_h0 = reshape(theta_h0.subvec(theta_h0_length-k0*k0, theta_h0_length-1), k0, k0);
+    P_h0_colsum_const = sum(abs(arma::sum(P_h0,0)-1))>thtol; 
   }
-  arma::vec LRN = LR_samp_dist(mdl_h0, k1, msmu, msvar, N, maxit, thtol);
-  double pval = MCpval(LRT_0, LRN, "geq");
-  List LRMCTest_output;
-  LRMCTest_output["mdl_h0"] = mdl_h0;
-  LRMCTest_output["mdl_h1"] = mdl_h1;
-  LRMCTest_output["LRT_0"] = LRT_0;
-  LRMCTest_output["LRN"] = LRN;
-  LRMCTest_output["pval"] = pval;
-  return(LRMCTest_output);
+  P_h1 = reshape(theta_h1.subvec(theta_h1_length-k1*k1, theta_h1_length-1), k1, k1); 
+  P_h1_colsum_const = sum(abs(arma::sum(P_h1,0)-1))>thtol;
+  // ----- Compute pval 
+  if ((P_h0_colsum_const==TRUE) or (P_h1_colsum_const==TRUE) or (non_stationary_const==TRUE)){
+    // If either transition matrix columns do not sum to 1 OR (stationary_ind == TRUE AND non_stationary_const == TRUE), pval is a positive constant
+    pval = lambda*(P_h0_colsum_const + P_h1_colsum_const + non_stationary_const);
+  }else{
+    // If transition matrices' columns sum to 1 AND (stationary_ind==FALSE OR non_stationary_const == FALSE), pval is computed. 
+    List mdl_h0_tmp = mdl_h0;
+    mdl_h0_tmp["theta"] = theta_h0;
+    mdl_h0_tmp["mu"] = theta_h0.subvec(0, msmu*(k0-1));
+    mdl_h0_tmp["stdev"] = sqrt(theta_h0.subvec(1+msmu*(k0-1),1+msmu*(k0-1)+msvar*(k0-1)));
+    if (ar>0){
+      mdl_h0_tmp["phi"] = theta_h0.subvec(2+msmu*(k0-1)+msvar*(k0-1), 2+msmu*(k0-1)+msvar*(k0-1)+ar-1);
+    }
+    // compute test stat
+    if (k0==1){
+      logL0 = loglik_fun(theta_h0, mdl_h0);  
+    }else{
+      logL0 = MSloglik_fun(theta_h0, mdl_h0, k0);
+      mdl_h0_tmp["P"] = P_h0;
+    }
+    logL1 = MSloglik_fun(theta_h1, mdl_h1, k1);
+    double LRT_0 = -2*(logL0-logL1);
+    // simulate under null hypothesis
+    arma::vec LRN_tmp = LR_samp_dist(mdl_h0_tmp, k1, msmu, msvar, N, maxit, thtol);
+    pval = -MCpval(LRT_0, LRN_tmp, "geq");
+  }
+  return(pval);
 }
+
+
 // ==============================================================================
-//' @title Bootstrap Likelihood Ratio Test
+//' @title Monte Carlo Likelihood Ratio Test P-value Function 
 //' 
 //' 
 //' @export
 // [[Rcpp::export]]
-List LR_BootTest(arma::vec Y, int ar, int k0 = 1, int k1 = 2, bool msmu = 1, bool msvar = 1, int N = 1000, int maxit = 500, double thtol = 1e-6){
-  List mdl_h0;
-  List mdl_h1;
-  bool getHess = FALSE;
-  if (k0==1){
-    mdl_h0 = ARmdl(Y, ar);
-    mdl_h1 = MSARmdl(Y, ar, k1, msmu, msvar, maxit, thtol, getHess);  
-  }else if (k0>1){
-    mdl_h0 = MSARmdl(Y, ar, k0, msmu, msvar, maxit, thtol, getHess);  
-    mdl_h1 = MSARmdl(Y, ar, k1, msmu, msvar, maxit, thtol, getHess);  
-  }
-  double logL0 = mdl_h0["logLike"];
-  double logL1 = mdl_h1["logLike"];
-  arma::vec theta_h0 = mdl_h0["theta"];
-  arma::vec theta_h1 = mdl_h1["theta"];
-  double LRT_0 = -2*(logL0-logL1);
-  if ((arma::is_finite(LRT_0)==FALSE) or (theta_h0.is_finite()==FALSE) or (theta_h1.is_finite()==FALSE)){
-    stop("LRT_0 or model parameters are not finite. Please check series");
-  }
-  arma::vec LRN = LR_samp_dist(mdl_h0, k1, msmu, msvar, N, maxit, thtol);
-  double B = N;
-  double pval = sum(LRN>LRT_0)/B; // [eq. 4.62] (Davidson & MacKinnon, 2004)
-  List LRBootTest_output;
-  LRBootTest_output["mdl_h0"] = mdl_h0;
-  LRBootTest_output["mdl_h1"] = mdl_h1;
-  LRBootTest_output["LRT_0"] = LRT_0;
-  LRBootTest_output["LRN"] = LRN;
-  LRBootTest_output["pval"] = pval;
-  return(LRBootTest_output);
+double MMCLRpval_fun_max(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, double thtol, bool stationary_ind, double lambda){
+  double pval = -MMCLRpval_fun(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, stationary_ind, lambda);
+  return(pval);
 }
 
 

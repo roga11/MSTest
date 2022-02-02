@@ -4,12 +4,12 @@
 \alias{getHess}
 \title{Obtain Hessian matrix}
 \usage{
-getHess(EMmdl_out, k)
+getHess(mdl_out, k)
 }
 \arguments{
-\item{EMmdl_out}{List with model output from EM algorithm}
-
 \item{k}{int number of regimes}
+
+\item{EMmdl_out}{List with model output from EM algorithm}
 
 \item{msmu}{bool indicating if mean is switching with regime}
 

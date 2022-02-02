@@ -4,7 +4,9 @@
 #include <RcppArmadillo.h>
 using namespace Rcpp;
 
-List ARmdl(arma::vec Y, int ar, bool intercept = 1);
+double loglik_fun(arma::vec theta, List mdl);
+  
+List ARmdl(arma::vec Y, int ar, bool intercept = 1, bool getSE = 0);
 
 double MSloglik_fun(arma::vec theta, List mdl, int k);
 

@@ -4,7 +4,7 @@
 \alias{LR_samp_dist}
 \title{Likelihood Ratio Test Statistic Sample Distribution}
 \usage{
-LR_samp_dist(mdl_h0, k1, msmu, msvar, N, maxit = 500L, thtol = 1e-06)
+LR_samp_dist(mdl_h0, k1, msmu, msvar, N, maxit, thtol)
 }
 \description{
 Likelihood Ratio Test Statistic Sample Distribution

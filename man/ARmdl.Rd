@@ -4,7 +4,7 @@
 \alias{ARmdl}
 \title{Fitting Autoregressive Model}
 \usage{
-ARmdl(Y, ar, intercept = 1L)
+ARmdl(Y, ar, intercept = 1L, getSE = 0L)
 }
 \arguments{
 \item{Y}{vector of observations}

@@ -2,12 +2,12 @@
 % Please edit documentation in R/RcppExports.R
 \name{DLMMCpval_fun}
 \alias{DLMMCpval_fun}
-\title{MMC pvalue Function}
+\title{Dufour & Luger (2017) moment-based MMC test p-value function to be minimized}
 \usage{
-DLMMCpval_fun(theta, y, x, N = 99L, type = "min", simdist_N = 10000L)
+DLMMCpval_fun(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda)
 }
 \description{
-MMC pvalue Function
+Dufour & Luger (2017) moment-based MMC test p-value function to be minimized
 }
 \references{
 Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
