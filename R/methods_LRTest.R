@@ -1,4 +1,70 @@
 
+
+# ==============================================================================
+#' @title Likelihood Ratio Test Statistic Sample Distribution (Parallel version)
+#' 
+#' @description 
+#' @param 
+#'
+#' @return 
+#' 
+#' @export
+LR_samp_dist_parallel <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol, cores){
+  k0 <- mdl_h0[["k"]]
+  ar <- mdl_h0[["ar"]]
+  if (k0 == 1){
+    cl <- parallel::makeCluster(cores)
+    doParallel::registerDoParallel(cl)
+    LRN <- foreach::foreach(xn = 1:N, .combine = c, .inorder = FALSE, .packages = "MSTest") %dopar% {
+      # ------------- load functions in environment
+      LRT_finite <- FALSE
+      while (LRT_finite==FALSE){
+        y0_out <- simuAR(mdl_h0)
+        mdl_h0_tmp <- ARmdl(y0_out[["y"]], ar, intercept = TRUE, getSE = FALSE)
+        mdl_h1_tmp <- MSARmdl(y0_out[["y"]], ar, k1, msmu, msvar, maxit, thtol, getHess = FALSE)
+        # test stat
+        l_0 <- mdl_h0_tmp[["logLike"]]
+        l_1 <- mdl_h1_tmp[["logLike"]]
+        LRT_i <- -2*(l_0 - l_1)
+        LRT_finite <- is.finite(LRT_i)
+      }
+      LRT_i
+    }
+    parallel::stopCluster(cl)
+  }else if (k0>1){
+    if (msmu == FALSE){
+      muk <- matrix(1, k0, 1)
+      mu_h0 <- mdl_h0[["mu"]]
+      mdl_h0[["mu"]] <- muk%*%mu_h0
+    }
+    if (msvar == FALSE){
+      stdevk <- matrix(1, k0, 1)
+      stdev_h0 <- mdl_h0[["stdev"]]
+      mdl_h0[["stdev"]] = stdevk%*%stdev_h0
+    }
+    cl <- parallel::makeCluster(cores)
+    doParallel::registerDoParallel(cl)
+    LRN <- foreach::foreach(xn = 1:N, .combine = c, .inorder = FALSE, .packages = "MSTest") %dopar% {
+      # ------------- load functions in environment
+      LRT_finite <- FALSE
+      while (LRT_finite==FALSE){
+        y0_out <- simuMSAR(mdl_h0)
+        mdl_h0_tmp <- MSARmdl(y0_out[["y"]], ar, k0, msmu, msvar, maxit, thtol, getHess = FALSE)
+        mdl_h1_tmp <- MSARmdl(y0_out[["y"]], ar, k1, msmu, msvar, maxit, thtol, getHess = FALSE)
+        # test stat
+        l_0 <- mdl_h0_tmp[["logLike"]]
+        l_1 <- mdl_h1_tmp[["logLike"]]
+        LRT_i <- -2*(l_0 - l_1)
+        LRT_finite <- is.finite(LRT_i)
+      }
+      LRT_i
+    }
+    parallel::stopCluster(cl)
+  }
+  return(LRN)
+}
+
+
 # ==============================================================================
 #' @title Monte Carlo Likelihood Ratio Test
 #' 
