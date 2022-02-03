@@ -130,6 +130,8 @@ MCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list())
 #' 
 #' @export
 MMC_bounds_univariate <- function(theta_0, mdl_h0, mdl_h1, con, msmu, msvar){
+  k0 <- mdl_h0[["k"]]
+  k1 <- mdl_h1[["k"]]
   # ----- Define lower & upper bounds for search
   theta_low = theta_0 - con[["eps"]]
   theta_upp = theta_0 + con[["eps"]]

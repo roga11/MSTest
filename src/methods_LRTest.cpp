@@ -105,10 +105,10 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
   // ----- Checking that P matrix columns sum to 1
   if (k0>1){
     P_h0 = reshape(theta_h0.subvec(theta_h0_length-k0*k0, theta_h0_length-1), k0, k0);
-    P_h0_colsum_const = sum(abs(arma::sum(P_h0,0)-1))>thtol; 
+    P_h0_colsum_const = any(abs(arma::sum(P_h0,0)-1)>thtol); 
   }
   P_h1 = reshape(theta_h1.subvec(theta_h1_length-k1*k1, theta_h1_length-1), k1, k1); 
-  P_h1_colsum_const = sum(abs(arma::sum(P_h1,0)-1))>thtol;
+  P_h1_colsum_const = any(abs(arma::sum(P_h1,0)-1)>thtol);
   // ----- Compute pval 
   if ((P_h0_colsum_const==TRUE) or (P_h1_colsum_const==TRUE) or (non_stationary_const==TRUE)){
     // If either transition matrix columns do not sum to 1 OR (stationary_ind == TRUE AND non_stationary_const == TRUE), pval is a positive constant
