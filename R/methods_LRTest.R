@@ -13,6 +13,7 @@ LR_samp_dist_parallel <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol, core
   k0 <- mdl_h0[["k"]]
   ar <- mdl_h0[["ar"]]
   if (k0 == 1){
+    `%dopar%` <- foreach::`%dopar%`
     cl <- parallel::makeCluster(cores)
     doParallel::registerDoParallel(cl)
     LRN <- foreach::foreach(xn = 1:N, .combine = c, .inorder = FALSE, .packages = "MSTest") %dopar% {
@@ -42,6 +43,7 @@ LR_samp_dist_parallel <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol, core
       stdev_h0 <- mdl_h0[["stdev"]]
       mdl_h0[["stdev"]] = stdevk%*%stdev_h0
     }
+    `%dopar%` <- foreach::`%dopar%`
     cl <- parallel::makeCluster(cores)
     doParallel::registerDoParallel(cl)
     LRN <- foreach::foreach(xn = 1:N, .combine = c, .inorder = FALSE, .packages = "MSTest") %dopar% {
