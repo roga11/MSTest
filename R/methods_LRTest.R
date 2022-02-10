@@ -1,71 +1,5 @@
 
 
-# ==============================================================================
-#' @title Likelihood Ratio Test Statistic Sample Distribution (Parallel version)
-#' 
-#' @description 
-#' @param 
-#'
-#' @return 
-#' 
-#' @export
-LR_samp_dist_parallel <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol, cores){
-  k0 <- mdl_h0[["k"]]
-  ar <- mdl_h0[["ar"]]
-  if (k0 == 1){
-    `%dopar%` <- foreach::`%dopar%`
-    cl <- parallel::makeCluster(cores)
-    doParallel::registerDoParallel(cl)
-    LRN <- foreach::foreach(xn = 1:N, .combine = c, .inorder = FALSE, .packages = "MSTest") %dopar% {
-      # ------------- load functions in environment
-      LRT_finite <- FALSE
-      while (LRT_finite==FALSE){
-        y0_out <- simuAR(mdl_h0)
-        mdl_h0_tmp <- ARmdl(y0_out[["y"]], ar, intercept = TRUE, getSE = FALSE)
-        mdl_h1_tmp <- MSARmdl(y0_out[["y"]], ar, k1, msmu, msvar, maxit, thtol, getHess = FALSE)
-        # test stat
-        l_0 <- mdl_h0_tmp[["logLike"]]
-        l_1 <- mdl_h1_tmp[["logLike"]]
-        LRT_i <- -2*(l_0 - l_1)
-        LRT_finite <- is.finite(LRT_i)
-      }
-      LRT_i
-    }
-    parallel::stopCluster(cl)
-  }else if (k0>1){
-    if (msmu == FALSE){
-      muk <- matrix(1, k0, 1)
-      mu_h0 <- mdl_h0[["mu"]]
-      mdl_h0[["mu"]] <- muk%*%mu_h0
-    }
-    if (msvar == FALSE){
-      stdevk <- matrix(1, k0, 1)
-      stdev_h0 <- mdl_h0[["stdev"]]
-      mdl_h0[["stdev"]] = stdevk%*%stdev_h0
-    }
-    `%dopar%` <- foreach::`%dopar%`
-    cl <- parallel::makeCluster(cores)
-    doParallel::registerDoParallel(cl)
-    LRN <- foreach::foreach(xn = 1:N, .combine = c, .inorder = FALSE, .packages = "MSTest") %dopar% {
-      # ------------- load functions in environment
-      LRT_finite <- FALSE
-      while (LRT_finite==FALSE){
-        y0_out <- simuMSAR(mdl_h0)
-        mdl_h0_tmp <- MSARmdl(y0_out[["y"]], ar, k0, msmu, msvar, maxit, thtol, getHess = FALSE)
-        mdl_h1_tmp <- MSARmdl(y0_out[["y"]], ar, k1, msmu, msvar, maxit, thtol, getHess = FALSE)
-        # test stat
-        l_0 <- mdl_h0_tmp[["logLike"]]
-        l_1 <- mdl_h1_tmp[["logLike"]]
-        LRT_i <- -2*(l_0 - l_1)
-        LRT_finite <- is.finite(LRT_i)
-      }
-      LRT_i
-    }
-    parallel::stopCluster(cl)
-  }
-  return(LRN)
-}
-
 
 # ==============================================================================
 #' @title Monte Carlo Likelihood Ratio Test
@@ -81,7 +15,9 @@ MCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list())
   con <- list(N = 99,
               maxit = 500,
               thtol = 1e-6,
-              getSE = FALSE)
+              burnin = 200,
+              getSE = FALSE,
+              converge_check = NULL)
   # Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
@@ -91,10 +27,23 @@ MCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list())
   # ----- Compute test statistic (using observed data)
   if (k0==1){
     mdl_h0 <- ARmdl(Y, ar, TRUE, con[["getSE"]])
+    mdl_h0[["iterations"]] <- 1
     mdl_h1 <- MSARmdl(Y, ar, k1, msmu, msvar, con[["maxit"]], con[["thtol"]], con[["getSE"]])
   }else if (k0>1){
     mdl_h0 <- MSARmdl(Y, ar, k0, msmu, msvar, con[["maxit"]], con[["thtol"]], con[["getSE"]])  
     mdl_h1 <- MSARmdl(Y, ar, k1, msmu, msvar, con[["maxit"]], con[["thtol"]], con[["getSE"]])  
+  }
+  # Optional model convergence checks
+  if (is.null(con[["converge_check"]])==FALSE){
+    if ((con[["converge_check"]]=="null") & (mdl_h0[["iterations"]]==con[["maxit"]])){
+      stop("Model under null hypothesis did not converge. Run again to use different initial values and/or increase 'maxit'")
+    }
+    if((con[["converge_check"]]=="alt") & (mdl_h1[["iterations"]]==con[["maxit"]])){
+      stop("Model under alternative hypothesis did not converge. Run again to use different initial values and/or increase 'maxit'")
+    }
+    if ((con[["converge_check"]]=="both") & ((mdl_h0[["iterations"]]==con[["maxit"]]) | (mdl_h1[["iterations"]]==con[["maxit"]]))){
+      stop("Model did not converge. Run again to use different initial values and/or increase 'maxit'")
+    }
   }
   logL0 <- mdl_h0[["logLike"]]
   logL1 <- mdl_h1[["logLike"]]
@@ -106,7 +55,7 @@ MCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list())
     stop("LRT_0 or model parameters are not finite. Please check series")
   }
   # ----- Simulate sample null distribution
-  LRN <- LR_samp_dist(mdl_h0, k1, msmu, msvar, con[["N"]], con[["maxit"]], con[["thtol"]])
+  LRN <- LR_samp_dist(mdl_h0, k1, msmu, msvar, con[["N"]], con[["maxit"]], con[["thtol"]], con[["burnin"]])
   # ----- Compute p-value
   pval <- MCpval(LRT_0, LRN, "geq")
   # ----- Organize output
@@ -191,6 +140,7 @@ MMCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list()
   con <- list(N = 99,
               maxit = 500,
               thtol = 1e-6,
+              burnin = 200, 
               getSE = TRUE,
               eps = 0.1,
               CI_union = TRUE,
@@ -200,6 +150,7 @@ MMCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list()
               type = "GenSA",
               silence = FALSE,
               threshold_stop = 1,
+              converge_check = NULL,
               type_control = list(maxit = 200))
   # Perform some checks for controls
   nmsC <- names(con)
@@ -210,10 +161,23 @@ MMCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list()
   # ----- Set initial value as consistent estimate
   if (k0==1){
     mdl_h0 <- ARmdl(Y, ar, TRUE, con[["getSE"]])
+    mdl_h0[["iterations"]] <- 1
     mdl_h1 <- MSARmdl(Y, ar, k1, msmu, msvar, con[["maxit"]], con[["thtol"]], con[["getSE"]])
   }else if (k0>1){
     mdl_h0 <- MSARmdl(Y, ar, k0, msmu, msvar, con[["maxit"]], con[["thtol"]], con[["getSE"]])  
     mdl_h1 <- MSARmdl(Y, ar, k1, msmu, msvar, con[["maxit"]], con[["thtol"]], con[["getSE"]])  
+  }
+  # Optional model convergence checks (model under null is only checked if k0>1 since EM is only used then)
+  if (is.null(con[["converge_check"]])==FALSE){
+    if ((con[["converge_check"]]=="null") & (mdl_h0[["iterations"]]==con[["maxit"]])){
+      stop("Model under null hypothesis did not converge. Run again to use different initial values and/or increase 'maxit'")
+    }
+    if((con[["converge_check"]]=="alt") & (mdl_h1[["iterations"]]==con[["maxit"]])){
+      stop("Model under alternative hypothesis did not converge. Run again to use different initial values and/or increase 'maxit'")
+    }
+    if ((con[["converge_check"]]=="both") & ((mdl_h0[["iterations"]]==con[["maxit"]]) | (mdl_h1[["iterations"]]==con[["maxit"]]))){
+      stop("Model did not converge. Run again to use different initial values and/or increase 'maxit'")
+    }
   }
   theta_0 <- c(mdl_h0[["theta"]], mdl_h1[["theta"]])
   # ----- Define lower & upper bounds for search
@@ -231,7 +195,7 @@ MMCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list()
     mmc_out <- pso::psoptim(par = theta_0, fn = MMCLRpval_fun, lower = theta_low, upper = theta_upp, 
                             gr = NULL, control = con[["type_control"]],
                             mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, msmu = msmu, msvar = msvar, ar = ar, 
-                            N = con[["N"]], maxit = con[["maxit"]], thtol = con[["thtol"]], 
+                            N = con[["N"]], maxit = con[["maxit"]], thtol = con[["thtol"]], burnin = con[["burnin"]],
                             stationary_ind = con[["stationary_ind"]], lambda = con[["lambda"]])
     MMCLRTest_output[["theta"]] <- mmc_out$par
     MMCLRTest_output[["pval"]] <- -mmc_out$value
@@ -244,7 +208,7 @@ MMCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list()
     mmc_out <- GenSA::GenSA(par = theta_0, fn = MMCLRpval_fun, lower = theta_low, upper = theta_upp, 
                             control = con[["type_control"]],
                             mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, msmu = msmu, msvar = msvar, ar = ar, 
-                            N = con[["N"]], maxit = con[["maxit"]], thtol = con[["thtol"]], 
+                            N = con[["N"]], maxit = con[["maxit"]], thtol = con[["thtol"]], burnin = con[["burnin"]], 
                             stationary_ind = con[["stationary_ind"]], lambda = con[["lambda"]])
     MMCLRTest_output[["theta"]] <- mmc_out$par
     MMCLRTest_output[["pval"]] <- -mmc_out$value
@@ -252,8 +216,8 @@ MMCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list()
     # begin optimization
     mmc_out <- GA::ga(type = "real-valued", fitness = MMCLRpval_fun_max, 
                       mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, msmu = msmu, msvar = msvar, ar = ar, 
-                      N = con[["N"]], maxit = con[["maxit"]], thtol = con[["thtol"]], stationary_ind = con[["stationary_ind"]], 
-                      lambda = con[["lambda"]], lower = theta_low, upper = theta_upp, 
+                      N = con[["N"]], maxit = con[["maxit"]], thtol = con[["thtol"]], burnin = con[["burnin"]],
+                      stationary_ind = con[["stationary_ind"]], lambda = con[["lambda"]], lower = theta_low, upper = theta_upp, 
                       maxiter = con$type_control[["maxit"]], maxFitness = con[["threshold_stop"]], 
                       monitor = (con[["silence"]]==FALSE), suggestions = t(theta_0))
     MMCLRTest_output[["theta"]] <- c(mmc_out@solution)
@@ -283,10 +247,12 @@ MMCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list()
 #' @export
 BootLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list()){
   # ----- Set control values
-  con <- list(N = 1000,
+  con <- list(B = 1000,
             maxit = 500,
             thtol = 1e-6,
-            getSE = FALSE)
+            burnin = 200,
+            getSE = FALSE,
+            converge_check = NULL)
   # Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
@@ -296,10 +262,23 @@ BootLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list(
   # ----- Compute test statistic (using observed data)
   if (k0==1){
     mdl_h0 <- ARmdl(Y, ar, TRUE, con[["getSE"]])
+    mdl_h0[["iterations"]] <- 1
     mdl_h1 <- MSARmdl(Y, ar, k1, msmu, msvar, con[["maxit"]], con[["thtol"]], con[["getSE"]])
   }else if (k0>1){
     mdl_h0 <- MSARmdl(Y, ar, k0, msmu, msvar, con[["maxit"]], con[["thtol"]], con[["getSE"]])  
     mdl_h1 <- MSARmdl(Y, ar, k1, msmu, msvar, con[["maxit"]], con[["thtol"]], con[["getSE"]])  
+  }
+  # Optional model convergence checks (model under null is only checked if k0>1 since EM is only used then)
+  if (is.null(con[["converge_check"]])==FALSE){
+    if ((con[["converge_check"]]=="null") & (mdl_h0[["iterations"]]==con[["maxit"]])){
+      stop("Model under null hypothesis did not converge. Run again to use different initial values and/or increase 'maxit'")
+    }
+    if((con[["converge_check"]]=="alt") & (mdl_h1[["iterations"]]==con[["maxit"]])){
+      stop("Model under alternative hypothesis did not converge. Run again to use different initial values and/or increase 'maxit'")
+    }
+    if ((con[["converge_check"]]=="both") & ((mdl_h0[["iterations"]]==con[["maxit"]]) | (mdl_h1[["iterations"]]==con[["maxit"]]))){
+      stop("Model did not converge. Run again to use different initial values and/or increase 'maxit'")
+    }
   }
   logL0 <- mdl_h0[["logLike"]]
   logL1 <- mdl_h1[["logLike"]]
@@ -311,9 +290,9 @@ BootLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list(
     stop("LRT_0 or model parameters are not finite. Please check series")
   }
   # ----- Simulate sample null distribution
-  LRN <- LR_samp_dist(mdl_h0, k1, msmu, msvar, con[["N"]], con[["maxit"]], con[["thtol"]])
+  LRN <- LR_samp_dist(mdl_h0, k1, msmu, msvar, con[["B"]], con[["maxit"]], con[["thtol"]], con[["burnin"]])
   # ----- Compute p-value
-  pval <- sum(LRN>LRT_0)/con[["N"]] # [eq. 4.62] (Davidson & MacKinnon, 2004)
+  pval <- sum(LRN>LRT_0)/con[["B"]] # [eq. 4.62] (Davidson & MacKinnon, 2004)
   # ----- Organize output
   BootLRTest_output<-list()
   BootLRTest_output[["mdl_h0"]] <- mdl_h0

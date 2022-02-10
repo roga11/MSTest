@@ -192,31 +192,31 @@
     },
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
-        "file_last_write": 1643912710.0,
+        "file_last_write": 1643924010.0,
         "definitions": [
             {
-                "usr": "c:@F@LR_samp_dist#I#I#b#b#I#I#d#",
+                "usr": "c:@F@LR_samp_dist#I#I#b#b#I#I#d#I#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "LR_samp_dist(Rcpp::List, int, bool, bool, int, int, double)",
+                "name": "LR_samp_dist(Rcpp::List, int, bool, bool, int, int, double, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
                 "line": 13,
                 "column": 11
             },
             {
-                "usr": "c:@F@MMCLRpval_fun#$@N@arma@S@Col>#d#I#I#b#b#I#I#I#d#b#d#",
+                "usr": "c:@F@MMCLRpval_fun#$@N@arma@S@Col>#d#I#I#b#b#I#I#I#d#I#b#d#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "MMCLRpval_fun(arma::vec, Rcpp::List, Rcpp::List, bool, bool, int, int, int, double, bool, double)",
+                "name": "MMCLRpval_fun(arma::vec, Rcpp::List, Rcpp::List, bool, bool, int, int, int, double, int, bool, double)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
                 "line": 74,
                 "column": 8
             },
             {
-                "usr": "c:@F@MMCLRpval_fun_max#$@N@arma@S@Col>#d#I#I#b#b#I#I#I#d#b#d#",
+                "usr": "c:@F@MMCLRpval_fun_max#$@N@arma@S@Col>#d#I#I#b#b#I#I#I#d#I#b#d#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "MMCLRpval_fun_max(arma::vec, Rcpp::List, Rcpp::List, bool, bool, int, int, int, double, bool, double)",
+                "name": "MMCLRpval_fun_max(arma::vec, Rcpp::List, Rcpp::List, bool, bool, int, int, int, double, int, bool, double)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
                 "line": 148,
                 "column": 8

@@ -14,6 +14,7 @@ MMCLRpval_fun_max(
   N,
   maxit,
   thtol,
+  burnin,
   stationary_ind,
   lambda
 )

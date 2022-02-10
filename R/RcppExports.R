@@ -269,24 +269,24 @@ simuMSVAR <- function(mdl_h0, type = "markov", burnin = 200L) {
 #' 
 #' 
 #' @export
-LR_samp_dist <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol) {
-    .Call(`_MSTest_LR_samp_dist`, mdl_h0, k1, msmu, msvar, N, maxit, thtol)
+LR_samp_dist <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin) {
+    .Call(`_MSTest_LR_samp_dist`, mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin)
 }
 
 #' @title Monte Carlo Likelihood Ratio Test P-value Function 
 #' 
 #' 
 #' @export
-MMCLRpval_fun <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, stationary_ind, lambda) {
-    .Call(`_MSTest_MMCLRpval_fun`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, stationary_ind, lambda)
+MMCLRpval_fun <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda) {
+    .Call(`_MSTest_MMCLRpval_fun`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda)
 }
 
 #' @title Monte Carlo Likelihood Ratio Test P-value Function 
 #' 
 #' 
 #' @export
-MMCLRpval_fun_max <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, stationary_ind, lambda) {
-    .Call(`_MSTest_MMCLRpval_fun_max`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, stationary_ind, lambda)
+MMCLRpval_fun_max <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda) {
+    .Call(`_MSTest_MMCLRpval_fun_max`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda)
 }
 
 #' @title Calculate Dufour & Luger (2017) Moment-Based Test-Statistics 

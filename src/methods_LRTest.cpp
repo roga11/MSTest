@@ -10,7 +10,7 @@ using namespace Rcpp;
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int maxit, double thtol){
+arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int maxit, double thtol, int burnin){
   int k0 = mdl_h0["k"];
   arma::vec LRT_N(N,arma::fill::zeros);
   int ar = mdl_h0["ar"];
@@ -22,7 +22,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
       double LRT_i;
       bool LRT_finite = FALSE;
       while (LRT_finite==FALSE){
-        List y0_out = simuAR(mdl_h0);
+        List y0_out = simuAR(mdl_h0, burnin);
         arma::vec y0 = y0_out["y"];
         List mdl_h0_tmp = ARmdl(y0, ar, inter);
         List mdl_h1_tmp = MSARmdl(y0, ar, k1, msmu, msvar, maxit, thtol, getHess, max_init);
@@ -49,7 +49,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
       double LRT_i;
       bool LRT_finite = FALSE;
       while (LRT_finite==FALSE){
-      List y0_out = simuMSAR(mdl_h0);
+      List y0_out = simuMSAR(mdl_h0, "markov", burnin);
         arma::vec y0 = y0_out["y"];
         List mdl_h0_tmp = MSARmdl(y0, ar, k0, msmu, msvar, maxit, thtol, getHess);
         List mdl_h1_tmp = MSARmdl(y0, ar, k1, msmu, msvar, maxit, thtol, getHess);
@@ -71,7 +71,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
 //' 
 //' @export
 // [[Rcpp::export]]
-double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, double thtol, bool stationary_ind, double lambda){
+double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, double thtol, int burnin, bool stationary_ind, double lambda){
   // initialize variables 
   double pval;
   double logL0;
@@ -132,7 +132,7 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
     logL1 = MSloglik_fun(theta_h1, mdl_h1, k1);
     double LRT_0 = -2*(logL0-logL1);
     // simulate under null hypothesis
-    arma::vec LRN_tmp = LR_samp_dist(mdl_h0_tmp, k1, msmu, msvar, N, maxit, thtol);
+    arma::vec LRN_tmp = LR_samp_dist(mdl_h0_tmp, k1, msmu, msvar, N, maxit, thtol, burnin);
     pval = -MCpval(LRT_0, LRN_tmp, "geq");
   }
   return(pval);
@@ -145,8 +145,8 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
 //' 
 //' @export
 // [[Rcpp::export]]
-double MMCLRpval_fun_max(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, double thtol, bool stationary_ind, double lambda){
-  double pval = -MMCLRpval_fun(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, stationary_ind, lambda);
+double MMCLRpval_fun_max(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, double thtol, int burnin,  bool stationary_ind, double lambda){
+  double pval = -MMCLRpval_fun(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda);
   return(pval);
 }
 
