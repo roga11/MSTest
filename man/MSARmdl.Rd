@@ -13,7 +13,7 @@ MSARmdl(
   maxit = 10000L,
   thtol = 1e-06,
   getHess = 0L,
-  max_init = 100L
+  max_init = 500L
 )
 }
 \arguments{

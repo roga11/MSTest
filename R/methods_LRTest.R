@@ -1,5 +1,25 @@
-
-
+# ==============================================================================
+#' @title Monte Carlo Likelihood Ratio Test sample disttribution (parallel version)
+#' 
+#' @description 
+#' @param 
+#'
+#' @return 
+#' 
+#' @export
+LR_samp_dist_par <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, workers){ 
+  N_worker_i <- matrix(rep(floor(N/workers),workers),workers,1)
+  N_worker_i[1:(N-floor(N/workers)*(workers))] <- N_worker_i[1:(N-floor(N/workers)*(workers))] +1 
+  LRN_all <- matrix(0,N,1)
+  `%dopar%` <- foreach::`%dopar%`
+  LRN_all <- foreach::foreach(wi=1:workers, .inorder = FALSE, .packages = "MSTest") %dopar% {
+    LRN <- LR_samp_dist(mdl_h0, k1, msmu, msvar, N_worker_i[wi], maxit, thtol, burnin, max_init, dist_converge_iter)
+    LRN
+  }
+  return(unlist(LRN_all))
+}
+  
+  
 
 # ==============================================================================
 #' @title Monte Carlo Likelihood Ratio Test
@@ -19,7 +39,8 @@ MCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list())
               getSE = FALSE,
               converge_check = "both",
               max_init = 100,
-              dist_converge_iter = 100)
+              dist_converge_iter = 100,
+              workers = 0)
   # Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
@@ -57,7 +78,12 @@ MCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list())
     stop("LRT_0 or model parameters are not finite. Run again to use different initial values")
   }
   # ----- Simulate sample null distribution
-  LRN <- LR_samp_dist(mdl_h0, k1, msmu, msvar, con[["N"]], con[["maxit"]], con[["thtol"]], con[["burnin"]], con[["max_init"]], con[["dist_converge_iter"]])
+  if(con[["workers"]]>0){
+    LRN <- LR_samp_dist_par(mdl_h0, k1, msmu, msvar, con[["N"]], con[["maxit"]], con[["thtol"]], con[["burnin"]], con[["max_init"]], con[["dist_converge_iter"]], con[["workers"]])
+  }else{
+    LRN <- LR_samp_dist(mdl_h0, k1, msmu, msvar, con[["N"]], con[["maxit"]], con[["thtol"]], con[["burnin"]], con[["max_init"]], con[["dist_converge_iter"]]) 
+  }
+  
   # ----- Compute p-value
   pval <- MCpval(LRT_0, LRN, "geq")
   # ----- Organize output
@@ -93,32 +119,22 @@ MMC_bounds_univariate <- function(theta_0, mdl_h0, mdl_h1, con, msmu, msvar){
   }
   # check that bounds respect admissible regions
   sigma_h0_ind <- rep(FALSE, length(mdl_h0[["theta"]]))
-  #phi_h0_ind <- rep(FALSE, length(mdl_h0[["theta"]]))
   P_h0_ind <- rep(FALSE, length(mdl_h0[["theta"]]))
   sigma_h1_ind <- rep(FALSE, length(mdl_h1[["theta"]]))
-  #phi_h1_ind <- rep(FALSE, length(mdl_h1[["theta"]]))
   P_h1_ind <- rep(FALSE, length(mdl_h1[["theta"]]))
   sigma_h0_ind[(2+msmu*(k0-1)):(2+msmu*(k0-1)+msvar*(k0-1))] <- TRUE
   sigma_h1_ind[(2+msmu*(k1-1)):(2+msmu*(k1-1)+msvar*(k1-1))] <- TRUE
-  #phi_h0_ind[(3+msmu*(k0-1)+msvar*(k0-1)):(3+msmu*(k0-1)+msvar*(k0-1)+ar-1)] <- TRUE
-  #phi_h1_ind[(3+msmu*(k1-1)+msvar*(k1-1)):(3+msmu*(k1-1)+msvar*(k1-1)+ar-1)] <- TRUE
   P_h1_ind[(length(mdl_h1[["theta"]])-k1*k1+1):length(mdl_h1[["theta"]])] <- TRUE
   if (k0>1){
     P_h0_ind[(length(mdl_h0[["theta"]])-k0*k0+1):length(mdl_h0[["theta"]])] <- TRUE
   }
   sigma_ind <- c(sigma_h0_ind,sigma_h1_ind)
-  #phi_ind <- c(phi_h0_ind,phi_h1_ind)
   P_ind <- c(P_h0_ind,P_h1_ind)
   # correct variances to be in admissible region
   theta_low[sigma_ind][theta_low[sigma_ind]<=0]=con[["variance_lower_bound"]]
   # correct transition probs to be in admissible region
   theta_low[P_ind][theta_low[P_ind]<0] <- 0
   theta_upp[P_ind][theta_upp[P_ind]>1] <- 1
-  # correct autoregressive coefficients to be in between (-1, 1)
-  #if (con[["stationary_ind"]]==TRUE){
-    #theta_low[phi_ind][theta_low[phi_ind]<-1] <- -0.99
-    #theta_upp[phi_ind][theta_upp[phi_ind]>1] <- 0.99
-  #}
   mmc_bounds <- list()
   mmc_bounds[["theta_low"]] <- theta_low
   mmc_bounds[["theta_upp"]] <- theta_upp
@@ -293,7 +309,7 @@ BootLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list(
   theta_h1 <- mdl_h1[["theta"]]
   LRT_0 <- -2*(logL0-logL1)
   # ----- Perform check of test stat and model parameters
-  if ((is.finite(LRT_0)==FALSE) | (any(is.finite(theta_h0)==FALSE)) | (any(is.finite(theta_h1)==FALSE))){
+  if ((is.finite(LRT_0)==FALSE) | (LRT_0<0) | (any(is.finite(theta_h0)==FALSE)) | (any(is.finite(theta_h1)==FALSE))){
     stop("LRT_0 or model parameters are not finite. Please check series")
   }
   # ----- Simulate sample null distribution
