@@ -22,7 +22,9 @@ List ts_lagged(arma::mat Y, int ar);
 
 arma::mat randTransMat(int k, int n = 200);
 
-arma::vec initVals(arma::vec theta, int k, bool msmu, bool msvar);
+arma::vec initVals(List mdl, int k, bool msmu, bool msvar);
+
+arma::vec initVals2(arma::vec theta, int k, bool msmu, bool msvar, arma::vec Y);
 
 arma::vec initValsVAR(arma::vec mu, arma::mat sigma, int k, bool msmu, bool msvar);
 

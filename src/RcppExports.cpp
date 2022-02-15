@@ -142,16 +142,16 @@ BEGIN_RCPP
 END_RCPP
 }
 // initVals
-arma::vec initVals(arma::vec theta, int k, bool msmu, bool msvar);
-RcppExport SEXP _MSTest_initVals(SEXP thetaSEXP, SEXP kSEXP, SEXP msmuSEXP, SEXP msvarSEXP) {
+arma::vec initVals(List mdl, int k, bool msmu, bool msvar);
+RcppExport SEXP _MSTest_initVals(SEXP mdlSEXP, SEXP kSEXP, SEXP msmuSEXP, SEXP msvarSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< List >::type mdl(mdlSEXP);
     Rcpp::traits::input_parameter< int >::type k(kSEXP);
     Rcpp::traits::input_parameter< bool >::type msmu(msmuSEXP);
     Rcpp::traits::input_parameter< bool >::type msvar(msvarSEXP);
-    rcpp_result_gen = Rcpp::wrap(initVals(theta, k, msmu, msvar));
+    rcpp_result_gen = Rcpp::wrap(initVals(mdl, k, msmu, msvar));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -272,8 +272,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // LR_samp_dist
-arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int maxit, double thtol, int burnin);
-RcppExport SEXP _MSTest_LR_samp_dist(SEXP mdl_h0SEXP, SEXP k1SEXP, SEXP msmuSEXP, SEXP msvarSEXP, SEXP NSEXP, SEXP maxitSEXP, SEXP thtolSEXP, SEXP burninSEXP) {
+arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int maxit, double thtol, int burnin, int max_init, int dist_converge_iter);
+RcppExport SEXP _MSTest_LR_samp_dist(SEXP mdl_h0SEXP, SEXP k1SEXP, SEXP msmuSEXP, SEXP msvarSEXP, SEXP NSEXP, SEXP maxitSEXP, SEXP thtolSEXP, SEXP burninSEXP, SEXP max_initSEXP, SEXP dist_converge_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -285,13 +285,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
     Rcpp::traits::input_parameter< double >::type thtol(thtolSEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    rcpp_result_gen = Rcpp::wrap(LR_samp_dist(mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin));
+    Rcpp::traits::input_parameter< int >::type max_init(max_initSEXP);
+    Rcpp::traits::input_parameter< int >::type dist_converge_iter(dist_converge_iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(LR_samp_dist(mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter));
     return rcpp_result_gen;
 END_RCPP
 }
 // MMCLRpval_fun
-double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, double thtol, int burnin, bool stationary_ind, double lambda);
-RcppExport SEXP _MSTest_MMCLRpval_fun(SEXP thetaSEXP, SEXP mdl_h0SEXP, SEXP mdl_h1SEXP, SEXP msmuSEXP, SEXP msvarSEXP, SEXP arSEXP, SEXP NSEXP, SEXP maxitSEXP, SEXP thtolSEXP, SEXP burninSEXP, SEXP stationary_indSEXP, SEXP lambdaSEXP) {
+double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, double thtol, int burnin, bool stationary_ind, double lambda, int max_init, int dist_converge_iter);
+RcppExport SEXP _MSTest_MMCLRpval_fun(SEXP thetaSEXP, SEXP mdl_h0SEXP, SEXP mdl_h1SEXP, SEXP msmuSEXP, SEXP msvarSEXP, SEXP arSEXP, SEXP NSEXP, SEXP maxitSEXP, SEXP thtolSEXP, SEXP burninSEXP, SEXP stationary_indSEXP, SEXP lambdaSEXP, SEXP max_initSEXP, SEXP dist_converge_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -307,13 +309,15 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
     Rcpp::traits::input_parameter< bool >::type stationary_ind(stationary_indSEXP);
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(MMCLRpval_fun(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda));
+    Rcpp::traits::input_parameter< int >::type max_init(max_initSEXP);
+    Rcpp::traits::input_parameter< int >::type dist_converge_iter(dist_converge_iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(MMCLRpval_fun(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter));
     return rcpp_result_gen;
 END_RCPP
 }
 // MMCLRpval_fun_max
-double MMCLRpval_fun_max(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, double thtol, int burnin, bool stationary_ind, double lambda);
-RcppExport SEXP _MSTest_MMCLRpval_fun_max(SEXP thetaSEXP, SEXP mdl_h0SEXP, SEXP mdl_h1SEXP, SEXP msmuSEXP, SEXP msvarSEXP, SEXP arSEXP, SEXP NSEXP, SEXP maxitSEXP, SEXP thtolSEXP, SEXP burninSEXP, SEXP stationary_indSEXP, SEXP lambdaSEXP) {
+double MMCLRpval_fun_max(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, double thtol, int burnin, bool stationary_ind, double lambda, int max_init, int dist_converge_iter);
+RcppExport SEXP _MSTest_MMCLRpval_fun_max(SEXP thetaSEXP, SEXP mdl_h0SEXP, SEXP mdl_h1SEXP, SEXP msmuSEXP, SEXP msvarSEXP, SEXP arSEXP, SEXP NSEXP, SEXP maxitSEXP, SEXP thtolSEXP, SEXP burninSEXP, SEXP stationary_indSEXP, SEXP lambdaSEXP, SEXP max_initSEXP, SEXP dist_converge_iterSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -329,7 +333,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
     Rcpp::traits::input_parameter< bool >::type stationary_ind(stationary_indSEXP);
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(MMCLRpval_fun_max(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda));
+    Rcpp::traits::input_parameter< int >::type max_init(max_initSEXP);
+    Rcpp::traits::input_parameter< int >::type dist_converge_iter(dist_converge_iterSEXP);
+    rcpp_result_gen = Rcpp::wrap(MMCLRpval_fun_max(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -434,26 +440,6 @@ BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type SN2(SN2SEXP);
     rcpp_result_gen = Rcpp::wrap(approx_dist_loop(SN2));
-    return rcpp_result_gen;
-END_RCPP
-}
-// QMCtest
-List QMCtest(arma::vec Y, int ar, int k0, int k1, int N, int simdist_N, bool msmu, bool msvar, int maxit, double thtol);
-RcppExport SEXP _MSTest_QMCtest(SEXP YSEXP, SEXP arSEXP, SEXP k0SEXP, SEXP k1SEXP, SEXP NSEXP, SEXP simdist_NSEXP, SEXP msmuSEXP, SEXP msvarSEXP, SEXP maxitSEXP, SEXP thtolSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type Y(YSEXP);
-    Rcpp::traits::input_parameter< int >::type ar(arSEXP);
-    Rcpp::traits::input_parameter< int >::type k0(k0SEXP);
-    Rcpp::traits::input_parameter< int >::type k1(k1SEXP);
-    Rcpp::traits::input_parameter< int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< int >::type simdist_N(simdist_NSEXP);
-    Rcpp::traits::input_parameter< bool >::type msmu(msmuSEXP);
-    Rcpp::traits::input_parameter< bool >::type msvar(msvarSEXP);
-    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
-    Rcpp::traits::input_parameter< double >::type thtol(thtolSEXP);
-    rcpp_result_gen = Rcpp::wrap(QMCtest(Y, ar, k0, k1, N, simdist_N, msmu, msvar, maxit, thtol));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -752,9 +738,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_cov2corr", (DL_FUNC) &_MSTest_cov2corr, 1},
     {"_MSTest_simuVAR", (DL_FUNC) &_MSTest_simuVAR, 2},
     {"_MSTest_simuMSVAR", (DL_FUNC) &_MSTest_simuMSVAR, 3},
-    {"_MSTest_LR_samp_dist", (DL_FUNC) &_MSTest_LR_samp_dist, 8},
-    {"_MSTest_MMCLRpval_fun", (DL_FUNC) &_MSTest_MMCLRpval_fun, 12},
-    {"_MSTest_MMCLRpval_fun_max", (DL_FUNC) &_MSTest_MMCLRpval_fun_max, 12},
+    {"_MSTest_LR_samp_dist", (DL_FUNC) &_MSTest_LR_samp_dist, 10},
+    {"_MSTest_MMCLRpval_fun", (DL_FUNC) &_MSTest_MMCLRpval_fun, 14},
+    {"_MSTest_MMCLRpval_fun_max", (DL_FUNC) &_MSTest_MMCLRpval_fun_max, 14},
     {"_MSTest_calc_DLmoments", (DL_FUNC) &_MSTest_calc_DLmoments, 1},
     {"_MSTest_calc_Qmoments", (DL_FUNC) &_MSTest_calc_Qmoments, 2},
     {"_MSTest_sim_DLmoments", (DL_FUNC) &_MSTest_sim_DLmoments, 2},
@@ -763,7 +749,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_calc_DLmcstat", (DL_FUNC) &_MSTest_calc_DLmcstat, 4},
     {"_MSTest_calc_Qmcstat", (DL_FUNC) &_MSTest_calc_Qmcstat, 6},
     {"_MSTest_approx_dist_loop", (DL_FUNC) &_MSTest_approx_dist_loop, 1},
-    {"_MSTest_QMCtest", (DL_FUNC) &_MSTest_QMCtest, 10},
     {"_MSTest_DLMMCpval_fun", (DL_FUNC) &_MSTest_DLMMCpval_fun, 8},
     {"_MSTest_DLMMCpval_fun_max", (DL_FUNC) &_MSTest_DLMMCpval_fun_max, 8},
     {"_MSTest_loglik_fun", (DL_FUNC) &_MSTest_loglik_fun, 2},

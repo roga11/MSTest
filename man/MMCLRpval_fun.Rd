@@ -16,7 +16,9 @@ MMCLRpval_fun(
   thtol,
   burnin,
   stationary_ind,
-  lambda
+  lambda,
+  max_init,
+  dist_converge_iter
 )
 }
 \description{

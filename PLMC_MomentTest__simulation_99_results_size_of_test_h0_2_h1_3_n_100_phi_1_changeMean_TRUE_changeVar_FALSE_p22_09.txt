@@ -1,0 +1,3 @@
+Iteration,Attempts,TimeSpent,PLMC_Pvalue_min,PLMC_Pvalue_prod
+1,4,6.83600000000001,0.42,0.62
+2,2,5.88500000000001,0.47,0.73

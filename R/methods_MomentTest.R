@@ -172,3 +172,116 @@ DLMMCTest <- function(Y, ar, pval_type = "min", control = list()){
   MMCLRTest_output[["opt_output"]] <- mmc_out
   return(MMCLRTest_output)
 }
+
+
+
+
+# ==============================================================================
+#' @title Monte-Carlo Moment-based test for MS AR model
+#'
+#' This function performs the Local Monte-Carlo Moment-Based test for
+#' MS AR models presented in Dufour & Luger (2017) (i.e when no nuissance 
+#' parameters are present). 
+#'
+#' @param Y Series to be tested
+#' @param ar Order of autoregressive components AR(p)
+#' @param k0 number of regime sunder the null
+#' @param k1 number of regimes under the alternative
+#' @param msmu bool indication if mean changes with regime (if k0>1)
+#' @param msvar bool indication if variance changes with regime (if k0>1)
+#' @param control List of control parameters. See “Details”.
+#' 
+#' @details The control argument is a list that can supply any of the following components:
+#' \itemize{
+#'   
+#' }
+#' 
+#' @return List with model and test results.
+#' 
+#' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
+#' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+#' 
+#' @export
+PMCTest <- function(Y, ar, k0, k1, msmu =  TRUE, msvar = TRUE, control = list()){
+  # ----- Set control values
+  con <- list(N = 99,
+              simdist_N = 10000,
+              maxit = 500,
+              thtol = 1e-6,
+              getSE = FALSE,
+              converge_check = NULL)
+  # Perform some checks for controls
+  nmsC <- names(con)
+  con[(namc <- names(control))] <- control
+  if(length(noNms <- namc[!namc %in% nmsC])){
+    warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+  }
+  # ----- Transform process (from eq. (20) to z_t(phi))
+  Tsize <- length(Y)
+  if(ar>0){
+    if (k0==1){
+      mdl_h0  <- ARmdl(Y, ar, TRUE, con[["getSE"]])
+      mdl_h0[["iterations"]] <- 1
+      y       <- mdl_h0[["y"]]
+      x       <- mdl_h0[["x"]]
+      phi     <- mdl_h0[["phi"]]
+      z       <- y - x%*%phi
+    }else{
+      mdl_h0  <- MSARmdl(Y, ar, k0, msmu, msvar, con[["maxit"]], con[["thtol"]], con[["getSE"]]) 
+      y       <- mdl_h0[["y"]]
+      x       <- mdl_h0[["x"]]
+      phi     <- mdl_h0[["phi"]]
+      z       <- y - x%*%phi 
+      if (msmu == FALSE){
+        mdl_h0[["mu"]] = rep(mdl_h0[["mu"]], k0)
+      }
+      if (msvar == FALSE){
+        mdl_h0[["stdev"]] = rep(mdl_h0[["stdev"]], k0)
+      }
+    }
+  }else{
+    if (k0==1){
+      z                       <- Y
+      mdl_h0                  <- list()
+      mdl_h0[["k"]]           <- k0
+      mdl_h0[["ar"]]          <- 0
+      mdl_h0[["mu"]]          <- mean(z)
+      mdl_h0[["sigma"]]       <- sum((z-mean(z))*(z-mean(z)))/(Tsize-1)
+      mdl_h0[["iterations"]]  <- 1
+    }else{
+      # **** USE MSmdl (i.e., HMM since no autoregressive params) to obtain mu and sigma for each regime
+    }
+  }
+  # Optional model convergence checks
+  if (is.null(con[["converge_check"]])==FALSE){
+    if ((con[["converge_check"]]=="null") & (mdl_h0[["iterations"]]==con[["maxit"]])){
+      stop("Model under null hypothesis did not converge. Run again to use different initial values and/or increase 'maxit'")
+    }
+  }
+  # --------- Get parameters from approximated distribution ----------
+  params <- approxDistQ(Tsize-ar, con[["simdist_N"]], mdl_h0, k1)
+  # -------------------------- Get P-Values --------------------------
+  N     <- con[["N"]]
+  eps   <- z - mean(z)
+  Fmin  <- calc_Qmcstat(eps, N, params, mdl_h0, k1, "min")
+  Fprod <- calc_Qmcstat(eps, N, params, mdl_h0, k1, "prod")
+  # ----- Obtain p-value
+  Fmin0     <- Fmin[N+1]
+  Fprod0    <- Fprod[N+1]
+  FminSim   <- Fmin[1:N]
+  FprodSim  <- Fprod[1:N]
+  pval_min  <- MCpval(Fmin0, FminSim, "geq")
+  pval_prod <- MCpval(Fprod0, FprodSim, "geq")
+  LMC_N     <- cbind(Fmin,Fprod)
+  # ----- Organize output
+  Qtest_output <- list()
+  Qtest_output[["eps"]] <- eps
+  Qtest_output[["mdl_h0"]] <- mdl_h0
+  Qtest_output[["dist_params"]] <- params
+  Qtest_output[["LMC_N"]] <- LMC_N
+  Qtest_output[["Fmin_0"]] <- Fmin0
+  Qtest_output[["Fprod_0"]] <- Fprod0
+  Qtest_output[["pval_min"]] <- pval_min
+  Qtest_output[["pval_prod"]] <- pval_prod
+  return(Qtest_output)
+}

@@ -392,24 +392,33 @@ arma::mat randTransMat(int k, int n = 200){
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::vec initVals(arma::vec theta, int k, bool msmu, bool msvar){
-  double mu = theta(0);
-  double sig = theta(1);
+arma::vec initVals(List mdl, int k, bool msmu, bool msvar){
+  int ar = mdl["ar"];
+  arma::vec phi = mdl["phi"];
+  double mu = mdl["mu"];
+  double stdev = mdl["stdev"];
+  int Tsize =  mdl["n"];
   arma::vec mu_0(1+msmu*(k-1), arma::fill::zeros);
   arma::vec sig_0(1+msvar*(k-1), arma::fill::zeros);
   mu_0(0) = mu;
-  sig_0(0) = sig;
+  sig_0(0) = pow(stdev,2);
   if (msmu==TRUE){
     arma::vec mu_k = mu + arma::randn<arma::vec>(k-1);
     mu_0.subvec(1,k-1) = mu_k;
   }
   if (msvar==TRUE){
-    arma::vec sig_k = sig + sig*arma::randu<arma::vec>(k-1);
+    arma::vec sig_k = pow(stdev + stdev*arma::randu<arma::vec>(k-1),2);
     sig_0.subvec(1,k-1) = sig_k;
   }
   arma::vec theta_0 = join_vert(mu_0, sig_0);
+  if (ar>0){
+    theta_0 = join_vert(theta_0, phi);
+  }
+  arma::mat P_0 = randTransMat(k, Tsize);
+  theta_0 = join_vert(theta_0, vectorise(P_0));
   return(theta_0);
 }
+
 // ==============================================================================
 //' @title generate initial values for EM Algorithm 
 //' 

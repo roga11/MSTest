@@ -149,8 +149,8 @@ randTransMat <- function(k, n = 200L) {
 #' 
 #' 
 #' @export
-initVals <- function(theta, k, msmu, msvar) {
-    .Call(`_MSTest_initVals`, theta, k, msmu, msvar)
+initVals <- function(mdl, k, msmu, msvar) {
+    .Call(`_MSTest_initVals`, mdl, k, msmu, msvar)
 }
 
 #' @title generate initial values for EM Algorithm 
@@ -269,24 +269,24 @@ simuMSVAR <- function(mdl_h0, type = "markov", burnin = 200L) {
 #' 
 #' 
 #' @export
-LR_samp_dist <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin) {
-    .Call(`_MSTest_LR_samp_dist`, mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin)
+LR_samp_dist <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter) {
+    .Call(`_MSTest_LR_samp_dist`, mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter)
 }
 
 #' @title Monte Carlo Likelihood Ratio Test P-value Function 
 #' 
 #' 
 #' @export
-MMCLRpval_fun <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda) {
-    .Call(`_MSTest_MMCLRpval_fun`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda)
+MMCLRpval_fun <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter) {
+    .Call(`_MSTest_MMCLRpval_fun`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter)
 }
 
 #' @title Monte Carlo Likelihood Ratio Test P-value Function 
 #' 
 #' 
 #' @export
-MMCLRpval_fun_max <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda) {
-    .Call(`_MSTest_MMCLRpval_fun_max`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda)
+MMCLRpval_fun_max <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter) {
+    .Call(`_MSTest_MMCLRpval_fun_max`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter)
 }
 
 #' @title Calculate Dufour & Luger (2017) Moment-Based Test-Statistics 
@@ -429,29 +429,6 @@ approx_dist_loop <- function(SN2) {
     .Call(`_MSTest_approx_dist_loop`, SN2)
 }
 
-#' @title Monte-Carlo Moment-based test for MS AR model
-#'
-#' This function performs the Local Monte-Carlo Moment-Based test for
-#' MS AR models presented in Dufour & Luger (2017) (i.e when no nuissance 
-#' parameters are present). 
-#'
-#' @param Y Series to be tested 
-#' @param p Order of autoregressive components AR(p).
-#' @param x exogenous variables if any. Test in Dufour & Luger is model for AR lags
-#' @param N number of samples
-#' @param N2 number of simulations when approximating distribution used to combine 
-#' p-values (eq. 16).
-#'
-#' @return List with model and test results.
-#' 
-#' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-#' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
-#' 
-#' @export
-QMCtest <- function(Y, ar = 0L, k0 = 1L, k1 = 2L, N = 99L, simdist_N = 10000L, msmu = 1L, msvar = 1L, maxit = 500L, thtol = 1e-8) {
-    .Call(`_MSTest_QMCtest`, Y, ar, k0, k1, N, simdist_N, msmu, msvar, maxit, thtol)
-}
-
 #' @title Dufour & Luger (2017) moment-based MMC test p-value function to be minimized
 #'
 #' 
@@ -474,7 +451,7 @@ DLMMCpval_fun_max <- function(theta, y, x, N, simdist_N, pval_type, stationary_i
     .Call(`_MSTest_DLMMCpval_fun_max`, theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda)
 }
 
-#' @title Markov-switching AR Log-likelihood objective function (used to find Hessian)
+#' @title AR Log-likelihood objective function (used to find Hessian)
 #' 
 #' 
 #' @export
@@ -683,7 +660,7 @@ EMest_VAR <- function(theta_0, mdl, k, optim_options) {
 #' - logLike: the log-likelihood 
 #' 
 #' @export
-MSARmdl <- function(Y, ar = 0L, k = 2L, msmu = 1L, msvar = 1L, maxit = 10000L, thtol = 1.e-8, getHess = 0L, max_init = 100L) {
+MSARmdl <- function(Y, ar, k, msmu = 1L, msvar = 1L, maxit = 10000L, thtol = 1.e-6, getHess = 0L, max_init = 500L) {
     .Call(`_MSTest_MSARmdl`, Y, ar, k, msmu, msvar, maxit, thtol, getHess, max_init)
 }
 

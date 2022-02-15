@@ -2,10 +2,10 @@
 % Please edit documentation in R/RcppExports.R
 \name{loglik_fun}
 \alias{loglik_fun}
-\title{Markov-switching AR Log-likelihood objective function (used to find Hessian)}
+\title{AR Log-likelihood objective function (used to find Hessian)}
 \usage{
 loglik_fun(theta, mdl)
 }
 \description{
-Markov-switching AR Log-likelihood objective function (used to find Hessian)
+AR Log-likelihood objective function (used to find Hessian)
 }

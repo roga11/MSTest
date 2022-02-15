@@ -6,12 +6,12 @@
 \usage{
 MSARmdl(
   Y,
-  ar = 0L,
-  k = 2L,
+  ar,
+  k,
   msmu = 1L,
   msvar = 1L,
   maxit = 10000L,
-  thtol = 1e-08,
+  thtol = 1e-06,
   getHess = 0L,
   max_init = 100L
 )

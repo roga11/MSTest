@@ -123,6 +123,7 @@ arma::mat sim_DLmoments(int Tsize,int N){
   }
   return(stats);
 }
+
 // ==============================================================================
 //' @title Quantile-Based Test-Statistics From Simulated Data  
 //'
@@ -145,29 +146,36 @@ arma::mat sim_Qmoments(int Tsize, int N, List mdl_h0, int k1){
       SN.row(ik) = trans(mmtmp);
     }
   }else{
-    if (ar>0){
-      for (int ik = 0; ik<N; ik++){
-        List simudat  = simuMSAR(mdl_h0, "markov");
-        arma::vec y_null= simudat["y"];
-        bool intercept = TRUE;
-        List mdl_ar = ARmdl(y_null, ar, intercept);
-        arma::vec ytmp = mdl_ar["y"];
-        arma::mat xtmp = mdl_ar["x"];
-        arma::vec phi = mdl_ar["phi"];
-        arma::vec z_null = ytmp - xtmp*phi;
-        arma::vec eps_null = z_null - mean(z_null);
-        arma::vec mmtmp = calc_Qmoments(eps_null, k1);
-        SN.row(ik) = trans(mmtmp);
-      }
-    }else{
-      for (int ik = 0; ik<N; ik++){
-        List simudat   = simuMS(mdl_h0, "markov");
-        arma::vec z_null = simudat["y"];
-        arma::vec eps_null = z_null - mean(z_null);
-        arma::vec mmtmp = calc_Qmoments(eps_null, k1);
-        SN.row(ik)=trans(mmtmp);
-      }
+    // if (ar>0){
+    //   bool msmu = mdl_h0["msmu"];
+    //   bool msvar = mdl_h0["msvar"];
+    //   List mdl_options = mdl_h0["optim_options"];
+    //   int maxit = mdl_options["maxit"];
+    //   double thtol = mdl_options["thtol"];
+    //   bool getSE = mdl_h0["getSE"];
+    //   for (int ik = 0; ik<N; ik++){
+    //     List simudat  = simuMSAR(mdl_h0, "markov")
+    //     arma::vec y_null = simudat["y"];
+    //     bool intercept = TRUE;
+    //     List mdl_ar = ARmdl(y_null, ar, intercept);
+    //     //List mdl_ar = MSARmdl(y_null, ar, k0, msmu, msvar, maxit, thtol, getSE);
+    //     arma::vec ytmp = mdl_ar["y"];
+    //     arma::mat xtmp = mdl_ar["x"];
+    //     arma::vec phi = mdl_ar["phi"];
+    //     arma::vec z_null = ytmp - xtmp*phi;
+    //     arma::vec eps_null = z_null - mean(z_null);
+    //     arma::vec mmtmp = calc_Qmoments(eps_null, k1);
+    //     SN.row(ik) = trans(mmtmp);
+    //   }
+    // }else{
+    for (int ik = 0; ik<N; ik++){
+      List simudat   = simuMS(mdl_h0, "markov");
+      arma::vec z_null = simudat["y"];
+      arma::vec eps_null = z_null - mean(z_null);
+      arma::vec mmtmp = calc_Qmoments(eps_null, k1);
+      SN.row(ik)=trans(mmtmp);
     }
+    //}
   }
   return(SN);
 }
@@ -320,85 +328,7 @@ arma::mat approx_dist_loop(arma::mat SN2){
   }
   return(Fx);
 }
-// ==============================================================================
-//' @title Monte-Carlo Moment-based test for MS AR model
-//'
-//' This function performs the Local Monte-Carlo Moment-Based test for
-//' MS AR models presented in Dufour & Luger (2017) (i.e when no nuissance 
-//' parameters are present). 
-//'
-//' @param Y Series to be tested 
-//' @param p Order of autoregressive components AR(p).
-//' @param x exogenous variables if any. Test in Dufour & Luger is model for AR lags
-//' @param N number of samples
-//' @param N2 number of simulations when approximating distribution used to combine 
-//' p-values (eq. 16).
-//'
-//' @return List with model and test results.
-//' 
-//' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-//' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
-//' 
-//' @export
-// [[Rcpp::export]]
-List QMCtest(arma::vec Y, int ar = 0, int k0 = 1, int k1 = 2, int N = 99, int simdist_N = 10000, bool msmu = 1, bool msvar = 1, int maxit = 500, double thtol = 1e-8){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function approxDistQ = mstest["approxDistQ"];
-  int Tsize = Y.n_elem;
-  arma::vec z(Tsize-ar, arma::fill::zeros);
-  List mdl_h0;
-  List mdl_h1;
-  if(ar>0){
-    if (k0==1){
-      bool intercept = TRUE;
-      mdl_h0 = ARmdl(Y, ar, intercept);
-      mdl_h0["k"] = k0;
-      arma::vec y = mdl_h0["y"];
-      arma::mat x = mdl_h0["x"];
-      arma::vec phi = mdl_h0["phi"];
-      z = y - x*phi;  
-    }else{
-      bool getHess = FALSE;
-      mdl_h0 = MSARmdl(Y, ar, k0, msmu, msvar, maxit, thtol, getHess);
-      arma::vec y = mdl_h0["y"];
-      arma::mat x = mdl_h0["x"];
-      arma::vec phi = mdl_h0["phi"];
-      z = y - x*phi;  
-    }
-  }else{
-    z = Y;
-    mdl_h0["k"] = k0;
-    mdl_h0["ar"] = 0;
-    mdl_h0["mu"] = mean(z);
-    mdl_h0["sigma"] = sum((z-mean(z))%(z-mean(z)))/(Tsize-1);
-  }
-  // --------- Get parameters from approximated distribution ----------
-  arma::mat params = as<arma::mat>(approxDistQ(Tsize-ar, simdist_N, mdl_h0, k1));
-  // -------------------------- Get P-Values --------------------------
-  arma::vec eps = z - mean(z);
-  arma::vec Fmin = calc_Qmcstat(eps, N, params, mdl_h0, k1, "min");
-  arma::vec Fprod = calc_Qmcstat(eps, N, params, mdl_h0, k1, "prod");
-  // ----- Obtain p-value
-  double Fmin0 = Fmin(N);
-  double Fprod0 = Fprod(N);
-  arma::vec FminSim = Fmin.subvec(0,N-1);
-  arma::vec FprodSim = Fprod.subvec(0,N-1);
-  double pval_min = MCpval(Fmin0, FminSim, "geq");
-  double pval_prod = MCpval(Fprod0, FprodSim, "geq");
-  arma::mat LMC_ans = join_rows(Fmin,Fprod);
-  List Qtest_output;
-  Qtest_output["eps"] = eps;
-  if (ar>0){
-    Qtest_output["ARmdl"] = mdl_h0;
-  }
-  Qtest_output["params"] = params;
-  Qtest_output["LMC_ans"] = LMC_ans;
-  Qtest_output["Fmin"] = Fmin0;
-  Qtest_output["Fprod"] = Fprod0;
-  Qtest_output["p-value_min"] = pval_min;
-  Qtest_output["p-value_prod"] = pval_prod;
-  return(Qtest_output);
-}
+
 // ==============================================================================
 //' @title Dufour & Luger (2017) moment-based MMC test p-value function to be minimized
 //'

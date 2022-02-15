@@ -3,7 +3,7 @@
 //[[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 // ==============================================================================
-//' @title Markov-switching AR Log-likelihood objective function (used to find Hessian)
+//' @title AR Log-likelihood objective function (used to find Hessian)
 //' 
 //' 
 //' @export
@@ -13,7 +13,6 @@ double loglik_fun(arma::vec theta, List mdl){
   // ---------- Initialize parameters
   // ============================================================================
   arma::vec y = mdl["y"];
-  //arma::mat X = mdl["X"];
   arma::mat x = mdl["x"];
   int ar = mdl["ar"];
   int Tsize = y.n_elem;
@@ -895,7 +894,6 @@ List EMiter(List mdl, List EMest_output, int k){
   // ---------- Expectation
   // ============================================================================
   arma::vec theta = EMest_output["theta"];
-  //arma::mat P = EMest_output["P"];
   List MSloglik_output = MSloglik(theta, mdl, k);  
   // ============================================================================
   // ---------- Maximization
@@ -1086,7 +1084,7 @@ List EMest_VAR(arma::vec theta_0, List mdl, int k, List optim_options){
 //' 
 //' @export
 // [[Rcpp::export]]
-List MSARmdl(arma::vec Y, int ar = 0, int k = 2, bool msmu = 1, bool msvar = 1, int maxit = 10000, double thtol = 1.e-8, bool getHess = 0, int max_init = 100){
+List MSARmdl(arma::vec Y, int ar, int k, bool msmu = 1, bool msvar = 1, int maxit = 10000, double thtol = 1.e-6, bool getHess = 0, int max_init = 500){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function hessian = mstest["getHess"];
   Rcpp::Function transMatAR = mstest["transMatAR"];
@@ -1099,7 +1097,7 @@ List MSARmdl(arma::vec Y, int ar = 0, int k = 2, bool msmu = 1, bool msvar = 1, 
   optim_options["maxit"] = maxit; // max iterations
   optim_options["thtol"] = thtol; // Convergence criterion/tolerance
   // =============================================================================
-  // ---------- Transform model
+  // ---------- Collect Model Variables
   // =============================================================================
   List mdl_out;
   if (ar>0){
@@ -1119,51 +1117,33 @@ List MSARmdl(arma::vec Y, int ar = 0, int k = 2, bool msmu = 1, bool msvar = 1, 
     mdl_out["mu"] = mu;
     mdl_out["phi"] = phi_tmp;
     mdl_out["stdev"] = stdev;
+    mdl_out["sigma"] = pow(stdev,2);
   }
   mdl_out["msmu"] = msmu;
   mdl_out["msvar"] = msvar;
-  // ----- Use OLS output in initial values
-  //arma::vec y = mdl_out["y"];
-  arma::vec phi = mdl_out["phi"];
-  double mu = mdl_out["mu"];
-  double stdev = mdl_out["stdev"];
-  int Tsize =  mdl_out["n"];
-  arma::vec theta(2, arma::fill::zeros);
-  theta(0) = mu;
-  theta(1) = pow(stdev, 2);
   // =============================================================================
   // ---------- Estimate model 
   // =============================================================================
   List EM_output;
   int init_used = 0;
-  //bool finite_check = TRUE;
-  //bool initVal_check = TRUE;
-  bool converge_check= TRUE;
-  while (converge_check==TRUE){
+  bool converge_check = FALSE;
+  while ((converge_check==FALSE) and (init_used<max_init)){
     // ----- Initial values
-    arma::vec theta_0 = initVals(theta, k, msmu, msvar);
-    arma::mat P_0 = randTransMat(k, Tsize);
-    if (ar>0){
-      theta_0 = join_vert(theta_0, phi);
-    }
-    theta_0 = join_vert(theta_0, vectorise(P_0));
-    init_used = init_used + 1;
+    arma::vec theta_0 = initVals(mdl_out, k, msmu, msvar);
     // ----- Estimate using EM algorithm 
     EM_output = EMest(theta_0, mdl_out, k, optim_options);
+    EM_output["init_values"] = theta_0;
+    // ----- Convergence check
     double logLike_tmp = EM_output["logLike"];
     arma::vec theta_tmp = EM_output["theta"];
-    //finite_check =  (arma::is_finite(logLike_tmp)==FALSE) and (init_used<=max_init); 
-    converge_check = ((arma::is_finite(logLike_tmp)==FALSE) or (theta_tmp.is_finite()==FALSE)) and (init_used<max_init);
-    //initVal_check = init_used<max_init;
-    //converge_check = finite_check and initVal_check;
+    converge_check = ((arma::is_finite(logLike_tmp)) and (theta_tmp.is_finite()));
+    init_used += 1;
   }
   EM_output["init_used"] = init_used;  
   // =============================================================================
   // ---------- organize output
   // =============================================================================
   List MSARmdl_output;
-  //MSARmdl_output["check1"] = finite_check;
-  //MSARmdl_output["check2"] = initVal_check;
   MSARmdl_output["theta"] = EM_output["theta"];
   MSARmdl_output["mu"] = EM_output["mu"];
   MSARmdl_output["sigma"] = EM_output["sigma"];
@@ -1189,6 +1169,7 @@ List MSARmdl(arma::vec Y, int ar = 0, int k = 2, bool msmu = 1, bool msvar = 1, 
   MSARmdl_output["optim_options"] = optim_options;
   MSARmdl_output["iterations"] = EM_output["iterations"];
   MSARmdl_output["initVals_used"] = EM_output["init_used"];
+  MSARmdl_output["getSE"] = getHess;
   if (getHess==TRUE){
     arma::mat Hess = as<arma::mat>(hessian(MSARmdl_output, k));
     arma::mat info_mat = inv(-Hess);

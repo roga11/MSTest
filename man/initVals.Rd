@@ -4,7 +4,7 @@
 \alias{initVals}
 \title{generate initial values for EM Algorithm}
 \usage{
-initVals(theta, k, msmu, msvar)
+initVals(mdl, k, msmu, msvar)
 }
 \description{
 generate initial values for EM Algorithm
