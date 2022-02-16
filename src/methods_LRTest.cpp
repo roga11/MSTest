@@ -10,7 +10,8 @@ using namespace Rcpp;
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int maxit, double thtol, int burnin, int max_init, int dist_converge_iter){
+arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int maxit, double thtol, 
+                       int burnin, int max_init, int dist_converge_iter, int init_val_try_dist){
   int k0 = mdl_h0["k"];
   arma::vec LRT_N(N,arma::fill::zeros);
   int ar = mdl_h0["ar"];
@@ -27,14 +28,14 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
           List y0_out = simuAR(mdl_h0, burnin);
           arma::vec y0 = y0_out["y"];
           List mdl_h0_tmp = ARmdl(y0, ar, inter);
-          List mdl_h1_tmp = MSARmdl(y0, ar, k1, msmu, msvar, maxit, thtol, getHess, max_init);
+          List mdl_h1_tmp = MSARmdl(y0, ar, k1, msmu, msvar, maxit, thtol, getHess, max_init, init_val_try_dist);
           // test stat
           double l_0 = mdl_h0_tmp["logLike"];
           double l_1 = mdl_h1_tmp["logLike"];
           int mdl_h1_iter = mdl_h1_tmp["iterations"];
           LRT_i = -2*(l_0 - l_1);
           // LRT_finite = arma::is_finite(LRT_i);
-          LRT_finite = ((arma::is_finite(LRT_i)) and LRT_i>=0);
+          LRT_finite = ((arma::is_finite(LRT_i)) and (LRT_i>=0));
           LRT_converge = (mdl_h1_iter<maxit);
         }
         converge_iter +=1;
@@ -64,8 +65,8 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
         while (LRT_finite==FALSE){
           List y0_out = simuMSAR(mdl_h0, "markov", burnin);
           arma::vec y0 = y0_out["y"];
-          List mdl_h0_tmp = MSARmdl(y0, ar, k0, msmu, msvar, maxit, thtol, getHess, max_init);
-          List mdl_h1_tmp = MSARmdl(y0, ar, k1, msmu, msvar, maxit, thtol, getHess, max_init);
+          List mdl_h0_tmp = MSARmdl(y0, ar, k0, msmu, msvar, maxit, thtol, getHess, max_init, init_val_try_dist);
+          List mdl_h1_tmp = MSARmdl(y0, ar, k1, msmu, msvar, maxit, thtol, getHess, max_init, init_val_try_dist);
           // test stat
           double l_0 = mdl_h0_tmp["logLike"];
           double l_1 = mdl_h1_tmp["logLike"];
@@ -73,7 +74,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
           int mdl_h1_iter = mdl_h1_tmp["iterations"];
           LRT_i = -2*(l_0 - l_1);
           // LRT_finite = arma::is_finite(LRT_i);
-          LRT_finite = ((arma::is_finite(LRT_i)) and LRT_i>=0);
+          LRT_finite = ((arma::is_finite(LRT_i)) and (LRT_i>=0));
           LRT_converge = ((mdl_h0_iter<maxit) and (mdl_h1_iter<maxit));
         }
         converge_iter +=1;
@@ -93,7 +94,8 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
 //' 
 //' @export
 // [[Rcpp::export]]
-double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, double thtol, int burnin, bool stationary_ind, double lambda, int max_init, int dist_converge_iter){
+double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit,
+                     double thtol, int burnin, bool stationary_ind, double lambda, int max_init, int dist_converge_iter, int init_val_try_dist){
   // initialize variables 
   double pval;
   double logL0;
@@ -154,7 +156,7 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
     logL1 = MSloglik_fun(theta_h1, mdl_h1, k1);
     double LRT_0 = -2*(logL0-logL1);
     // simulate under null hypothesis
-    arma::vec LRN_tmp = LR_samp_dist(mdl_h0_tmp, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter);
+    arma::vec LRN_tmp = LR_samp_dist(mdl_h0_tmp, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist);
     pval = -MCpval(LRT_0, LRN_tmp, "geq");
   }
   return(pval);
@@ -167,8 +169,9 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
 //' 
 //' @export
 // [[Rcpp::export]]
-double MMCLRpval_fun_max(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, double thtol, int burnin,  bool stationary_ind, double lambda, int max_init, int dist_converge_iter){
-  double pval = -MMCLRpval_fun(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter);
+double MMCLRpval_fun_max(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, 
+                         double thtol, int burnin,  bool stationary_ind, double lambda, int max_init, int dist_converge_iter, int init_val_try_dist){
+  double pval = -MMCLRpval_fun(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter, init_val_try_dist);
   return(pval);
 }
 

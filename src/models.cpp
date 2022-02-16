@@ -1084,7 +1084,9 @@ List EMest_VAR(arma::vec theta_0, List mdl, int k, List optim_options){
 //' 
 //' @export
 // [[Rcpp::export]]
-List MSARmdl(arma::vec Y, int ar, int k, bool msmu = 1, bool msvar = 1, int maxit = 10000, double thtol = 1.e-6, bool getHess = 0, int max_init = 500){
+List MSARmdl(arma::vec Y, int ar, int k, bool msmu = 1, bool msvar = 1, int maxit = 10000, 
+             double thtol = 1.e-6, bool getHess = 0, int max_init = 500, int use_diff_init = 1, 
+             Nullable<NumericVector> init_value = R_NilValue){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function hessian = mstest["getHess"];
   Rcpp::Function transMatAR = mstest["transMatAR"];
@@ -1125,26 +1127,49 @@ List MSARmdl(arma::vec Y, int ar, int k, bool msmu = 1, bool msvar = 1, int maxi
   // ---------- Estimate model 
   // =============================================================================
   List EM_output;
+  List EM_output_all(use_diff_init);
+  arma::vec max_loglik(use_diff_init, arma::fill::zeros);
   int init_used = 0;
-  bool converge_check = FALSE;
-  while ((converge_check==FALSE) and (init_used<max_init)){
-    // ----- Initial values
-    arma::vec theta_0 = initVals(mdl_out, k, msmu, msvar);
+  if (init_value.isNotNull()){
     // ----- Estimate using EM algorithm 
-    EM_output = EMest(theta_0, mdl_out, k, optim_options);
-    EM_output["init_values"] = theta_0;
-    // ----- Convergence check
-    double logLike_tmp = EM_output["logLike"];
-    arma::vec theta_tmp = EM_output["theta"];
-    converge_check = ((arma::is_finite(logLike_tmp)) and (theta_tmp.is_finite()));
-    init_used += 1;
+    NumericVector init_values(init_value);
+    EM_output = EMest(init_values, mdl_out, k, optim_options);
+    EM_output["init_values"] = init_values;
+    EM_output["init_used"] = 1;
+  }else{
+    List EM_output_tmp;
+    for (int xi = 0; xi<use_diff_init; xi++){
+      double logLike_tmp;
+      bool converge_check = FALSE;
+      while ((converge_check==FALSE) and (init_used<max_init)){
+        // ----- Initial values
+        arma::vec theta_0 = initVals(mdl_out, k, msmu, msvar);
+        // ----- Estimate using EM algorithm 
+        EM_output_tmp = EMest(theta_0, mdl_out, k, optim_options);
+        EM_output_tmp["init_values"] = theta_0;
+        // ----- Convergence check
+        logLike_tmp = EM_output_tmp["logLike"];
+        arma::vec theta_tmp = EM_output_tmp["theta"];
+        converge_check = ((arma::is_finite(logLike_tmp)) and (theta_tmp.is_finite()));
+        init_used += 1;
+      }
+      max_loglik(xi) = logLike_tmp;
+      EM_output_tmp["init_used"] = init_used;
+      EM_output_all[xi] = EM_output_tmp;
+    }
+    if (use_diff_init==1){
+      EM_output = EM_output_tmp;
+    }else{
+      arma::uword xl = index_max(max_loglik);
+      EM_output = EM_output_all[xl];
+    }
   }
-  EM_output["init_used"] = init_used;  
   // =============================================================================
   // ---------- organize output
   // =============================================================================
   List MSARmdl_output;
   MSARmdl_output["theta"] = EM_output["theta"];
+  MSARmdl_output["theta_0"] = EM_output["init_values"];
   MSARmdl_output["mu"] = EM_output["mu"];
   MSARmdl_output["sigma"] = EM_output["sigma"];
   MSARmdl_output["P"] = EM_output["P"];
@@ -1184,6 +1209,7 @@ List MSARmdl(arma::vec Y, int ar, int k, bool msmu = 1, bool msvar = 1, int maxi
     MSARmdl_output["info_mat"] = info_mat;
     MSARmdl_output["nearPD_used"] = nearPD_used;
   }
+  MSARmdl_output["trace"] = EM_output_all;
   return(MSARmdl_output);
 }
 // ==============================================================================
@@ -1224,7 +1250,7 @@ List MSVARmdl(arma::mat Y, int ar = 1, int k = 2, bool msmu = 1, bool msvar = 1,
   while (finite_check==TRUE){
     // ----- Initial values
     arma::vec theta_0 = initValsVAR(mu, sigma, k, msmu, msvar);
-    arma::mat P_0 = randTransMat(k, Tsize);
+    arma::mat P_0 = randTransMat(k);
     theta_0 = join_vert(theta_0, vectorise(phi));
     theta_0 = join_vert(theta_0, vectorise(P_0));
     init_used = init_used + 1;

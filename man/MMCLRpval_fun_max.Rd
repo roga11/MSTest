@@ -18,7 +18,8 @@ MMCLRpval_fun_max(
   stationary_ind,
   lambda,
   max_init,
-  dist_converge_iter
+  dist_converge_iter,
+  init_val_try_dist
 )
 }
 \description{

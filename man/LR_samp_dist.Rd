@@ -14,7 +14,8 @@ LR_samp_dist(
   thtol,
   burnin,
   max_init,
-  dist_converge_iter
+  dist_converge_iter,
+  init_val_try_dist
 )
 }
 \description{

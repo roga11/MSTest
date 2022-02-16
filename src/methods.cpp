@@ -358,6 +358,7 @@ List ts_lagged(arma::mat Y, int ar){
   lagged_output["X"] = X;
   return(lagged_output);
 }
+
 // ==============================================================================
 //' @title Random Transition Matrix
 //' 
@@ -371,21 +372,16 @@ List ts_lagged(arma::mat Y, int ar){
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::mat randTransMat(int k, int n = 200){
-  arma::vec seqk = arma::linspace(1,k,k);
-  arma::vec ind = RcppArmadillo::sample(seqk,n,TRUE);
-  arma::mat transmat(k,k,arma::fill::zeros);
-  arma::vec tmp = diff(ind);
-  arma::vec ind2 = ind.rows(1,n-1);
-  arma::vec ind3 = ind.rows(0,n-2);
-  for(int xi=1; xi<=k;xi++){
-    double n2 = sum(ind3==xi);
-    for(int xxi=1; xxi<=k; xxi++){
-      transmat(xi-1,xxi-1) = sum(ind2==xxi && tmp==xxi-xi)/n2;
-    }
-  }
-  return(trans(transmat));
+arma::mat randTransMat(int k){
+  arma::mat P = reshape(arma::randu(k*k), k, k); 
+  arma::vec PcolSums = trans(arma::sum(P,0));
+  for (int xk = 0; xk<k; xk++){
+    P.col(xk) = P.col(xk)/PcolSums(xk);
+  } 
+  return(P);
 }
+
+
 // ==============================================================================
 //' @title generate initial values for EM Algorithm 
 //' 
@@ -397,24 +393,21 @@ arma::vec initVals(List mdl, int k, bool msmu, bool msvar){
   arma::vec phi = mdl["phi"];
   double mu = mdl["mu"];
   double stdev = mdl["stdev"];
-  int Tsize =  mdl["n"];
   arma::vec mu_0(1+msmu*(k-1), arma::fill::zeros);
   arma::vec sig_0(1+msvar*(k-1), arma::fill::zeros);
   mu_0(0) = mu;
   sig_0(0) = pow(stdev,2);
   if (msmu==TRUE){
-    arma::vec mu_k = mu + arma::randn<arma::vec>(k-1);
-    mu_0.subvec(1,k-1) = mu_k;
+    mu_0 = mu + (3*stdev)*arma::randn<arma::vec>(k);
   }
   if (msvar==TRUE){
-    arma::vec sig_k = pow(stdev + stdev*arma::randu<arma::vec>(k-1),2);
-    sig_0.subvec(1,k-1) = sig_k;
+    sig_0 = (stdev*0.1) + ((2*stdev)-(stdev*0.1))*arma::randu<arma::vec>(k);
   }
   arma::vec theta_0 = join_vert(mu_0, sig_0);
   if (ar>0){
     theta_0 = join_vert(theta_0, phi);
   }
-  arma::mat P_0 = randTransMat(k, Tsize);
+  arma::mat P_0 = randTransMat(k);
   theta_0 = join_vert(theta_0, vectorise(P_0));
   return(theta_0);
 }

@@ -15,6 +15,7 @@ LR_samp_dist_par(
   burnin,
   max_init,
   dist_converge_iter,
+  init_val_try_dist,
   workers
 )
 }

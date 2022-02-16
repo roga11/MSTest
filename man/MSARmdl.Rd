@@ -13,7 +13,9 @@ MSARmdl(
   maxit = 10000L,
   thtol = 1e-06,
   getHess = 0L,
-  max_init = 500L
+  max_init = 500L,
+  use_diff_init = 1L,
+  init_value = NULL
 )
 }
 \arguments{

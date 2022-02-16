@@ -20,7 +20,7 @@ List calcMSVARResid(List mdl, List mu, int k);
 
 List ts_lagged(arma::mat Y, int ar);
 
-arma::mat randTransMat(int k, int n = 200);
+arma::mat randTransMat(int k);
 
 arma::vec initVals(List mdl, int k, bool msmu, bool msvar);
 

@@ -4,7 +4,7 @@
 \alias{randTransMat}
 \title{Random Transition Matrix}
 \usage{
-randTransMat(k, n = 200L)
+randTransMat(k)
 }
 \arguments{
 \item{k}{number of regimes. Must be greater than or equal to 2.}

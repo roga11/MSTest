@@ -141,8 +141,8 @@ ts_lagged <- function(Y, ar) {
 #' @return transition matrix with randomly generated entries.
 #' 
 #' @export
-randTransMat <- function(k, n = 200L) {
-    .Call(`_MSTest_randTransMat`, k, n)
+randTransMat <- function(k) {
+    .Call(`_MSTest_randTransMat`, k)
 }
 
 #' @title generate initial values for EM Algorithm 
@@ -269,24 +269,24 @@ simuMSVAR <- function(mdl_h0, type = "markov", burnin = 200L) {
 #' 
 #' 
 #' @export
-LR_samp_dist <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter) {
-    .Call(`_MSTest_LR_samp_dist`, mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter)
+LR_samp_dist <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist) {
+    .Call(`_MSTest_LR_samp_dist`, mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist)
 }
 
 #' @title Monte Carlo Likelihood Ratio Test P-value Function 
 #' 
 #' 
 #' @export
-MMCLRpval_fun <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter) {
-    .Call(`_MSTest_MMCLRpval_fun`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter)
+MMCLRpval_fun <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter, init_val_try_dist) {
+    .Call(`_MSTest_MMCLRpval_fun`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter, init_val_try_dist)
 }
 
 #' @title Monte Carlo Likelihood Ratio Test P-value Function 
 #' 
 #' 
 #' @export
-MMCLRpval_fun_max <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter) {
-    .Call(`_MSTest_MMCLRpval_fun_max`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter)
+MMCLRpval_fun_max <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter, init_val_try_dist) {
+    .Call(`_MSTest_MMCLRpval_fun_max`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter, init_val_try_dist)
 }
 
 #' @title Calculate Dufour & Luger (2017) Moment-Based Test-Statistics 
@@ -660,8 +660,8 @@ EMest_VAR <- function(theta_0, mdl, k, optim_options) {
 #' - logLike: the log-likelihood 
 #' 
 #' @export
-MSARmdl <- function(Y, ar, k, msmu = 1L, msvar = 1L, maxit = 10000L, thtol = 1.e-6, getHess = 0L, max_init = 500L) {
-    .Call(`_MSTest_MSARmdl`, Y, ar, k, msmu, msvar, maxit, thtol, getHess, max_init)
+MSARmdl <- function(Y, ar, k, msmu = 1L, msvar = 1L, maxit = 10000L, thtol = 1.e-6, getHess = 0L, max_init = 500L, use_diff_init = 1L, init_value = NULL) {
+    .Call(`_MSTest_MSARmdl`, Y, ar, k, msmu, msvar, maxit, thtol, getHess, max_init, use_diff_init, init_value)
 }
 
 #' @title Markov-switching Vector Autoregressive (VAR) model
