@@ -9,7 +9,9 @@
 #' @export
 LR_samp_dist_par <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist, workers){ 
   N_worker_i <- matrix(rep(floor(N/workers),workers),workers,1)
-  N_worker_i[1:(N-floor(N/workers)*(workers))] <- N_worker_i[1:(N-floor(N/workers)*(workers))] +1 
+  if (sum(N_worker_i)<N){
+    N_worker_i[1:(N-floor(N/workers)*(workers))] <- N_worker_i[1:(N-floor(N/workers)*(workers))] +1  
+  }
   LRN_all <- matrix(0,N,1)
   `%dopar%` <- foreach::`%dopar%`
   LRN_all <- foreach::foreach(wi=1:workers, .inorder = FALSE, .packages = "MSTest") %dopar% {
