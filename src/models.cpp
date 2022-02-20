@@ -383,8 +383,9 @@ List MSloglik(arma::vec theta, List mdl, int k){
   // ============================================================================
   // ----- Compute residuals in each regime
   // ============================================================================
-  mdl["phi"] = phi;
-  arma::mat eps = calcMSResid(mdl, muAR, k);
+  List mdl_tmp  = clone(mdl);
+  mdl_tmp["phi"] = phi;
+  arma::mat eps = calcMSResid(mdl_tmp, muAR, k);
   // ============================================================================
   // ----- Begin Calculating log-likelihood & filtered probabilities
   // ============================================================================
@@ -554,8 +555,9 @@ List EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k){
   // ----- Update estimates for variance
   // ============================================================================
   // ----- Compute new residuals
-  mdl["phi"] = phi_new;
-  arma::mat resid = calcMSResid(mdl, muAR, k);
+  List mdl_tmp = clone(mdl);
+  mdl_tmp["phi"] = phi_new;
+  arma::mat resid = calcMSResid(mdl_tmp, muAR, k);
   // ----- Compute updated sigma
   arma::vec sigma(1+msvar*(k-1), arma::fill::zeros);
   arma::vec sigma_tmp(M, arma::fill::zeros);

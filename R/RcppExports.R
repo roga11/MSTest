@@ -265,6 +265,85 @@ simuMSVAR <- function(mdl_h0, type = "markov", burnin = 200L) {
     .Call(`_MSTest_simuMSVAR`, mdl_h0, type, burnin)
 }
 
+#' @title Calc eq. 2.5 from CHP (2014) where both mean and variance can switch
+#'
+#' @description When alternative has bith switching mean and variance, we take the second 
+#' derivative of the log likelihood function w.r.t mu, phi and sigma.
+#' 
+#' Output from this function is used as input in \emph{chpStat}
+#'
+#' @param mdl List containing model information
+#' @param rho_b bound for rho (nuisance param space)
+#' @param ltmt List conatining derivatives (i.e. is the output when using \emph{chpDmat})
+#' 
+#' @return mu_2t from eq. 2.5 and used in test-statistic caluclation
+#' 
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
+#' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+#' 
+#' @export
+calc_mu2t_mv <- function(mdl, rho, ltmt, hv) {
+    .Call(`_MSTest_calc_mu2t_mv`, mdl, rho, ltmt, hv)
+}
+
+#' @title Calc eq. 2.5 from CHP (2014) where only mean can switch
+#'
+#' @description When alternative only has Switching mean (and not variance), we only take the second 
+#' derivative of the log likelihood function w.r.t mu and not phi or sigma.
+#' 
+#' Output from this function is used as input in \emph{chpStat}
+#'
+#' @param mdl List containing model information
+#' @param rho_b bound for rho (nuisance param space)
+#' @param ltmt List conatining derivatives (i.e. is the output when using \emph{chpDmat})
+#' 
+#' @return mu_2t from eq. 2.5 and used in test-statistic caluclation
+#' 
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
+#' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+#' @export
+calc_mu2t <- function(mdl, rho, ltmt) {
+    .Call(`_MSTest_calc_mu2t`, mdl, rho, ltmt)
+}
+
+#' @title CHP Test Statistic
+#' 
+#' @description Calculate supTS and expTS test-statistics from CHP (2014).
+#'
+#' @param mdl List containing model information
+#' @param rho_b bound for rho (nuisance param space)
+#' @param ltmt List containing  relevant first and second derivatives of log likelihood function.
+#' @param var_switch variance switch indicator
+#' 
+#' @return Test Statistic
+#' 
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
+#' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+#' 
+#' @export
+chpStat <- function(mdl, rho_b, ltmt, var_switch) {
+    .Call(`_MSTest_chpStat`, mdl, rho_b, ltmt, var_switch)
+}
+
+#' @title Bootstrap Critival Values CHP Test
+#'
+#' @description This bootstrap procedure is described on page 771 of CHP (2014)
+#'
+#' @param mdl List containing model information
+#' @param rho_b bound for rho (nuisance param space)
+#' @param N number of simulations
+#' @param var_switch variance switch indicator
+#' 
+#' @return Bootstrap critical values
+#' 
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
+#' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+#' 
+#' @export
+bootCV <- function(mdl, rho_b, N, var_switch) {
+    .Call(`_MSTest_bootCV`, mdl, rho_b, N, var_switch)
+}
+
 #' @title Likelihood Ratio Test Statistic Sample Distribution
 #' 
 #' 
