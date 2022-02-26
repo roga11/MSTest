@@ -19,7 +19,8 @@ MMCLRpval_fun(
   lambda,
   max_init,
   dist_converge_iter,
-  init_val_try_dist
+  init_val_try_dist,
+  workers
 )
 }
 \description{

@@ -95,7 +95,10 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
 //' @export
 // [[Rcpp::export]]
 double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit,
-                     double thtol, int burnin, bool stationary_ind, double lambda, int max_init, int dist_converge_iter, int init_val_try_dist){
+                     double thtol, int burnin, bool stationary_ind, double lambda, int max_init, int dist_converge_iter, 
+                     int init_val_try_dist, int workers){
+  Rcpp::Environment mstest("package:MSTest");
+  Rcpp::Function LR_samp_dist_par = mstest["LR_samp_dist_par"];
   // initialize variables 
   double pval;
   double logL0;
@@ -156,7 +159,12 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
     logL1 = MSloglik_fun(theta_h1, mdl_h1, k1);
     double LRT_0 = -2*(logL0-logL1);
     // simulate under null hypothesis
-    arma::vec LRN_tmp = LR_samp_dist(mdl_h0_tmp, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist);
+    arma::vec LRN_tmp;
+    if(workers>0){
+      LRN_tmp = as<arma::vec>(LR_samp_dist_par(mdl_h0_tmp, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist, workers));
+    }else{
+      LRN_tmp = LR_samp_dist(mdl_h0_tmp, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist);
+    }
     pval = -MCpval(LRT_0, LRN_tmp, "geq");
   }
   return(pval);
@@ -170,8 +178,9 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
 //' @export
 // [[Rcpp::export]]
 double MMCLRpval_fun_max(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, 
-                         double thtol, int burnin,  bool stationary_ind, double lambda, int max_init, int dist_converge_iter, int init_val_try_dist){
-  double pval = -MMCLRpval_fun(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter, init_val_try_dist);
+                         double thtol, int burnin,  bool stationary_ind, double lambda, int max_init, int dist_converge_iter, 
+                         int init_val_try_dist, int workers){
+  double pval = -MMCLRpval_fun(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter, init_val_try_dist, workers);
   return(pval);
 }
 

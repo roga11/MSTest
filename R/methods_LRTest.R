@@ -90,7 +90,6 @@ MCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list())
   }else{
     LRN <- LR_samp_dist(mdl_h0, k1, msmu, msvar, con[["N"]], con[["maxit"]], con[["thtol"]], con[["burnin"]], con[["finite_max_init"]], con[["dist_converge_iter"]], con[["init_val_try_dist"]]) 
   }
-  
   # ----- Compute p-value
   pval <- MCpval(LRT_0, LRN, "geq")
   # ----- Organize output
@@ -180,6 +179,7 @@ MMCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list()
               init_val_try_dist = 1,
               finite_max_init = 100, 
               dist_converge_iter = 100,
+              workers =0,
               type_control = list(maxit = 200))
   # Perform some checks for controls
   nmsC <- names(con)
@@ -226,7 +226,8 @@ MMCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list()
                             mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, msmu = msmu, msvar = msvar, ar = ar, 
                             N = con[["N"]], maxit = con[["maxit"]], thtol = con[["thtol"]], burnin = con[["burnin"]],
                             stationary_ind = con[["stationary_ind"]], lambda = con[["lambda"]], max_init = con[["finite_max_init"]], 
-                            dist_converge_iter = con[["dist_converge_iter"]], init_val_try_dist = con[["init_val_try_dist"]])
+                            dist_converge_iter = con[["dist_converge_iter"]], init_val_try_dist = con[["init_val_try_dist"]],
+                            workers = con[["workers"]])
     MMCLRTest_output[["theta"]] <- mmc_out$par
     MMCLRTest_output[["pval"]] <- -mmc_out$value
   }else if(con[["type"]]=="GenSA"){
@@ -240,7 +241,8 @@ MMCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list()
                             mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, msmu = msmu, msvar = msvar, ar = ar, 
                             N = con[["N"]], maxit = con[["maxit"]], thtol = con[["thtol"]], burnin = con[["burnin"]], 
                             stationary_ind = con[["stationary_ind"]], lambda = con[["lambda"]], max_init = con[["finite_max_init"]], 
-                            dist_converge_iter = con[["dist_converge_iter"]], init_val_try_dist = con[["init_val_try_dist"]])
+                            dist_converge_iter = con[["dist_converge_iter"]], init_val_try_dist = con[["init_val_try_dist"]],
+                            workers = con[["workers"]])
     MMCLRTest_output[["theta"]] <- mmc_out$par
     MMCLRTest_output[["pval"]] <- -mmc_out$value
   }else if(con[["type"]]=="GA"){
@@ -249,7 +251,7 @@ MMCLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list()
                       mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, msmu = msmu, msvar = msvar, ar = ar, 
                       N = con[["N"]], maxit = con[["maxit"]], thtol = con[["thtol"]], burnin = con[["burnin"]],
                       stationary_ind = con[["stationary_ind"]], lambda = con[["lambda"]], max_init = con[["finite_max_init"]], 
-                      dist_converge_iter = con[["dist_converge_iter"]], init_val_try_dist = con[["init_val_try_dist"]],
+                      dist_converge_iter = con[["dist_converge_iter"]], init_val_try_dist = con[["init_val_try_dist"]], workers = con[["workers"]],
                       lower = theta_low, upper = theta_upp, 
                       maxiter = con$type_control[["maxit"]], maxFitness = con[["threshold_stop"]], 
                       monitor = (con[["silence"]]==FALSE), suggestions = t(theta_0))
@@ -290,7 +292,7 @@ BootLRTest <- function(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list(
             init_val_try_dist = 1,
             finite_max_init = 100,
             dist_converge_iter = 100,
-            workers)
+            workers=0)
   # Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
