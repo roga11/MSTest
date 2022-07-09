@@ -2,10 +2,10 @@
 % Please edit documentation in R/RcppExports.R
 \name{MSloglik_fun_min}
 \alias{MSloglik_fun_min}
-\title{Markov-switching AR Log-likelihood objective function Minization}
+\title{Markov-switching AR Log-likelihood objective function Minimization}
 \usage{
 MSloglik_fun_min(theta, mdl, k)
 }
 \description{
-Markov-switching AR Log-likelihood objective function Minization
+Markov-switching AR Log-likelihood objective function Minimization
 }

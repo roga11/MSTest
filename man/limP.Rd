@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{limP}
 \alias{limP}
-\title{Limiting Probabilities of States}
+\title{Ergodic (limiting) Probabilities of States}
 \usage{
 limP(P, k)
 }

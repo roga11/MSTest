@@ -4,38 +4,38 @@
 #include <RcppArmadillo.h>
 using namespace Rcpp;
 
-arma::vec sumfinite(arma::mat x, int ncol = 1);
+arma::mat cov2corr(arma::mat cov_mat);
 
-arma::mat finitemat(arma::mat x);
+arma::vec sig_mattovec(arma::mat sig, int q);
+
+arma::mat sig_vectomat(arma::vec sig, int q);
+
+arma::mat randTransMat(int k);
 
 arma::vec limP(arma::mat P, int k);
 
-List paramList(arma::vec theta, int ar, int k, bool msmu, bool msvar);
+List ts_lagged(arma::mat Y, int ar);
 
-List VARparamList(arma::vec theta, int N, int ar, int k, bool msmu, bool msvar);
+List paramListMS(arma::vec theta, int ar, int k, bool msmu, bool msvar);
+
+List paramListMSVAR(arma::vec theta, int q, int ar, int k, bool msmu, bool msvar);
 
 arma::mat calcMSResid(List mdl, arma::mat mu, int k);
 
 List calcMSVARResid(List mdl, List mu, int k);
 
-List ts_lagged(arma::mat Y, int ar);
+arma::vec initValsMS(List mdl, int k);
 
-arma::mat randTransMat(int k);
-
-arma::vec initVals(List mdl, int k, bool msmu, bool msvar);
-
-arma::vec initVals2(arma::vec theta, int k, bool msmu, bool msvar, arma::vec Y);
-
-arma::vec initValsVAR(arma::vec mu, arma::mat sigma, int k, bool msmu, bool msvar);
-
-List initValsKM(arma::vec Y, int k, bool msmu, bool msvar);
+arma::vec initValsMSVAR(List mdl, int k);
 
 double MCpval(double test_stat, arma::vec null_vec, Rcpp::String type = "geq");
 
 List simuAR(List mdl_h0, int burnin = 200);
 
-List simuMSAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200);
+List simuMS(List mdl_h0, int burnin = 200);
 
-List simuMS(List mdl_h0, Rcpp::String type = "markov", int burnin = 200);
+List simuVAR(List mdl_h0, int burnin = 200);
+
+List simuMSVAR(List mdl_h0, int burnin = 200);
 
 #endif

@@ -4,7 +4,7 @@
 \alias{simuMSVAR}
 \title{Simulate Markov-Switching VAR Model}
 \usage{
-simuMSVAR(mdl_h0, type = "markov", burnin = 200L)
+simuMSVAR(mdl_h0, burnin = 200L)
 }
 \description{
 Simulate Markov-Switching VAR Model

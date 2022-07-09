@@ -4,7 +4,7 @@
 \alias{MMCLRTest}
 \title{Maximized Monte Carlo Likelihood Ratio Test}
 \usage{
-MMCLRTest(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list())
+MMCLRTest(Y, ar, k0, k1, control = list())
 }
 \value{
 

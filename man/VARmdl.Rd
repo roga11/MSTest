@@ -4,7 +4,7 @@
 \alias{VARmdl}
 \title{Fitting Vector Autoregressive Model}
 \usage{
-VARmdl(Y, ar, intercept = 1L)
+VARmdl(Y, ar, intercept = 1L, getSE = 0L)
 }
 \description{
 This function estimates a vector autoregresive series

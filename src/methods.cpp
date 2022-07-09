@@ -3,8 +3,20 @@
 #include "models.h"
 //[[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
+
 // ==============================================================================
-//' @title Sum of only finite values of columns of a matrix (of vector)
+//' @title convert covariance matrix to correlation matrix
+//' 
+//' 
+//' @export
+// [[Rcpp::export]]
+arma::mat cov2corr(arma::mat cov_mat){
+  arma::mat corr_mat = inv(diagmat(sqrt(cov_mat)))*cov_mat*inv(diagmat(sqrt(cov_mat)));
+  return(corr_mat);
+}
+
+// ==============================================================================
+//' @title Converts var-covar matrix to vector representaion
 //' 
 //' @description 
 //' 
@@ -13,17 +25,16 @@ using namespace Rcpp;
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::vec sumfinite(arma::mat x, int ncol = 1){
-  arma::vec finite_sums(ncol, arma::fill::zeros);
-  for (int xc = 0; xc<ncol; xc++){
-    arma::vec vec_tmp = x.col(xc);
-    arma::vec finite_vec = vec_tmp.rows(find_finite(vec_tmp));
-    finite_sums(xc) = sum(finite_vec);
+arma::vec sig_mattovec(arma::mat sig, int q){
+  arma::vec sigma_vec = trans(sig.row(0));
+  for (int xq = 1; xq<q; xq++){
+    sigma_vec = join_vert(sigma_vec, trans(sig.submat(xq,xq,xq,q-1)));
   }
-  return(finite_sums);
+  return(sigma_vec);
 }
+
 // ==============================================================================
-//' @title returns finite components of matrix
+//' @title Converts var-covar matrix vector representaion back to matrix 
 //' 
 //' @description 
 //' 
@@ -32,52 +43,44 @@ arma::vec sumfinite(arma::mat x, int ncol = 1){
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::mat finitemat(arma::mat x){
-  int nrow = x.n_rows;
-  int ncol = x.n_cols;
-  arma::mat finite_matrix(nrow, ncol, arma::fill::zeros);
-  for (int xc = 0; xc<ncol; xc++){
-    arma::vec finite_vector(nrow, arma::fill::zeros);
-    arma::vec vec_tmp = x.col(xc);
-    finite_vector.rows(find_finite(vec_tmp)) = vec_tmp.rows(find_finite(vec_tmp));
-    finite_matrix.col(xc) = finite_vector;
+arma::mat sig_vectomat(arma::vec sig, int q){
+  arma::mat sigma_mat(q, q, arma::fill::zeros);
+  int count = 0;
+  for (int xq = 0; xq<q; xq++){
+    for (int xqq = xq; xqq<q; xqq++){
+      sigma_mat(xq,xqq) = sig(count);
+      sigma_mat(xqq,xq) = sig(count);
+      count += 1;
+    }
   }
-  return(finite_matrix);
+  return(sigma_mat);
 }
+
+
 // ==============================================================================
-//' @title musigGrid cpp version (TESTING FOR SPEED - SLOWER)
+//' @title Random Transition Matrix
 //' 
+//' @description This function creates a (kxk) random transition matrix
+//' 
+//' @param k number of regimes. Must be greater than or equal to 2. 
+//' @param n number of random sample to use. By default it is 100 but this can be set to length of TS for example
+//'  
+//' 
+//' @return transition matrix with randomly generated entries.
 //' 
 //' @export
 // [[Rcpp::export]]
-List musigGrid_cpp(arma::vec mu, arma::vec sig, int k, int ar){
-  Rcpp::Function expGrid("expand.grid");
-  Rcpp::Function asMatrix("as.matrix");
-  // create grid of regimes
-  arma::vec repk(k,arma::fill::ones);
-  repk = cumsum(repk);
-  List mu_lx(ar+1);
-  List sig_lx(ar+1);
-  List state_lx(ar+1);
-  for (int xi = 0; xi<(ar+1);xi++){
-    mu_lx[xi] = mu;
-    sig_lx[xi] = sig;
-    state_lx[xi] = repk;
-  }
-  arma::mat mu_stategrid = as<arma::mat>(asMatrix(expGrid(mu_lx)));
-  arma::mat sig_stategrid = as<arma::mat>(asMatrix(expGrid(sig_lx)));
-  arma::mat state_indicator = as<arma::mat>(asMatrix(expGrid(state_lx)));
-  // keep only relevant parts
-  arma::vec sig_stategrid_out = sig_stategrid.col(0);
-  arma::vec state_indicator_out = state_indicator.col(0);
-  List musig_out;
-  musig_out["mu"] = mu_stategrid;
-  musig_out["sig"] = sig_stategrid_out;
-  musig_out["state_ind"] = state_indicator_out;
-  return(musig_out);
+arma::mat randTransMat(int k){
+  arma::mat P = reshape(arma::randu(k*k), k, k); 
+  arma::vec PcolSums = trans(arma::sum(P,0));
+  for (int xk = 0; xk<k; xk++){
+    P.col(xk) = P.col(xk)/PcolSums(xk);
+  } 
+  return(P);
 }
+
 // ==============================================================================
-//' @title Limiting Probabilities of States
+//' @title Ergodic (limiting) Probabilities of States
 //' 
 //' @description Takes a transition matrix and returns the limiting probabilities
 //' 
@@ -96,6 +99,34 @@ arma::vec limP(arma::mat P, int k){
   arma::vec pinf = solve(trans(Atmp)*Atmp,trans(Atmp))*trans(ep);
   return (pinf);
 }
+
+// ==============================================================================
+//' @title Lagged Time Series Data
+//' 
+//' @description This function takes a (Tx1) vector Y and returns the (T-px1) vector y and matrix of lagged observations.
+//' 
+//' @param Y vector with time series observations. Required argument. 
+//' @param ar integer for the number of lags to use in estimation. Must be greater than or equal to 1. Default is 1.
+//' 
+//' @return List with vector y (vector of lagged Y) and matrix X of lagged observations.
+//' 
+//' @export
+// [[Rcpp::export]]
+List ts_lagged(arma::mat Y, int ar){
+  int Tsize = Y.n_rows;
+  int N = Y.n_cols;
+  arma::mat y = Y.submat(ar,0,Tsize-1,N-1);
+  int n = Tsize - ar;
+  arma::mat X(n, ar*N, arma::fill::zeros);
+  for (int xp = 0; xp<ar; xp++){
+    X.submat(0,N*xp,n-1,N*xp+N-1) = Y.submat(ar-(xp+1),0,Tsize-(xp+1)-1,N-1);
+  }
+  List lagged_output;
+  lagged_output["y"] = y;
+  lagged_output["X"] = X;
+  return(lagged_output);
+}
+
 // ==============================================================================
 //' @title Parameter List
 //' 
@@ -111,20 +142,17 @@ arma::vec limP(arma::mat P, int k){
 //' 
 //' @export
 // [[Rcpp::export]]
-List paramList(arma::vec theta, int ar, int k, bool msmu, bool msvar){
+List paramListMS(arma::vec theta, int ar, int k, bool msmu, bool msvar){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function musigGrid = mstest["musigGrid"];
   Rcpp::Function transMatAR = mstest["transMatAR"];
-  arma::vec repk(k, arma::fill::ones);
   // ----- Mean for each regime 
   arma::vec mu = theta.subvec(0, msmu*(k-1));
   // ----- Variance for each regime 
   arma::vec sig = theta.subvec(1+msmu*(k-1),1+msmu*(k-1)+msvar*(k-1));
   // ----- Phi vector
-  arma::vec phi(std::max(ar,1), arma::fill::zeros);
-  if (ar>0){
-    phi =  theta.subvec(2+msmu*(k-1)+msvar*(k-1), 2+msmu*(k-1)+msvar*(k-1)+ar-1);
-  }
+  arma::vec phi(ar, arma::fill::zeros);
+  phi =  theta.subvec(2+msmu*(k-1)+msvar*(k-1), 2+msmu*(k-1)+msvar*(k-1)+ar-1);
   // ----- Transition probabilities 
   arma::mat P = reshape(theta.subvec(2+msmu*(k-1)+msvar*(k-1) + ar, 2+msmu*(k-1)+msvar*(k-1) + ar + k*k - 1),k, k);
   // Regime limiting probabilities
@@ -167,17 +195,16 @@ List paramList(arma::vec theta, int ar, int k, bool msmu, bool msvar){
 //' 
 //' @export
 // [[Rcpp::export]]
-List VARparamList(arma::vec theta, int N, int ar, int k, bool msmu, bool msvar){
+List paramListMSVAR(arma::vec theta, int q, int ar, int k, bool msmu, bool msvar){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function musigVARGrid = mstest["musigVARGrid"];
   Rcpp::Function transMatAR = mstest["transMatAR"];
-  arma::vec repk(k, arma::fill::ones);
   // ----- Mean for each regime 
-  arma::mat mu_k(k, N, arma::fill::zeros);
-  arma::vec mu = theta.subvec(0, N+N*msmu*(k-1)-1);
+  arma::mat mu_k(k, q, arma::fill::zeros);
+  arma::vec mu = theta.subvec(0, q+q*msmu*(k-1)-1);
   if (msmu==TRUE){
     for (int xk = 0; xk<k; xk++){
-      mu_k.row(xk) = trans(mu.subvec(xk*N,xk*N+N-1));
+      mu_k.row(xk) = trans(mu.subvec(xk*q,xk*q+q-1));
     }
   }else{
     for (int xk = 0; xk<k; xk++){
@@ -185,43 +212,25 @@ List VARparamList(arma::vec theta, int N, int ar, int k, bool msmu, bool msvar){
     }
   }
   // ----- Variance for each regime 
-  int sigN = (N*(N+1))/2;
-  arma::vec sig = theta.subvec(N+N*msmu*(k-1),N+N*msmu*(k-1)+sigN+sigN*msvar*(k-1)-1);
+  int sigN = (q*(q+1))/2;
+  arma::vec sig = theta.subvec(q+q*msmu*(k-1),q+q*msmu*(k-1)+sigN+sigN*msvar*(k-1)-1);
   List sigma(k);
   if (msvar==TRUE){
     for (int xk = 0; xk<k; xk++){
-      arma::mat sigma_tmp(N,N,arma::fill::zeros);
       arma::vec sig_tmp = sig.subvec(sigN*xk,sigN*xk+sigN-1);
-      int count = 0;
-      for (int xn = 0; xn<N; xn++){
-        for (int xnn = xn; xnn<N; xnn++){
-          sigma_tmp(xn,xnn) = sig_tmp(count);
-          sigma_tmp(xnn,xn) = sig_tmp(count);
-          count=count+1;
-        }
-      }
-      sigma[xk] = sigma_tmp;
+      sigma[xk] = sig_vectomat(sig_tmp, q);
     } 
   }else{
-    arma::mat sigma_tmp(N,N,arma::fill::zeros);
-    int count = 0;
-    for (int xn = 0; xn<N; xn++){
-      for (int xnn = xn; xnn<N; xnn++){
-        sigma_tmp(xn,xnn) = sig(count);
-        sigma_tmp(xnn,xn) = sig(count);
-        count=count+1;
-      }
-    }
     for (int xk = 0; xk<k; xk++){
-      sigma[xk] = sigma_tmp;
+      sigma[xk] = sig_vectomat(sig, q);
     }
   }
   // ----- Phi vector
-  int phiN = N+N*msmu*(k-1)+sigN+sigN*msvar*(k-1);
-  arma::vec phi_tmp =  theta.subvec(phiN, phiN+ N*N*ar-1);
-  arma::mat phi = reshape(phi_tmp, N*ar, N);
+  int phiN = q+q*msmu*(k-1)+sigN+sigN*msvar*(k-1);
+  arma::vec phi_tmp =  theta.subvec(phiN, phiN+ q*q*ar-1);
+  arma::mat phi = reshape(phi_tmp, q*ar, q);
   // ----- Transition probabilities 
-  int PN = N+N*msmu*(k-1)+sigN+sigN*msvar*(k-1)+N*N*ar;
+  int PN = q+q*msmu*(k-1)+sigN+sigN*msvar*(k-1)+q*q*ar;
   arma::mat P = reshape(theta.subvec(PN, PN + k*k - 1), k, k);
   // Regime limiting probabilities
   arma::vec pinf = limP(P, k);
@@ -275,19 +284,15 @@ arma::mat calcMSResid(List mdl, arma::mat mu, int k){
   arma::mat ms_y = y*repvec;
   arma::mat resid(Tsize, M, arma::fill::zeros);
   // ---------- Compute Residuals 
-  if(ar>0){
-    arma::mat z = ms_y - repmu*trans(mu.col(0)); // [y(t) - mu_s(t))]
-    arma::mat x = mdl["x"];
-    arma::vec phi = mdl["phi"];
-    arma::mat xz(Tsize, M, arma::fill::zeros);
-    for (int xkp = 0; xkp<M; xkp++){
-      arma::mat zx_tmp = x - repmu*mu.submat(xkp,1,xkp,ar); // [y(t-i) - mu_s(t-i))]
-      xz.col(xkp) = zx_tmp*phi;
-    }
-    resid = z - xz;
-  }else{
-    resid = ms_y - repmu*trans(mu);
+  arma::mat z = ms_y - repmu*trans(mu.col(0)); // [y(t) - mu_s(t))]
+  arma::mat x = mdl["x"];
+  arma::vec phi = mdl["phi"];
+  arma::mat xz(Tsize, M, arma::fill::zeros);
+  for (int xkp = 0; xkp<M; xkp++){
+    arma::mat zx_tmp = x - repmu*mu.submat(xkp,1,xkp,ar); // [y(t-i) - mu_s(t-i))]
+    xz.col(xkp) = zx_tmp*phi;
   }
+  resid = z - xz;
   return(resid);
 }
 // ==============================================================================
@@ -332,169 +337,91 @@ List calcMSVARResid(List mdl, List mu, int k){
   }
   return(resid);
 }
-// ==============================================================================
-//' @title Lagged Time Series Data
-//' 
-//' @description This function takes a (Tx1) vector Y and returns the (T-px1) vector y and matrix of lagged observations.
-//' 
-//' @param Y vector with time series observations. Required argument. 
-//' @param ar integer for the number of lags to use in estimation. Must be greater than or equal to 1. Default is 1.
-//' 
-//' @return List with vector y (vector of lagged Y) and matrix X of lagged observations.
-//' 
-//' @export
-// [[Rcpp::export]]
-List ts_lagged(arma::mat Y, int ar){
-  int Tsize = Y.n_rows;
-  int N = Y.n_cols;
-  arma::mat y = Y.submat(ar,0,Tsize-1,N-1);
-  int n = Tsize - ar;
-  arma::mat X(n, ar*N, arma::fill::zeros);
-  for (int xp = 0; xp<ar; xp++){
-    X.submat(0,N*xp,n-1,N*xp+N-1) = Y.submat(ar-(xp+1),0,Tsize-(xp+1)-1,N-1);
-  }
-  List lagged_output;
-  lagged_output["y"] = y;
-  lagged_output["X"] = X;
-  return(lagged_output);
-}
 
 // ==============================================================================
-//' @title Random Transition Matrix
-//' 
-//' @description This function creates a (kxk) random transition matrix
-//' 
-//' @param k number of regimes. Must be greater than or equal to 2. 
-//' @param n number of random sample to use. By default it is 100 but this can be set to length of TS for example
-//'  
-//' 
-//' @return transition matrix with randomly generated entries.
-//' 
-//' @export
-// [[Rcpp::export]]
-arma::mat randTransMat(int k){
-  arma::mat P = reshape(arma::randu(k*k), k, k); 
-  arma::vec PcolSums = trans(arma::sum(P,0));
-  for (int xk = 0; xk<k; xk++){
-    P.col(xk) = P.col(xk)/PcolSums(xk);
-  } 
-  return(P);
-}
-
-
-// ==============================================================================
-//' @title generate initial values for EM Algorithm 
+//' @title generate initial values for MS model
 //' 
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::vec initVals(List mdl, int k, bool msmu, bool msvar){
-  int ar = mdl["ar"];
+arma::vec initValsMS(List mdl, int k){
   arma::vec phi = mdl["phi"];
   double mu = mdl["mu"];
   double stdev = mdl["stdev"];
+  bool msmu = mdl["msmu"];
+  bool msvar = mdl["msvar"];
+  // pre-allocate mu and sigma vectors
   arma::vec mu_0(1+msmu*(k-1), arma::fill::zeros);
   arma::vec sig_0(1+msvar*(k-1), arma::fill::zeros);
+  // Set initial values using linear model if no switch
   mu_0(0) = mu;
   sig_0(0) = pow(stdev,2);
+  // initial values for mu around linear model mu when switch
   if (msmu==TRUE){
     mu_0 = mu + (3*stdev)*arma::randn<arma::vec>(k);
   }
+  // initial values for stdev around linear model stdev when switch
   if (msvar==TRUE){
     sig_0 = (stdev*0.1) + ((2*stdev)-(stdev*0.1))*arma::randu<arma::vec>(k);
   }
+  // create vector for initial values
   arma::vec theta_0 = join_vert(mu_0, sig_0);
-  if (ar>0){
-    theta_0 = join_vert(theta_0, phi);
-  }
+  theta_0 = join_vert(theta_0, phi);
   arma::mat P_0 = randTransMat(k);
   theta_0 = join_vert(theta_0, vectorise(P_0));
   return(theta_0);
 }
 
 // ==============================================================================
-//' @title generate initial values for EM Algorithm 
+//' @title generate initial values for MS-VAR model
 //' 
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::vec initValsVAR(arma::vec mu, arma::mat sigma, int k, bool msmu, bool msvar){
-  int N = mu.n_elem;
-  arma::mat mu_k(1+msmu*(k-1), N, arma::fill::zeros);
-  arma::mat mu_k_tmp(k-1, N, arma::fill::zeros);
+arma::vec initValsMSVAR(List mdl, int k){
+  arma::vec phi = mdl["phi"];
+  arma::vec mu = mdl["mu"];
+  arma::mat sigma = mdl["sigma"];
+  bool msmu = mdl["msmu"];
+  bool msvar = mdl["msvar"];
+  int q = mu.n_elem;
+  int sigN = (q*(q+1))/2;
+  // pre-allocate mu and sigma matrices
+  arma::mat mu_0(1+msmu*(k-1), q, arma::fill::zeros);
+  arma::mat sigma_0(1+msvar*(k-1), sigN, arma::fill::zeros);
+  // Set initial values using linear model if no switch
+  mu_0.row(0) = trans(mu);
+  sigma_0.row(0) = trans(sig_mattovec(sigma, q));
+  // initial values for mu around linear model mu when switch
   if (msmu==TRUE){
-    for(int xk = 0; xk<(k-1);xk++){
-      mu_k_tmp.row(xk) = trans(mu + arma::randn());
-    }
-    mu_k= join_cols(trans(mu),mu_k_tmp);
-  }else{
-    mu_k = mu;
+    arma::mat repvec(k,1,arma::fill::ones);
+    mu_0 =   repvec*trans(mu) + (repvec*trans(3*sqrt(sigma.diag())))%arma::mat(k,q,arma::fill::randn);
   }
-  arma::vec mu_out = vectorise(trans(mu_k));
-  int sigN = (N*(N+1))/2;
-  arma::mat sigma_k(1+msvar*(k-1), sigN, arma::fill::zeros);
-  arma::vec sigma_k1 = trans(sigma.row(0));
-  for (int xn = 1; xn<N; xn++){
-    sigma_k1 = join_vert(sigma_k1, trans(sigma.submat(xn,xn,xn,N-1)));
-  }
+  arma::vec mu_out = vectorise(trans(mu_0));
+  // initial values for stdev around linear model stdev when switch
   if (msvar==TRUE){
-    arma::mat sigma_k_tmp(k-1, sigN, arma::fill::zeros);
-    for(int xk = 0; xk<(k-1);xk++){
-      sigma_k_tmp.row(xk) = trans(sigma_k1*(2+xk));
+    arma::vec sigma_vec_tmp = sig_mattovec(sigma, q);
+    arma::mat sig_mat_tmp = sig_vectomat((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
+    sig_mat_tmp = sig_mat_tmp*trans(sig_mat_tmp);
+    sig_mat_tmp = sig_mat_tmp + q*arma::speye(q,q);
+    sigma_0.row(0) = trans(sig_mattovec(sig_mat_tmp, q));
+    for (int xk = 1; xk<k; xk++){
+      arma::mat sig_mat_tmp = sig_vectomat((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
+      sig_mat_tmp = sig_mat_tmp*trans(sig_mat_tmp);
+      sig_mat_tmp = sig_mat_tmp + q*arma::speye(q,q);
+      sigma_0.row(xk) = trans(sig_mattovec(sig_mat_tmp, q));
     }
-    sigma_k = join_cols(trans(sigma_k1), sigma_k_tmp);
-    }else{
-      sigma_k = trans(sigma_k1);
-    }
-  arma::vec sigma_out = vectorise(trans(sigma_k));
+  }
+  arma::vec sigma_out = vectorise(trans(sigma_0));
+  // create vector for initial values
   arma::vec theta_0 = join_vert(mu_out, sigma_out);
+  theta_0 = join_vert(theta_0, vectorise(phi));
+  arma::mat P_0 = randTransMat(k);
+  theta_0 = join_vert(theta_0, vectorise(P_0));
   return(theta_0);
 }
-// ==============================================================================
-//' @title generate initial values for EM Algorithm using Kmeans algorithm 
-//' 
-//' 
-//' @export
-// [[Rcpp::export]]
-List initValsKM(arma::vec Y, int k, bool msmu, bool msvar){
-  Rcpp::Function kmeans("kmeans");
-  int Tsize = Y.n_elem;
-  // ----- use k-mean to get initial values
-  List kclust = kmeans(wrap(Y),k);
-  // predefine mean and standard dev. variables
-  arma::vec mu(k, arma::fill::zeros);
-  arma::vec sig(k, arma::fill::zeros);
-  arma::vec p(k,arma::fill::zeros);
-  // use loop to fill these variables
-  arma::vec state_ind = kclust["cluster"];
-  arma::vec repone(Tsize,arma::fill::ones);
-  for (int xi = 1; xi<=k; xi++){
-    mu(xi-1) = as_scalar(mean(Y.rows(find(state_ind==xi))));
-    sig(xi-1) = as_scalar(pow(stddev(Y.rows(find(state_ind==xi))),2));
-    p(xi-1) = as_scalar(sum(repone.rows(find(state_ind==xi))))/Tsize;
-  }
-  if (msmu == FALSE){
-    arma::vec repmu(k, arma::fill::ones);
-    mu = repmu*mean(Y);
-  }
-  if (msvar == FALSE){
-    arma::vec repsig(k, arma::fill::ones);
-    sig = repsig*pow(stddev(Y),2);
-  }
-  arma::mat P(k, k, arma::fill::zeros);
-  for (int xk = 0; xk<k; xk++){
-    arma::vec ptmp(k,arma::fill::ones);
-    ptmp = ptmp*((1-p(xk))/(k-1));
-    ptmp(xk) = p(xk);
-    P.col(xk) = ptmp;
-  }
-  List init;
-  init["mu"] = mu;
-  init["sig"] = sig;
-  init["p"] = p;
-  init["P"] = P;
-  return(init);
-}
+
+
 // ==============================================================================
 //' @title Calculate MC P-Value
 //' 
@@ -587,7 +514,7 @@ List simuAR(List mdl_h0, int burnin = 200){
 //' 
 //' @export
 // [[Rcpp::export]]
-List simuMSAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
+List simuMS(List mdl_h0, int burnin = 200){
   // ----- Obtain parameters
   int n = mdl_h0["n"];
   arma::vec phi = mdl_h0["phi"];
@@ -596,12 +523,10 @@ List simuMSAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
   int ar = mdl_h0["ar"];
   int k = mdl_h0["k"];
   arma::mat P = mdl_h0["P"];
-  //arma::vec intercept = mu*(1-sum(phi));
+  arma::vec pinf = limP(P, k);
   // vector for mean and standard dev at each time t
   arma::vec mu_t(n+burnin, arma::fill::zeros);
   arma::vec std_t(n+burnin, arma::fill::zeros);
-  // pre-fill limiting probabilities (if type = 'mixture' P and pinf will be the same)
-  arma::vec pinf(k, arma::fill::zeros);
   // Simulate data
   arma::vec series(n+burnin,arma::fill::zeros);
   arma::vec state_series(n+burnin,arma::fill::zeros);
@@ -614,38 +539,19 @@ List simuMSAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
   // ----- Simulate series
   arma::vec repvec(k,arma::fill::ones);
   arma::vec state_ind = cumsum(repvec)-1;
-  if (type == "markov"){
-    for (int xt = ar; xt<n+burnin; xt++){
-      // Get new state
-      arma::vec w_temp = P.col(state);
-      arma::vec state_mat = cumsum(w_temp);
-      state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
-      state_series(xt) = state;
-      // generate new obs
-      arma::vec ytmp = flipud(series.subvec((xt-ar),(xt-1)));
-      arma::vec mu_lag = flipud(mu_t.subvec((xt-ar),(xt-1))); 
-      series(xt) = as_scalar(mu(state) + (trans(ytmp-mu_lag))*phi + arma::randn()*std(state));
-      mu_t(xt) = mu(state);
-      std_t(xt) = std(state);
-    }
-    pinf = limP(P, k);
+  for (int xt = ar; xt<n+burnin; xt++){
+    // Get new state
+    arma::vec w_temp = P.col(state);
+    arma::vec state_mat = cumsum(w_temp);
+    state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
+    state_series(xt) = state;
+    // generate new obs
+    arma::vec ytmp = flipud(series.subvec((xt-ar),(xt-1)));
+    arma::vec mu_lag = flipud(mu_t.subvec((xt-ar),(xt-1))); 
+    series(xt) = as_scalar(mu(state) + (trans(ytmp-mu_lag))*phi + arma::randn()*std(state));
+    mu_t(xt) = mu(state);
+    std_t(xt) = std(state);
   }
-  // FIX 'mixture' TO WORK WITH AR (SPECIFICALLY, ADD FIRST AR OBSERVATIONS)
-  //if (type == "mixture"){
-  //  pinf = P;
-  //  for (int xt = ar; xt<n+burnin; xt++){
-      // Get new state
-  //    arma::vec state_mat = cumsum(pinf);
-  //    state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
-  //    state_series(xt) = state; 
-      // generate new obs
-  //    arma::vec ytmp = flipud(series.subvec((xt-ar),(xt-1)));
-  //    arma::vec mu_lag = flipud(mu_t.subvec((xt-ar),(xt-1))); 
-  //    series(xt) = as_scalar(mu(state) + (trans(ytmp-mu_lag))*phi + arma::randn()*std(state));
-  //    mu_t(xt) = mu(state);
-  //    std_t(xt) = std(state);
-  //}
-  //}
   // ----- Organize output
   arma::vec series_out = series.subvec(burnin,n+burnin-1);
   arma::vec state_series_out = state_series.subvec(burnin,n+burnin-1);
@@ -654,100 +560,14 @@ List simuMSAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
   List simu_output;
   simu_output["y"] = series_out;
   simu_output["St"] = state_series_out;
-  simu_output["n"] = n;
-  simu_output["phi"] = phi;
-  simu_output["mu"] = mu;
-  simu_output["stdev"] = std;
   simu_output["mu_t"] = mu_t_out;
-  simu_output["stdev_t"] = std_t_out;
+  //simu_output["stdev_t"] = std_t_out;
   simu_output["P"] = P;
   simu_output["pinf"] = pinf;
   simu_output["mdl"] = mdl_h0;
   return(simu_output);
 }
 
-// ==============================================================================
-//' @title Simulate Markov-switching  Series
-//' 
-//' @description This function simulates a Markov-switching  series
-//' 
-//' @param mdl_h0 List containing series properties such as n: length, ar: number of autoregressive lags, 
-//' stdev: standard deviation, mu: mean of process, phi: vector of autoregressive coefficients, P: transition matrix (if type="markov")
-//' or vector of component weights (if type="mixture"), k: number of regimes.
-//' @param type determines type of St is a Markov process or a random mixture. Default is "markov" 
-//' @param burnin number of simulated observations to remove from beginning. By assumption, series begins in state 1 
-//' so it is recommended to use burnin to avoid dependence on this assumption. Default is 200.
-//' 
-//' @return List with Markov-switching series and its properties
-//' 
-//' @export
-// [[Rcpp::export]]
-List simuMS(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
-  // Obtain parameters
-  int n = mdl_h0["n"];
-  arma::vec phi = mdl_h0["phi"];
-  arma::vec mu = mdl_h0["mu"];
-  arma::vec std = mdl_h0["stdev"];
-  int k = mdl_h0["k"];
-  arma::mat P = mdl_h0["P"];
-  // pre-fill limiting probabilities (if type = 'mixture' P and pinf will be the same)
-  arma::vec pinf(k, arma::fill::zeros);
-  // Simulate data
-  arma::vec series(n+burnin,arma::fill::zeros);
-  arma::vec state_series(n+burnin,arma::fill::zeros);
-  // initialize assuming series begins in state 1 (use burnin to reduce dependence on this assumption)
-  int state = 0;
-  // Simulate series
-  arma::vec repvec(k, arma::fill::ones);
-  arma::vec state_ind = cumsum(repvec)-1;
-  if (type == "markov"){
-    for (int xt = 0; xt<n+burnin; xt++){
-      // Get new state
-      arma::vec w_temp = P.col(state);
-      arma::vec state_mat = cumsum(w_temp);
-      state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
-      state_series(xt) = state;
-      // generate new obs
-      series(xt) = mu(state) + arma::randn()*std(state);
-    }
-    arma::vec pinf = limP(P, k);
-  }
-  if (type == "mixture"){
-    pinf = P;
-    for (int xt = 0; xt<n+burnin; xt++){
-      // Get new state
-      arma::vec state_mat = cumsum(pinf);
-      state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
-      state_series(xt) = state; 
-      // generate new obs
-      series(xt) = mu(state) + arma::randn()*std(state);
-    }
-  }
-  // organize output
-  arma::vec series_out = series.subvec(burnin,n+burnin-1);
-  arma::vec state_series_out = state_series.subvec(burnin,n+burnin-1);
-  List simu_output;
-  simu_output["y"] = series_out;
-  simu_output["St"] = state_series_out;
-  simu_output["n"] = n;
-  simu_output["phi"] = phi;
-  simu_output["mu"] = mu;
-  simu_output["stdev"] = std;
-  simu_output["P"] = P;
-  simu_output["pinf"] = pinf;
-  return(simu_output);
-}
-
-// ==============================================================================
-//' @title convert covariance matrix to correlation matrix
-//' 
-//' 
-//' @export
-// [[Rcpp::export]]
-arma::mat cov2corr(arma::mat cov_mat){
-  arma::mat corr_mat = inv(diagmat(sqrt(cov_mat)))*cov_mat*inv(diagmat(sqrt(cov_mat)));
-  return(corr_mat);
-}
 // ==============================================================================
 //' @title Simulate VAR Model
 //' 
@@ -782,31 +602,22 @@ List simuVAR(List mdl_h0, int burnin = 200){
   arma::vec nu_tmp = (arma::eye(N*ar,N*ar) - F)*mu_tmp;
   arma::vec nu = nu_tmp.subvec(0,N-1);
   // Simulate process 
-  arma::mat Z(Tsize+burnin-ar,N*ar, arma::fill::zeros);
-  arma::mat Y(Tsize+burnin-ar,N, arma::fill::zeros);
-  arma::vec Zt = vectorise(trans(eps_corr.rows(0,ar-1)));
-  for (int xt = 0; xt<(Tsize+burnin-ar);xt++){
-    Z.row(xt) = trans(Zt);
-    Y.row(xt) = trans(nu) + Z.row(xt)*trans(phimat) + eps_corr.row(xt+ar);
-    if (ar==1){
-      Zt = trans(Y.row(xt));
-    }else{
-      arma::vec Zt_tmp = Zt.subvec(0,N*(ar-1)-1);
-      Zt = join_vert(trans(Y.row(xt)), Zt_tmp);
-    }
+  arma::mat Y(Tsize+burnin, N, arma::fill::zeros);
+  Y.rows(0,ar-1) = repmu*trans(nu) + eps_corr.rows(0,ar-1);
+  for (int xt = ar; xt<(Tsize+burnin); xt++){
+    arma::mat Ytmp = flipud(Y.rows((xt-ar),(xt-1)));
+    Y.row(xt) = trans(nu) + trans(vectorise(trans(Ytmp)))*trans(phimat) + eps_corr.row(xt);
   }
-  arma::mat Z_out = Z.submat(burnin,0,Tsize+burnin-ar-1,N*ar-1);
-  arma::mat Y_out = Y.submat(burnin,0,Tsize+burnin-ar-1,N-1);
+  arma::mat Y_out = Y.submat(burnin,0,Tsize+burnin-1,N-1);
+  arma::mat eps_out = eps.submat(burnin,0,Tsize+burnin-1,N-1);
+  arma::mat eps_corr_out = eps_corr.submat(burnin,0,Tsize+burnin-1,N-1);
   // Output
   List simuVAR_out;
-  simuVAR_out["eps"] = eps;
+  simuVAR_out["y"] = Y_out;
   simuVAR_out["corr_mat"] = corr_mat;
   simuVAR_out["cholesktmat"] = C;
-  simuVAR_out["eps_corr"] = eps_corr;
-  simuVAR_out["Z"] = Z_out;
-  simuVAR_out["Y"] = Y_out;
   simuVAR_out["F_comp"] = F;
-  simuVAR_out["coef"] = join_rows(nu,phimat);
+  simuVAR_out["mdl"] = mdl_h0;
   return(simuVAR_out);
 }
 
@@ -817,18 +628,19 @@ List simuVAR(List mdl_h0, int burnin = 200){
 //' 
 //' @export
 // [[Rcpp::export]]
-List simuMSVAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
+List simuMSVAR(List mdl_h0, int burnin = 200){
   arma::mat mu = mdl_h0["mu"];
   List cov_matLs = mdl_h0["sigma"];
   int Tsize = mdl_h0["n"];
   arma::mat phimat = mdl_h0["phi"];
   int ar = mdl_h0["ar"];
-  // Number of time series variables
   int N = mu.n_cols;
-  // Number of regimes
   int k = mdl_h0["k"];
-  //Transition matrix
   arma::mat P = mdl_h0["P"];
+  arma::vec  pinf = limP(P, k);
+  // vector for mean and standard dev at each time t
+  arma::mat mu_t(Tsize+burnin, N, arma::fill::zeros);
+  List sigma_t(Tsize+burnin);
   // Get companion form matrix
   arma::mat diagmat = arma::eye(N*(ar-1), N*(ar-1));
   arma::mat diagzero(N*(ar-1),N,arma::fill::zeros);
@@ -841,8 +653,8 @@ List simuMSVAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
   double pi = arma::datum::pi;
   arma::vec repmu(ar,arma::fill::ones);
   for (int xk = 0; xk<k; xk++){
-    arma::mat U1(Tsize+burnin+ar, N, arma::fill::randu);
-    arma::mat U2(Tsize+burnin+ar, N, arma::fill::randu);
+    arma::mat U1(Tsize+burnin, N, arma::fill::randu);
+    arma::mat U2(Tsize+burnin, N, arma::fill::randu);
     arma::mat cov_mat_k = cov_matLs[xk];
     arma::mat eps_k = trans(arma::diagmat(sqrt(cov_mat_k))*trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
     // add correlations
@@ -851,55 +663,45 @@ List simuMSVAR(List mdl_h0, Rcpp::String type = "markov", int burnin = 200){
     arma::mat C = chol(corr_mat_k, "lower");
     arma::mat eps_corr = trans(C*trans(eps_k));
     epsLs[xk] = eps_corr;
-    // get constant vec (*****NOTE: DO NOT USE CONSTANT! USE mu_St (Y_t-1 - mu_St-1)*PHI_1. SEE simuMSAR() FOR EXAMPLE)
-    arma::vec mu_tmp = vectorise(trans(repmu*mu.row(xk)));
-    arma::vec nu_k_tmp = (arma::eye(N*ar,N*ar) - F)*mu_tmp;
-    arma::vec nu_k = nu_k_tmp.subvec(0,N-1);
-    nu.row(xk) = trans(nu_k);
   }
-  // Simulate process 
-  int state = 0;
-  arma::vec repvec(k, arma::fill::ones);
-  arma::vec state_ind = cumsum(repvec)-1;
-  arma::vec state_series(Tsize+burnin, arma::fill::zeros);
-  arma::mat Z(Tsize+burnin, N*ar, arma::fill::zeros);
+  // initialize assuming series begins in state 1 (use burnin to reduce dependence on this assumption)
   arma::mat Y(Tsize+burnin, N, arma::fill::zeros);
-  arma::mat eps(Tsize+burnin, N, arma::fill::zeros);
+  arma::vec state_series(Tsize+burnin,arma::fill::zeros);
+  int state = 0;
+  mu_t.rows(0,ar-1) = repmu*mu.row(state);
   arma::mat eps_corr_k = epsLs[state];
-  arma::vec Zt = vectorise(trans(eps_corr_k.rows(0,ar-1)));
-  if (type == "markov"){
-    for (int xt = 0; xt<(Tsize+burnin);xt++){
-      // Get new state
-      arma::vec w_temp = P.col(state);
-      arma::vec state_mat = cumsum(w_temp);
-      state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
-      state_series(xt) = state;
-      arma::mat eps_corr_k = epsLs[state];
-      arma::mat nu_k = nu.row(state);
-      Z.row(xt) = trans(Zt);
-      Y.row(xt) = nu_k + Z.row(xt)*trans(phimat) + eps_corr_k.row(xt+ar);
-      eps.row(xt) = eps_corr_k.row(xt+ar);
-      if (ar==1){
-        Zt = trans(Y.row(xt));
-      }else{
-        arma::vec Zt_tmp = Zt.subvec(0,N*(ar-1)-1);
-        Zt = join_vert(trans(Y.row(xt)), Zt_tmp);
-      }
-    }
+  Y.rows(0,ar-1) = mu_t.rows(0,ar-1) + eps_corr_k.rows(0,ar-1);
+  for (int xp = 0; xp<ar; xp++){
+    sigma_t[xp] = cov_matLs[state];
+  } 
+  // ----- Simulate series
+  arma::vec repvec(k,arma::fill::ones);
+  arma::vec state_ind = cumsum(repvec)-1;
+  for (int xt = ar; xt<(Tsize+burnin); xt++){
+    // Get new state
+    arma::vec w_temp = P.col(state);
+    arma::vec state_mat = cumsum(w_temp);
+    state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
+    state_series(xt) = state;
+    arma::mat eps_corr_k = epsLs[state];
+    arma::mat Ytmp = flipud(Y.rows((xt-ar),(xt-1)));
+    arma::mat mu_lag = flipud(mu_t.rows((xt-ar),(xt-1))); 
+    Y.row(xt) = mu.row(state) + trans(vectorise(trans(Ytmp-mu_lag)))*trans(phimat) + eps_corr_k.row(xt);
+    mu_t.row(xt) = mu.row(state);
+    sigma_t[xt] = cov_matLs[state];
   }
-  arma::mat Z_out = Z.submat(burnin,0,Tsize+burnin-1,N*ar-1);
   arma::mat Y_out = Y.submat(burnin,0,Tsize+burnin-1,N-1);
-  arma::mat eps_out = eps.submat(burnin,0,Tsize+burnin-1,N-1);
-  arma::vec state_out = state_series.subvec(burnin,Tsize+burnin-1);
+  arma::vec state_series_out = state_series.subvec(burnin,Tsize+burnin-1);
+  arma::mat mu_t_out = mu_t.rows(burnin,Tsize+burnin-1);
   // Output
   List simuVAR_out;
-  simuVAR_out["corr_mat"] = corr_mat;
-  simuVAR_out["eps"] = eps_out;
-  simuVAR_out["epsList"] = epsLs;
-  simuVAR_out["Z"] = Z_out;
-  simuVAR_out["Y"] = Y_out;
+  simuVAR_out["y"] = Y_out;
   simuVAR_out["F_comp"] = F;
-  simuVAR_out["coef"] = join_rows(trans(nu),phimat);
-  simuVAR_out["St"] = state_out;
+  simuVAR_out["St"] = state_series_out;
+  simuVAR_out["mu_t"] = mu_t_out;
+  simuVAR_out["P"] = P;
+  simuVAR_out["pinf"] = pinf;
+  simuVAR_out["mdl"] = mdl_h0;
   return(simuVAR_out);
 }
+

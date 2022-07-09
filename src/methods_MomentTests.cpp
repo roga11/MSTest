@@ -46,58 +46,6 @@ arma::vec calc_DLmoments(arma::vec ehat){
   return(stats);
 }
 // ==============================================================================
-//' @title Calculate Quantile Moment-Based Test-Statistics 
-//'
-//' @description This function computes the four momment-based test-statistics (eq. 11 - 14 in paper) 
-//' for a given series. The series should be the residuals from an AR model. 
-//' 
-//' @export
-// [[Rcpp::export]]
-arma::vec calc_Qmoments(arma::vec eps, int k1){
-  Rcpp::Function quant("quantile");
-  // cluster observations
-  arma::vec qseq(k1, arma::fill::ones);
-  qseq = cumsum(qseq/k1);
-  arma::vec lead0(1, arma::fill::zeros);
-  qseq = join_vert(lead0, qseq);
-  arma::vec quants = quantile(eps, qseq);
-  // Get stats based on means and variance
-  List indx(k1);
-  arma::vec mu(k1, arma::fill::zeros);
-  arma::vec std(k1, arma::fill::zeros);
-  arma::vec eta(k1, arma::fill::zeros);
-  for (int xi = 0; xi<k1; xi++){
-    arma::vec vec_tmp = eps.rows(find((eps>=quants(xi)) and (eps<(quants(xi+1)+0.0000000001))));
-    indx[xi] = vec_tmp;
-    int len_tmp = vec_tmp.n_elem;
-    mu(xi) = sum(vec_tmp)/len_tmp;
-    std(xi) = sum((vec_tmp-mu(xi))%(vec_tmp-mu(xi)))/len_tmp;
-    eta(xi) = sum(vec_tmp%vec_tmp)/len_tmp;
-  }
-  arma::vec S1((k1*(k1-1))/2, arma::fill::zeros);
-  arma::vec S2((k1*(k1-1))/2, arma::fill::zeros);
-  int count = 0;
-  for (int xi = 0; xi<k1; xi++){
-    for (int xj = (xi+1); xj<k1; xj++){
-      S1(count) = abs(mu(xj)-mu(xi))/sqrt(std(xj)+std(xi));
-      S2(count) = eta(xj)/eta(xi);
-      count = count+1;
-    }
-  }
-  arma::vec S = join_vert(S1, S2);
-  arma::vec Ssk(2, arma::fill::zeros);
-  // Stat based on Skewness
-  int Tsize = eps.n_elem;
-  //double var = sum((eps-mean(eps))%(eps-mean(eps)))/(Tsize-1);
-  double var = sum((eps)%(eps))/(Tsize-1);
-  arma::vec z = eps/sqrt(var);
-  Ssk(0) = abs(mean(z%z%z));
-  // State based on Kurtosis 
-  Ssk(1) = abs(mean(z%z%z%z) - 3);
-  S = join_vert(S, Ssk);
-  return(S);
-}
-// ==============================================================================
 //' @title Test-statistics from simulated data
 //'
 //' @description This function computes simulates residuals from a standard normal distribution
@@ -124,61 +72,6 @@ arma::mat sim_DLmoments(int Tsize,int N){
   return(stats);
 }
 
-// ==============================================================================
-//' @title Quantile-Based Test-Statistics From Simulated Data  
-//'
-//' @description 
-//' 
-//' @export
-// [[Rcpp::export]]
-arma::mat sim_Qmoments(int Tsize, int N, List mdl_h0, int k1){
-  int k0 = mdl_h0["k"];
-  int ar = mdl_h0["ar"];
-  arma::mat SN(N,k1*(k1-1)+2,arma::fill::zeros);
-  if (k0==1){
-    double mu_h0 = mdl_h0["mu"];
-    double sig_h0 = mdl_h0["sigma"];
-    double std_h0 = sqrt(sig_h0);
-    for (int ik = 0; ik<N; ik++){
-      arma::vec z_null = mu_h0 + std_h0*arma::randn<arma::vec>(Tsize);
-      arma::vec eps_null = z_null - mean(z_null);
-      arma::vec mmtmp = calc_Qmoments(eps_null, k1);
-      SN.row(ik) = trans(mmtmp);
-    }
-  }else{
-    // if (ar>0){
-    //   bool msmu = mdl_h0["msmu"];
-    //   bool msvar = mdl_h0["msvar"];
-    //   List mdl_options = mdl_h0["optim_options"];
-    //   int maxit = mdl_options["maxit"];
-    //   double thtol = mdl_options["thtol"];
-    //   bool getSE = mdl_h0["getSE"];
-    //   for (int ik = 0; ik<N; ik++){
-    //     List simudat  = simuMSAR(mdl_h0, "markov")
-    //     arma::vec y_null = simudat["y"];
-    //     bool intercept = TRUE;
-    //     List mdl_ar = ARmdl(y_null, ar, intercept);
-    //     //List mdl_ar = MSARmdl(y_null, ar, k0, msmu, msvar, maxit, thtol, getSE);
-    //     arma::vec ytmp = mdl_ar["y"];
-    //     arma::mat xtmp = mdl_ar["x"];
-    //     arma::vec phi = mdl_ar["phi"];
-    //     arma::vec z_null = ytmp - xtmp*phi;
-    //     arma::vec eps_null = z_null - mean(z_null);
-    //     arma::vec mmtmp = calc_Qmoments(eps_null, k1);
-    //     SN.row(ik) = trans(mmtmp);
-    //   }
-    // }else{
-    for (int ik = 0; ik<N; ik++){
-      List simudat   = simuMS(mdl_h0, "markov");
-      arma::vec z_null = simudat["y"];
-      arma::vec eps_null = z_null - mean(z_null);
-      arma::vec mmtmp = calc_Qmoments(eps_null, k1);
-      SN.row(ik)=trans(mmtmp);
-    }
-    //}
-  }
-  return(SN);
-}
 // ==============================================================================
 //' @title Combine p-values 
 //'
@@ -266,30 +159,6 @@ arma::vec calc_DLmcstat(arma::vec ezt, int N, arma::mat params, Rcpp::String typ
   arma::vec S0 = calc_DLmoments(ezt);
   // Simulated data 
   arma::mat SN = sim_DLmoments(Tsize,N); // must leaves as N-1.
-  // Get individual moment p-values 
-  arma::vec Fx(N+1, arma::fill::zeros);
-  if (type=="prod"){
-    Fx = combine_stat(S0, SN, params, "prod");
-  }else if (type=="min"){
-    Fx  = combine_stat(S0, SN, params, "min");   
-  }else{
-    Rcerr << "type must be: 'min' or 'prod'.\n";
-  }
-  return(Fx);
-}
-// ==============================================================================
-//' @title Calculate Quantile-Based Combined P-Value Test Statistic 
-//'
-//' 
-//' @param ezt observed series
-//' 
-//' @export
-// [[Rcpp::export]]
-arma::vec calc_Qmcstat(arma::vec ezt, int N, arma::mat params, List mdl_h0, int k1, Rcpp::String type = "min"){
-  int Tsize = ezt.n_elem;
-  arma::vec S0 = calc_Qmoments(ezt, k1);
-  // Simulated data 
-  arma::mat SN = sim_Qmoments(Tsize, N, mdl_h0, k1);
   // Get individual moment p-values 
   arma::vec Fx(N+1, arma::fill::zeros);
   if (type=="prod"){

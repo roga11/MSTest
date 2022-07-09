@@ -4,7 +4,7 @@
 \alias{BootLRTest}
 \title{Bootstrap Likelihood Ratio Test}
 \usage{
-BootLRTest(Y, ar, k0, k1, msmu = TRUE, msvar = TRUE, control = list())
+BootLRTest(Y, ar, k0, k1, control = list())
 }
 \value{
 
