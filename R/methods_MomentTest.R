@@ -28,7 +28,6 @@ DLMCTest <- function(Y, ar, control = list()){
   con <- list(N = 99,
               simdist_N = 10000,
               getSE = FALSE)
-  #check
   # Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
