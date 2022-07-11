@@ -45,26 +45,25 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// randTransMat
-arma::mat randTransMat(int k);
-RcppExport SEXP _MSTest_randTransMat(SEXP kSEXP) {
+// randP
+arma::mat randP(int k);
+RcppExport SEXP _MSTest_randP(SEXP kSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< int >::type k(kSEXP);
-    rcpp_result_gen = Rcpp::wrap(randTransMat(k));
+    rcpp_result_gen = Rcpp::wrap(randP(k));
     return rcpp_result_gen;
 END_RCPP
 }
 // limP
-arma::vec limP(arma::mat P, int k);
-RcppExport SEXP _MSTest_limP(SEXP PSEXP, SEXP kSEXP) {
+arma::vec limP(arma::mat P);
+RcppExport SEXP _MSTest_limP(SEXP PSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type P(PSEXP);
-    Rcpp::traits::input_parameter< int >::type k(kSEXP);
-    rcpp_result_gen = Rcpp::wrap(limP(P, k));
+    rcpp_result_gen = Rcpp::wrap(limP(P));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -707,8 +706,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_cov2corr", (DL_FUNC) &_MSTest_cov2corr, 1},
     {"_MSTest_covar_vech", (DL_FUNC) &_MSTest_covar_vech, 1},
     {"_MSTest_covar_unvech", (DL_FUNC) &_MSTest_covar_unvech, 2},
-    {"_MSTest_randTransMat", (DL_FUNC) &_MSTest_randTransMat, 1},
-    {"_MSTest_limP", (DL_FUNC) &_MSTest_limP, 2},
+    {"_MSTest_randP", (DL_FUNC) &_MSTest_randP, 1},
+    {"_MSTest_limP", (DL_FUNC) &_MSTest_limP, 1},
     {"_MSTest_ts_lagged", (DL_FUNC) &_MSTest_ts_lagged, 2},
     {"_MSTest_paramListMS", (DL_FUNC) &_MSTest_paramListMS, 5},
     {"_MSTest_paramListMSVAR", (DL_FUNC) &_MSTest_paramListMSVAR, 6},

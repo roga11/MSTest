@@ -10,9 +10,9 @@ arma::vec covar_vech(arma::mat mat);
 
 arma::mat covar_unvech(arma::vec sig, int q);
 
-arma::mat randTransMat(int k);
+arma::mat randP(int k);
 
-arma::vec limP(arma::mat P, int k);
+arma::vec limP(arma::mat P);
 
 List ts_lagged(arma::mat Y, int ar);
 

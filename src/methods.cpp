@@ -74,17 +74,15 @@ arma::mat covar_unvech(arma::vec sig, int n){
 // ==============================================================================
 //' @title Random Transition Matrix
 //' 
-//' @description This function creates a (k x k) random transition matrix
+//' @description This function creates a random transition matrix
 //' 
 //' @param k number of regimes. Must be greater than or equal to 2. 
-//' @param n number of random sample to use. By default it is 100 but this can be set to length of TS for example
-//'  
 //' 
 //' @return transition matrix with randomly generated entries.
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::mat randTransMat(int k){
+arma::mat randP(int k){
   arma::mat P = reshape(arma::randu(k*k), k, k); 
   arma::vec PcolSums = trans(arma::sum(P,0));
   for (int xk = 0; xk<k; xk++){
@@ -94,24 +92,30 @@ arma::mat randTransMat(int k){
 }
 
 // ==============================================================================
-//' @title Ergodic (limiting) Probabilities of States
+//' @title Ergodic (limiting) probabilities of states
 //' 
 //' @description Takes a transition matrix and returns the limiting probabilities
 //' 
-//' @param P matrix with transition probabilities
+//' @param P: matrix with transition probabilities
 //' 
-//' @return Vector of Limiting probabilities of a transition matrix
+//' @return (k x 1) vector of limiting probabilities
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::vec limP(arma::mat P, int k){
-  arma::mat onevec(1, k, arma::fill::ones);
-  arma::mat ep(1, k+1, arma::fill::zeros);
-  ep(0,k) = 1;
-  arma::mat Atmp = join_cols(arma::eye(k,k)-P,onevec);
-  //arma::vec pinf = inv(trans(Atmp)*Atmp)*trans(Atmp)*trans(ep);
-  arma::vec pinf = solve(trans(Atmp)*Atmp,trans(Atmp))*trans(ep);
-  return (pinf);
+arma::vec limP(arma::mat P){
+  int nr = P.n_rows;
+  int nc = P.n_cols;
+  if (nc==nr){
+    arma::mat onevec(1, nr, arma::fill::ones);
+    arma::mat ep(1, nr+1, arma::fill::zeros);
+    ep(0,nr) = 1;
+    arma::mat Atmp = join_cols(arma::eye(nr,nr)-P,onevec);
+    //arma::vec pinf = inv(trans(Atmp)*Atmp)*trans(Atmp)*trans(ep);
+    arma::vec pinf = solve(trans(Atmp)*Atmp,trans(Atmp))*trans(ep);
+    return (pinf);
+  }else{
+    stop("Input must be a square matrix");
+  }
 }
 
 // ==============================================================================
@@ -170,7 +174,7 @@ List paramListMS(arma::vec theta, int ar, int k, bool msmu, bool msvar){
   // ----- Transition probabilities 
   arma::mat P = reshape(theta.subvec(2+msmu*(k-1)+msvar*(k-1) + ar, 2+msmu*(k-1)+msvar*(k-1) + ar + k*k - 1),k, k);
   // Regime limiting probabilities
-  arma::vec pinf = limP(P, k);
+  arma::vec pinf = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
   List musig_out = musigGrid(mu, sig, k, ar, msmu, msvar);
   arma::mat muAR = as<arma::mat>(musig_out["mu"]);
@@ -179,7 +183,7 @@ List paramListMS(arma::vec theta, int ar, int k, bool msmu, bool msvar){
   // ----- Obtain AR consistent P and pinf
   int M = pow(k, ar+1);
   arma::mat P_AR = as<arma::mat>(transMatAR(P, k, ar));
-  arma::mat pinf_AR = limP(P_AR, M);
+  arma::mat pinf_AR = limP(P_AR);
   // ----- Organize output
   List param_out;
   param_out["mu"] = mu;
@@ -247,7 +251,7 @@ List paramListMSVAR(arma::vec theta, int q, int ar, int k, bool msmu, bool msvar
   int PN = q+q*msmu*(k-1)+sigN+sigN*msvar*(k-1)+q*q*ar;
   arma::mat P = reshape(theta.subvec(PN, PN + k*k - 1), k, k);
   // Regime limiting probabilities
-  arma::vec pinf = limP(P, k);
+  arma::vec pinf = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
   List musig_out = musigVARGrid(mu_k, sigma, k, ar, msmu, msvar);
   List muAR = musig_out["mu"];
@@ -256,7 +260,7 @@ List paramListMSVAR(arma::vec theta, int q, int ar, int k, bool msmu, bool msvar
   // ----- Obtain AR consistent P and pinf
   int M = pow(k, ar+1);
   arma::mat P_AR = as<arma::mat>(transMatAR(P, k, ar));
-  arma::mat pinf_AR = limP(P_AR, M);
+  arma::mat pinf_AR = limP(P_AR);
   // ----- Organize output
   List param_out;
   param_out["mu"] = mu_k;
@@ -381,7 +385,7 @@ arma::vec initValsMS(List mdl, int k){
   // create vector for initial values
   arma::vec theta_0 = join_vert(mu_0, sig_0);
   theta_0 = join_vert(theta_0, phi);
-  arma::mat P_0 = randTransMat(k);
+  arma::mat P_0 = randP(k);
   theta_0 = join_vert(theta_0, vectorise(P_0));
   return(theta_0);
 }
@@ -430,7 +434,7 @@ arma::vec initValsMSVAR(List mdl, int k){
   // create vector for initial values
   arma::vec theta_0 = join_vert(mu_out, sigma_out);
   theta_0 = join_vert(theta_0, vectorise(phi));
-  arma::mat P_0 = randTransMat(k);
+  arma::mat P_0 = randP(k);
   theta_0 = join_vert(theta_0, vectorise(P_0));
   return(theta_0);
 }
@@ -537,7 +541,7 @@ List simuMS(List mdl_h0, int burnin = 200){
   int ar = mdl_h0["ar"];
   int k = mdl_h0["k"];
   arma::mat P = mdl_h0["P"];
-  arma::vec pinf = limP(P, k);
+  arma::vec pinf = limP(P);
   // vector for mean and standard dev at each time t
   arma::vec mu_t(n+burnin, arma::fill::zeros);
   arma::vec std_t(n+burnin, arma::fill::zeros);
@@ -651,7 +655,7 @@ List simuMSVAR(List mdl_h0, int burnin = 200){
   int N = mu.n_cols;
   int k = mdl_h0["k"];
   arma::mat P = mdl_h0["P"];
-  arma::vec  pinf = limP(P, k);
+  arma::vec  pinf = limP(P);
   // vector for mean and standard dev at each time t
   arma::mat mu_t(Tsize+burnin, N, arma::fill::zeros);
   List sigma_t(Tsize+burnin);

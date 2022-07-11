@@ -43,30 +43,28 @@ covar_unvech <- function(sig, n) {
 
 #' @title Random Transition Matrix
 #' 
-#' @description This function creates a (k x k) random transition matrix
+#' @description This function creates a random transition matrix
 #' 
 #' @param k number of regimes. Must be greater than or equal to 2. 
-#' @param n number of random sample to use. By default it is 100 but this can be set to length of TS for example
-#'  
 #' 
 #' @return transition matrix with randomly generated entries.
 #' 
 #' @export
-randTransMat <- function(k) {
-    .Call(`_MSTest_randTransMat`, k)
+randP <- function(k) {
+    .Call(`_MSTest_randP`, k)
 }
 
-#' @title Ergodic (limiting) Probabilities of States
+#' @title Ergodic (limiting) probabilities of states
 #' 
 #' @description Takes a transition matrix and returns the limiting probabilities
 #' 
-#' @param P matrix with transition probabilities
+#' @param P: matrix with transition probabilities
 #' 
-#' @return Vector of Limiting probabilities of a transition matrix
+#' @return (k x 1) vector of limiting probabilities
 #' 
 #' @export
-limP <- function(P, k) {
-    .Call(`_MSTest_limP`, P, k)
+limP <- function(P) {
+    .Call(`_MSTest_limP`, P)
 }
 
 #' @title Lagged Time Series Data

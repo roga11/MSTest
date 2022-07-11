@@ -2,15 +2,15 @@
 % Please edit documentation in R/RcppExports.R
 \name{limP}
 \alias{limP}
-\title{Ergodic (limiting) Probabilities of States}
+\title{Ergodic (limiting) probabilities of states}
 \usage{
-limP(P, k)
+limP(P)
 }
 \arguments{
-\item{P}{matrix with transition probabilities}
+\item{P:}{matrix with transition probabilities}
 }
 \value{
-Vector of Limiting probabilities of a transition matrix
+(k x 1) vector of limiting probabilities
 }
 \description{
 Takes a transition matrix and returns the limiting probabilities

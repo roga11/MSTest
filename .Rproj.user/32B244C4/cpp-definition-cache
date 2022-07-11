@@ -1,7 +1,7 @@
 [
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-        "file_last_write": 1648090402.0,
+        "file_last_write": 1657568906.0,
         "definitions": [
             {
                 "usr": "c:@F@cov2corr#$@N@arma@S@Mat>#d#",
@@ -9,25 +9,25 @@
                 "parent_name": "",
                 "name": "cov2corr(arma::mat)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 13,
+                "line": 18,
                 "column": 11
             },
             {
-                "usr": "c:@F@sig_mattovec#$@N@arma@S@Mat>#d#I#",
+                "usr": "c:@F@covar_vech#$@N@arma@S@Mat>#d#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "sig_mattovec(arma::mat, int)",
+                "name": "covar_vech(arma::mat)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 28,
+                "line": 34,
                 "column": 11
             },
             {
-                "usr": "c:@F@sig_vectomat#$@N@arma@S@Col>#d#I#",
+                "usr": "c:@F@covar_unvech#$@N@arma@S@Col>#d#I#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "sig_vectomat(arma::vec, int)",
+                "name": "covar_unvech(arma::vec, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 46,
+                "line": 60,
                 "column": 11
             },
             {
@@ -36,7 +36,7 @@
                 "parent_name": "",
                 "name": "randTransMat(int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 73,
+                "line": 87,
                 "column": 11
             },
             {
@@ -45,7 +45,7 @@
                 "parent_name": "",
                 "name": "limP(arma::mat, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 93,
+                "line": 107,
                 "column": 11
             },
             {
@@ -54,7 +54,7 @@
                 "parent_name": "",
                 "name": "ts_lagged(arma::mat, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 115,
+                "line": 129,
                 "column": 6
             },
             {
@@ -63,7 +63,7 @@
                 "parent_name": "",
                 "name": "paramListMS(arma::vec, int, int, bool, bool)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 145,
+                "line": 159,
                 "column": 6
             },
             {
@@ -72,43 +72,43 @@
                 "parent_name": "",
                 "name": "paramListMSVAR(arma::vec, int, int, int, bool, bool)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 198,
+                "line": 212,
                 "column": 6
             },
             {
-                "usr": "c:@F@calcMSResid#I#$@N@arma@S@Mat>#d#I#",
+                "usr": "c:@F@calcMSResid#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#$@N@arma@S@Mat>#d#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "calcMSResid(Rcpp::List, arma::mat, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 276,
+                "line": 290,
                 "column": 11
             },
             {
-                "usr": "c:@F@calcMSVARResid#I#I#I#",
+                "usr": "c:@F@calcMSVARResid#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S0_#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "calcMSVARResid(Rcpp::List, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 314,
+                "line": 328,
                 "column": 6
             },
             {
-                "usr": "c:@F@initValsMS#I#I#",
+                "usr": "c:@F@initValsMS#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "initValsMS(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 347,
+                "line": 361,
                 "column": 11
             },
             {
-                "usr": "c:@F@initValsMSVAR#I#I#",
+                "usr": "c:@F@initValsMSVAR#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "initValsMSVAR(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 381,
+                "line": 395,
                 "column": 11
             },
             {
@@ -117,50 +117,50 @@
                 "parent_name": "",
                 "name": "MCpval(double, arma::vec, Rcpp::String)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 445,
+                "line": 459,
                 "column": 8
             },
             {
-                "usr": "c:@F@simuAR#I#I#",
+                "usr": "c:@F@simuAR#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "simuAR(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 477,
+                "line": 491,
                 "column": 6
             },
             {
-                "usr": "c:@F@simuMS#I#I#",
+                "usr": "c:@F@simuMS#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "simuMS(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 517,
+                "line": 531,
                 "column": 6
             },
             {
-                "usr": "c:@F@simuVAR#I#I#",
+                "usr": "c:@F@simuVAR#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "simuVAR(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 577,
+                "line": 591,
                 "column": 6
             },
             {
-                "usr": "c:@F@simuMSVAR#I#I#",
+                "usr": "c:@F@simuMSVAR#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "simuMSVAR(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 631,
+                "line": 645,
                 "column": 6
             }
         ]
     },
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.h",
-        "file_last_write": 1648067555.0,
+        "file_last_write": 1657568977.0,
         "definitions": []
     },
     {
@@ -207,7 +207,7 @@
     },
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
-        "file_last_write": 1648521311.0,
+        "file_last_write": 1657569052.0,
         "definitions": [
             {
                 "usr": "c:@F@LR_samp_dist#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#b#b#I#I#d#I#I#I#I#",
@@ -309,7 +309,7 @@
     },
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/models.cpp",
-        "file_last_write": 1649009623.0,
+        "file_last_write": 1657569173.0,
         "definitions": [
             {
                 "usr": "c:@F@AR_loglik_fun#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",

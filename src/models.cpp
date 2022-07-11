@@ -310,7 +310,7 @@ double MSloglik_fun(arma::vec theta, List mdl, int k){
   // ----- Transition probabilities 
   arma::mat P = reshape(theta.subvec(2+msmu*(k-1)+msvar*(k-1) + ar, 2+msmu*(k-1)+msvar*(k-1) + ar + k*k - 1),k, k);
   // Regime limiting probabilities
-  arma::vec pinf = limP(P, k);
+  arma::vec pinf = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
   List musig_out = musigGrid(mu, sig, k, ar, msmu, msvar);
   arma::mat muAR = as<arma::mat>(musig_out["mu"]);
@@ -318,7 +318,7 @@ double MSloglik_fun(arma::vec theta, List mdl, int k){
   arma::vec state_ind = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
   arma::mat P_AR = as<arma::mat>(transMatAR(P, k, ar));
-  arma::mat pinf_AR = limP(P_AR, M);
+  arma::mat pinf_AR = limP(P_AR);
   // ============================================================================
   // ----- Compute residuals in each regime
   // ============================================================================
@@ -539,7 +539,7 @@ double MSVARloglik_fun(arma::vec theta, List mdl, int k){
   int PN = q+q*msmu*(k-1)+sigN+sigN*msvar*(k-1)+q*q*ar;
   arma::mat P = reshape(theta.subvec(PN, PN + k*k - 1), k, k);
   // Regime limiting probabilities
-  arma::vec pinf = limP(P, k);
+  arma::vec pinf = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
   List musig_out = musigVARGrid(mu_k, sigma, k, ar, msmu, msvar);
   List muAR = musig_out["mu"];
@@ -547,7 +547,7 @@ double MSVARloglik_fun(arma::vec theta, List mdl, int k){
   arma::vec state_ind = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
   arma::mat PAR = as<arma::mat>(transMatAR(P, k, ar));
-  arma::mat pinfAR = limP(PAR, M);
+  arma::mat pinfAR = limP(PAR);
   // ============================================================================
   // ----- Compute residuals in each regime
   // ============================================================================
@@ -786,7 +786,7 @@ List MS_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k){
   }
   P_new = trans(P_new);
   // Get limiting probabilities implied by transition matrix P_0
-  arma::vec pinf = limP(P_new, k);
+  arma::vec pinf = limP(P_new);
   // ============================================================================
   // ----- Update estimates for mu
   // ============================================================================
@@ -919,7 +919,7 @@ List MSVAR_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k)
   }
   P_new = trans(P_new);
   // Get limiting probabilities implied by transition matrix P_0
-  arma::vec pinf = limP(P_new, k);
+  arma::vec pinf = limP(P_new);
   // ============================================================================
   // ----- Update estimates for mu
   // ============================================================================
