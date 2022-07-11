@@ -295,13 +295,13 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
       arma::mat mu_new = trans(reshape(theta_mu_h0,q,k0));
       mdl_h0_tmp["mu"] = mu_new;
       if (k0==1){
-        mdl_h0_tmp["sigma"] = sig_vectomat(theta_sig_h0,q);
+        mdl_h0_tmp["sigma"] = covar_unvech(theta_sig_h0,q);
       }else if (k0>1){
         arma::mat sig_new_tmp = trans(reshape(theta_sig_h0, (q*(q+1))/2, k0));
         List sig_new(k0);
         for (int xk = 0; xk<k0; xk++){
           arma::vec sig_tmp_k = trans(sig_new_tmp.row(xk));
-          sig_new[xk] = sig_vectomat(sig_tmp_k, q);
+          sig_new[xk] = covar_unvech(sig_tmp_k, q);
         }
         mdl_h0_tmp["sigma"] = sig_new;
       } 

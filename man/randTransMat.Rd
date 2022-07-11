@@ -15,5 +15,5 @@ randTransMat(k)
 transition matrix with randomly generated entries.
 }
 \description{
-This function creates a (kxk) random transition matrix
+This function creates a (k x k) random transition matrix
 }

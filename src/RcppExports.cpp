@@ -22,27 +22,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// sig_mattovec
-arma::vec sig_mattovec(arma::mat sig, int q);
-RcppExport SEXP _MSTest_sig_mattovec(SEXP sigSEXP, SEXP qSEXP) {
+// covar_vech
+arma::vec covar_vech(arma::mat mat);
+RcppExport SEXP _MSTest_covar_vech(SEXP matSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type sig(sigSEXP);
-    Rcpp::traits::input_parameter< int >::type q(qSEXP);
-    rcpp_result_gen = Rcpp::wrap(sig_mattovec(sig, q));
+    Rcpp::traits::input_parameter< arma::mat >::type mat(matSEXP);
+    rcpp_result_gen = Rcpp::wrap(covar_vech(mat));
     return rcpp_result_gen;
 END_RCPP
 }
-// sig_vectomat
-arma::mat sig_vectomat(arma::vec sig, int q);
-RcppExport SEXP _MSTest_sig_vectomat(SEXP sigSEXP, SEXP qSEXP) {
+// covar_unvech
+arma::mat covar_unvech(arma::vec sig, int n);
+RcppExport SEXP _MSTest_covar_unvech(SEXP sigSEXP, SEXP nSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::vec >::type sig(sigSEXP);
-    Rcpp::traits::input_parameter< int >::type q(qSEXP);
-    rcpp_result_gen = Rcpp::wrap(sig_vectomat(sig, q));
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
+    rcpp_result_gen = Rcpp::wrap(covar_unvech(sig, n));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -706,8 +705,8 @@ END_RCPP
 
 static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_cov2corr", (DL_FUNC) &_MSTest_cov2corr, 1},
-    {"_MSTest_sig_mattovec", (DL_FUNC) &_MSTest_sig_mattovec, 2},
-    {"_MSTest_sig_vectomat", (DL_FUNC) &_MSTest_sig_vectomat, 2},
+    {"_MSTest_covar_vech", (DL_FUNC) &_MSTest_covar_vech, 1},
+    {"_MSTest_covar_unvech", (DL_FUNC) &_MSTest_covar_unvech, 2},
     {"_MSTest_randTransMat", (DL_FUNC) &_MSTest_randTransMat, 1},
     {"_MSTest_limP", (DL_FUNC) &_MSTest_limP, 2},
     {"_MSTest_ts_lagged", (DL_FUNC) &_MSTest_ts_lagged, 2},

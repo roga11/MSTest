@@ -2,10 +2,16 @@
 % Please edit documentation in R/RcppExports.R
 \name{cov2corr}
 \alias{cov2corr}
-\title{convert covariance matrix to correlation matrix}
+\title{Covariance to correlation matrix}
 \usage{
 cov2corr(cov_mat)
 }
+\arguments{
+\item{(n}{x n) covariance matrix}
+}
+\value{
+(n x n) correlation matrix
+}
 \description{
-convert covariance matrix to correlation matrix
+This function takes an (n x n) covariance matrix and returns the associated (n x n) correlation matrix
 }

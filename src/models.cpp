@@ -146,7 +146,7 @@ double VAR_loglik_fun(arma::vec theta, List mdl){
   int sigN = (q*(q+1))/2;
   arma::vec mu = theta.subvec(0, q-1);
   arma::vec sig = theta.subvec(q,q+sigN-1);
-  arma::mat sigma = sig_vectomat(sig, q);
+  arma::mat sigma = covar_unvech(sig, q);
   int phiN = q+sigN;
   arma::vec phi_tmp = theta.subvec(phiN, phiN+q*q*ar-1);
   arma::mat phi = reshape(phi_tmp, q*ar, q);
@@ -233,12 +233,12 @@ List VARmdl(arma::mat Y, int ar, bool intercept = 1, bool getSE = 0){
   }
   double logLike = sum(log(f_t));
   // ----- Organize output
-  arma::vec sigma_vec = sig_mattovec(sigma, q);
+  arma::vec sigma_vec = covar_vech(sigma);
   arma::vec phi_vec = vectorise(phi);
   arma::vec theta = join_vert(join_vert(trans(mu),sigma_vec),phi_vec);
   arma::vec theta_mu_ind = join_vert(join_vert(arma::vec(mu.n_elem, arma::fill::ones),arma::vec(sigma_vec.n_elem,arma::fill::zeros)),arma::vec(phi_vec.n_elem,arma::fill::zeros));
   arma::vec theta_sig_ind = join_vert(join_vert(arma::vec(mu.n_elem, arma::fill::zeros), arma::vec(sigma_vec.n_elem,arma::fill::ones)),arma::vec(phi_vec.n_elem,arma::fill::zeros));
-  arma::vec theta_var_ind = join_vert(join_vert(arma::vec(mu.n_elem, arma::fill::zeros), sig_mattovec(arma::eye(q,q), q)),arma::vec(phi_vec.n_elem,arma::fill::zeros));
+  arma::vec theta_var_ind = join_vert(join_vert(arma::vec(mu.n_elem, arma::fill::zeros), covar_vech(arma::eye(q,q))),arma::vec(phi_vec.n_elem,arma::fill::zeros));
   arma::vec theta_phi_ind = join_vert(arma::vec(mu.n_elem + sigma_vec.n_elem,arma::fill::zeros),arma::vec(phi_vec.n_elem,arma::fill::ones));
   List VARmdl_out;
   VARmdl_out["y"] = y;
@@ -524,11 +524,11 @@ double MSVARloglik_fun(arma::vec theta, List mdl, int k){
   if (msvar==TRUE){
     for (int xk = 0; xk<k; xk++){
       arma::vec sig_tmp = sig.subvec(sigN*xk,sigN*xk+sigN-1);
-      sigma[xk] = sig_vectomat(sig_tmp, q);
+      sigma[xk] = covar_unvech(sig_tmp, q);
     } 
   }else{
     for (int xk = 0; xk<k; xk++){
-      sigma[xk] = sig_vectomat(sig, q);
+      sigma[xk] = covar_unvech(sig, q);
     }
   }
   // ----- Phi vector

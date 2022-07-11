@@ -50,7 +50,7 @@ LMCLRTest <- function(Y, ar, k0, k1, control = list()){
   # ----- Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
-  if(length(noNms <- namc[!namc %in% nmsC])){
+  if (length(noNms <- namc[!namc %in% nmsC])){
     warning("unknown names in control: ", paste(noNms,collapse=", ")) 
   }
   # ----- Perform other checks

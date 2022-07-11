@@ -6,9 +6,9 @@ using namespace Rcpp;
 
 arma::mat cov2corr(arma::mat cov_mat);
 
-arma::vec sig_mattovec(arma::mat sig, int q);
+arma::vec covar_vech(arma::mat mat);
 
-arma::mat sig_vectomat(arma::vec sig, int q);
+arma::mat covar_unvech(arma::vec sig, int q);
 
 arma::mat randTransMat(int k);
 

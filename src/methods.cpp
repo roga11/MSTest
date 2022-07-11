@@ -5,8 +5,13 @@
 using namespace Rcpp;
 
 // ==============================================================================
-//' @title convert covariance matrix to correlation matrix
+//' @title Covariance to correlation matrix
 //' 
+//' @description This function takes an (n x n) covariance matrix and returns the associated (n x n) correlation matrix
+//' 
+//' @param (n x n) covariance matrix
+//' 
+//' @return (n x n) correlation matrix
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -16,38 +21,47 @@ arma::mat cov2corr(arma::mat cov_mat){
 }
 
 // ==============================================================================
-//' @title Converts var-covar matrix to vector representaion
+//' @title Covariance vech function
 //' 
-//' @description 
+//' @description This function returns the half-vectorization of an input matrix as a column vector.
 //' 
+//' @param mat: (n x n) covariance matrix
 //' 
-//' @return 
+//' @return (n+1)*n/2 column vector 
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::vec sig_mattovec(arma::mat sig, int q){
-  arma::vec sigma_vec = trans(sig.row(0));
-  for (int xq = 1; xq<q; xq++){
-    sigma_vec = join_vert(sigma_vec, trans(sig.submat(xq,xq,xq,q-1)));
+arma::vec covar_vech(arma::mat mat){
+  int nr = mat.n_rows;
+  int nc = mat.n_cols;
+  if (nc==nr){
+    arma::vec sigma_vec = trans(mat.row(0));
+    for (int xq = 1; xq<nr; xq++){
+      sigma_vec = join_vert(sigma_vec, trans(mat.submat(xq,xq,xq,nr-1)));
+    }
+    return(sigma_vec);  
+  }else{
+    stop("Input must be a square matrix");
   }
-  return(sigma_vec);
 }
 
 // ==============================================================================
-//' @title Converts var-covar matrix vector representaion back to matrix 
+//' @title Covariance vech to matrix 
 //' 
-//' @description 
+//' @description This function undoes the half-vectorization of a covariance matrix.
 //' 
+//' @param sig: (n+1)*n/2 vector 
+//' n: integer determining shape of the orginal matrix
 //' 
-//' @return 
+//' @return (n x n) covariance matrix
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::mat sig_vectomat(arma::vec sig, int q){
-  arma::mat sigma_mat(q, q, arma::fill::zeros);
+arma::mat covar_unvech(arma::vec sig, int n){
+  arma::mat sigma_mat(n, n, arma::fill::zeros);
   int count = 0;
-  for (int xq = 0; xq<q; xq++){
-    for (int xqq = xq; xqq<q; xqq++){
+  for (int xq = 0; xq<n; xq++){
+    for (int xqq = xq; xqq<n; xqq++){
       sigma_mat(xq,xqq) = sig(count);
       sigma_mat(xqq,xq) = sig(count);
       count += 1;
@@ -60,7 +74,7 @@ arma::mat sig_vectomat(arma::vec sig, int q){
 // ==============================================================================
 //' @title Random Transition Matrix
 //' 
-//' @description This function creates a (kxk) random transition matrix
+//' @description This function creates a (k x k) random transition matrix
 //' 
 //' @param k number of regimes. Must be greater than or equal to 2. 
 //' @param n number of random sample to use. By default it is 100 but this can be set to length of TS for example
@@ -218,11 +232,11 @@ List paramListMSVAR(arma::vec theta, int q, int ar, int k, bool msmu, bool msvar
   if (msvar==TRUE){
     for (int xk = 0; xk<k; xk++){
       arma::vec sig_tmp = sig.subvec(sigN*xk,sigN*xk+sigN-1);
-      sigma[xk] = sig_vectomat(sig_tmp, q);
+      sigma[xk] = covar_unvech(sig_tmp, q);
     } 
   }else{
     for (int xk = 0; xk<k; xk++){
-      sigma[xk] = sig_vectomat(sig, q);
+      sigma[xk] = covar_unvech(sig, q);
     }
   }
   // ----- Phi vector
@@ -391,7 +405,7 @@ arma::vec initValsMSVAR(List mdl, int k){
   arma::mat sigma_0(1+msvar*(k-1), sigN, arma::fill::zeros);
   // Set initial values using linear model if no switch
   mu_0.row(0) = trans(mu);
-  sigma_0.row(0) = trans(sig_mattovec(sigma, q));
+  sigma_0.row(0) = trans(covar_vech(sigma));
   // initial values for mu around linear model mu when switch
   if (msmu==TRUE){
     arma::mat repvec(k,1,arma::fill::ones);
@@ -400,16 +414,16 @@ arma::vec initValsMSVAR(List mdl, int k){
   arma::vec mu_out = vectorise(trans(mu_0));
   // initial values for stdev around linear model stdev when switch
   if (msvar==TRUE){
-    arma::vec sigma_vec_tmp = sig_mattovec(sigma, q);
-    arma::mat sig_mat_tmp = sig_vectomat((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
+    arma::vec sigma_vec_tmp = covar_vech(sigma);
+    arma::mat sig_mat_tmp = covar_vech((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN));
     sig_mat_tmp = sig_mat_tmp*trans(sig_mat_tmp);
     sig_mat_tmp = sig_mat_tmp + q*arma::speye(q,q);
-    sigma_0.row(0) = trans(sig_mattovec(sig_mat_tmp, q));
+    sigma_0.row(0) = trans(covar_vech(sig_mat_tmp));
     for (int xk = 1; xk<k; xk++){
-      arma::mat sig_mat_tmp = sig_vectomat((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
+      arma::mat sig_mat_tmp = covar_vech((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN));
       sig_mat_tmp = sig_mat_tmp*trans(sig_mat_tmp);
       sig_mat_tmp = sig_mat_tmp + q*arma::speye(q,q);
-      sigma_0.row(xk) = trans(sig_mattovec(sig_mat_tmp, q));
+      sigma_0.row(xk) = trans(covar_vech(sig_mat_tmp));
     }
   }
   arma::vec sigma_out = vectorise(trans(sigma_0));
