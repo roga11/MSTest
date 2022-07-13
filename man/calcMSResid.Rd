@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{calcMSResid}
 \alias{calcMSResid}
-\title{Calculate Residuals for Markov-switching model}
+\title{Markov-switching autoregressive model residuals}
 \usage{
 calcMSResid(mdl, mu, k)
 }
@@ -12,13 +12,10 @@ calcMSResid(mdl, mu, k)
 \item{mu}{vector with mean in each regime.}
 
 \item{k}{number of regimes. Must be greater than or equal to 2.}
-
-\item{ar}{bool indicator for whether model is AR model.}
 }
 \value{
-(Txk) matrix of residuals in each regime.
+(TxM) matrix of residuals in each regime M where M=k^(ar+1)
 }
 \description{
-This function computes residuals when mean or conditional mean 
-(i.e. when dealing with AR model) switches with regime.
+This function computes residuals of a Markov-switching autoregressive model
 }

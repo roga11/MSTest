@@ -2,23 +2,23 @@
 % Please edit documentation in R/RcppExports.R
 \name{MCpval}
 \alias{MCpval}
-\title{Calculate MC P-Value}
+\title{Monte Carlo P-value}
 \usage{
 MCpval(test_stat, null_vec, type = "geq")
 }
 \arguments{
-\item{test_stat}{test statistic under the alternative (e.g. S_0)}
+\item{test_stat:}{test statistic under the alternative (e.g. S_0)}
 
-\item{null_vec}{series with test statistic under the null (i.e. vector S)}
+\item{null_vec:}{(N x 1) vector with test statistic under the null hypothesis}
 
-\item{type}{like of test. options are: "geq" for right-tail test, "leq" for 
+\item{type:}{type of test of test. options are: "geq" for right-tail test, "leq" for 
 left-tail test, "abs" for absolute vallue test and "two-tail" for two-tail test.}
 }
 \value{
 MC p-value of test
 }
 \description{
-This function calculates a Monte-Carlo p-value
+This function computes the Monte Carlo P-value
 }
 \references{
 Dufour, J. M. (2006). Monte Carlo tests with nuisance parameters: 

@@ -91,7 +91,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
       int converge_iter = 0;
       while ((LRT_converge==FALSE) and (converge_iter<dist_converge_iter)){
         while (LRT_finite==FALSE){
-          List y0_out = simuMS(mdl_h0_c, burnin);
+          List y0_out = simuMSAR(mdl_h0_c, burnin);
           arma::vec y0 = y0_out["y"];
           List mdl_h0_tmp = MSmdl_EM(y0, ar, k0, control);
           List mdl_h1_tmp = MSmdl_EM(y0, ar, k1, control);

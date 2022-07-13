@@ -2,24 +2,24 @@
 % Please edit documentation in R/RcppExports.R
 \name{paramListMS}
 \alias{paramListMS}
-\title{Parameter List}
+\title{Parameter list for Markov-switching autoregressive model}
 \usage{
 paramListMS(theta, ar, k, msmu, msvar)
 }
 \arguments{
-\item{theta}{vector of parameters.}
+\item{theta:}{vector of parameters.}
 
-\item{k}{number of regimes. Must be greater than or equal to 2.}
+\item{ar:}{umber of autoregressive lags}
 
-\item{msmu}{bool indicating is the mean switches with regime}
+\item{k:}{number of regimes}
 
-\item{msvar}{bool indicating is the variance switches with regime}
+\item{msmu:}{bool indicating is the mean switches with regime}
 
-\item{mdl}{List of model properties}
+\item{msvar:}{bool indicating is the variance switches with regime}
 }
 \value{
-List with the mean, variance, transition matrix and limiting probabilities
+List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators
 }
 \description{
-This function takes the vector of parameters of interest and converts it to a list with the parameters seperated
+This function takes the parameter vector of interest and converts it to a list with specific parameter vectors needed for univariate Markov-switching functions
 }

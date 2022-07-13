@@ -118,10 +118,12 @@ arma::vec limP(arma::mat P){
   }
 }
 
+
+
 // ==============================================================================
 //' @title Lagged Time Series Data
 //' 
-//' @description This function takes a (Tx1) vector Y and returns the (T-px1) vector y and matrix of lagged observations.
+//' @description This function takes a (T x 1) vector Y and returns the (T-p x 1) vector y and the (T-p x p) matrix of lagged observations.
 //' 
 //' @param Y vector with time series observations. Required argument. 
 //' @param ar integer for the number of lags to use in estimation. Must be greater than or equal to 1. Default is 1.
@@ -146,17 +148,17 @@ List ts_lagged(arma::mat Y, int ar){
 }
 
 // ==============================================================================
-//' @title Parameter List
+//' @title Parameter list for Markov-switching autoregressive model
 //' 
-//' @description This function takes the vector of parameters of interest and converts it to a list with the parameters seperated
+//' @description This function takes the parameter vector of interest and converts it to a list with specific parameter vectors needed for univariate Markov-switching functions
 //' 
-//' @param theta vector of parameters.
-//' @param mdl List of model properties
-//' @param k number of regimes. Must be greater than or equal to 2. 
-//' @param msmu bool indicating is the mean switches with regime 
-//' @param msvar bool indicating is the variance switches with regime 
+//' @param theta: vector of parameters.
+//' @param ar: umber of autoregressive lags
+//' @param k: number of regimes
+//' @param msmu: bool indicating is the mean switches with regime 
+//' @param msvar: bool indicating is the variance switches with regime 
 //' 
-//' @return List with the mean, variance, transition matrix and limiting probabilities
+//' @return List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -181,7 +183,7 @@ List paramListMS(arma::vec theta, int ar, int k, bool msmu, bool msvar){
   arma::mat sigAR = as<arma::mat>(musig_out["sig"]);
   arma::vec state_ind = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
-  int M = pow(k, ar+1);
+  //int M = pow(k, ar+1);
   arma::mat P_AR = as<arma::mat>(transMatAR(P, k, ar));
   arma::mat pinf_AR = limP(P_AR);
   // ----- Organize output
@@ -199,17 +201,18 @@ List paramListMS(arma::vec theta, int ar, int k, bool msmu, bool msvar){
   return(param_out);
 }
 // ==============================================================================
-//' @title Parameter List
+//' @title Parameter list for Markov-switching vector autoregressive model
 //' 
-//' @description This function takes the vector of parameters of interest and converts it to a list with the parameters seperated
+//' @description This function takes the parameter vector of interest and converts it to a list with specific parameter vectors needed for multivariate Markov-switching functions
 //' 
-//' @param theta vector of parameters.
-//' @param mdl List of model properties
-//' @param k number of regimes. Must be greater than or equal to 2. 
-//' @param msmu bool indicating is the mean switches with regime 
-//' @param msvar bool indicating is the variance switches with regime 
+//' @param theta: vector of parameters.
+//' @param q: number of time series 
+//' @param ar: umber of autoregressive lags
+//' @param k: number of regimes
+//' @param msmu: bool indicating is the mean switches with regime 
+//' @param msvar: bool indicating is the variance switches with regime 
 //' 
-//' @return List with the mean, variance, transition matrix and limiting probabilities
+//' @return List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -258,7 +261,7 @@ List paramListMSVAR(arma::vec theta, int q, int ar, int k, bool msmu, bool msvar
   List sigAR = musig_out["sig"];
   arma::vec state_ind = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
-  int M = pow(k, ar+1);
+  //int M = pow(k, ar+1);
   arma::mat P_AR = as<arma::mat>(transMatAR(P, k, ar));
   arma::mat pinf_AR = limP(P_AR);
   // ----- Organize output
@@ -276,18 +279,15 @@ List paramListMSVAR(arma::vec theta, int q, int ar, int k, bool msmu, bool msvar
   return(param_out);
 }
 // ==============================================================================
-//' @title Calculate Residuals for Markov-switching model
+//' @title Markov-switching autoregressive model residuals
 //' 
-//' @description This function computes residuals when mean or conditional mean 
-//' (i.e. when dealing with AR model) switches with regime.
+//' @description This function computes residuals of a Markov-switching autoregressive model
 //' 
 //' @param mdl List containing relevant parameters.
 //' @param mu vector with mean in each regime.
 //' @param k number of regimes. Must be greater than or equal to 2. 
-//' @param ar bool indicator for whether model is AR model.
-//'  
 //' 
-//' @return (Txk) matrix of residuals in each regime.
+//' @return (TxM) matrix of residuals in each regime M where M=k^(ar+1)
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -314,18 +314,15 @@ arma::mat calcMSResid(List mdl, arma::mat mu, int k){
   return(resid);
 }
 // ==============================================================================
-//' @title Calculate Residuals for Markov-switching VAR model
+//' @title Markov-switching vector autoregressive model residuals
 //' 
-//' @description This function computes residuals when mean or conditional mean 
-//' (i.e. when dealing with AR model) switches with regime.
+//' @description This function computes residuals of a Markov-switching vector autoregressive model. Note that 
 //' 
 //' @param mdl List containing relevant parameters.
 //' @param mu vector with mean in each regime.
 //' @param k number of regimes. Must be greater than or equal to 2. 
-//' @param ar bool indicator for whether model is AR model.
-//'  
 //' 
-//' @return (Txk) matrix of residuals in each regime.
+//' @return List with M (Txq) matrix of residuals in each regime M where M=k^(ar+1)
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -357,8 +354,19 @@ List calcMSVARResid(List mdl, List mu, int k){
 }
 
 // ==============================================================================
-//' @title generate initial values for MS model
+//' @title Initial values for Markov-switching autoregressive model
 //' 
+//' @description This function generates a random parameter vector to be used as initial values for a Markov-switching autoregressive model
+//' 
+//' @param mdl: List with parameter values of simple (one-regime) autoregressive model. This includes
+//'   - phi: vector autoregressive coefficients
+//'   - mu: mean of process 
+//'   - stdev: standard deviation
+//'   - msmu: boolean indicator. If TRUE, mean is function of markov process. If FALSE, mean is constant across regimes
+//'   - msvar: boolean indicator. If TRUE, standard deviation is function of markov process. If FALSE, standard deviation is constant across regimes
+//' @param k: number of regimes
+//' 
+//' @return vector of initial parameter values
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -391,8 +399,19 @@ arma::vec initValsMS(List mdl, int k){
 }
 
 // ==============================================================================
-//' @title generate initial values for MS-VAR model
+//' @title Initial values for Markov-switching vector autoregressive model
 //' 
+//' @description This function generates a random parameter vector to be used as initial values for a Markov-switching vector autoregressive model
+//' 
+//' @param mdl: List with parameter values of simple (one-regime) vector autoregressive model. This includes
+//'   - phi: matrix autoregressive coefficients
+//'   - mu: vector of means
+//'   - sigma: covariance matrix
+//'   - msmu: boolean indicator. If TRUE, mean is function of markov process. If FALSE, mean is constant across regimes
+//'   - msvar: boolean indicator. If TRUE, standard deviation is function of markov process. If FALSE, standard deviation is constant across regimes
+//' @param k: number of regimes
+//' 
+//' @return vector of initial parameter values
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -419,12 +438,12 @@ arma::vec initValsMSVAR(List mdl, int k){
   // initial values for stdev around linear model stdev when switch
   if (msvar==TRUE){
     arma::vec sigma_vec_tmp = covar_vech(sigma);
-    arma::mat sig_mat_tmp = covar_vech((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN));
+    arma::mat sig_mat_tmp = covar_unvech((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
     sig_mat_tmp = sig_mat_tmp*trans(sig_mat_tmp);
     sig_mat_tmp = sig_mat_tmp + q*arma::speye(q,q);
     sigma_0.row(0) = trans(covar_vech(sig_mat_tmp));
     for (int xk = 1; xk<k; xk++){
-      arma::mat sig_mat_tmp = covar_vech((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN));
+      arma::mat sig_mat_tmp = covar_unvech((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
       sig_mat_tmp = sig_mat_tmp*trans(sig_mat_tmp);
       sig_mat_tmp = sig_mat_tmp + q*arma::speye(q,q);
       sigma_0.row(xk) = trans(covar_vech(sig_mat_tmp));
@@ -441,13 +460,13 @@ arma::vec initValsMSVAR(List mdl, int k){
 
 
 // ==============================================================================
-//' @title Calculate MC P-Value
+//' @title Monte Carlo P-value
 //' 
-//' @description This function calculates a Monte-Carlo p-value
+//' @description This function computes the Monte Carlo P-value
 //' 
-//' @param test_stat test statistic under the alternative (e.g. S_0)
-//' @param null_vec series with test statistic under the null (i.e. vector S)
-//' @param type like of test. options are: "geq" for right-tail test, "leq" for 
+//' @param test_stat: test statistic under the alternative (e.g. S_0)
+//' @param null_vec: (N x 1) vector with test statistic under the null hypothesis
+//' @param type: type of test of test. options are: "geq" for right-tail test, "leq" for 
 //' left-tail test, "abs" for absolute vallue test and "two-tail" for two-tail test.
 //' 
 //' @return MC p-value of test
@@ -481,220 +500,286 @@ double MCpval(double test_stat, arma::vec null_vec, Rcpp::String type = "geq"){
 }
 
 // ==============================================================================
-//' @title Simulate Autoregressive Series
+//' @title Simulate autoregressive process
 //' 
-//' @description This function simulates an autoregresive series
+//' @description This function simulates an autoregresive process
 //' 
-//' @param mdl_h0 List containing series properties such as n: length, ar: number of autoregressive lags, stdev: standard deviation, mu: mean of process, phi: vector of autoregressive coefficients
-//' @param burnin number of simulated observations to remove from begining. If using mu not equal to 0 it is recommended to use burnin to avoid dependence on initial value. Default is 200.
+//' @param mdl_h0: List containing the following DGP parameters
+//'   - n: length of series
+//'   - mu: mean of process 
+//'   - sigma: standard deviation of process
+//'   - phi: vector of autoregressive coefficients
+//'   
+//' @param burnin: number of simulated observations to remove from beginning. Default is 100
 //' 
-//' @return List with autoregressive series and its properties
+//' @return List with simulated autoregressive series and its DGP parameters
 //' 
 //' @export
 // [[Rcpp::export]]
-List simuAR(List mdl_h0, int burnin = 200){
-  int n = mdl_h0["n"];
+List simuAR(List mdl_h0, int burnin = 100){
+  // ----- DGP parameter
   arma::vec phi = mdl_h0["phi"];
+  int Tsize = mdl_h0["n"];
   double mu = mdl_h0["mu"];
-  double std = mdl_h0["stdev"];
-  int ar = mdl_h0["ar"];
+  double stdev = mdl_h0["sigma"];
+  int ar = phi.n_elem; 
   double intercept = mu*(1-sum(phi));
-  arma::vec series(n+burnin, arma::fill::zeros);
-  series.subvec(0, ar-1) = intercept + arma::randn(ar)*std;
-  for (int xt = ar; xt<n+burnin; xt++){
-    arma::vec ytmp = flipud(series.subvec((xt-ar),(xt-1)));
-    series(xt) = as_scalar(intercept + trans(ytmp)*phi + arma::randn()*std);
+  // ----- Start simulation
+  // pre-define variables
+  arma::vec Y(Tsize+burnin, arma::fill::zeros);
+  // simulate errors using box-Muller method
+  double pi = arma::datum::pi;
+  arma::mat U1(Tsize+burnin, 1, arma::fill::randu);
+  arma::mat U2(Tsize+burnin, 1, arma::fill::randu);
+  arma::vec eps = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
+  arma::vec eps_corr = eps*stdev;
+  // simulate process
+  Y.subvec(0, ar-1) = mu + eps_corr.subvec(0, ar-1);
+  for (int xt = ar; xt<(Tsize+burnin); xt++){
+    arma::vec ytmp = flipud(Y.subvec((xt-ar),(xt-1)));
+    eps_corr(xt) = arma::randn()*stdev;
+    Y(xt) = as_scalar(intercept + trans(ytmp)*phi + eps_corr(xt));
   }
-  arma::vec series_out = series.subvec(burnin, n+burnin-1);
-  List simu_output;
-  simu_output["y"] = series_out;
-  simu_output["n"] = n;
-  simu_output["phi"] = phi;
-  simu_output["mu"] = mu;
-  simu_output["stdev"] = std;
-  simu_output["mdl"] = mdl_h0;
+  // ----- Output
+  arma::vec Y_out = Y.subvec(burnin, Tsize+burnin-1);
+  arma::vec eps_corr_out = eps_corr.subvec(burnin, Tsize+burnin-1);
+  List simu_output = clone(mdl_h0);
+  simu_output["y"] = Y_out;
+  simu_output["ar"] = ar;
+  simu_output["resid"] = eps_corr_out;
   return(simu_output);
 }
 
 // ==============================================================================
-//' @title Simulate Markov-switching Autoregressive Series
+//' @title Simulate Markov-switching autoregressive process
 //' 
-//' @description This function simulates a Markov-switching autoregressive series
+//' @description This function simulates a Markov-switching autoregressive process
 //' 
-//' @param mdl_h0 List containing series properties such as n: length, ar: number of autoregressive lags, 
-//' stdev: standard deviation, mu: mean of process, phi: vector of autoregressive coefficients, P: transition matrix (if type="markov")
-//' or vector of component weights (if type="mixture"), k: number of regimes.
-//' @param type determines type of St is a Markov process or a random mixture. Default is "markov" 
-//' @param burnin number of simulated observations to remove from beginning. By assumption, series begins in state 1 
-//' so it is recommended to use burnin to avoid dependence on this assumption. Default is 200.
+//' @param mdl_h0: List containing the following DGP parameters
+//'   - n: length of series
+//'   - k: number of regimes
+//'   - mu: (k x 1) vector with mean of process in each regime
+//'   - sigma: (k x 1) vector with standard deviation of process in each regime
+//'   - phi: vector of autoregressive coefficients
+//'   - P: (k x k) transition matrix (columns must sum to one)
+//'   
+//' @param burnin: number of simulated observations to remove from beginning. Default is 100
 //' 
-//' @return List with Markov-switching autoregressive series and its properties
+//' @return List with simulated Markov-switching autoregressive process and its DGP properties
 //' 
 //' @export
 // [[Rcpp::export]]
-List simuMS(List mdl_h0, int burnin = 200){
-  // ----- Obtain parameters
-  int n = mdl_h0["n"];
+List simuMSAR(List mdl_h0, int burnin = 100){
+  // ----- DGP parameter
   arma::vec phi = mdl_h0["phi"];
   arma::vec mu = mdl_h0["mu"];
-  arma::vec std = mdl_h0["stdev"];
-  int ar = mdl_h0["ar"];
-  int k = mdl_h0["k"];
+  arma::vec stdev = mdl_h0["sigma"];
   arma::mat P = mdl_h0["P"];
   arma::vec pinf = limP(P);
-  // vector for mean and standard dev at each time t
-  arma::vec mu_t(n+burnin, arma::fill::zeros);
-  arma::vec std_t(n+burnin, arma::fill::zeros);
-  // Simulate data
-  arma::vec series(n+burnin,arma::fill::zeros);
-  arma::vec state_series(n+burnin,arma::fill::zeros);
+  int Tsize = mdl_h0["n"];
+  int k = mdl_h0["k"];
+  int ar = phi.n_elem; 
+  // ----- Perform checks on DGP
+  arma::vec check_Pcolsum = trans(arma::sum(P,0));
+  if (max(abs(check_Pcolsum-1))>1e-8){
+    stop("Columns of transition matrix 'P' must sum to 1.");
+  }
+  // ----- Start Simulation
+  // pre-define variables
+  arma::vec mu_t(Tsize+burnin, arma::fill::zeros);
+  arma::vec stdev_t(Tsize+burnin, arma::fill::zeros);
+  arma::vec Y(Tsize+burnin,arma::fill::zeros);
+  arma::vec resid(Tsize+burnin,arma::fill::zeros);
+  arma::vec state_series(Tsize+burnin,arma::fill::zeros);
+  arma::vec repar(ar,arma::fill::ones);
+  // simulate errors using box-Muller method
+  List epsLs(k);
+  double pi = arma::datum::pi;
+  for (int xk = 0; xk<k; xk++){
+    double stdev_k = stdev(xk);
+    arma::mat U1(Tsize+burnin, 1, arma::fill::randu);
+    arma::mat U2(Tsize+burnin, 1, arma::fill::randu);
+    arma::vec eps_k = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
+    arma::vec eps_corr = eps_k*stdev_k;
+    epsLs[xk] = eps_corr;
+  }
   // initialize assuming series begins in state 1 (use burnin to reduce dependence on this assumption)
   int state = 0;
-  arma::vec repar(ar, arma::fill::ones);
-  series.subvec(0,ar-1) = mu(state) + arma::randn(ar)*std(state);
-  mu_t.subvec(0,ar-1) = mu(state)*repar;
-  std_t.subvec(0,ar-1) = std(state)*repar;
-  // ----- Simulate series
-  arma::vec repvec(k,arma::fill::ones);
-  arma::vec state_ind = cumsum(repvec)-1;
-  for (int xt = ar; xt<n+burnin; xt++){
+  mu_t.rows(0,ar-1) = repar*mu.row(state);
+  stdev_t.rows(0,ar-1) = repar*stdev.row(state);
+  arma::vec eps_corr_k = epsLs[state];
+  Y.rows(0,ar-1) = mu_t.rows(0,ar-1) + eps_corr_k.rows(0,ar-1);
+  // simulate process
+  arma::vec repk(k,arma::fill::ones);
+  arma::vec state_ind = cumsum(repk)-1;
+  for (int xt = ar; xt<(Tsize+burnin); xt++){
     // Get new state
     arma::vec w_temp = P.col(state);
     arma::vec state_mat = cumsum(w_temp);
     state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
     state_series(xt) = state;
     // generate new obs
-    arma::vec ytmp = flipud(series.subvec((xt-ar),(xt-1)));
+    arma::vec ytmp = flipud(Y.subvec((xt-ar),(xt-1)));
     arma::vec mu_lag = flipud(mu_t.subvec((xt-ar),(xt-1))); 
-    series(xt) = as_scalar(mu(state) + (trans(ytmp-mu_lag))*phi + arma::randn()*std(state));
+    arma::vec eps_corr_k = epsLs[state];
+    resid(xt) = eps_corr_k(xt);
+    Y(xt) = as_scalar(mu(state) + (trans(ytmp-mu_lag))*phi + resid(xt));
     mu_t(xt) = mu(state);
-    std_t(xt) = std(state);
+    stdev_t(xt) = stdev(state);
   }
-  // ----- Organize output
-  arma::vec series_out = series.subvec(burnin,n+burnin-1);
-  arma::vec state_series_out = state_series.subvec(burnin,n+burnin-1);
-  arma::vec mu_t_out = mu_t.subvec(burnin,n+burnin-1);
-  arma::vec std_t_out = std_t.subvec(burnin,n+burnin-1);
-  List simu_output;
-  simu_output["y"] = series_out;
+  // ----- Output
+  arma::vec Y_out = Y.subvec(burnin,Tsize+burnin-1);
+  arma::vec resid_out = resid.subvec(burnin,Tsize+burnin-1);
+  arma::vec state_series_out = state_series.subvec(burnin,Tsize+burnin-1);
+  arma::vec mu_t_out = mu_t.subvec(burnin,Tsize+burnin-1);
+  arma::vec stdev_t_out = stdev_t.subvec(burnin,Tsize+burnin-1);
+  List simu_output = clone(mdl_h0);
+  simu_output["y"] = Y_out;
+  simu_output["ar"] = ar;
+  simu_output["resid"] = resid_out;
   simu_output["St"] = state_series_out;
   simu_output["mu_t"] = mu_t_out;
-  //simu_output["stdev_t"] = std_t_out;
-  simu_output["P"] = P;
+  simu_output["stdev_t"] = stdev_t_out;
   simu_output["pinf"] = pinf;
-  simu_output["mdl"] = mdl_h0;
   return(simu_output);
 }
 
 // ==============================================================================
-//' @title Simulate VAR Model
+//' @title Simulate VAR process
 //' 
+//' @description This function simulates a vector autoregresive process
+//' 
+//' @param mdl_h0: List containing the following DGP parameters
+//'   - n: length of series
+//'   - mu: (q x 1) vector of means 
+//'   - sigma: (q x q) covariance matrix 
+//'   - phi: (q x qp) matrix of autoregressive coefficients
+//'   - ar: number of autoregressive lags (i.e, p)
+//'   
+//' @param burnin: number of simulated observations to remove from beginning. Default is 100
+//' 
+//' @return List with simulated vector autoregressive series and its DGP parameters
 //' 
 //' @export
 // [[Rcpp::export]]
-List simuVAR(List mdl_h0, int burnin = 200){
+List simuVAR(List mdl_h0, int burnin = 100){
+  // ----- DGP parameters
   arma::vec mu = mdl_h0["mu"];
   arma::mat cov_mat = mdl_h0["sigma"];
-  int Tsize = mdl_h0["n"];
   arma::mat phimat = mdl_h0["phi"];
+  int Tsize = mdl_h0["n"];
   int ar = mdl_h0["ar"];
-  // Number of time series variables
   int N = mu.n_elem;
-  // random uniform for box-muller method
-  double pi = arma::datum::pi;
-  arma::mat U1(Tsize+burnin, N, arma::fill::randu);
-  arma::mat U2(Tsize+burnin, N, arma::fill::randu);
-  arma::mat eps = trans(arma::diagmat(sqrt(cov_mat))*trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
-  // add correlations
-  arma::mat corr_mat = cov2corr(cov_mat);
-  arma::mat C = chol(corr_mat, "lower");
-  arma::mat eps_corr = trans(C*trans(eps));
-  // Get companion form matrix
+  // companion matrix
   arma::mat diagmat = arma::eye(N*(ar-1),N*(ar-1));
   arma::mat diagzero(N*(ar-1),N,arma::fill::zeros);
   arma::mat Mn = join_rows(diagmat,diagzero);
   arma::mat F = join_cols(phimat,Mn);
-  // get constant vec 
+  // constant vec
   arma::vec repmu(ar,arma::fill::ones);
   arma::vec mu_tmp = vectorise(trans(repmu*trans(mu)));
   arma::vec nu_tmp = (arma::eye(N*ar,N*ar) - F)*mu_tmp;
   arma::vec nu = nu_tmp.subvec(0,N-1);
-  // Simulate process 
+  // ----- Simulate VAR process
+  // simulate errors using box-Muller method
+  double pi = arma::datum::pi;
+  arma::mat U1(Tsize+burnin, N, arma::fill::randu);
+  arma::mat U2(Tsize+burnin, N, arma::fill::randu);
+  arma::mat eps = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
+  // add correlations
+  arma::mat C = chol(cov_mat, "lower");
+  arma::mat eps_corr = trans(C*trans(eps));
+  // simulate process
   arma::mat Y(Tsize+burnin, N, arma::fill::zeros);
   Y.rows(0,ar-1) = repmu*trans(nu) + eps_corr.rows(0,ar-1);
   for (int xt = ar; xt<(Tsize+burnin); xt++){
     arma::mat Ytmp = flipud(Y.rows((xt-ar),(xt-1)));
     Y.row(xt) = trans(nu) + trans(vectorise(trans(Ytmp)))*trans(phimat) + eps_corr.row(xt);
   }
+  // ----- Output
   arma::mat Y_out = Y.submat(burnin,0,Tsize+burnin-1,N-1);
-  arma::mat eps_out = eps.submat(burnin,0,Tsize+burnin-1,N-1);
   arma::mat eps_corr_out = eps_corr.submat(burnin,0,Tsize+burnin-1,N-1);
-  // Output
-  List simuVAR_out;
+  List simuVAR_out = clone(mdl_h0);
   simuVAR_out["y"] = Y_out;
-  simuVAR_out["corr_mat"] = corr_mat;
-  simuVAR_out["cholesktmat"] = C;
+  simuVAR_out["resid"] = eps_corr_out;
   simuVAR_out["F_comp"] = F;
-  simuVAR_out["mdl"] = mdl_h0;
   return(simuVAR_out);
 }
 
 
 // ==============================================================================
-//' @title Simulate Markov-Switching VAR Model
+//' @title Simulate Markov-switching vector autoregressive process
 //' 
+//' @description This function simulates a Markov-switching vector autoregressive process
+//' 
+//' @param mdl_h0: List containing the following DGP parameters
+//'   - n: length of series
+//'   - k: number of regimes
+//'   - mu: (k x q) matrix of means 
+//'   - sigma: List with k (q x q) covariance matrices
+//'   - phi: (q x qp) matrix of autoregressive coefficients
+//'   - ar: number of autoregressive lags (i.e, p)
+//'   - P: (k x k) transition matrix (columns must sum to one)
+//'   
+//' @param burnin: number of simulated observations to remove from beginning. Default is 100
+//' 
+//' @return List with simulated vector autoregressive series and its DGP parameters
 //' 
 //' @export
 // [[Rcpp::export]]
-List simuMSVAR(List mdl_h0, int burnin = 200){
+List simuMSVAR(List mdl_h0, int burnin = 100){
+  // ----- DGP parameters
   arma::mat mu = mdl_h0["mu"];
   List cov_matLs = mdl_h0["sigma"];
-  int Tsize = mdl_h0["n"];
   arma::mat phimat = mdl_h0["phi"];
-  int ar = mdl_h0["ar"];
-  int N = mu.n_cols;
-  int k = mdl_h0["k"];
   arma::mat P = mdl_h0["P"];
   arma::vec  pinf = limP(P);
-  // vector for mean and standard dev at each time t
-  arma::mat mu_t(Tsize+burnin, N, arma::fill::zeros);
-  List sigma_t(Tsize+burnin);
-  // Get companion form matrix
+  int Tsize = mdl_h0["n"];
+  int ar = mdl_h0["ar"];
+  int k = mdl_h0["k"];
+  int N = mu.n_cols;
+  // companion form matrix
   arma::mat diagmat = arma::eye(N*(ar-1), N*(ar-1));
   arma::mat diagzero(N*(ar-1),N,arma::fill::zeros);
   arma::mat Mn = join_rows(diagmat,diagzero);
   arma::mat F = join_cols(phimat,Mn);
-  // Get correlated normal errors
+  // ----- Perform checks on DGP
+  arma::vec check_Pcolsum = trans(arma::sum(P,0));
+  if (max(abs(check_Pcolsum-1))>1e-8){
+    stop("Columns of transition matrix 'P' must sum to 1.");
+  }
+  // ----- Start Simulation
+  // pre-define variables
+  arma::mat mu_t(Tsize+burnin, N, arma::fill::zeros);
+  List sigma_t(Tsize+burnin);
+  arma::mat Y(Tsize+burnin, N, arma::fill::zeros);
+  arma::mat resid(Tsize+burnin, N, arma::fill::zeros);
+  arma::vec state_series(Tsize+burnin,arma::fill::zeros);
+  arma::vec repar(ar,arma::fill::ones);
+  // simulate errors using box-Muller method
   List epsLs(k);
-  List corr_mat(k);
-  arma::mat nu(k, N, arma::fill::zeros);
   double pi = arma::datum::pi;
-  arma::vec repmu(ar,arma::fill::ones);
   for (int xk = 0; xk<k; xk++){
     arma::mat U1(Tsize+burnin, N, arma::fill::randu);
     arma::mat U2(Tsize+burnin, N, arma::fill::randu);
-    arma::mat cov_mat_k = cov_matLs[xk];
-    arma::mat eps_k = trans(arma::diagmat(sqrt(cov_mat_k))*trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
+    arma::mat eps_k = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
     // add correlations
-    arma::mat corr_mat_k = cov2corr(cov_mat_k);
-    corr_mat[xk] = corr_mat_k;
-    arma::mat C = chol(corr_mat_k, "lower");
+    arma::mat cov_mat_k = cov_matLs[xk];
+    arma::mat C = chol(cov_mat_k, "lower");
     arma::mat eps_corr = trans(C*trans(eps_k));
     epsLs[xk] = eps_corr;
   }
   // initialize assuming series begins in state 1 (use burnin to reduce dependence on this assumption)
-  arma::mat Y(Tsize+burnin, N, arma::fill::zeros);
-  arma::vec state_series(Tsize+burnin,arma::fill::zeros);
   int state = 0;
-  mu_t.rows(0,ar-1) = repmu*mu.row(state);
+  mu_t.rows(0,ar-1) = repar*mu.row(state);
   arma::mat eps_corr_k = epsLs[state];
   Y.rows(0,ar-1) = mu_t.rows(0,ar-1) + eps_corr_k.rows(0,ar-1);
   for (int xp = 0; xp<ar; xp++){
     sigma_t[xp] = cov_matLs[state];
   } 
-  // ----- Simulate series
-  arma::vec repvec(k,arma::fill::ones);
-  arma::vec state_ind = cumsum(repvec)-1;
+  // simulate process
+  arma::vec repk(k,arma::fill::ones);
+  arma::vec state_ind = cumsum(repk)-1;
   for (int xt = ar; xt<(Tsize+burnin); xt++){
     // Get new state
     arma::vec w_temp = P.col(state);
@@ -704,22 +789,169 @@ List simuMSVAR(List mdl_h0, int burnin = 200){
     arma::mat eps_corr_k = epsLs[state];
     arma::mat Ytmp = flipud(Y.rows((xt-ar),(xt-1)));
     arma::mat mu_lag = flipud(mu_t.rows((xt-ar),(xt-1))); 
-    Y.row(xt) = mu.row(state) + trans(vectorise(trans(Ytmp-mu_lag)))*trans(phimat) + eps_corr_k.row(xt);
+    resid.row(xt) = eps_corr_k.row(xt);
+    Y.row(xt) = mu.row(state) + trans(vectorise(trans(Ytmp-mu_lag)))*trans(phimat) + resid.row(xt);
+    mu_t.row(xt) = mu.row(state);
+    sigma_t[xt] = cov_matLs[state];
+  }
+  // ----- Output
+  arma::mat Y_out = Y.submat(burnin,0,Tsize+burnin-1,N-1);
+  arma::mat resid_out = resid.submat(burnin,0,Tsize+burnin-1,N-1);
+  arma::vec state_series_out = state_series.subvec(burnin,Tsize+burnin-1);
+  arma::mat mu_t_out = mu_t.rows(burnin,Tsize+burnin-1);
+  List sigma_t_out(Tsize);
+  for (int xt = burnin; xt<(Tsize+burnin); xt++){
+    sigma_t_out[xt-burnin] = sigma_t[xt];
+  } 
+  List simuVAR_out = clone(mdl_h0);
+  simuVAR_out["y"] = Y_out;
+  simuVAR_out["resid"] = resid_out;
+  simuVAR_out["F_comp"] = F;
+  simuVAR_out["St"] = state_series_out;
+  simuVAR_out["mu_t"] = mu_t_out;
+  simuVAR_out["sigma_t"] = sigma_t_out;
+  simuVAR_out["pinf"] = pinf;
+  return(simuVAR_out);
+}
+
+
+// ==============================================================================
+//' @title Simulate normally distributed process
+//' 
+//' @description This function simulates a normally distributed process
+//' 
+//' @param mdl_h0: List containing the following DGP parameters
+//'   - n: length of series
+//'   - mu: (q x 1) vector of means 
+//'   - sigma: (q x q) covariance matrix. If simulating a univariate process (i.e., length of mu is 1), this should be the standard devation and not the variance.
+//'   
+//' @return List with simulated series and its DGP parameters
+//' 
+//' @export
+// [[Rcpp::export]]
+List simuNorm(List mdl_h0){
+  // ----- DGP parameter
+  arma::vec mu = mdl_h0["mu"];
+  int Tsize = mdl_h0["n"];
+  int N = mu.n_elem;
+  // ----- Start simulation
+  // pre-define variables
+  arma::mat Y; 
+  arma::mat eps_corr;
+  arma::vec repT(Tsize, arma::fill::ones);
+  // simulate errors using box-Muller method
+  double pi = arma::datum::pi;
+  arma::mat U1(Tsize, N, arma::fill::randu);
+  arma::mat U2(Tsize, N, arma::fill::randu);
+  arma::mat eps = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
+  if (N>1){
+    arma::mat cov_mat = mdl_h0["sigma"];
+    // add correlations
+    arma::mat C = chol(cov_mat, "lower");
+    eps_corr = trans(C*trans(eps));
+    // simulate process
+    Y  =  repT*trans(mu) + eps_corr;  
+  }else if (N==1){
+    double stdev = mdl_h0["sigma"];
+    // add variance
+    eps_corr = eps*stdev;
+    // simulate process
+    Y = repT*mu + eps_corr;
+  }
+  // ----- Output
+  List simuVAR_out = clone(mdl_h0);
+  simuVAR_out["y"] = Y;
+  simuVAR_out["resid"] = eps_corr;
+  return(simuVAR_out);
+}
+
+
+
+
+// ==============================================================================
+//' @title Simulate Hidden Markov model with normally distributed errors
+//' 
+//' @description This function simulates a Hidden Markov Model process
+//' 
+//' @param mdl_h0: List containing the following DGP parameters
+//'   - n: length of series
+//'   - k: number of regimes
+//'   - mu: (k x q) vector of means 
+//'   - sigma: (q x q) covariance matrix. If simulating a univariate process (i.e., length of mu is 1), this should be the standard devation and not the variance.
+//'   - P: (k x k) transition matrix (columns must sum to one)
+//'   
+//' @param burnin: number of simulated observations to remove from beginning. Default is 100
+//' 
+//' @return List with simulated series and its DGP parameters
+//' 
+//' @export
+// [[Rcpp::export]]
+List simuHMM(List mdl_h0, int burnin = 100){
+  // ----- DGP parameter
+  arma::mat mu = mdl_h0["mu"];
+  List cov_matLs = mdl_h0["sigma"];
+  arma::mat P = mdl_h0["P"];
+  arma::vec  pinf = limP(P);
+  int Tsize = mdl_h0["n"];
+  int k = mdl_h0["k"];
+  int N = mu.n_cols;
+  // ----- Perform checks on DGP
+  arma::vec check_Pcolsum = trans(arma::sum(P,0));
+  if (max(abs(check_Pcolsum-1))>1e-8){
+    stop("Columns of transition matrix 'P' must sum to 1.");
+  }
+  // ----- Start Simulation
+  // pre-define variables
+  arma::mat mu_t(Tsize+burnin, N, arma::fill::zeros);
+  List sigma_t(Tsize+burnin);
+  arma::mat Y(Tsize+burnin, N, arma::fill::zeros);
+  arma::mat resid(Tsize+burnin, N, arma::fill::zeros);
+  arma::vec state_series(Tsize+burnin, arma::fill::zeros);
+  // simulate errors using box-Muller method
+  List epsLs(k);
+  double pi = arma::datum::pi;
+  for (int xk = 0; xk<k; xk++){
+    arma::mat U1(Tsize+burnin, N, arma::fill::randu);
+    arma::mat U2(Tsize+burnin, N, arma::fill::randu);
+    arma::mat eps_k = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
+    // add correlations
+    arma::mat cov_mat_k = cov_matLs[xk];
+    arma::mat C = chol(cov_mat_k, "lower");
+    arma::mat eps_corr = trans(C*trans(eps_k));
+    epsLs[xk] = eps_corr;
+  }
+  // initialize assuming series begins in state 1 (use burnin to reduce dependence on this assumption)
+  int state = 0;
+  // simulate process
+  arma::vec repk(k,arma::fill::ones);
+  arma::vec state_ind = cumsum(repk)-1;
+  for (int xt = 0; xt<(Tsize+burnin); xt++){
+    // Get new state
+    arma::vec w_temp = P.col(state);
+    arma::vec state_mat = cumsum(w_temp);
+    state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
+    state_series(xt) = state;
+    arma::mat eps_corr_k = epsLs[state];
+    resid.row(xt) = eps_corr_k.row(xt);
+    Y.row(xt) = mu.row(state) + resid.row(xt);
     mu_t.row(xt) = mu.row(state);
     sigma_t[xt] = cov_matLs[state];
   }
   arma::mat Y_out = Y.submat(burnin,0,Tsize+burnin-1,N-1);
+  arma::mat resid_out = resid.submat(burnin,0,Tsize+burnin-1,N-1);
   arma::vec state_series_out = state_series.subvec(burnin,Tsize+burnin-1);
   arma::mat mu_t_out = mu_t.rows(burnin,Tsize+burnin-1);
-  // Output
-  List simuVAR_out;
+  List sigma_t_out(Tsize);
+  for (int xt = burnin; xt<(Tsize+burnin); xt++){
+    sigma_t_out[xt-burnin] = sigma_t[xt];
+  } 
+  // ----- Output
+  List simuVAR_out = clone(mdl_h0);
   simuVAR_out["y"] = Y_out;
-  simuVAR_out["F_comp"] = F;
+  simuVAR_out["resid"] = resid_out;
   simuVAR_out["St"] = state_series_out;
   simuVAR_out["mu_t"] = mu_t_out;
-  simuVAR_out["P"] = P;
+  simuVAR_out["sigma_t"] = sigma_t_out;
   simuVAR_out["pinf"] = pinf;
-  simuVAR_out["mdl"] = mdl_h0;
   return(simuVAR_out);
 }
-

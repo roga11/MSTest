@@ -15,5 +15,5 @@ ts_lagged(Y, ar)
 List with vector y (vector of lagged Y) and matrix X of lagged observations.
 }
 \description{
-This function takes a (Tx1) vector Y and returns the (T-px1) vector y and matrix of lagged observations.
+This function takes a (T x 1) vector Y and returns the (T-p x 1) vector y and the (T-p x p) matrix of lagged observations.
 }

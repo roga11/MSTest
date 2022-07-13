@@ -2,10 +2,25 @@
 % Please edit documentation in R/RcppExports.R
 \name{simuMSVAR}
 \alias{simuMSVAR}
-\title{Simulate Markov-Switching VAR Model}
+\title{Simulate Markov-switching vector autoregressive process}
 \usage{
-simuMSVAR(mdl_h0, burnin = 200L)
+simuMSVAR(mdl_h0, burnin = 100L)
+}
+\arguments{
+\item{mdl_h0:}{List containing the following DGP parameters
+- n: length of series
+- k: number of regimes
+- mu: (k x q) matrix of means 
+- sigma: List with k (q x q) covariance matrices
+- phi: (q x qp) matrix of autoregressive coefficients
+- ar: number of autoregressive lags (i.e, p)
+- P: (k x k) transition matrix (columns must sum to one)}
+
+\item{burnin:}{number of simulated observations to remove from beginning. Default is 100}
+}
+\value{
+List with simulated vector autoregressive series and its DGP parameters
 }
 \description{
-Simulate Markov-Switching VAR Model
+This function simulates a Markov-switching vector autoregressive process
 }

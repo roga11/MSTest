@@ -69,7 +69,7 @@ limP <- function(P) {
 
 #' @title Lagged Time Series Data
 #' 
-#' @description This function takes a (Tx1) vector Y and returns the (T-px1) vector y and matrix of lagged observations.
+#' @description This function takes a (T x 1) vector Y and returns the (T-p x 1) vector y and the (T-p x p) matrix of lagged observations.
 #' 
 #' @param Y vector with time series observations. Required argument. 
 #' @param ar integer for the number of lags to use in estimation. Must be greater than or equal to 1. Default is 1.
@@ -81,99 +81,116 @@ ts_lagged <- function(Y, ar) {
     .Call(`_MSTest_ts_lagged`, Y, ar)
 }
 
-#' @title Parameter List
+#' @title Parameter list for Markov-switching autoregressive model
 #' 
-#' @description This function takes the vector of parameters of interest and converts it to a list with the parameters seperated
+#' @description This function takes the parameter vector of interest and converts it to a list with specific parameter vectors needed for univariate Markov-switching functions
 #' 
-#' @param theta vector of parameters.
-#' @param mdl List of model properties
-#' @param k number of regimes. Must be greater than or equal to 2. 
-#' @param msmu bool indicating is the mean switches with regime 
-#' @param msvar bool indicating is the variance switches with regime 
+#' @param theta: vector of parameters.
+#' @param ar: umber of autoregressive lags
+#' @param k: number of regimes
+#' @param msmu: bool indicating is the mean switches with regime 
+#' @param msvar: bool indicating is the variance switches with regime 
 #' 
-#' @return List with the mean, variance, transition matrix and limiting probabilities
+#' @return List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators
 #' 
 #' @export
 paramListMS <- function(theta, ar, k, msmu, msvar) {
     .Call(`_MSTest_paramListMS`, theta, ar, k, msmu, msvar)
 }
 
-#' @title Parameter List
+#' @title Parameter list for Markov-switching vector autoregressive model
 #' 
-#' @description This function takes the vector of parameters of interest and converts it to a list with the parameters seperated
+#' @description This function takes the parameter vector of interest and converts it to a list with specific parameter vectors needed for multivariate Markov-switching functions
 #' 
-#' @param theta vector of parameters.
-#' @param mdl List of model properties
-#' @param k number of regimes. Must be greater than or equal to 2. 
-#' @param msmu bool indicating is the mean switches with regime 
-#' @param msvar bool indicating is the variance switches with regime 
+#' @param theta: vector of parameters.
+#' @param q: number of time series 
+#' @param ar: umber of autoregressive lags
+#' @param k: number of regimes
+#' @param msmu: bool indicating is the mean switches with regime 
+#' @param msvar: bool indicating is the variance switches with regime 
 #' 
-#' @return List with the mean, variance, transition matrix and limiting probabilities
+#' @return List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators
 #' 
 #' @export
 paramListMSVAR <- function(theta, q, ar, k, msmu, msvar) {
     .Call(`_MSTest_paramListMSVAR`, theta, q, ar, k, msmu, msvar)
 }
 
-#' @title Calculate Residuals for Markov-switching model
+#' @title Markov-switching autoregressive model residuals
 #' 
-#' @description This function computes residuals when mean or conditional mean 
-#' (i.e. when dealing with AR model) switches with regime.
+#' @description This function computes residuals of a Markov-switching autoregressive model
 #' 
 #' @param mdl List containing relevant parameters.
 #' @param mu vector with mean in each regime.
 #' @param k number of regimes. Must be greater than or equal to 2. 
-#' @param ar bool indicator for whether model is AR model.
-#'  
 #' 
-#' @return (Txk) matrix of residuals in each regime.
+#' @return (TxM) matrix of residuals in each regime M where M=k^(ar+1)
 #' 
 #' @export
 calcMSResid <- function(mdl, mu, k) {
     .Call(`_MSTest_calcMSResid`, mdl, mu, k)
 }
 
-#' @title Calculate Residuals for Markov-switching VAR model
+#' @title Markov-switching vector autoregressive model residuals
 #' 
-#' @description This function computes residuals when mean or conditional mean 
-#' (i.e. when dealing with AR model) switches with regime.
+#' @description This function computes residuals of a Markov-switching vector autoregressive model. Note that 
 #' 
 #' @param mdl List containing relevant parameters.
 #' @param mu vector with mean in each regime.
 #' @param k number of regimes. Must be greater than or equal to 2. 
-#' @param ar bool indicator for whether model is AR model.
-#'  
 #' 
-#' @return (Txk) matrix of residuals in each regime.
+#' @return List with M (Txq) matrix of residuals in each regime M where M=k^(ar+1)
 #' 
 #' @export
 calcMSVARResid <- function(mdl, mu, k) {
     .Call(`_MSTest_calcMSVARResid`, mdl, mu, k)
 }
 
-#' @title generate initial values for MS model
+#' @title Initial values for Markov-switching autoregressive model
 #' 
+#' @description This function generates a random parameter vector to be used as initial values for a Markov-switching autoregressive model
+#' 
+#' @param mdl: List with parameter values of simple (one-regime) autoregressive model. This includes
+#'   - phi: vector autoregressive coefficients
+#'   - mu: mean of process 
+#'   - stdev: standard deviation
+#'   - msmu: boolean indicator. If TRUE, mean is function of markov process. If FALSE, mean is constant across regimes
+#'   - msvar: boolean indicator. If TRUE, standard deviation is function of markov process. If FALSE, standard deviation is constant across regimes
+#' @param k: number of regimes
+#' 
+#' @return vector of initial parameter values
 #' 
 #' @export
 initValsMS <- function(mdl, k) {
     .Call(`_MSTest_initValsMS`, mdl, k)
 }
 
-#' @title generate initial values for MS-VAR model
+#' @title Initial values for Markov-switching vector autoregressive model
 #' 
+#' @description This function generates a random parameter vector to be used as initial values for a Markov-switching vector autoregressive model
+#' 
+#' @param mdl: List with parameter values of simple (one-regime) vector autoregressive model. This includes
+#'   - phi: matrix autoregressive coefficients
+#'   - mu: vector of means
+#'   - sigma: covariance matrix
+#'   - msmu: boolean indicator. If TRUE, mean is function of markov process. If FALSE, mean is constant across regimes
+#'   - msvar: boolean indicator. If TRUE, standard deviation is function of markov process. If FALSE, standard deviation is constant across regimes
+#' @param k: number of regimes
+#' 
+#' @return vector of initial parameter values
 #' 
 #' @export
 initValsMSVAR <- function(mdl, k) {
     .Call(`_MSTest_initValsMSVAR`, mdl, k)
 }
 
-#' @title Calculate MC P-Value
+#' @title Monte Carlo P-value
 #' 
-#' @description This function calculates a Monte-Carlo p-value
+#' @description This function computes the Monte Carlo P-value
 #' 
-#' @param test_stat test statistic under the alternative (e.g. S_0)
-#' @param null_vec series with test statistic under the null (i.e. vector S)
-#' @param type like of test. options are: "geq" for right-tail test, "leq" for 
+#' @param test_stat: test statistic under the alternative (e.g. S_0)
+#' @param null_vec: (N x 1) vector with test statistic under the null hypothesis
+#' @param type: type of test of test. options are: "geq" for right-tail test, "leq" for 
 #' left-tail test, "abs" for absolute vallue test and "two-tail" for two-tail test.
 #' 
 #' @return MC p-value of test
@@ -189,52 +206,122 @@ MCpval <- function(test_stat, null_vec, type = "geq") {
     .Call(`_MSTest_MCpval`, test_stat, null_vec, type)
 }
 
-#' @title Simulate Autoregressive Series
+#' @title Simulate autoregressive process
 #' 
-#' @description This function simulates an autoregresive series
+#' @description This function simulates an autoregresive process
 #' 
-#' @param mdl_h0 List containing series properties such as n: length, ar: number of autoregressive lags, stdev: standard deviation, mu: mean of process, phi: vector of autoregressive coefficients
-#' @param burnin number of simulated observations to remove from begining. If using mu not equal to 0 it is recommended to use burnin to avoid dependence on initial value. Default is 200.
+#' @param mdl_h0: List containing the following DGP parameters
+#'   - n: length of series
+#'   - mu: mean of process 
+#'   - sigma: standard deviation of process
+#'   - phi: vector of autoregressive coefficients
+#'   
+#' @param burnin: number of simulated observations to remove from beginning. Default is 100
 #' 
-#' @return List with autoregressive series and its properties
+#' @return List with simulated autoregressive series and its DGP parameters
 #' 
 #' @export
-simuAR <- function(mdl_h0, burnin = 200L) {
+simuAR <- function(mdl_h0, burnin = 100L) {
     .Call(`_MSTest_simuAR`, mdl_h0, burnin)
 }
 
-#' @title Simulate Markov-switching Autoregressive Series
+#' @title Simulate Markov-switching autoregressive process
 #' 
-#' @description This function simulates a Markov-switching autoregressive series
+#' @description This function simulates a Markov-switching autoregressive process
 #' 
-#' @param mdl_h0 List containing series properties such as n: length, ar: number of autoregressive lags, 
-#' stdev: standard deviation, mu: mean of process, phi: vector of autoregressive coefficients, P: transition matrix (if type="markov")
-#' or vector of component weights (if type="mixture"), k: number of regimes.
-#' @param type determines type of St is a Markov process or a random mixture. Default is "markov" 
-#' @param burnin number of simulated observations to remove from beginning. By assumption, series begins in state 1 
-#' so it is recommended to use burnin to avoid dependence on this assumption. Default is 200.
+#' @param mdl_h0: List containing the following DGP parameters
+#'   - n: length of series
+#'   - k: number of regimes
+#'   - mu: (k x 1) vector with mean of process in each regime
+#'   - sigma: (k x 1) vector with standard deviation of process in each regime
+#'   - phi: vector of autoregressive coefficients
+#'   - P: (k x k) transition matrix (columns must sum to one)
+#'   
+#' @param burnin: number of simulated observations to remove from beginning. Default is 100
 #' 
-#' @return List with Markov-switching autoregressive series and its properties
+#' @return List with simulated Markov-switching autoregressive process and its DGP properties
 #' 
 #' @export
-simuMS <- function(mdl_h0, burnin = 200L) {
-    .Call(`_MSTest_simuMS`, mdl_h0, burnin)
+simuMSAR <- function(mdl_h0, burnin = 100L) {
+    .Call(`_MSTest_simuMSAR`, mdl_h0, burnin)
 }
 
-#' @title Simulate VAR Model
+#' @title Simulate VAR process
 #' 
+#' @description This function simulates a vector autoregresive process
+#' 
+#' @param mdl_h0: List containing the following DGP parameters
+#'   - n: length of series
+#'   - mu: (q x 1) vector of means 
+#'   - sigma: (q x q) covariance matrix 
+#'   - phi: (q x qp) matrix of autoregressive coefficients
+#'   - ar: number of autoregressive lags (i.e, p)
+#'   
+#' @param burnin: number of simulated observations to remove from beginning. Default is 100
+#' 
+#' @return List with simulated vector autoregressive series and its DGP parameters
 #' 
 #' @export
-simuVAR <- function(mdl_h0, burnin = 200L) {
+simuVAR <- function(mdl_h0, burnin = 100L) {
     .Call(`_MSTest_simuVAR`, mdl_h0, burnin)
 }
 
-#' @title Simulate Markov-Switching VAR Model
+#' @title Simulate Markov-switching vector autoregressive process
 #' 
+#' @description This function simulates a Markov-switching vector autoregressive process
+#' 
+#' @param mdl_h0: List containing the following DGP parameters
+#'   - n: length of series
+#'   - k: number of regimes
+#'   - mu: (k x q) matrix of means 
+#'   - sigma: List with k (q x q) covariance matrices
+#'   - phi: (q x qp) matrix of autoregressive coefficients
+#'   - ar: number of autoregressive lags (i.e, p)
+#'   - P: (k x k) transition matrix (columns must sum to one)
+#'   
+#' @param burnin: number of simulated observations to remove from beginning. Default is 100
+#' 
+#' @return List with simulated vector autoregressive series and its DGP parameters
 #' 
 #' @export
-simuMSVAR <- function(mdl_h0, burnin = 200L) {
+simuMSVAR <- function(mdl_h0, burnin = 100L) {
     .Call(`_MSTest_simuMSVAR`, mdl_h0, burnin)
+}
+
+#' @title Simulate normally distributed process
+#' 
+#' @description This function simulates a normally distributed process
+#' 
+#' @param mdl_h0: List containing the following DGP parameters
+#'   - n: length of series
+#'   - mu: (q x 1) vector of means 
+#'   - sigma: (q x q) covariance matrix. If simulating a univariate process (i.e., length of mu is 1), this should be the standard devation and not the variance.
+#'   
+#' @return List with simulated series and its DGP parameters
+#' 
+#' @export
+simuNorm <- function(mdl_h0) {
+    .Call(`_MSTest_simuNorm`, mdl_h0)
+}
+
+#' @title Simulate Hidden Markov model with normally distributed errors
+#' 
+#' @description This function simulates a Hidden Markov Model process
+#' 
+#' @param mdl_h0: List containing the following DGP parameters
+#'   - n: length of series
+#'   - k: number of regimes
+#'   - mu: (k x q) vector of means 
+#'   - sigma: (q x q) covariance matrix. If simulating a univariate process (i.e., length of mu is 1), this should be the standard devation and not the variance.
+#'   - P: (k x k) transition matrix (columns must sum to one)
+#'   
+#' @param burnin: number of simulated observations to remove from beginning. Default is 100
+#' 
+#' @return List with simulated series and its DGP parameters
+#' 
+#' @export
+simuHMM <- function(mdl_h0, burnin = 100L) {
+    .Call(`_MSTest_simuHMM`, mdl_h0, burnin)
 }
 
 #' @title Calc eq. 2.5 from CHP (2014) where both mean and variance can switch

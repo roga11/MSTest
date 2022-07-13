@@ -249,7 +249,7 @@ List VARmdl(arma::mat Y, int ar, bool intercept = 1, bool getSE = 0){
   VARmdl_out["k"] = 1;
   VARmdl_out["ar"] = ar;
   VARmdl_out["coef"] = b0;
-  VARmdl_out["phi"] = phi;
+  VARmdl_out["phi"] = phi; // should transpose this before outputting (what functions would be affected by this?)
   VARmdl_out["mu"] = mu;
   VARmdl_out["residuals"] = resid;
   VARmdl_out["stdev"] = stdev;

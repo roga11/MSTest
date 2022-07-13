@@ -30,12 +30,16 @@ arma::vec initValsMSVAR(List mdl, int k);
 
 double MCpval(double test_stat, arma::vec null_vec, Rcpp::String type = "geq");
 
-List simuAR(List mdl_h0, int burnin = 200);
+List simuAR(List mdl_h0, int burnin = 100);
 
-List simuMS(List mdl_h0, int burnin = 200);
+List simuMSAR(List mdl_h0, int burnin = 100);
 
-List simuVAR(List mdl_h0, int burnin = 200);
+List simuVAR(List mdl_h0, int burnin = 100);
 
-List simuMSVAR(List mdl_h0, int burnin = 200);
+List simuMSVAR(List mdl_h0, int burnin = 100);
+
+List simuNorm(List mdl_h0);
+
+List simuHMM(List mdl_h0, int burnin = 100);
 
 #endif

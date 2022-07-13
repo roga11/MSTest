@@ -2,10 +2,23 @@
 % Please edit documentation in R/RcppExports.R
 \name{initValsMS}
 \alias{initValsMS}
-\title{generate initial values for MS model}
+\title{Initial values for Markov-switching autoregressive model}
 \usage{
 initValsMS(mdl, k)
 }
+\arguments{
+\item{mdl:}{List with parameter values of simple (one-regime) autoregressive model. This includes
+- phi: vector autoregressive coefficients
+- mu: mean of process 
+- stdev: standard deviation
+- msmu: boolean indicator. If TRUE, mean is function of markov process. If FALSE, mean is constant across regimes
+- msvar: boolean indicator. If TRUE, standard deviation is function of markov process. If FALSE, standard deviation is constant across regimes}
+
+\item{k:}{number of regimes}
+}
+\value{
+vector of initial parameter values
+}
 \description{
-generate initial values for MS model
+This function generates a random parameter vector to be used as initial values for a Markov-switching autoregressive model
 }

@@ -2,18 +2,22 @@
 % Please edit documentation in R/RcppExports.R
 \name{simuAR}
 \alias{simuAR}
-\title{Simulate Autoregressive Series}
+\title{Simulate autoregressive process}
 \usage{
-simuAR(mdl_h0, burnin = 200L)
+simuAR(mdl_h0, burnin = 100L)
 }
 \arguments{
-\item{mdl_h0}{List containing series properties such as n: length, ar: number of autoregressive lags, stdev: standard deviation, mu: mean of process, phi: vector of autoregressive coefficients}
+\item{mdl_h0:}{List containing the following DGP parameters
+- n: length of series
+- mu: mean of process 
+- sigma: standard deviation of process
+- phi: vector of autoregressive coefficients}
 
-\item{burnin}{number of simulated observations to remove from begining. If using mu not equal to 0 it is recommended to use burnin to avoid dependence on initial value. Default is 200.}
+\item{burnin:}{number of simulated observations to remove from beginning. Default is 100}
 }
 \value{
-List with autoregressive series and its properties
+List with simulated autoregressive series and its DGP parameters
 }
 \description{
-This function simulates an autoregresive series
+This function simulates an autoregresive process
 }

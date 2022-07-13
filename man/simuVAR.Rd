@@ -2,10 +2,23 @@
 % Please edit documentation in R/RcppExports.R
 \name{simuVAR}
 \alias{simuVAR}
-\title{Simulate VAR Model}
+\title{Simulate VAR process}
 \usage{
-simuVAR(mdl_h0, burnin = 200L)
+simuVAR(mdl_h0, burnin = 100L)
+}
+\arguments{
+\item{mdl_h0:}{List containing the following DGP parameters
+- n: length of series
+- mu: (q x 1) vector of means 
+- sigma: (q x q) covariance matrix 
+- phi: (q x qp) matrix of autoregressive coefficients
+- ar: number of autoregressive lags (i.e, p)}
+
+\item{burnin:}{number of simulated observations to remove from beginning. Default is 100}
+}
+\value{
+List with simulated vector autoregressive series and its DGP parameters
 }
 \description{
-Simulate VAR Model
+This function simulates a vector autoregresive process
 }
