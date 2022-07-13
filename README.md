@@ -13,7 +13,7 @@ ing parameters.” Econometrica 82 (2): 765–784.
 Dufour, Jean-Marie, and Richard Luger. 2017. “Identification-robust moment-based tests for
 Markov switching in autoregressive models.” Econometric Reviews 36 (6-9): 713–727.
 
-Dufour, Jean-Marie, and Gabriel ROdriguez Rondon. 2022. “Monte Carlo Likelihood Ratio Tests for Markov
+Dufour, Jean-Marie, and Gabriel Rodriguez Rondon. 2022. “Monte Carlo Likelihood Ratio Tests for Markov
 Switching Models.” Work in Progress.
 
 Hansen, Bruce E. 1992. “The likelihood ratio test under nonstandard conditions: testing the
