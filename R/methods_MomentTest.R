@@ -1,3 +1,38 @@
+#' @title Approximate Distribuion For Dufour & Luger Test
+#'
+#' @description This function obtains the parameters needed in eq. 16 which is used for 
+#' combining p-values.
+#'
+#' @param Tsize sample size
+#' @param simdist_N number of draws (simulations)
+#' 
+#' @return params the paramters gamma in eq. 16 of Dufour & Luger (2017). 
+#' 
+#' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
+#' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+#' 
+#' @export
+approxDistDL <- function(Tsize, simdist_N){
+  S_N2  <- sim_DLmoments(Tsize, simdist_N)
+  x     <- apply(S_N2, 2, sort)
+  Fx    <- approx_dist_loop(x)
+  a_start <- 0.01
+  b_start <- 0.01
+  # initiate matrix
+  a<-matrix(nrow=1,ncol=0)
+  b<-matrix(nrow=1,ncol=0)
+  # estimate params of ecdf for each moment statistic
+  for (i in 1:4){
+    mdl<-nls(Fx[,i]~exp(alpha+beta*x[,i])/(1+exp(alpha+beta*x[,i])),
+             start=list(alpha=a_start,beta=b_start))
+    params<-coef(mdl)
+    a<-cbind(a,params[1])
+    b<-cbind(b,params[2])
+  }
+  return(rbind(matrix(a,nrow=1,ncol=4),matrix(b,nrow=1,ncol=4)))
+}
+
+
 # ==============================================================================
 #' @title  Monte-Carlo Moment-based test for Markov-switching model
 #' 

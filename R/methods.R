@@ -1,18 +1,18 @@
 
 
-# ==============================================================================
-#' @title Convert transition matrix to transition matrix consistent with AR model
+
+#' @title Autoregressive transition matrix
+#'
+#' @description This function converts a transition matrix to the transition matrix consistent with a Markov-switching autoregressive model.
 #'
 #' @param P original transition matrix
-#' @param k number of regimes
+#' @param k integer determining the number of regimes
 #' @param ar number of autoregressive lags
 #'
-#' @return transformed tansition matrix
-#' 
-#' @references Hamilton (1994)
+#' @return transformed transition matrix
 #' 
 #' @export
-transMatAR <- function(P, k, ar){
+arP <- function(P, k, ar){
   if (ar>0){
     Pnew_tmp <- matrix(0,k*k,k)
     for (xk in 1:k){
@@ -27,22 +27,22 @@ transMatAR <- function(P, k, ar){
   }
   return(Pnew)  
 }
-# ==============================================================================
-#' @title Mu and Sigma AR grid
+
+#' @title Autoregressive moment grid
 #'
-#' @description Creates grid of mu and sigma consistent with number of Autoregressive lags
+#' @description This function creates a grid of mean and variance consistent with a Markov-switching autoregressive model.
 #'
 #' @param mu vector (k x 1) of mu in each regime
 #' @param sig vector (k x 1) of sigma in each regime
-#' @param k number of regimes
+#' @param k integer determining the number of regimes
 #' @param ar number of autoregressive lags
+#' @param msmu boolean indicator. If 'TRUE' mean is subject to change. If 'FALSE' mean is constant across regimes
+#' @param msvar boolean indicator. If 'TRUE' variance is subject to change. If 'FALSE' variance is constant across regimes
 #'
-#' @return 
-#' 
-#' @references Hamilton (1994) see pg. 691
+#' @return List with (M x ar+1) matrix of means for each regime M (where M = k^(ar+1)) and each time t,... t-ar, vector with variance for each regime M, and vector indicating the corresponded 1,..., k regime. 
 #' 
 #' @export
-musigGrid <- function(mu, sig, k, ar, msmu, msvar){
+arGrid <- function(mu, sig, k, ar, msmu, msvar){
   if (msmu==FALSE){
     mu <- rep(mu, k)
   }
@@ -67,27 +67,29 @@ musigGrid <- function(mu, sig, k, ar, msmu, msvar){
   musig_out[["state_ind"]] <- as.matrix(state_indicator)
   return(musig_out)
 }
-# ==============================================================================
-#' @title Mu and Sigma VAR grid
+
+
+#' @title Vector autoregressive moment grid
 #'
-#' @description Creates grid of mu and sigma consistent with number of Autoregressive lags
+#' @description Creates grid of means and covariance matrices consistent  with a Markov-switching vector autoregressive model.
 #'
-#' @param mu vector (k x N) of mu in each regime
-#' @param sig list of k regime specific (N x N) matrices 
-#' @param k number of regimes
+#' @param mu (k x q) matrix of means in each regime (for k regimes and q time series)
+#' @param sig list with k regime specific (q x q) covariance matrices 
+#' @param k integer determining the number of regimes
 #' @param ar number of autoregressive lags
+#' @param msmu boolean indicator. If 'TRUE' mean is subject to change. If 'FALSE' mean is constant across regimes
+#' @param msvar boolean indicator. If 'TRUE' variance is subject to change. If 'FALSE' variance is constant across regimes
 #'
-#' @return 
-#' 
+#' @return List with M regime specific (q x k) matrices of means, List with M regime specific covariance matrices, and vector indicating the corresponded 1,..., k regime. 
 #' 
 #' @export
-musigVARGrid <- function(mu, sigma, k, ar, msmu, msvar){
+varGrid <- function(mu, sigma, k, ar, msmu, msvar){
   # create grid of regimes
   lx <-list()
   for (xi in 1:(ar+1)) lx[[xi]] <- 1:k
   mu_stategrid <- as.matrix(expand.grid(lx))
   state_indicator <- mu_stategrid[,1]
-  M <- k^(ar+1)
+  M <- k^(ar+1) 
   sig_stategrid <- list()
   muN_stategrid <- list()
   for (xm in 1:M){
@@ -101,71 +103,35 @@ musigVARGrid <- function(mu, sigma, k, ar, msmu, msvar){
   return(musig_out)
 }
 
-# ==============================================================================
-#' @title Obtain Hessian matrix 
+
+#' @title Hessian matrix 
 #' 
-#' @description Use numDeriv() package to obtain Hessian matrix which is then used to get standard errors of parameters
+#' @description This function is used to obtain a numerical approximation of the Hessian matrix which is then used to get standard errors of parameters.
 #'
-#' @param EMmdl_out List with model output from EM algorithm
-#' @param k int number of regimes
-#' @param msmu bool indicating if mean is switching with regime
-#' @param msvar bool indicating if variance is switching with regime
+#' @param mdl List with model properties
+#' @param k integer determining the number of regimes
 #'
 #' @return Hessian matrix
 #' 
 #' @export
-getHess <- function(mdl_out, k){
-  q <- mdl_out[["q"]]
-  theta = mdl_out[["theta"]]
+getHess <- function(md, k){
+  q <- mdl[["q"]]
+  theta = mdl[["theta"]]
   if (q==1){
     if (k==1){
-      hess <- numDeriv::hessian(AR_loglik_fun, theta, method = "Richardson", mdl = mdl_out) 
+      hess <- numDeriv::hessian(AR_loglik_fun, theta, method = "Richardson", mdl = mdl) 
     }
     if (k>1){
-      hess <- numDeriv::hessian(MSloglik_fun, theta, method = "Richardson", mdl = mdl_out, k = k) 
+      hess <- numDeriv::hessian(MSloglik_fun, theta, method = "Richardson", mdl = mdl, k = k) 
     } 
   }else{
     if (k==1){
-      hess <- numDeriv::hessian(VAR_loglik_fun, theta, method = "Richardson", mdl = mdl_out) 
+      hess <- numDeriv::hessian(VAR_loglik_fun, theta, method = "Richardson", mdl = mdl) 
     }
     if (k>1){
-      hess <- numDeriv::hessian(MSVARloglik_fun, theta, method = "Richardson", mdl = mdl_out, k = k) 
+      hess <- numDeriv::hessian(MSVARloglik_fun, theta, method = "Richardson", mdl = mdl, k = k) 
     } 
   }
   return(hess)
-}
-# ==============================================================================
-#' @title Approximate Distribuion For Dufour & Luger Test
-#'
-#' @description This function obtains the parameters needed in eq. 16 which is used for 
-#' combining p-values.
-#'
-#' @param Tsize sample size
-#' @param simdist_N number of draws (simulations)
-#' 
-#' @return params the paramters gamma in eq. 16 of Dufour & Luger (2017). 
-#' 
-#' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-#' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
-#' 
-#' @export
-approxDistDL<- function(Tsize, simdist_N){
-  S_N2  <- sim_DLmoments(Tsize, simdist_N)
-  x     <- apply(S_N2, 2, sort)
-  Fx    <- approx_dist_loop(x)
-  a_start <- 0.01
-  b_start <- 0.01
-  # initiate matrix
-  a<-matrix(nrow=1,ncol=0)
-  b<-matrix(nrow=1,ncol=0)
-  # estimate params of ecdf for each moment statistic
-  for (i in 1:4){
-    mdl<-nls(Fx[,i]~exp(alpha+beta*x[,i])/(1+exp(alpha+beta*x[,i])),
-              start=list(alpha=a_start,beta=b_start))
-    params<-coef(mdl)
-    a<-cbind(a,params[1])
-    b<-cbind(b,params[2])
-  }
-  return(rbind(matrix(a,nrow=1,ncol=4),matrix(b,nrow=1,ncol=4)))
 }
 

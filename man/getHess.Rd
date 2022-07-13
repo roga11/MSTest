@@ -2,22 +2,18 @@
 % Please edit documentation in R/methods.R
 \name{getHess}
 \alias{getHess}
-\title{Obtain Hessian matrix}
+\title{Hessian matrix}
 \usage{
-getHess(mdl_out, k)
+getHess(md, k)
 }
 \arguments{
-\item{k}{int number of regimes}
+\item{k}{integer determining the number of regimes}
 
-\item{EMmdl_out}{List with model output from EM algorithm}
-
-\item{msmu}{bool indicating if mean is switching with regime}
-
-\item{msvar}{bool indicating if variance is switching with regime}
+\item{mdl}{List with model properties}
 }
 \value{
 Hessian matrix
 }
 \description{
-Use numDeriv() package to obtain Hessian matrix which is then used to get standard errors of parameters
+This function is used to obtain a numerical approximation of the Hessian matrix which is then used to get standard errors of parameters.
 }

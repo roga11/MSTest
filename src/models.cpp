@@ -281,6 +281,8 @@ List VARmdl(arma::mat Y, int ar, bool intercept = 1, bool getSE = 0){
   VARmdl_out["standard_errors"] = std_error;
   return(VARmdl_out);
 }
+
+
 // ==============================================================================
 //' @title Markov-switching AR Log-likelihood objective function (used to find Hessian)
 //' 
@@ -289,8 +291,8 @@ List VARmdl(arma::mat Y, int ar, bool intercept = 1, bool getSE = 0){
 // [[Rcpp::export]]
 double MSloglik_fun(arma::vec theta, List mdl, int k){
   Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function transMatAR = mstest["transMatAR"];
-  Rcpp::Function musigGrid = mstest["musigGrid"];
+  Rcpp::Function arP = mstest["arP"];
+  Rcpp::Function arGrid = mstest["arGrid"];
   // ============================================================================
   // ---------- Initialize parameters
   // ============================================================================
@@ -312,12 +314,12 @@ double MSloglik_fun(arma::vec theta, List mdl, int k){
   // Regime limiting probabilities
   arma::vec pinf = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
-  List musig_out = musigGrid(mu, sig, k, ar, msmu, msvar);
+  List musig_out = arGrid(mu, sig, k, ar, msmu, msvar);
   arma::mat muAR = as<arma::mat>(musig_out["mu"]);
   arma::mat sigAR = as<arma::mat>(musig_out["sig"]);
   arma::vec state_ind = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
-  arma::mat P_AR = as<arma::mat>(transMatAR(P, k, ar));
+  arma::mat P_AR = as<arma::mat>(arP(P, k, ar));
   arma::mat pinf_AR = limP(P_AR);
   // ============================================================================
   // ----- Compute residuals in each regime
@@ -492,8 +494,8 @@ List MSloglik(arma::vec theta, List mdl, int k){
 // [[Rcpp::export]]
 double MSVARloglik_fun(arma::vec theta, List mdl, int k){
   Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function transMatAR = mstest["transMatAR"];
-  Rcpp::Function musigVARGrid = mstest["musigVARGrid"];
+  Rcpp::Function arP = mstest["arP"];
+  Rcpp::Function varGrid = mstest["varGrid"];
   // ============================================================================
   // ---------- Initialize parameters
   // ============================================================================
@@ -541,12 +543,12 @@ double MSVARloglik_fun(arma::vec theta, List mdl, int k){
   // Regime limiting probabilities
   arma::vec pinf = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
-  List musig_out = musigVARGrid(mu_k, sigma, k, ar, msmu, msvar);
+  List musig_out = varGrid(mu_k, sigma, k, ar, msmu, msvar);
   List muAR = musig_out["mu"];
   List sigAR = musig_out["sig"];
   arma::vec state_ind = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
-  arma::mat PAR = as<arma::mat>(transMatAR(P, k, ar));
+  arma::mat PAR = as<arma::mat>(arP(P, k, ar));
   arma::mat pinfAR = limP(PAR);
   // ============================================================================
   // ----- Compute residuals in each regime
@@ -743,7 +745,7 @@ List MSVARloglik(arma::vec theta, List mdl, int k){
 // [[Rcpp::export]]
 List MS_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k){
   Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function musigGrid = mstest["musigGrid"];
+  Rcpp::Function arGrid = mstest["arGrid"];
   // ============================================================================
   // ---------- Initialize parameters
   // ============================================================================
@@ -811,7 +813,7 @@ List MS_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k){
   // ============================================================================
   arma::mat muAR(M, ar+1,arma::fill::zeros);
   arma::vec sigAR(M, 1,arma::fill::zeros);
-  List mugrid = musigGrid(mu, sig, k, ar, msmu, msvar);
+  List mugrid = arGrid(mu, sig, k, ar, msmu, msvar);
   muAR = as<arma::mat>(mugrid["mu"]);
   sigAR = as<arma::vec>(mugrid["sig"]);
   arma::mat x = mdl["x"];
@@ -874,7 +876,7 @@ List MS_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k){
 // [[Rcpp::export]]
 List MSVAR_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k){
   Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function musigVARGrid = mstest["musigVARGrid"];
+  Rcpp::Function varGrid = mstest["varGrid"];
   // ============================================================================
   // ---------- Initialize parameters
   // ============================================================================
@@ -951,7 +953,7 @@ List MSVAR_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k)
   // ============================================================================
   // ----- Update estimates for phi
   // ============================================================================
-  List mugrid = musigVARGrid(mu_k, sig, k, ar, msmu, msvar);
+  List mugrid = varGrid(mu_k, sig, k, ar, msmu, msvar);
   List muAR = mugrid["mu"];
   List sigAR = mugrid["sig"];
   arma::mat x = mdl["x"];
@@ -1260,7 +1262,7 @@ List MSARmdl(arma::vec Y, int ar, int k, bool msmu = 1, bool msvar = 1, int maxi
   // =============================================================================
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function hessian = mstest["getHess"];
-  Rcpp::Function transMatAR = mstest["transMatAR"];
+  Rcpp::Function arP = mstest["arP"];
   Rcpp::Environment lmf("package:lmf");
   Rcpp::Function nearPD = lmf["nearPD"];
   // =============================================================================
@@ -1379,7 +1381,7 @@ List MSVARmdl(arma::mat Y, int ar, int k, bool msmu = 1, bool msvar = 1, int max
               Nullable<NumericVector> init_value = R_NilValue){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function hessian = mstest["getHess"];
-  Rcpp::Function transMatAR = mstest["transMatAR"];
+  Rcpp::Function arP = mstest["arP"];
   Rcpp::Environment lmf("package:lmf");
   Rcpp::Function nearPD = lmf["nearPD"];
   // =============================================================================

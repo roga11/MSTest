@@ -164,8 +164,8 @@ List ts_lagged(arma::mat Y, int ar){
 // [[Rcpp::export]]
 List paramListMS(arma::vec theta, int ar, int k, bool msmu, bool msvar){
   Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function musigGrid = mstest["musigGrid"];
-  Rcpp::Function transMatAR = mstest["transMatAR"];
+  Rcpp::Function arGrid = mstest["arGrid"];
+  Rcpp::Function arP = mstest["arP"];
   // ----- Mean for each regime 
   arma::vec mu = theta.subvec(0, msmu*(k-1));
   // ----- Variance for each regime 
@@ -178,13 +178,13 @@ List paramListMS(arma::vec theta, int ar, int k, bool msmu, bool msvar){
   // Regime limiting probabilities
   arma::vec pinf = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
-  List musig_out = musigGrid(mu, sig, k, ar, msmu, msvar);
+  List musig_out = arGrid(mu, sig, k, ar, msmu, msvar);
   arma::mat muAR = as<arma::mat>(musig_out["mu"]);
   arma::mat sigAR = as<arma::mat>(musig_out["sig"]);
   arma::vec state_ind = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
   //int M = pow(k, ar+1);
-  arma::mat P_AR = as<arma::mat>(transMatAR(P, k, ar));
+  arma::mat P_AR = as<arma::mat>(arP(P, k, ar));
   arma::mat pinf_AR = limP(P_AR);
   // ----- Organize output
   List param_out;
@@ -218,8 +218,8 @@ List paramListMS(arma::vec theta, int ar, int k, bool msmu, bool msvar){
 // [[Rcpp::export]]
 List paramListMSVAR(arma::vec theta, int q, int ar, int k, bool msmu, bool msvar){
   Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function musigVARGrid = mstest["musigVARGrid"];
-  Rcpp::Function transMatAR = mstest["transMatAR"];
+  Rcpp::Function varGrid = mstest["varGrid"];
+  Rcpp::Function arP = mstest["arP"];
   // ----- Mean for each regime 
   arma::mat mu_k(k, q, arma::fill::zeros);
   arma::vec mu = theta.subvec(0, q+q*msmu*(k-1)-1);
@@ -256,13 +256,13 @@ List paramListMSVAR(arma::vec theta, int q, int ar, int k, bool msmu, bool msvar
   // Regime limiting probabilities
   arma::vec pinf = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
-  List musig_out = musigVARGrid(mu_k, sigma, k, ar, msmu, msvar);
+  List musig_out = varGrid(mu_k, sigma, k, ar, msmu, msvar);
   List muAR = musig_out["mu"];
   List sigAR = musig_out["sig"];
   arma::vec state_ind = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
   //int M = pow(k, ar+1);
-  arma::mat P_AR = as<arma::mat>(transMatAR(P, k, ar));
+  arma::mat P_AR = as<arma::mat>(arP(P, k, ar));
   arma::mat pinf_AR = limP(P_AR);
   // ----- Organize output
   List param_out;
