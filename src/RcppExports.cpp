@@ -682,48 +682,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// MSARmdl
-List MSARmdl(arma::vec Y, int ar, int k, bool msmu, bool msvar, int maxit, double thtol, bool getSE, int max_init, int use_diff_init, Nullable<NumericVector> init_value);
-RcppExport SEXP _MSTest_MSARmdl(SEXP YSEXP, SEXP arSEXP, SEXP kSEXP, SEXP msmuSEXP, SEXP msvarSEXP, SEXP maxitSEXP, SEXP thtolSEXP, SEXP getSESEXP, SEXP max_initSEXP, SEXP use_diff_initSEXP, SEXP init_valueSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type Y(YSEXP);
-    Rcpp::traits::input_parameter< int >::type ar(arSEXP);
-    Rcpp::traits::input_parameter< int >::type k(kSEXP);
-    Rcpp::traits::input_parameter< bool >::type msmu(msmuSEXP);
-    Rcpp::traits::input_parameter< bool >::type msvar(msvarSEXP);
-    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
-    Rcpp::traits::input_parameter< double >::type thtol(thtolSEXP);
-    Rcpp::traits::input_parameter< bool >::type getSE(getSESEXP);
-    Rcpp::traits::input_parameter< int >::type max_init(max_initSEXP);
-    Rcpp::traits::input_parameter< int >::type use_diff_init(use_diff_initSEXP);
-    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type init_value(init_valueSEXP);
-    rcpp_result_gen = Rcpp::wrap(MSARmdl(Y, ar, k, msmu, msvar, maxit, thtol, getSE, max_init, use_diff_init, init_value));
-    return rcpp_result_gen;
-END_RCPP
-}
-// MSVARmdl
-List MSVARmdl(arma::mat Y, int ar, int k, bool msmu, bool msvar, int maxit, double thtol, bool getSE, int max_init, int use_diff_init, Nullable<NumericVector> init_value);
-RcppExport SEXP _MSTest_MSVARmdl(SEXP YSEXP, SEXP arSEXP, SEXP kSEXP, SEXP msmuSEXP, SEXP msvarSEXP, SEXP maxitSEXP, SEXP thtolSEXP, SEXP getSESEXP, SEXP max_initSEXP, SEXP use_diff_initSEXP, SEXP init_valueSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type Y(YSEXP);
-    Rcpp::traits::input_parameter< int >::type ar(arSEXP);
-    Rcpp::traits::input_parameter< int >::type k(kSEXP);
-    Rcpp::traits::input_parameter< bool >::type msmu(msmuSEXP);
-    Rcpp::traits::input_parameter< bool >::type msvar(msvarSEXP);
-    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
-    Rcpp::traits::input_parameter< double >::type thtol(thtolSEXP);
-    Rcpp::traits::input_parameter< bool >::type getSE(getSESEXP);
-    Rcpp::traits::input_parameter< int >::type max_init(max_initSEXP);
-    Rcpp::traits::input_parameter< int >::type use_diff_init(use_diff_initSEXP);
-    Rcpp::traits::input_parameter< Nullable<NumericVector> >::type init_value(init_valueSEXP);
-    rcpp_result_gen = Rcpp::wrap(MSVARmdl(Y, ar, k, msmu, msvar, maxit, thtol, getSE, max_init, use_diff_init, init_value));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_cov2corr", (DL_FUNC) &_MSTest_cov2corr, 1},
@@ -775,8 +733,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_MSVAR_EMiter", (DL_FUNC) &_MSTest_MSVAR_EMiter, 3},
     {"_MSTest_MS_EMest", (DL_FUNC) &_MSTest_MS_EMest, 4},
     {"_MSTest_MSVAR_EMest", (DL_FUNC) &_MSTest_MSVAR_EMest, 4},
-    {"_MSTest_MSARmdl", (DL_FUNC) &_MSTest_MSARmdl, 11},
-    {"_MSTest_MSVARmdl", (DL_FUNC) &_MSTest_MSVARmdl, 11},
     {NULL, NULL, 0}
 };
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{ARmdl}
 \alias{ARmdl}
-\title{Fitting Autoregressive Model}
+\title{Autoregressive Model}
 \usage{
 ARmdl(Y, ar, intercept = 1L, getSE = 0L)
 }
@@ -11,10 +11,12 @@ ARmdl(Y, ar, intercept = 1L, getSE = 0L)
 
 \item{ar}{number of lags}
 
-\item{intercept}{bool determines whether or not to include constant in estimation. Default is TRUE.}
+\item{intercept}{boolean indicator determining whether or not to include constant. Default is TRUE.}
+
+\item{getSE}{boolean indicator determining whether or not to estimate standard errors}
 }
 \value{
-List with model characteristics which include
+List with model attributes which include
 - y: transformed process
 - X: matrix of lagged observations (with or without vector of 1s depending on const=1 or const=0)
 - x: matrix of lagged observations without vector of 1s
@@ -29,5 +31,5 @@ List with model characteristics which include
 - logLike: the log-likelihood
 }
 \description{
-This function estimates an autoregresive series
+This function estimates an autoregresive model
 }

@@ -2,10 +2,18 @@
 % Please edit documentation in R/RcppExports.R
 \name{AR_loglik_fun}
 \alias{AR_loglik_fun}
-\title{AR Log-likelihood objective function (used to find Hessian)}
+\title{Autoregressive log-likelihood objective function}
 \usage{
 AR_loglik_fun(theta, mdl)
 }
+\arguments{
+\item{theta}{vector of model parameters}
+
+\item{mdl}{List with model attributes}
+}
+\value{
+log-likelihood given data
+}
 \description{
-AR Log-likelihood objective function (used to find Hessian)
+This function computes the log-likelihood for an autoregressive model
 }

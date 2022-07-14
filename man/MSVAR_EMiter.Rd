@@ -2,10 +2,20 @@
 % Please edit documentation in R/RcppExports.R
 \name{MSVAR_EMiter}
 \alias{MSVAR_EMiter}
-\title{EM Algorithm Iteration for VAR model}
+\title{EM algorithm iteration for Markov-switching vector autoregressive model}
 \usage{
 MSVAR_EMiter(mdl, EMest_output, k)
 }
+\arguments{
+\item{mdl}{List with model attributes}
+
+\item{EMest_output}{List with attributes from previous iteration}
+
+\item{k}{integer determining the number of regimes}
+}
+\value{
+List with attributes from new iteration
+}
 \description{
-This function performs a single iteration of the Expectation Maximization (EM) algorithm
+This function performs the one iteration (E-step and M-step) of the Expectation Maximization algorithm for Markov-switching vector autoregressive model.
 }

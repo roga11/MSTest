@@ -2,33 +2,22 @@
 % Please edit documentation in R/RcppExports.R
 \name{MS_EMest}
 \alias{MS_EMest}
-\title{Estimation by EM Algorithm}
+\title{Estimation of Markov-switching autoregressive model by EM Algorithm}
 \usage{
 MS_EMest(theta_0, mdl, k, optim_options)
 }
 \arguments{
-\item{theta_0}{vector with initial values for mean and variance parameters in each state (e.g. theta_0 = c(mu_1, mu_2,..., mu_K, var_1, var_2, ..., var_K)). If NULL then initVal() is used to generate initial values. Default is NULL.}
+\item{theta_0}{vector with initital values for parameters}
 
-\item{k}{number of regimes. Must be greater than or equal to 2.}
+\item{mdl}{List with model attributes}
 
-\item{optim_options}{List with optimization options. When not specified (i.e. NULL), the max number of EM iterations is 200 and the convergence criterion is 1.e-6. Default is NULL.}
+\item{k}{integer determining the number of regimes}
 
-\item{z}{vector with observations.}
-
-\item{msmu}{bool indicator for switch in mean (TRUE) or constant mean (FALSE). Default is TRUE.}
-
-\item{msvar}{bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is TRUE.}
-
-\item{P_0}{matrix with initial values for transition matrix P. Is NULL, randTransMat() is used to generate a random transition matrix. Default is NULL.}
+\item{optim_options}{List with optimiztion options}
 }
 \value{
 List with model results
 }
 \description{
-Estimated by the EM algorithm by calling the function EM() 
-multiple times until convergence. Convergence is determined by a max number 
-of iterations (maxit) or a convergence criterion. Specifically, the convergence 
-criterion is the absolute difference between parameter estimates in adjacent 
-iterations be less than 1.e-6 in absolute value. These can be changed by 
-defining them in the optim_options List.
+Estimate Markov-switching autoregressive model by EM algorithm. This function is used by MSmdl_EM() which organizes the output and takes raw data as input.
 }

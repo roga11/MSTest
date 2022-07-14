@@ -2,23 +2,27 @@
 #include "methods.h"
 //[[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
+
+
 // ==============================================================================
-//' @title AR Log-likelihood objective function (used to find Hessian)
+//' @title Autoregressive log-likelihood objective function
 //' 
+//' @description This function computes the log-likelihood for an autoregressive model
+//' 
+//' @param theta vector of model parameters
+//' @param mdl List with model attributes
+//' 
+//' @return log-likelihood given data
 //' 
 //' @export
 // [[Rcpp::export]]
 double AR_loglik_fun(arma::vec theta, List mdl){
-  // ============================================================================
   // ---------- Initialize parameters
-  // ============================================================================
   arma::vec y = mdl["y"];
   arma::mat x = mdl["x"];
   int ar = mdl["ar"];
   int Tsize = y.n_elem;
-  // ============================================================================
-  // ---------- Compute Loglike
-  // ============================================================================
+  // ---------- Compute log-likehood
   double logLike;
   double pi = arma::datum::pi;
   arma::mat repmu(Tsize,ar,arma::fill::ones);
@@ -27,16 +31,18 @@ double AR_loglik_fun(arma::vec theta, List mdl){
   return(logLike);
 }
 
+
 // ==============================================================================
-//' @title Fitting Autoregressive Model
+//' @title Autoregressive Model
 //' 
-//' @description This function estimates an autoregresive series
+//' @description This function estimates an autoregresive model
 //' 
 //' @param Y vector of observations
 //' @param ar number of lags
-//' @param intercept bool determines whether or not to include constant in estimation. Default is TRUE.
+//' @param intercept boolean indicator determining whether or not to include constant. Default is TRUE.
+//' @param getSE boolean indicator determining whether or not to estimate standard errors
 //' 
-//' @return List with model characteristics which include
+//' @return List with model attributes which include
 //' - y: transformed process
 //' - X: matrix of lagged observations (with or without vector of 1s depending on const=1 or const=0)
 //' - x: matrix of lagged observations without vector of 1s
@@ -128,21 +134,27 @@ List ARmdl(arma::vec Y, int ar, bool intercept = 1, bool getSE = 0){
   return(ARmdl_out);
 }
 
+
 // ==============================================================================
-//' @title VAR Log-likelihood objective function (used to find Hessian)
+//' @title Vector autoregressive log-likelihood objective function 
 //' 
+//' @description This function computes the log-likelihood for a vector autoregressive model
+//' 
+//' @param theta vector of model parameters
+//' @param mdl List with model attributes
+//' 
+//' @return log-likelihood given data
 //' 
 //' @export
 // [[Rcpp::export]]
 double VAR_loglik_fun(arma::vec theta, List mdl){
-  // ============================================================================
-  // ---------- Initialize parameters
-  // ============================================================================
+  // ---------- model parameters
   arma::mat y = mdl["y"];
   arma::mat x = mdl["x"];
   int ar = mdl["ar"];
   int Tsize = y.n_rows;
   int q = y.n_cols;
+  // ---------- pre-define variables
   int sigN = (q*(q+1))/2;
   arma::vec mu = theta.subvec(0, q-1);
   arma::vec sig = theta.subvec(q,q+sigN-1);
@@ -153,13 +165,12 @@ double VAR_loglik_fun(arma::vec theta, List mdl){
   arma::mat repmu(Tsize, 1, arma::fill::ones);
   arma::mat z = y-repmu*trans(mu);
   arma::mat xz_tmp(Tsize, q*ar, arma::fill::zeros); 
+  // ---------- compute residual
   for (int xp = 0; xp<ar; xp++){
     xz_tmp.submat(0,q*xp,Tsize-1,q*xp+q-1) = x.submat(0,q*xp,Tsize-1,q*xp+q-1) - repmu*trans(mu);
   }
   arma::mat resid = z - xz_tmp*phi;
-  // ============================================================================
-  // ---------- Compute Loglike
-  // ============================================================================
+  // ---------- Compute log-likehood
   double pi = arma::datum::pi;
   arma::vec f_t(Tsize, arma::fill::zeros);
   for (int xt = 0; xt<Tsize; xt++){
@@ -170,10 +181,18 @@ double VAR_loglik_fun(arma::vec theta, List mdl){
   return(logLike);  
 }
 
+
 // ==============================================================================
-//' @title Fitting Vector Autoregressive Model
+//' @title Vector autoregressive model
 //' 
-//' @description This function estimates a vector autoregresive series
+//' @description This function estimates a vector autoregresive model
+//' 
+//' @param Y is a (T x q) matrix of observations
+//' @param ar number of lags
+//' @param intercept boolean indicator determining whether or not to include constant. Default is TRUE.
+//' @param getSE boolean indicator determining whether or not to estimate standard errors
+//' 
+//' @return List with model attributes
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -284,8 +303,15 @@ List VARmdl(arma::mat Y, int ar, bool intercept = 1, bool getSE = 0){
 
 
 // ==============================================================================
-//' @title Markov-switching AR Log-likelihood objective function (used to find Hessian)
+//' @title Markov-switching autoregressive log-likelihood objective function
 //' 
+//' @description This function computes the log-likelihood for a markov-switching autoregressive model
+//' 
+//' @param theta vector of model parameters
+//' @param mdl List with model attributes
+//' @param k integer determining the number of regimes
+//' 
+//' @return log-likelihood given data
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -293,9 +319,7 @@ double MSloglik_fun(arma::vec theta, List mdl, int k){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function arP = mstest["arP"];
   Rcpp::Function arGrid = mstest["arGrid"];
-  // ============================================================================
   // ---------- Initialize parameters
-  // ============================================================================
   arma::vec y = mdl["y"];
   arma::mat x = mdl["x"];
   int ar = mdl["ar"];
@@ -321,9 +345,7 @@ double MSloglik_fun(arma::vec theta, List mdl, int k){
   // ----- Obtain AR consistent P and pinf
   arma::mat P_AR = as<arma::mat>(arP(P, k, ar));
   arma::mat pinf_AR = limP(P_AR);
-  // ============================================================================
   // ----- Compute residuals in each regime
-  // ============================================================================
   arma::mat repvec(1, M, arma::fill::ones);
   arma::mat repmu(Tsize, 1, arma::fill::ones);
   arma::mat ms_y = y*repvec;
@@ -336,11 +358,9 @@ double MSloglik_fun(arma::vec theta, List mdl, int k){
     xz.col(xkp) = zx_tmp*phi;
   }
   eps = z - xz;
-  // ============================================================================
   // ----- Begin Calculating likelihood and log-likelihood
-  // ============================================================================
-  arma::mat eta(Tsize, M, arma::fill::zeros);           // [eq. 22.4.2]
-  arma::mat f_t(Tsize, 1, arma::fill::zeros);           // [eq. 22.4.8]
+  arma::mat eta(Tsize, M, arma::fill::zeros);       // [eq. 22.4.2]
+  arma::mat f_t(Tsize, 1, arma::fill::zeros);       // [eq. 22.4.8]
   arma::mat xi_t_t(Tsize, M, arma::fill::zeros);    // [eq. 22.4.5]
   arma::mat xi_tp1_t(Tsize, M, arma::fill::zeros);  // [eq. 22.4.6]
   double pi = arma::datum::pi;
@@ -362,8 +382,15 @@ double MSloglik_fun(arma::vec theta, List mdl, int k){
 }
 
 // ==============================================================================
-//' @title Markov-switching AR Log-likelihood objective function Minimization
+//' @title Markov-switching autoregressive log-likelihood objective function (minimization version)
 //' 
+//' @description This function computes the (negative) log-likelihood for a markov-switching autoregressive model
+//' 
+//' @param theta vector of model parameters
+//' @param mdl List with model attributes
+//' @param k integer determining the number of regimes
+//' 
+//' @return negative log-likelihood given data
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -372,25 +399,24 @@ double MSloglik_fun_min(arma::vec theta, List mdl, int k){
   return(logL_negative);
 }
 
+
 // ==============================================================================
-//' @title Markov-switching loglikelihood and Hamilton smoother
+//' @title Markov-switching autoregressive log-likelihood function 
 //' 
-//' @description This function computes loglikelihood for Markov-switching models and computes the hamilton smoother.
+//' @description This function computes the log-likelihood for a markov-switching autoregressive model and uses the Hamilton smoother to obtain smoothed probabilities of each state. This is also the expectation step in the Expectation Maximization algorithm for a Markov-switching autoregressive model.
 //' 
-//' @param mdl List containing relevant parameters.
-//' @param theta vector with mean and variance in each regime.
-//' @param P matrix with transition probabilities.
-//' @param pinf limiting probabilities of each regime.
-//' @param k number of regimes. Must be greater than or equal to 2. 
+//' @param theta vector of model parameters
+//' @param mdl List with model attributes
+//' @param k integer determining the number of regimes
+//' 
+//' @return log-likelihood given data
 //'  
-//' @return List with log-likelihood (loglik), and smoothed probabilities of each regime (xi_t_T).
+//' @return List with log-likelihood (log-likelihood), and smoothed probabilities of each regime (xi_t_T).
 //' 
 //' @export
 // [[Rcpp::export]]
 List MSloglik(arma::vec theta, List mdl, int k){
-  // ============================================================================
   // ---------- Initialize parameters
-  // ============================================================================
   arma::vec y = mdl["y"];
   int Tsize = y.n_elem;
   int ar = mdl["ar"];
@@ -408,15 +434,11 @@ List MSloglik(arma::vec theta, List mdl, int k){
   arma::mat PAR = pList["P_AR"];
   arma::vec pinfAR = pList["pinf_AR"];
   arma::vec state_ind = pList["state_ind"];
-  // ============================================================================
   // ----- Compute residuals in each regime
-  // ============================================================================
   List mdl_tmp  = clone(mdl);
   mdl_tmp["phi"] = phi;
   arma::mat eps = calcMSResid(mdl_tmp, muAR, k);
-  // ============================================================================
   // ----- Begin Calculating log-likelihood & filtered probabilities
-  // ============================================================================
   arma::mat eta(Tsize, M, arma::fill::zeros);       // [eq. 22.4.2]
   arma::mat f_t(Tsize, 1, arma::fill::zeros);       // [eq. 22.4.8]
   arma::mat xi_t_t(Tsize, k, arma::fill::zeros);    // [eq. 22.4.5]
@@ -445,9 +467,7 @@ List MSloglik(arma::vec theta, List mdl, int k){
   arma::vec logf = log(f_t);
   double logL = sum(logf);     //[eq. 22.4.7]
   double L = logL/Tsize; 
-  // ============================================================================
   // ---------- Hamilton smoother
-  // ============================================================================
   arma::mat xi_t_T(Tsize, k, arma::fill::zeros); // [eq. 22.4.14]
   arma::mat xi_t_T_tmp(Tsize, M, arma::fill::zeros); 
   xi_t_T_tmp.row(Tsize-1)  = xi_t_t_tmp.row(Tsize-1);
@@ -456,9 +476,7 @@ List MSloglik(arma::vec theta, List mdl, int k){
     xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT)%trans(trans(PAR)*trans(xi_t_T_tmp.row(xT+1)/xi_tp1_t_tmp.row(xT)));
     xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_t.row(xT)));
   }
-  // ============================================================================
   // ----- Organize output
-  // ============================================================================
   List MSloglik_output;
   MSloglik_output["logLike"] = logL;
   MSloglik_output["L"] = L;
@@ -486,9 +504,17 @@ List MSloglik(arma::vec theta, List mdl, int k){
   return(MSloglik_output);
 }
 
+
 // ==============================================================================
-//' @title Markov-switching VAR loglikelihood objective function 
+//' @title Markov-switching vector autoregressive log-likelihood objective function
 //' 
+//' @description This function computes the log-likelihood for a markov-switching vector autoregressive model
+//' 
+//' @param theta vector of model parameters
+//' @param mdl List with model attributes
+//' @param k integer determining the number of regimes
+//' 
+//' @return log-likelihood given data
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -496,9 +522,7 @@ double MSVARloglik_fun(arma::vec theta, List mdl, int k){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function arP = mstest["arP"];
   Rcpp::Function varGrid = mstest["varGrid"];
-  // ============================================================================
   // ---------- Initialize parameters
-  // ============================================================================
   arma::mat y = mdl["y"];
   arma::mat x = mdl["x"];
   int q = y.n_cols;
@@ -550,9 +574,7 @@ double MSVARloglik_fun(arma::vec theta, List mdl, int k){
   // ----- Obtain AR consistent P and pinf
   arma::mat PAR = as<arma::mat>(arP(P, k, ar));
   arma::mat pinfAR = limP(PAR);
-  // ============================================================================
   // ----- Compute residuals in each regime
-  // ============================================================================
   arma::mat repmu(Tsize, 1, arma::fill::ones);
   List z_mat(M); // [y(t) - mu_s(t))]
   List xz_mat(M); // [y(t-p) - mu_s(t-p))]
@@ -568,9 +590,7 @@ double MSVARloglik_fun(arma::vec theta, List mdl, int k){
     z_mat[xm] = y_tmp;
     xz_mat[xm] = xz_tmp;
   }
-  // ============================================================================
   // ----- Begin Calculating log-likelihood & filtered probabilities
-  // ============================================================================
   arma::mat eta(Tsize, M, arma::fill::zeros);       // [eq. 22.4.2]
   arma::mat f_t(Tsize, 1, arma::fill::zeros);       // [eq. 22.4.8]
   arma::mat xi_t_t(Tsize, k, arma::fill::zeros);    // [eq. 22.4.5]
@@ -607,8 +627,15 @@ double MSVARloglik_fun(arma::vec theta, List mdl, int k){
 }
 
 // ==============================================================================
-//' @title Markov-switching VAR Log-likelihood objective function Minimization
+//' @title Markov-switching vector autoregressive log-likelihood objective function (minimization version)
 //' 
+//' @description This function computes the (negative) log-likelihood for a markov-switching vector autoregressive model
+//' 
+//' @param theta vector of model parameters
+//' @param mdl List with model attributes
+//' @param k integer determining the number of regimes
+//' 
+//' @return negative log-likelihood given data
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -618,24 +645,22 @@ double MSVARloglik_fun_min(arma::vec theta, List mdl, int k){
 }
 
 // ==============================================================================
-//' @title Markov-switching loglikelihood and Hamilton smoother
+//' @title Markov-switching vector autoregressive log-likelihood function
 //' 
-//' @description This function computes loglikelihood for Markov-switching models and computes the hamilton smoother.
+//' @description This function computes the log-likelihood for a markov-switching vector autoregressive model and uses the Hamilton smoother to obtain smoothed probabilities of each state. This is also the expectation step in the Expectation Maximization algorithm for a Markov-switching autoregressive model.
 //' 
-//' @param mdl List containing relevant parameters.
-//' @param theta vector with mean and variance in each regime.
-//' @param P matrix with transition probabilities.
-//' @param pinf limiting probabilities of each regime.
-//' @param k number of regimes. Must be greater than or equal to 2. 
+//' @param theta vector of model parameters
+//' @param mdl List with model attributes
+//' @param k integer determining the number of regimes
+//' 
+//' @return log-likelihood given data
 //'  
-//' @return List with log-likelihood (loglik), and smoothed probabilities of each regime (xi_t_T).
+//' @return List with log-likelihood (log-likelihood), and smoothed probabilities of each regime (xi_t_T).
 //' 
 //' @export
 // [[Rcpp::export]]
 List MSVARloglik(arma::vec theta, List mdl, int k){
-  // ============================================================================
   // ---------- Initialize parameters
-  // ============================================================================
   arma::mat y = mdl["y"];
   int N = y.n_cols;
   int Tsize = y.n_rows;
@@ -654,15 +679,11 @@ List MSVARloglik(arma::vec theta, List mdl, int k){
   arma::mat PAR = pList["P_AR"];
   arma::vec pinfAR = pList["pinf_AR"];
   arma::vec state_ind = pList["state_ind"];
-  // ============================================================================
   // ----- Compute residuals in each regime
-  // ============================================================================
   List mdl_tmp  = clone(mdl);
   mdl_tmp["phi"] = phi;
   List eps = calcMSVARResid(mdl_tmp, muAR, k);
-  // ============================================================================
   // ----- Begin Calculating log-likelihood & filtered probabilities
-  // ============================================================================
   arma::mat eta(Tsize, M, arma::fill::zeros);       // [eq. 22.4.2]
   arma::mat f_t(Tsize, 1, arma::fill::zeros);       // [eq. 22.4.8]
   arma::mat xi_t_t(Tsize, k, arma::fill::zeros);    // [eq. 22.4.5]
@@ -695,9 +716,7 @@ List MSVARloglik(arma::vec theta, List mdl, int k){
   arma::vec logf = log(f_t);
   double logL = sum(logf);     //[eq. 22.4.7]
   double L = logL/Tsize; 
-  // ============================================================================
   // ---------- Hamilton smoother
-  // ============================================================================
   arma::mat xi_t_T(Tsize, k, arma::fill::zeros); // [eq. 22.4.14]
   arma::mat xi_t_T_tmp(Tsize, M, arma::fill::zeros); 
   xi_t_T_tmp.row(Tsize-1)  = xi_t_t_tmp.row(Tsize-1);
@@ -706,9 +725,7 @@ List MSVARloglik(arma::vec theta, List mdl, int k){
     xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT)%trans(trans(PAR)*trans(xi_t_T_tmp.row(xT+1)/xi_tp1_t_tmp.row(xT)));
     xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_t.row(xT)));
   }
-  // ============================================================================
   // ----- Organize output
-  // ============================================================================
   List MSloglik_output;
   MSloglik_output["logLike"] = logL;
   MSloglik_output["L"] = L;
@@ -737,18 +754,23 @@ List MSVARloglik(arma::vec theta, List mdl, int k){
 }
 
 // ==============================================================================
-//' @title EM Algo Maximization step
+//' @title Maximization step of EM algorithm for Markov-switching autoregressive model
 //' 
-//' @description This function performs the maximization step of the Expectation Maximization (EM) algorithm.
+//' @description This function performs the maximization step of the Expectation Maximization algorithm for Markov-switching autoregressive model.
+//' 
+//' @param theta vector of model parameters
+//' @param mdl List with model attributes
+//' @param MSloglik_output List with output from Expectation step of EM algorithm for Markov-switching autoregressive model
+//' @param k integer determining the number of regimes
+//' 
+//' @return List with new maximized parameters
 //' 
 //' @export
 // [[Rcpp::export]]
 List MS_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function arGrid = mstest["arGrid"];
-  // ============================================================================
   // ---------- Initialize parameters
-  // ============================================================================
   arma::vec y = mdl["y"];
   int ar = mdl["ar"];
   bool msmu = mdl["msmu"];
@@ -768,9 +790,7 @@ List MS_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k){
   int Tsize = y.n_elem;
   // Number of regimes consistent with AR lags
   int M = pow(k, ar+1);
-  // ============================================================================
-  // ----- Update transition matrix (P) and limiting probabilities (pinf)
-  // ============================================================================
+  // --------------- Update transition matrix (P) and limiting probabilities (pinf)
   // ----- Estimate Transition probs for k-state Markov-chain [eq. 22.4.16]
   arma::mat xi_t_T_tmp = xi_t_T.rows(1,Tsize-1);
   arma::mat xi_t_t_tmp = xi_t_t.rows(0,Tsize-2);
@@ -789,9 +809,7 @@ List MS_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k){
   P_new = trans(P_new);
   // Get limiting probabilities implied by transition matrix P_0
   arma::vec pinf = limP(P_new);
-  // ============================================================================
-  // ----- Update estimates for mu
-  // ============================================================================
+  // --------------- Update estimates for mu
   // ----- Obtain state indicators
   arma::vec mu(1+msmu*(k-1), arma::fill::zeros);
   arma::vec mu_tmp(M, arma::fill::zeros);
@@ -808,9 +826,7 @@ List MS_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k){
   }else{
     mu = theta(0); // Change this to update with xi_t_T so that a good estimate is obtained even if bad initial values are given
   }
-  // ============================================================================
   // ----- Update estimates for phi
-  // ============================================================================
   arma::mat muAR(M, ar+1,arma::fill::zeros);
   arma::vec sigAR(M, 1,arma::fill::zeros);
   List mugrid = arGrid(mu, sig, k, ar, msmu, msvar);
@@ -827,9 +843,7 @@ List MS_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k){
     num = num + (trans(x_tmp)*diagmat(xi_t_T_AR.col(xm)/sigAR(xm))*y_tmp);
   }
   arma::vec phi_new = inv(denom)*num;
-  // ============================================================================
   // ----- Update estimates for variance
-  // ============================================================================
   // ----- Compute new residuals
   List mdl_tmp = clone(mdl);
   mdl_tmp["phi"] = phi_new;
@@ -848,9 +862,7 @@ List MS_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k){
   }else{
     sigma = arma::sum(arma::sum(resid%resid%xi_t_T_AR,0),1)/Tsize;
   }
-  // ============================================================================
-  // ----- Organize output
-  // ============================================================================
+  // --------------- Organize output
   // ----- Produce new theta vector
   arma::vec theta_new = join_vert(mu, sigma);
   theta_new = join_vert(theta_new, phi_new);
@@ -868,18 +880,23 @@ List MS_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k){
 }
 
 // ==============================================================================
-//' @title EM Algo Maximization step
+//' @title Maximization step of EM algorithm for Markov-switching vector autoregressive model
 //' 
-//' @description This function performs the maximization step of the Expectation Maximization (EM) algorithm.
+//' @description This function performs the maximization step of the Expectation Maximization algorithm for Markov-switching vector autoregressive model.
+//' 
+//' @param theta vector of model parameters
+//' @param mdl List with model attributes
+//' @param MSloglik_output List with output from Expectation step of EM algorithm for Markov-switching vector autoregressive model
+//' @param k integer determining the number of regimes
+//'  
+//' @return List with new maximized parameters
 //' 
 //' @export
 // [[Rcpp::export]]
 List MSVAR_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function varGrid = mstest["varGrid"];
-  // ============================================================================
   // ---------- Initialize parameters
-  // ============================================================================
   arma::mat y = mdl["y"];
   int ar = mdl["ar"];
   int q = mdl["q"];
@@ -901,9 +918,7 @@ List MSVAR_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k)
   int N = y.n_cols;
   // Number of regimes consistent with AR lags
   int M = pow(k, ar+1);
-  // ============================================================================
-  // ----- Update transition matrix (P) and limiting probabilities (pinf)
-  // ============================================================================
+  // --------------- Update transition matrix (P) and limiting probabilities (pinf)
   // ----- Estimate Transition probs for k-state Markov-chain [eq. 22.4.16]
   arma::mat xi_t_T_tmp = xi_t_T.rows(1,Tsize-1);
   arma::mat xi_t_t_tmp = xi_t_t.rows(0,Tsize-2);
@@ -922,9 +937,7 @@ List MSVAR_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k)
   P_new = trans(P_new);
   // Get limiting probabilities implied by transition matrix P_0
   arma::vec pinf = limP(P_new);
-  // ============================================================================
-  // ----- Update estimates for mu
-  // ============================================================================
+  // --------------- Update estimates for mu
   // ----- Obtain state indicators
   arma::mat mu(1+msmu*(k-1), N, arma::fill::zeros);
   arma::mat mu_k(k, N, arma::fill::zeros);
@@ -950,9 +963,7 @@ List MSVAR_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k)
       mu_k.row(xk) = mu;
     }
   }
-  // ============================================================================
-  // ----- Update estimates for phi
-  // ============================================================================
+  // --------------- Update estimates for phi
   List mugrid = varGrid(mu_k, sig, k, ar, msmu, msvar);
   List muAR = mugrid["mu"];
   List sigAR = mugrid["sig"];
@@ -981,9 +992,7 @@ List MSVAR_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k)
   arma::mat diag_zero(q*(ar-1), q, arma::fill::zeros);
   arma::mat Mn = join_rows(diag_mat,diag_zero);
   arma::mat F = join_cols(F_tmp,Mn); 
-  // ============================================================================
-  // ----- Update estimates for variance
-  // ============================================================================
+  // --------------- Update estimates for variance
   // ----- Compute new residuals
   List mdl_tmp  = clone(mdl);
   mdl_tmp["phi"] = phi_new;
@@ -1031,9 +1040,7 @@ List MSVAR_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k)
     }
     sigma_out = sigma_out_tmp;
   }
-  // ============================================================================
-  // ----- Organize output
-  // ============================================================================
+  // --------------- Organize output
   // ----- Produce new theta vector
   arma::vec theta_new = join_vert(vectorise(trans(mu)), sigma_out);
   theta_new = join_vert(theta_new,vectorise(phi_new));
@@ -1051,26 +1058,28 @@ List MSVAR_EMaximization(arma::vec theta, List mdl, List MSloglik_output, int k)
   Maxim_output["residuals"] = resid;
   return(Maxim_output);
 }
+
+
 // ==============================================================================
-//' @title EM Algorithm 
+//' @title EM algorithm iteration for Markov-switching autoregressive model
 //' 
-//' @description This function performs a single iteration of the Expectation Maximization (EM) algorithm
+//' @description This function performs the one iteration (E-step and M-step) of the Expectation Maximization algorithm for Markov-switching autoregressive model.
+//' 
+//' @param mdl List with model attributes
+//' @param EMest_output List with attributes from previous iteration
+//' @param k integer determining the number of regimes
+//' 
+//' @return List with attributes from new iteration
 //' 
 //' @export
 // [[Rcpp::export]]
 List MS_EMiter(List mdl, List EMest_output, int k){
-  // ============================================================================
   // ---------- Expectation
-  // ============================================================================
   arma::vec theta = EMest_output["theta"];
-  List MSloglik_output = MSloglik(theta, mdl, k);  
-  // ============================================================================
+  List MSloglik_output = MSloglik(theta, mdl, k);
   // ---------- Maximization
-  // ============================================================================
   List Maxim_output = MS_EMaximization(theta, mdl, MSloglik_output, k);
-  // ============================================================================
   // ---------- Organize output
-  // ============================================================================
   arma::vec thl(3, arma::fill::zeros);
   double loglik_new = MSloglik_output["logLike"];
   double loglik_old = EMest_output["logLike"];
@@ -1096,27 +1105,28 @@ List MS_EMiter(List mdl, List EMest_output, int k){
   EM_output["residuals"] = Maxim_output["residuals"];
   return(EM_output);
 }
+
+
 // ==============================================================================
-//' @title EM Algorithm Iteration for VAR model
+//' @title EM algorithm iteration for Markov-switching vector autoregressive model
 //' 
-//' @description This function performs a single iteration of the Expectation Maximization (EM) algorithm
+//' @description This function performs the one iteration (E-step and M-step) of the Expectation Maximization algorithm for Markov-switching vector autoregressive model.
 //' 
+//' @param mdl List with model attributes
+//' @param EMest_output List with attributes from previous iteration
+//' @param k integer determining the number of regimes
+//' 
+//' @return List with attributes from new iteration
 //' @export
 // [[Rcpp::export]]
 List MSVAR_EMiter(List mdl, List EMest_output, int k){
-  // ============================================================================
   // ---------- Expectation
-  // ============================================================================
   arma::vec theta = EMest_output["theta"];
   //arma::mat P = EMest_output["P"];
-  List MSVARloglik_output = MSVARloglik(theta, mdl, k);  
-  // ============================================================================
+  List MSVARloglik_output = MSVARloglik(theta, mdl, k);
   // ---------- Maximization
-  // ============================================================================
   List Maxim_output = MSVAR_EMaximization(theta, mdl, MSVARloglik_output, k);
-  // ============================================================================
   // ---------- Organize output
-  // ============================================================================
   arma::vec thl(3, arma::fill::zeros);
   double loglik_new = MSVARloglik_output["logLike"];
   double loglik_old = EMest_output["logLike"];
@@ -1143,37 +1153,27 @@ List MSVAR_EMiter(List mdl, List EMest_output, int k){
   EM_output["residuals"] = Maxim_output["residuals"];
   return(EM_output);
 }
+
+
 // ==============================================================================
-//' @title Estimation by EM Algorithm 
+//' @title Estimation of Markov-switching autoregressive model by EM Algorithm 
 //' 
-//' @description Estimated by the EM algorithm by calling the function EM() 
-//' multiple times until convergence. Convergence is determined by a max number 
-//' of iterations (maxit) or a convergence criterion. Specifically, the convergence 
-//' criterion is the absolute difference between parameter estimates in adjacent 
-//' iterations be less than 1.e-6 in absolute value. These can be changed by 
-//' defining them in the optim_options List. 
+//' @description Estimate Markov-switching autoregressive model by EM algorithm. This function is used by MSmdl_EM() which organizes the output and takes raw data as input.
 //' 
-//' @param z vector with observations.
-//' @param k number of regimes. Must be greater than or equal to 2. 
-//' @param msmu bool indicator for switch in mean (TRUE) or constant mean (FALSE). Default is TRUE.
-//' @param msvar bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is TRUE.
-//' @param theta_0  vector with initial values for mean and variance parameters in each state (e.g. theta_0 = c(mu_1, mu_2,..., mu_K, var_1, var_2, ..., var_K)). If NULL then initVal() is used to generate initial values. Default is NULL.
-//' @param P_0 matrix with initial values for transition matrix P. Is NULL, randTransMat() is used to generate a random transition matrix. Default is NULL.
-//' @param optim_options List with optimization options. When not specified (i.e. NULL), the max number of EM iterations is 200 and the convergence criterion is 1.e-6. Default is NULL.
+//' @param theta_0 vector with initital values for parameters
+//' @param mdl List with model attributes
+//' @param k integer determining the number of regimes
+//' @param optim_options List with optimiztion options
 //' 
 //' @return List with model results
 //' 
 //' @export
 // [[Rcpp::export]]
 List MS_EMest(arma::vec theta_0, List mdl, int k, List optim_options){
-  // ============================================================================
   // ---------- Get optimization options
-  // ============================================================================
   int maxit = optim_options["maxit"];
   double thtol = optim_options["thtol"];
-  // ============================================================================
   // ---------- Begin EM Algo
-  // ============================================================================
   // ----- Initial values
   List EMest_output;
   EMest_output["theta"] = theta_0;  // initial values for parameters
@@ -1190,21 +1190,27 @@ List MS_EMest(arma::vec theta_0, List mdl, int k, List optim_options){
   EMest_output["iterations"] = it; 
   return(EMest_output);
 }
+
+
 // ==============================================================================
-//' @title Estimation of MSVAR by EM Algorithm 
+//' @title Estimation of Markov-switching vector autoregressive model by EM Algorithm 
 //' 
+//' @description Estimate Markov-switching vector  autoregressive model by EM algorithm. This function is used by MSmdl_EM() which organizes the output and takes raw data as input.
+//' 
+//' @param theta_0 vector with initital values for parameters
+//' @param mdl List with model attributes
+//' @param k integer determining the number of regimes
+//' @param optim_options List with optimiztion options
+//' 
+//' @return List with model results
 //' 
 //' @export
 // [[Rcpp::export]]
 List MSVAR_EMest(arma::vec theta_0, List mdl, int k, List optim_options){
-  // ============================================================================
   // ---------- Get optimization options
-  // ============================================================================
   int maxit = optim_options["maxit"];
   double thtol = optim_options["thtol"];
-  // ============================================================================
   // ---------- Begin EM Algo
-  // ============================================================================
   // ----- Initial values
   List EMest_output;
   EMest_output["theta"] = theta_0;  // initial values for parameters
@@ -1221,269 +1227,4 @@ List MSVAR_EMest(arma::vec theta_0, List mdl, int k, List optim_options){
   EMest_output["iterations"] = it; 
   return(EMest_output);
 }
-// ==============================================================================
-//' @title Markov-switching Autoregressive (AR) model
-//' 
-//' @description This function estimates a Markov-switching autoregressive (AR) model. 
-//' This function uses the EM algorithm and has the option to use an optimization method 
-//' as a second step to improve estimates. The function also allows the mean and/or the 
-//' variance to switch but the autoregressive parameters remain constant accross regimes.
-//' 
-//' @param Y (Tx1) vector with observational data. Required argument.
-//' @param p integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.
-//' @param k integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.
-//' @param msmu bool indicator for switch in mean (TRUE) or constant mean (FALSE). Default is TRUE.
-//' @param msvar bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is TRUE.
-//' @param theta_0  vector with initial values for mean and variance parameters in each state (e.g. theta_0 = c(mu_1, mu_2,..., mu_K, var_1, var_2, ..., var_K)). If NULL then initVal() is used to generate initial values. Default is NULL.
-//' @param P_0 matrix with initial values for transition matrix P. Is NULL, randTransMat() is used to generate a random transition matrix. Default is NULL.
-//' @param optim_options List with optimization options. When not specified (i.e. NULL), the max number of EM iterations is 200 and the convergence criterion is 1.e-6. Default is NULL.
-//' 
-//' @return List with model characteristics including:
-//' - y: transformed process
-//' - X: matrix of lagged observations (with or without vector of 1s depending on const=1 or const=0)
-//' - x: matrix of lagged observations without vector of 1s
-//' - n: number of observations (T-ar)
-//' - ar: number of autoregressive parameters
-//' - coef: coefficient estimates. This is the same as phi is const=0
-//' - phi: autoregressive coefficient estimates
-//' - mu: the mean of the process
-//' - residuals: vectot of residuals
-//' - stdev: standard deviations
-//' - se: standard errors of parameter estimtes
-//' - logLike: the log-likelihood 
-//' 
-//' @export
-// [[Rcpp::export]]
-List MSARmdl(arma::vec Y, int ar, int k, bool msmu = 1, bool msvar = 1, int maxit = 10000, 
-             double thtol = 1.e-6, bool getSE = 0, int max_init = 500, int use_diff_init = 1, 
-             Nullable<NumericVector> init_value = R_NilValue){
-  // =============================================================================
-  // ---------- Load R-Functions
-  // =============================================================================
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function hessian = mstest["getHess"];
-  Rcpp::Function arP = mstest["arP"];
-  Rcpp::Environment lmf("package:lmf");
-  Rcpp::Function nearPD = lmf["nearPD"];
-  // =============================================================================
-  // ---------- Optimization options
-  // =============================================================================
-  List optim_options;
-  optim_options["maxit"] = maxit; // max iterations
-  optim_options["thtol"] = thtol; // Convergence criterion/tolerance
-  // =============================================================================
-  // ---------- Estimate linear model to use for initial values
-  // =============================================================================
-  bool intercept = TRUE;
-  List  mdl_out = ARmdl(Y, ar, intercept);
-  mdl_out["msmu"] = msmu;
-  mdl_out["msvar"] = msvar;
-  // =============================================================================
-  // ---------- Estimate model 
-  // =============================================================================
-  List EM_output;
-  List EM_output_all(use_diff_init);
-  arma::vec max_loglik(use_diff_init, arma::fill::zeros);
-  int init_used = 0;
-  if (init_value.isNotNull()){
-    // ----- Estimate using initial values provided
-    NumericVector init_values(init_value);
-    EM_output = MS_EMest(init_values, mdl_out, k, optim_options);
-    EM_output["theta_0"] = init_values;
-    EM_output["init_used"] = 1;
-  }else{
-    // ----- Estimate using 'use_diff_init' different initial values
-    List EM_output_tmp;
-    for (int xi = 0; xi<use_diff_init; xi++){
-      double logLike_tmp;
-      bool converge_check = FALSE;
-      while ((converge_check==FALSE) and (init_used<max_init)){
-        // ----- Initial values
-        arma::vec theta_0 = initValsMS(mdl_out, k);
-        // ----- Estimate using EM algorithm 
-        EM_output_tmp = MS_EMest(theta_0, mdl_out, k, optim_options);
-        EM_output_tmp["theta_0"] = theta_0;
-        // ----- Convergence check
-        logLike_tmp = EM_output_tmp["logLike"];
-        arma::vec theta_tmp = EM_output_tmp["theta"];
-        converge_check = ((arma::is_finite(logLike_tmp)) and (theta_tmp.is_finite()));
-        init_used += 1;
-      }
-      max_loglik(xi) = logLike_tmp;
-      EM_output_tmp["init_used"] = init_used;
-      EM_output_all[xi] = EM_output_tmp;
-    }
-    if (use_diff_init==1){
-      EM_output = EM_output_tmp;
-    }else{
-      arma::uword xl = index_max(max_loglik);
-      EM_output = EM_output_all[xl];
-    }
-  }
-  // =============================================================================
-  // ---------- organize output
-  // =============================================================================
-  List MSARmdl_output;
-  MSARmdl_output["theta"] = EM_output["theta"];
-  MSARmdl_output["theta_0"] = EM_output["theta_0"];
-  MSARmdl_output["mu"] = EM_output["mu"];
-  MSARmdl_output["sigma"] = EM_output["sigma"];
-  MSARmdl_output["P"] = EM_output["P"];
-  MSARmdl_output["phi"] = EM_output["phi"];
-  MSARmdl_output["pinf"] = EM_output["pinf"];
-  MSARmdl_output["St"] = EM_output["St"];
-  MSARmdl_output["logLike"] = EM_output["logLike"];
-  MSARmdl_output["residuals"] = EM_output["residuals"];
-  MSARmdl_output["eta"] = EM_output["eta"];
-  MSARmdl_output["thl"] = EM_output["thl"];
-  MSARmdl_output["deltath"] = EM_output["deltath"];
-  MSARmdl_output["y"] = mdl_out["y"];
-  MSARmdl_output["ar"] = mdl_out["ar"];
-  MSARmdl_output["n"] = mdl_out["n"];
-  MSARmdl_output["q"] = 1;
-  MSARmdl_output["k"] = k;
-  MSARmdl_output["x"] = mdl_out["x"];
-  MSARmdl_output["X"] = mdl_out["X"];
-  MSARmdl_output["msmu"] = msmu;
-  MSARmdl_output["msvar"] = msvar;
-  arma::vec sigma = EM_output["sigma"];
-  MSARmdl_output["stdev"] = sqrt(sigma);
-  MSARmdl_output["optim_options"] = optim_options;
-  MSARmdl_output["iterations"] = EM_output["iterations"];
-  MSARmdl_output["initVals_used"] = EM_output["init_used"];
-  MSARmdl_output["getSE"] = getSE;
-  if (getSE==TRUE){
-    arma::mat Hess = as<arma::mat>(hessian(MSARmdl_output, k));
-    arma::mat info_mat = inv(-Hess);
-    bool nearPD_used = FALSE;
-    if (any(diagvec(info_mat)<0)){
-      info_mat = as<arma::mat>(nearPD(info_mat));
-      nearPD_used = TRUE;
-    }
-    arma::vec theta_stderr = sqrt(diagvec(info_mat));
-    MSARmdl_output["Hess"] = Hess; 
-    MSARmdl_output["theta_stderr"] = theta_stderr;
-    MSARmdl_output["info_mat"] = info_mat;
-    MSARmdl_output["nearPD_used"] = nearPD_used;
-  }
-  MSARmdl_output["trace"] = EM_output_all;
-  return(MSARmdl_output);
-}
 
-
-// ==============================================================================
-//' @title Markov-switching Vector Autoregressive (VAR) model
-//' 
-//' @export
-// [[Rcpp::export]]
-List MSVARmdl(arma::mat Y, int ar, int k, bool msmu = 1, bool msvar = 1, int maxit = 10000, 
-              double thtol = 1.e-8, bool getSE = 0, int max_init = 500, int use_diff_init = 1, 
-              Nullable<NumericVector> init_value = R_NilValue){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function hessian = mstest["getHess"];
-  Rcpp::Function arP = mstest["arP"];
-  Rcpp::Environment lmf("package:lmf");
-  Rcpp::Function nearPD = lmf["nearPD"];
-  // =============================================================================
-  // ---------- Initialize options
-  // =============================================================================
-  List optim_options;
-  optim_options["maxit"] = maxit; // max iterations
-  optim_options["thtol"] = thtol; // Convergence criterion/tolerance
-  // =============================================================================
-  // ---------- Estimate linear model to use for initial values
-  // =============================================================================
-  List mdl_out;
-  bool intercept = TRUE;
-  mdl_out = VARmdl(Y, ar, intercept);
-  mdl_out["msmu"] = msmu;
-  mdl_out["msvar"] = msvar;
-  // =============================================================================
-  // ---------- Estimate model 
-  // =============================================================================
-  List EM_output;
-  List EM_output_all(use_diff_init);
-  arma::vec max_loglik(use_diff_init, arma::fill::zeros);
-  int init_used = 0;
-  if (init_value.isNotNull()){
-    // ----- Estimate using initial values provided
-    NumericVector init_values(init_value);
-    EM_output = MSVAR_EMest(init_values, mdl_out, k, optim_options);
-    EM_output["theta_0"] = init_values;
-    EM_output["init_used"] = 1;
-  }else{
-    List EM_output_tmp;
-    for (int xi = 0; xi<use_diff_init; xi++){
-      double logLike_tmp;
-      bool converge_check = FALSE;
-      while ((converge_check==FALSE) and (init_used<max_init)){
-        // ----- Initial values
-        arma::vec theta_0 = initValsMSVAR(mdl_out, k);
-        // ----- Estimate using EM algorithm 
-        EM_output_tmp = MSVAR_EMest(theta_0, mdl_out, k, optim_options);
-        EM_output_tmp["theta_0"] = theta_0;
-        // ----- Convergence check
-        logLike_tmp = EM_output_tmp["logLike"];
-        arma::vec theta_tmp = EM_output_tmp["theta"];
-        converge_check = ((arma::is_finite(logLike_tmp)) and (theta_tmp.is_finite()));
-        init_used += 1;
-      }
-      max_loglik(xi) = logLike_tmp;
-      EM_output_tmp["init_used"] = init_used;
-      EM_output_all[xi] = EM_output_tmp;
-    }
-    if (use_diff_init==1){
-      EM_output = EM_output_tmp;
-    }else{
-      arma::uword xl = index_max(max_loglik);
-      EM_output = EM_output_all[xl];
-    }
-  }
-  // =============================================================================
-  // ---------- organize output
-  // =============================================================================
-  List MSVARmdl_output;
-  MSVARmdl_output["theta"] = EM_output["theta"];
-  MSVARmdl_output["theta_0"] = EM_output["theta_0"];
-  MSVARmdl_output["mu"] = EM_output["mu"];
-  MSVARmdl_output["sigma"] = EM_output["sigma"];
-  MSVARmdl_output["P"] = EM_output["P"];
-  MSVARmdl_output["phi"] = EM_output["phi"];
-  MSVARmdl_output["companion_mat"] = EM_output["companion_mat"];
-  MSVARmdl_output["pinf"] = EM_output["pinf"];
-  MSVARmdl_output["St"] = EM_output["St"];
-  MSVARmdl_output["logLike"] = EM_output["logLike"];
-  MSVARmdl_output["residuals"] = EM_output["residuals"];
-  MSVARmdl_output["eta"] = EM_output["eta"];
-  MSVARmdl_output["thl"] = EM_output["thl"];
-  MSVARmdl_output["deltath"] = EM_output["deltath"];
-  MSVARmdl_output["y"] = mdl_out["y"];
-  MSVARmdl_output["ar"] = mdl_out["ar"];
-  MSVARmdl_output["q"] = mdl_out["q"];
-  MSVARmdl_output["n"] = mdl_out["n"];
-  MSVARmdl_output["k"] = k;
-  MSVARmdl_output["x"] = mdl_out["x"];
-  MSVARmdl_output["X"] = mdl_out["X"];
-  MSVARmdl_output["msmu"] = msmu;
-  MSVARmdl_output["msvar"] = msvar;
-  MSVARmdl_output["optim_options"] = optim_options;
-  MSVARmdl_output["iterations"] = EM_output["iterations"];
-  MSVARmdl_output["initVals_used"] = EM_output["init_used"];
-  MSVARmdl_output["getSE"] = getSE;
-  if (getSE==TRUE){
-    arma::mat Hess = as<arma::mat>(hessian(MSVARmdl_output, k));
-    arma::mat info_mat = inv(-Hess);
-    bool nearPD_used = FALSE;
-    if (any(diagvec(info_mat)<0)){
-      info_mat = as<arma::mat>(nearPD(info_mat));
-      nearPD_used = TRUE;
-    }
-    arma::vec theta_stderr = sqrt(diagvec(info_mat));
-    MSVARmdl_output["Hess"] = Hess; 
-    MSVARmdl_output["theta_stderr"] = theta_stderr;
-    MSVARmdl_output["info_mat"] = info_mat;
-    MSVARmdl_output["nearPD_used"] = nearPD_used;
-  }
-  MSVARmdl_output["trace"] = EM_output_all;
-  return(MSVARmdl_output);
-}

@@ -2,16 +2,35 @@
 % Please edit documentation in R/models.R
 \name{MSVARmdl_EM}
 \alias{MSVARmdl_EM}
-\title{Markov-switching VAR Model (EM algorithm)}
+\title{Markov-switching vector autoregressive model by Expectation Minimization algorithm}
 \usage{
 MSVARmdl_EM(Y, ar, k, control = list())
 }
-\value{
+\arguments{
+\item{Y}{(Tx1) vector with observational data. Required argument.}
 
+\item{ar}{integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.}
+
+\item{k}{integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.}
+
+\item{control}{List with optimization options including:
+- msmu indicator for switch in mean (TRUE) or constant mean (FALSE). Default is TRUE.
+- msvar bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is TRUE.
+- maxit integer determining the maximum number of EM iterations.
+- thtol double determining the convergence criterion for the absolute difference in parameter estimates (theta) between iterations. Default is 1e-6.
+- getSE bool if 'TRUE' standard errors are computed and returned. If 'FALSE' standard errors are not computed. Default is 'FALSE'.
+- max_init integer determining the maximum number of initial values to attempt in case solution is NaN. Default is 500.
+- use_diff_init integer determining how many different initital values (that do not return NaN) to try. Default is 1. 
+- init_value vector of initial values. This is optional. Default is NUll, in which case 'initValsMS()' is used to generate initial values.}
+}
+\value{
+List with model characteristics
 }
 \description{
-Estimate Markov-switching VAR Model Using EM algorithm
+This function estimates a Markov-switching vector autoregressive model using the Expectation Minimization (EM) algorithm of Dempster, Laird and Rubin (1977) as explained in Krolzig (1997).
 }
 \references{
+Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” Journal of the Royal Statistical Society. Series B 39 (1): 1–38
 
+Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.” In Markov-Switching Vector Autoregressions, 6–28. Springer
 }

@@ -1,13 +1,26 @@
 
-# ==============================================================================
-#' @title Markov-switching Model (EM algorithm)
-#'
-#' @description Estimate Markov-switching Model Using EM algorithm
-#'
+
+#' @title Markov-switching autoregressive model by Expectation Minimization algorithm
 #' 
-#' @return 
+#' @description This function estimates a Markov-switching autoregressive model using the Expectation Minimization (EM) algorithm of Dempster, Laird and Rubin (1977) as explained in Hamilton (1990).
 #' 
-#' @references 
+#' @param Y (Tx1) vector with observational data. Required argument.
+#' @param ar integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.
+#' @param k integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.
+#' @param control List with optimization options including:
+#'     - msmu indicator for switch in mean (TRUE) or constant mean (FALSE). Default is TRUE.
+#'     - msvar bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is TRUE.
+#'     - maxit integer determining the maximum number of EM iterations.
+#'     - thtol double determining the convergence criterion for the absolute difference in parameter estimates (theta) between iterations. Default is 1e-6.
+#'     - getSE bool if 'TRUE' standard errors are computed and returned. If 'FALSE' standard errors are not computed. Default is 'FALSE'.
+#'     - max_init integer determining the maximum number of initial values to attempt in case solution is NaN. Default is 500.
+#'     - use_diff_init integer determining how many different initital values (that do not return NaN) to try. Default is 1. 
+#'     - init_value vector of initial values. This is optional. Default is NUll, in which case 'initValsMS()' is used to generate initial values.
+#' 
+#' @return List with model characteristics
+#' 
+#' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” Journal of the Royal Statistical Society. Series B 39 (1): 1–38
+#' @references Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” Journal of econometrics, 45 (1-2): 39–70
 #' 
 #' @export
 MSmdl_EM <- function(Y, ar, k, control = list()){
@@ -26,21 +39,15 @@ MSmdl_EM <- function(Y, ar, k, control = list()){
   if(length(noNms <- namc[!namc %in% nmsC])){
     warning("unknown names in control: ", paste(noNms,collapse=", ")) 
   }
-  # =============================================================================
   # ---------- Optimization options
-  # =============================================================================
   optim_options <- list(maxit = con[["maxit"]], thtol = con[["thtol"]])
-  # =============================================================================
   # ---------- Estimate linear model to use for initial values
-  # =============================================================================
   mdl_out <- ARmdl(Y, ar = ar, intercept = TRUE, getSE = con[["getSE"]])
   msmu <- con[["msmu"]]
   msvar <- con[["msvar"]]
   mdl_out[["msmu"]] = msmu
   mdl_out[["msvar"]] = msvar
-  # =============================================================================
   # ---------- Estimate model 
-  # =============================================================================
   EM_output_all <- list(con[["use_diff_init"]])
   max_loglik <- matrix(0, con[["use_diff_init"]], 1)
   if (is.null(con[["init_value"]])==FALSE){
@@ -81,9 +88,7 @@ MSmdl_EM <- function(Y, ar, k, control = list()){
       }
     }
   }
-  # =============================================================================
   # ---------- organize output
-  # =============================================================================
   theta_mu_ind <- c(rep(1, 1 + (k-1)*msmu), rep(0, 1 + (k-1)*msvar + ar + k*k))
   theta_sig_ind <- c(rep(0, 1 + (k-1)*msmu), rep(1, 1 + (k-1)*msvar), rep(0, ar + k*k))
   theta_phi_ind <- c(rep(0, 2 + (k-1)*msmu + (k-1)*msvar), rep(1, ar), rep(0, k*k))
@@ -126,16 +131,27 @@ MSmdl_EM <- function(Y, ar, k, control = list()){
 
 
 
-# ==============================================================================
-#' @title Markov-switching VAR Model (EM algorithm)
-#'
-#' @description Estimate Markov-switching VAR Model Using EM algorithm
-#'
+#' @title Markov-switching vector autoregressive model by Expectation Minimization algorithm
 #' 
-#' @return 
+#' @description This function estimates a Markov-switching vector autoregressive model using the Expectation Minimization (EM) algorithm of Dempster, Laird and Rubin (1977) as explained in Krolzig (1997).
 #' 
-#' @references 
+#' @param Y (Tx1) vector with observational data. Required argument.
+#' @param ar integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.
+#' @param k integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.
+#' @param control List with optimization options including:
+#'     - msmu indicator for switch in mean (TRUE) or constant mean (FALSE). Default is TRUE.
+#'     - msvar bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is TRUE.
+#'     - maxit integer determining the maximum number of EM iterations.
+#'     - thtol double determining the convergence criterion for the absolute difference in parameter estimates (theta) between iterations. Default is 1e-6.
+#'     - getSE bool if 'TRUE' standard errors are computed and returned. If 'FALSE' standard errors are not computed. Default is 'FALSE'.
+#'     - max_init integer determining the maximum number of initial values to attempt in case solution is NaN. Default is 500.
+#'     - use_diff_init integer determining how many different initital values (that do not return NaN) to try. Default is 1. 
+#'     - init_value vector of initial values. This is optional. Default is NUll, in which case 'initValsMS()' is used to generate initial values.
 #' 
+#' @return List with model characteristics
+#' 
+#' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” Journal of the Royal Statistical Society. Series B 39 (1): 1–38
+#' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.” In Markov-Switching Vector Autoregressions, 6–28. Springer
 #' @export
 MSVARmdl_EM <- function(Y, ar, k, control = list()){
   # ----- Set control values
@@ -153,21 +169,15 @@ MSVARmdl_EM <- function(Y, ar, k, control = list()){
   if(length(noNms <- namc[!namc %in% nmsC])){
     warning("unknown names in control: ", paste(noNms,collapse=", ")) 
   }
-  # =============================================================================
   # ---------- Optimization options
-  # =============================================================================
   optim_options <- list(maxit = con[["maxit"]], thtol = con[["thtol"]])
-  # =============================================================================
   # ---------- Estimate linear model to use for initial values
-  # =============================================================================
   mdl_out = VARmdl(Y, ar = ar, intercept = TRUE, getSE = con[["getSE"]])
   msmu <- con[["msmu"]]
   msvar <- con[["msvar"]]
   mdl_out[["msmu"]] = msmu
   mdl_out[["msvar"]] = msvar
-  # =============================================================================
   # ---------- Estimate model 
-  # =============================================================================
   EM_output_all <- list(con[["use_diff_init"]])
   max_loglik <- matrix(0, con[["use_diff_init"]], 1)
   if (is.null(con[["init_value"]])==FALSE){
@@ -207,9 +217,7 @@ MSVARmdl_EM <- function(Y, ar, k, control = list()){
       }
     }
   }
-  # =============================================================================
   # ---------- organize output
-  # =============================================================================
   q <- ncol(Y)
   Nsig <- (q*(q+1))/2
   phi_len <- length(c(mdl_out[["phi"]]))

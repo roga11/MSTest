@@ -2,16 +2,35 @@
 % Please edit documentation in R/models.R
 \name{MSmdl_EM}
 \alias{MSmdl_EM}
-\title{Markov-switching Model (EM algorithm)}
+\title{Markov-switching autoregressive model by Expectation Minimization algorithm}
 \usage{
 MSmdl_EM(Y, ar, k, control = list())
 }
-\value{
+\arguments{
+\item{Y}{(Tx1) vector with observational data. Required argument.}
 
+\item{ar}{integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.}
+
+\item{k}{integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.}
+
+\item{control}{List with optimization options including:
+- msmu indicator for switch in mean (TRUE) or constant mean (FALSE). Default is TRUE.
+- msvar bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is TRUE.
+- maxit integer determining the maximum number of EM iterations.
+- thtol double determining the convergence criterion for the absolute difference in parameter estimates (theta) between iterations. Default is 1e-6.
+- getSE bool if 'TRUE' standard errors are computed and returned. If 'FALSE' standard errors are not computed. Default is 'FALSE'.
+- max_init integer determining the maximum number of initial values to attempt in case solution is NaN. Default is 500.
+- use_diff_init integer determining how many different initital values (that do not return NaN) to try. Default is 1. 
+- init_value vector of initial values. This is optional. Default is NUll, in which case 'initValsMS()' is used to generate initial values.}
+}
+\value{
+List with model characteristics
 }
 \description{
-Estimate Markov-switching Model Using EM algorithm
+This function estimates a Markov-switching autoregressive model using the Expectation Minimization (EM) algorithm of Dempster, Laird and Rubin (1977) as explained in Hamilton (1990).
 }
 \references{
+Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” Journal of the Royal Statistical Society. Series B 39 (1): 1–38
 
+Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” Journal of econometrics, 45 (1-2): 39–70
 }

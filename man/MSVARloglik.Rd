@@ -2,24 +2,22 @@
 % Please edit documentation in R/RcppExports.R
 \name{MSVARloglik}
 \alias{MSVARloglik}
-\title{Markov-switching loglikelihood and Hamilton smoother}
+\title{Markov-switching vector autoregressive log-likelihood function}
 \usage{
 MSVARloglik(theta, mdl, k)
 }
 \arguments{
-\item{theta}{vector with mean and variance in each regime.}
+\item{theta}{vector of model parameters}
 
-\item{mdl}{List containing relevant parameters.}
+\item{mdl}{List with model attributes}
 
-\item{k}{number of regimes. Must be greater than or equal to 2.}
-
-\item{P}{matrix with transition probabilities.}
-
-\item{pinf}{limiting probabilities of each regime.}
+\item{k}{integer determining the number of regimes}
 }
 \value{
-List with log-likelihood (loglik), and smoothed probabilities of each regime (xi_t_T).
+log-likelihood given data
+
+List with log-likelihood (log-likelihood), and smoothed probabilities of each regime (xi_t_T).
 }
 \description{
-This function computes loglikelihood for Markov-switching models and computes the hamilton smoother.
+This function computes the log-likelihood for a markov-switching vector autoregressive model and uses the Hamilton smoother to obtain smoothed probabilities of each state. This is also the expectation step in the Expectation Maximization algorithm for a Markov-switching autoregressive model.
 }

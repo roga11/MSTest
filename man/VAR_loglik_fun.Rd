@@ -2,10 +2,18 @@
 % Please edit documentation in R/RcppExports.R
 \name{VAR_loglik_fun}
 \alias{VAR_loglik_fun}
-\title{VAR Log-likelihood objective function (used to find Hessian)}
+\title{Vector autoregressive log-likelihood objective function}
 \usage{
 VAR_loglik_fun(theta, mdl)
 }
+\arguments{
+\item{theta}{vector of model parameters}
+
+\item{mdl}{List with model attributes}
+}
+\value{
+log-likelihood given data
+}
 \description{
-VAR Log-likelihood objective function (used to find Hessian)
+This function computes the log-likelihood for a vector autoregressive model
 }

@@ -2,10 +2,20 @@
 % Please edit documentation in R/RcppExports.R
 \name{MSloglik_fun_min}
 \alias{MSloglik_fun_min}
-\title{Markov-switching AR Log-likelihood objective function Minimization}
+\title{Markov-switching autoregressive log-likelihood objective function (minimization version)}
 \usage{
 MSloglik_fun_min(theta, mdl, k)
 }
+\arguments{
+\item{theta}{vector of model parameters}
+
+\item{mdl}{List with model attributes}
+
+\item{k}{integer determining the number of regimes}
+}
+\value{
+negative log-likelihood given data
+}
 \description{
-Markov-switching AR Log-likelihood objective function Minimization
+This function computes the (negative) log-likelihood for a markov-switching autoregressive model
 }

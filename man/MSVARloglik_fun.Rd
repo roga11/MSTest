@@ -2,10 +2,20 @@
 % Please edit documentation in R/RcppExports.R
 \name{MSVARloglik_fun}
 \alias{MSVARloglik_fun}
-\title{Markov-switching VAR loglikelihood objective function}
+\title{Markov-switching vector autoregressive log-likelihood objective function}
 \usage{
 MSVARloglik_fun(theta, mdl, k)
 }
+\arguments{
+\item{theta}{vector of model parameters}
+
+\item{mdl}{List with model attributes}
+
+\item{k}{integer determining the number of regimes}
+}
+\value{
+log-likelihood given data
+}
 \description{
-Markov-switching VAR loglikelihood objective function
+This function computes the log-likelihood for a markov-switching vector autoregressive model
 }

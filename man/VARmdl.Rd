@@ -2,10 +2,22 @@
 % Please edit documentation in R/RcppExports.R
 \name{VARmdl}
 \alias{VARmdl}
-\title{Fitting Vector Autoregressive Model}
+\title{Vector autoregressive model}
 \usage{
 VARmdl(Y, ar, intercept = 1L, getSE = 0L)
 }
+\arguments{
+\item{Y}{is a (T x q) matrix of observations}
+
+\item{ar}{number of lags}
+
+\item{intercept}{boolean indicator determining whether or not to include constant. Default is TRUE.}
+
+\item{getSE}{boolean indicator determining whether or not to estimate standard errors}
+}
+\value{
+List with model attributes
+}
 \description{
-This function estimates a vector autoregresive series
+This function estimates a vector autoregresive model
 }

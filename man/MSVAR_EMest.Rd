@@ -2,10 +2,22 @@
 % Please edit documentation in R/RcppExports.R
 \name{MSVAR_EMest}
 \alias{MSVAR_EMest}
-\title{Estimation of MSVAR by EM Algorithm}
+\title{Estimation of Markov-switching vector autoregressive model by EM Algorithm}
 \usage{
 MSVAR_EMest(theta_0, mdl, k, optim_options)
 }
+\arguments{
+\item{theta_0}{vector with initital values for parameters}
+
+\item{mdl}{List with model attributes}
+
+\item{k}{integer determining the number of regimes}
+
+\item{optim_options}{List with optimiztion options}
+}
+\value{
+List with model results
+}
 \description{
-Estimation of MSVAR by EM Algorithm
+Estimate Markov-switching vector  autoregressive model by EM algorithm. This function is used by MSmdl_EM() which organizes the output and takes raw data as input.
 }

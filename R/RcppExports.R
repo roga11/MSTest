@@ -560,23 +560,30 @@ DLMMCpval_fun_max <- function(theta, y, x, N, simdist_N, pval_type, stationary_i
     .Call(`_MSTest_DLMMCpval_fun_max`, theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda)
 }
 
-#' @title AR Log-likelihood objective function (used to find Hessian)
+#' @title Autoregressive log-likelihood objective function
 #' 
+#' @description This function computes the log-likelihood for an autoregressive model
+#' 
+#' @param theta vector of model parameters
+#' @param mdl List with model attributes
+#' 
+#' @return log-likelihood given data
 #' 
 #' @export
 AR_loglik_fun <- function(theta, mdl) {
     .Call(`_MSTest_AR_loglik_fun`, theta, mdl)
 }
 
-#' @title Fitting Autoregressive Model
+#' @title Autoregressive Model
 #' 
-#' @description This function estimates an autoregresive series
+#' @description This function estimates an autoregresive model
 #' 
 #' @param Y vector of observations
 #' @param ar number of lags
-#' @param intercept bool determines whether or not to include constant in estimation. Default is TRUE.
+#' @param intercept boolean indicator determining whether or not to include constant. Default is TRUE.
+#' @param getSE boolean indicator determining whether or not to estimate standard errors
 #' 
-#' @return List with model characteristics which include
+#' @return List with model attributes which include
 #' - y: transformed process
 #' - X: matrix of lagged observations (with or without vector of 1s depending on const=1 or const=0)
 #' - x: matrix of lagged observations without vector of 1s
@@ -595,141 +602,199 @@ ARmdl <- function(Y, ar, intercept = 1L, getSE = 0L) {
     .Call(`_MSTest_ARmdl`, Y, ar, intercept, getSE)
 }
 
-#' @title VAR Log-likelihood objective function (used to find Hessian)
+#' @title Vector autoregressive log-likelihood objective function 
 #' 
+#' @description This function computes the log-likelihood for a vector autoregressive model
+#' 
+#' @param theta vector of model parameters
+#' @param mdl List with model attributes
+#' 
+#' @return log-likelihood given data
 #' 
 #' @export
 VAR_loglik_fun <- function(theta, mdl) {
     .Call(`_MSTest_VAR_loglik_fun`, theta, mdl)
 }
 
-#' @title Fitting Vector Autoregressive Model
+#' @title Vector autoregressive model
 #' 
-#' @description This function estimates a vector autoregresive series
+#' @description This function estimates a vector autoregresive model
+#' 
+#' @param Y is a (T x q) matrix of observations
+#' @param ar number of lags
+#' @param intercept boolean indicator determining whether or not to include constant. Default is TRUE.
+#' @param getSE boolean indicator determining whether or not to estimate standard errors
+#' 
+#' @return List with model attributes
 #' 
 #' @export
 VARmdl <- function(Y, ar, intercept = 1L, getSE = 0L) {
     .Call(`_MSTest_VARmdl`, Y, ar, intercept, getSE)
 }
 
-#' @title Markov-switching AR Log-likelihood objective function (used to find Hessian)
+#' @title Markov-switching autoregressive log-likelihood objective function
 #' 
+#' @description This function computes the log-likelihood for a markov-switching autoregressive model
+#' 
+#' @param theta vector of model parameters
+#' @param mdl List with model attributes
+#' @param k integer determining the number of regimes
+#' 
+#' @return log-likelihood given data
 #' 
 #' @export
 MSloglik_fun <- function(theta, mdl, k) {
     .Call(`_MSTest_MSloglik_fun`, theta, mdl, k)
 }
 
-#' @title Markov-switching AR Log-likelihood objective function Minimization
+#' @title Markov-switching autoregressive log-likelihood objective function (minimization version)
 #' 
+#' @description This function computes the (negative) log-likelihood for a markov-switching autoregressive model
+#' 
+#' @param theta vector of model parameters
+#' @param mdl List with model attributes
+#' @param k integer determining the number of regimes
+#' 
+#' @return negative log-likelihood given data
 #' 
 #' @export
 MSloglik_fun_min <- function(theta, mdl, k) {
     .Call(`_MSTest_MSloglik_fun_min`, theta, mdl, k)
 }
 
-#' @title Markov-switching loglikelihood and Hamilton smoother
+#' @title Markov-switching autoregressive log-likelihood function 
 #' 
-#' @description This function computes loglikelihood for Markov-switching models and computes the hamilton smoother.
+#' @description This function computes the log-likelihood for a markov-switching autoregressive model and uses the Hamilton smoother to obtain smoothed probabilities of each state. This is also the expectation step in the Expectation Maximization algorithm for a Markov-switching autoregressive model.
 #' 
-#' @param mdl List containing relevant parameters.
-#' @param theta vector with mean and variance in each regime.
-#' @param P matrix with transition probabilities.
-#' @param pinf limiting probabilities of each regime.
-#' @param k number of regimes. Must be greater than or equal to 2. 
+#' @param theta vector of model parameters
+#' @param mdl List with model attributes
+#' @param k integer determining the number of regimes
+#' 
+#' @return log-likelihood given data
 #'  
-#' @return List with log-likelihood (loglik), and smoothed probabilities of each regime (xi_t_T).
+#' @return List with log-likelihood (log-likelihood), and smoothed probabilities of each regime (xi_t_T).
 #' 
 #' @export
 MSloglik <- function(theta, mdl, k) {
     .Call(`_MSTest_MSloglik`, theta, mdl, k)
 }
 
-#' @title Markov-switching VAR loglikelihood objective function 
+#' @title Markov-switching vector autoregressive log-likelihood objective function
 #' 
+#' @description This function computes the log-likelihood for a markov-switching vector autoregressive model
+#' 
+#' @param theta vector of model parameters
+#' @param mdl List with model attributes
+#' @param k integer determining the number of regimes
+#' 
+#' @return log-likelihood given data
 #' 
 #' @export
 MSVARloglik_fun <- function(theta, mdl, k) {
     .Call(`_MSTest_MSVARloglik_fun`, theta, mdl, k)
 }
 
-#' @title Markov-switching VAR Log-likelihood objective function Minimization
+#' @title Markov-switching vector autoregressive log-likelihood objective function (minimization version)
 #' 
+#' @description This function computes the (negative) log-likelihood for a markov-switching vector autoregressive model
+#' 
+#' @param theta vector of model parameters
+#' @param mdl List with model attributes
+#' @param k integer determining the number of regimes
+#' 
+#' @return negative log-likelihood given data
 #' 
 #' @export
 MSVARloglik_fun_min <- function(theta, mdl, k) {
     .Call(`_MSTest_MSVARloglik_fun_min`, theta, mdl, k)
 }
 
-#' @title Markov-switching loglikelihood and Hamilton smoother
+#' @title Markov-switching vector autoregressive log-likelihood function
 #' 
-#' @description This function computes loglikelihood for Markov-switching models and computes the hamilton smoother.
+#' @description This function computes the log-likelihood for a markov-switching vector autoregressive model and uses the Hamilton smoother to obtain smoothed probabilities of each state. This is also the expectation step in the Expectation Maximization algorithm for a Markov-switching autoregressive model.
 #' 
-#' @param mdl List containing relevant parameters.
-#' @param theta vector with mean and variance in each regime.
-#' @param P matrix with transition probabilities.
-#' @param pinf limiting probabilities of each regime.
-#' @param k number of regimes. Must be greater than or equal to 2. 
+#' @param theta vector of model parameters
+#' @param mdl List with model attributes
+#' @param k integer determining the number of regimes
+#' 
+#' @return log-likelihood given data
 #'  
-#' @return List with log-likelihood (loglik), and smoothed probabilities of each regime (xi_t_T).
+#' @return List with log-likelihood (log-likelihood), and smoothed probabilities of each regime (xi_t_T).
 #' 
 #' @export
 MSVARloglik <- function(theta, mdl, k) {
     .Call(`_MSTest_MSVARloglik`, theta, mdl, k)
 }
 
-#' @title EM Algo Maximization step
+#' @title Maximization step of EM algorithm for Markov-switching autoregressive model
 #' 
-#' @description This function performs the maximization step of the Expectation Maximization (EM) algorithm.
+#' @description This function performs the maximization step of the Expectation Maximization algorithm for Markov-switching autoregressive model.
+#' 
+#' @param theta vector of model parameters
+#' @param mdl List with model attributes
+#' @param MSloglik_output List with output from Expectation step of EM algorithm for Markov-switching autoregressive model
+#' @param k integer determining the number of regimes
+#' 
+#' @return List with new maximized parameters
 #' 
 #' @export
 MS_EMaximization <- function(theta, mdl, MSloglik_output, k) {
     .Call(`_MSTest_MS_EMaximization`, theta, mdl, MSloglik_output, k)
 }
 
-#' @title EM Algo Maximization step
+#' @title Maximization step of EM algorithm for Markov-switching vector autoregressive model
 #' 
-#' @description This function performs the maximization step of the Expectation Maximization (EM) algorithm.
+#' @description This function performs the maximization step of the Expectation Maximization algorithm for Markov-switching vector autoregressive model.
+#' 
+#' @param theta vector of model parameters
+#' @param mdl List with model attributes
+#' @param MSloglik_output List with output from Expectation step of EM algorithm for Markov-switching vector autoregressive model
+#' @param k integer determining the number of regimes
+#'  
+#' @return List with new maximized parameters
 #' 
 #' @export
 MSVAR_EMaximization <- function(theta, mdl, MSloglik_output, k) {
     .Call(`_MSTest_MSVAR_EMaximization`, theta, mdl, MSloglik_output, k)
 }
 
-#' @title EM Algorithm 
+#' @title EM algorithm iteration for Markov-switching autoregressive model
 #' 
-#' @description This function performs a single iteration of the Expectation Maximization (EM) algorithm
+#' @description This function performs the one iteration (E-step and M-step) of the Expectation Maximization algorithm for Markov-switching autoregressive model.
+#' 
+#' @param mdl List with model attributes
+#' @param EMest_output List with attributes from previous iteration
+#' @param k integer determining the number of regimes
+#' 
+#' @return List with attributes from new iteration
 #' 
 #' @export
 MS_EMiter <- function(mdl, EMest_output, k) {
     .Call(`_MSTest_MS_EMiter`, mdl, EMest_output, k)
 }
 
-#' @title EM Algorithm Iteration for VAR model
+#' @title EM algorithm iteration for Markov-switching vector autoregressive model
 #' 
-#' @description This function performs a single iteration of the Expectation Maximization (EM) algorithm
+#' @description This function performs the one iteration (E-step and M-step) of the Expectation Maximization algorithm for Markov-switching vector autoregressive model.
 #' 
+#' @param mdl List with model attributes
+#' @param EMest_output List with attributes from previous iteration
+#' @param k integer determining the number of regimes
+#' 
+#' @return List with attributes from new iteration
 #' @export
 MSVAR_EMiter <- function(mdl, EMest_output, k) {
     .Call(`_MSTest_MSVAR_EMiter`, mdl, EMest_output, k)
 }
 
-#' @title Estimation by EM Algorithm 
+#' @title Estimation of Markov-switching autoregressive model by EM Algorithm 
 #' 
-#' @description Estimated by the EM algorithm by calling the function EM() 
-#' multiple times until convergence. Convergence is determined by a max number 
-#' of iterations (maxit) or a convergence criterion. Specifically, the convergence 
-#' criterion is the absolute difference between parameter estimates in adjacent 
-#' iterations be less than 1.e-6 in absolute value. These can be changed by 
-#' defining them in the optim_options List. 
+#' @description Estimate Markov-switching autoregressive model by EM algorithm. This function is used by MSmdl_EM() which organizes the output and takes raw data as input.
 #' 
-#' @param z vector with observations.
-#' @param k number of regimes. Must be greater than or equal to 2. 
-#' @param msmu bool indicator for switch in mean (TRUE) or constant mean (FALSE). Default is TRUE.
-#' @param msvar bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is TRUE.
-#' @param theta_0  vector with initial values for mean and variance parameters in each state (e.g. theta_0 = c(mu_1, mu_2,..., mu_K, var_1, var_2, ..., var_K)). If NULL then initVal() is used to generate initial values. Default is NULL.
-#' @param P_0 matrix with initial values for transition matrix P. Is NULL, randTransMat() is used to generate a random transition matrix. Default is NULL.
-#' @param optim_options List with optimization options. When not specified (i.e. NULL), the max number of EM iterations is 200 and the convergence criterion is 1.e-6. Default is NULL.
+#' @param theta_0 vector with initital values for parameters
+#' @param mdl List with model attributes
+#' @param k integer determining the number of regimes
+#' @param optim_options List with optimiztion options
 #' 
 #' @return List with model results
 #' 
@@ -738,53 +803,19 @@ MS_EMest <- function(theta_0, mdl, k, optim_options) {
     .Call(`_MSTest_MS_EMest`, theta_0, mdl, k, optim_options)
 }
 
-#' @title Estimation of MSVAR by EM Algorithm 
+#' @title Estimation of Markov-switching vector autoregressive model by EM Algorithm 
 #' 
+#' @description Estimate Markov-switching vector  autoregressive model by EM algorithm. This function is used by MSmdl_EM() which organizes the output and takes raw data as input.
+#' 
+#' @param theta_0 vector with initital values for parameters
+#' @param mdl List with model attributes
+#' @param k integer determining the number of regimes
+#' @param optim_options List with optimiztion options
+#' 
+#' @return List with model results
 #' 
 #' @export
 MSVAR_EMest <- function(theta_0, mdl, k, optim_options) {
     .Call(`_MSTest_MSVAR_EMest`, theta_0, mdl, k, optim_options)
-}
-
-#' @title Markov-switching Autoregressive (AR) model
-#' 
-#' @description This function estimates a Markov-switching autoregressive (AR) model. 
-#' This function uses the EM algorithm and has the option to use an optimization method 
-#' as a second step to improve estimates. The function also allows the mean and/or the 
-#' variance to switch but the autoregressive parameters remain constant accross regimes.
-#' 
-#' @param Y (Tx1) vector with observational data. Required argument.
-#' @param p integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.
-#' @param k integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.
-#' @param msmu bool indicator for switch in mean (TRUE) or constant mean (FALSE). Default is TRUE.
-#' @param msvar bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is TRUE.
-#' @param theta_0  vector with initial values for mean and variance parameters in each state (e.g. theta_0 = c(mu_1, mu_2,..., mu_K, var_1, var_2, ..., var_K)). If NULL then initVal() is used to generate initial values. Default is NULL.
-#' @param P_0 matrix with initial values for transition matrix P. Is NULL, randTransMat() is used to generate a random transition matrix. Default is NULL.
-#' @param optim_options List with optimization options. When not specified (i.e. NULL), the max number of EM iterations is 200 and the convergence criterion is 1.e-6. Default is NULL.
-#' 
-#' @return List with model characteristics including:
-#' - y: transformed process
-#' - X: matrix of lagged observations (with or without vector of 1s depending on const=1 or const=0)
-#' - x: matrix of lagged observations without vector of 1s
-#' - n: number of observations (T-ar)
-#' - ar: number of autoregressive parameters
-#' - coef: coefficient estimates. This is the same as phi is const=0
-#' - phi: autoregressive coefficient estimates
-#' - mu: the mean of the process
-#' - residuals: vectot of residuals
-#' - stdev: standard deviations
-#' - se: standard errors of parameter estimtes
-#' - logLike: the log-likelihood 
-#' 
-#' @export
-MSARmdl <- function(Y, ar, k, msmu = 1L, msvar = 1L, maxit = 10000L, thtol = 1.e-6, getSE = 0L, max_init = 500L, use_diff_init = 1L, init_value = NULL) {
-    .Call(`_MSTest_MSARmdl`, Y, ar, k, msmu, msvar, maxit, thtol, getSE, max_init, use_diff_init, init_value)
-}
-
-#' @title Markov-switching Vector Autoregressive (VAR) model
-#' 
-#' @export
-MSVARmdl <- function(Y, ar, k, msmu = 1L, msvar = 1L, maxit = 10000L, thtol = 1.e-8, getSE = 0L, max_init = 500L, use_diff_init = 1L, init_value = NULL) {
-    .Call(`_MSTest_MSVARmdl`, Y, ar, k, msmu, msvar, maxit, thtol, getSE, max_init, use_diff_init, init_value)
 }
 

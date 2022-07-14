@@ -2,10 +2,20 @@
 % Please edit documentation in R/RcppExports.R
 \name{MSloglik_fun}
 \alias{MSloglik_fun}
-\title{Markov-switching AR Log-likelihood objective function (used to find Hessian)}
+\title{Markov-switching autoregressive log-likelihood objective function}
 \usage{
 MSloglik_fun(theta, mdl, k)
 }
+\arguments{
+\item{theta}{vector of model parameters}
+
+\item{mdl}{List with model attributes}
+
+\item{k}{integer determining the number of regimes}
+}
+\value{
+log-likelihood given data
+}
 \description{
-Markov-switching AR Log-likelihood objective function (used to find Hessian)
+This function computes the log-likelihood for a markov-switching autoregressive model
 }
