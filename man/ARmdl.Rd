@@ -41,7 +41,7 @@ List with model attributes which include:
   \item{k - }{number of regimes. This is always 1 in ARmdl.}
   \item{logLike - }{log-likelihood.}
   \item{Hess - }{Hessian matrix. Approximated using numDeriv package and only returned if getSE='TRUE'.}
-  \item{infoMat - }{Information matrix. Computed as the inverse of -Hess which is approximated using numDeriv package. If matrix is not PD then nearest PD matrix is obtained using nearPD. Only returned if getSE='TRUE'.}
+  \item{info_mat - }{Information matrix. Computed as the inverse of -Hess which is approximated using numDeriv package. If matrix is not PD then nearest PD matrix is obtained using nearPD. Only returned if getSE='TRUE'.}
   \item{nearPD_used - }{Bool determining whether nearPD was used on infoMat 'TRUE' or not 'FALSE'. Only returned if getSE='TRUE'.}
   \item{theta_se - }{standard errors of parameters in theta. Only returned if getSE='TRUE'.}
 }

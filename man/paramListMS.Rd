@@ -4,7 +4,7 @@
 \alias{paramListMS}
 \title{Parameter list for Markov-switching autoregressive model}
 \usage{
-paramListMS(theta, ar, k, msmu, msvar)
+paramListMS(theta, p, k, msmu, msvar)
 }
 \arguments{
 \item{theta:}{vector of parameters.}

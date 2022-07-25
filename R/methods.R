@@ -237,4 +237,26 @@ getHessian.MSVARmdl <- function(mdl){
 }
 
 
-
+#' @title Theta standard errors
+#' 
+#' @description This function computes the standard errors of the parameters in vector theta. This is done using an approximation of the Hessian matrix (using numDeriv and nearPD if info mat is not PD).
+#'
+#' @param mdl List with model properties
+#'
+#' @return List prvided as input with additional attributes 'HESS,'theta_se', 'info_mat', and 'nearPD_used'.
+#' 
+#' @export
+thetaSE <- function(mdl){
+  Hess <- getHessian(mdl)
+  info_mat <- inv(-Hess)
+  nearPD_used <- FALSE
+  if ((all(is.na(Hess)==FALSE)) & (any(diag(info_mat)<0))){
+    info_mat <- nearPD(info_mat)
+    nearPD_used <- TRUE
+  }
+  mdl$Hess <- Hess
+  mdl$theta_se <- sqrt(diag(info_mat))
+  mdl$info_mat <- info_mat
+  mdl$nearPD_used <- nearPD_used 
+  return(mdl)
+}

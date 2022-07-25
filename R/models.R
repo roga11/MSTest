@@ -35,7 +35,7 @@
 #'   \item{k - }{number of regimes. This is always 1 in ARmdl.}
 #'   \item{logLike - }{log-likelihood.}
 #'   \item{Hess - }{Hessian matrix. Approximated using numDeriv package and only returned if getSE='TRUE'.}
-#'   \item{infoMat - }{Information matrix. Computed as the inverse of -Hess which is approximated using numDeriv package. If matrix is not PD then nearest PD matrix is obtained using nearPD. Only returned if getSE='TRUE'.}
+#'   \item{info_mat - }{Information matrix. Computed as the inverse of -Hess which is approximated using numDeriv package. If matrix is not PD then nearest PD matrix is obtained using nearPD. Only returned if getSE='TRUE'.}
 #'   \item{nearPD_used - }{Bool determining whether nearPD was used on infoMat 'TRUE' or not 'FALSE'. Only returned if getSE='TRUE'.}
 #'   \item{theta_se - }{standard errors of parameters in theta. Only returned if getSE='TRUE'.}
 #' }
@@ -85,28 +85,17 @@ ARmdl <- function(Y, p, control = list()){
   theta_mu_ind  <- c(1,rep(0,length(theta)-1))
   theta_sig_ind <- c(0,1,rep(0,p))
   theta_phi_ind <- c(0,0,rep(1,p))
-  # ----- output
+  # ----- Output
   out     <- list(y = y, X = X, x = x, resid = resid, mu = mu, coef = b0, intercept = inter, phi = phi,
-                  stdev = stdev, sigma = sigma, theta = theta, theta_mu_ind = theta_mu_ind, stationary = roots,
-                  theta_sig_ind = theta_sig_ind, theta_phi_ind = theta_phi_ind, n = n, p = p, q = 1, k = 1)
+                  stdev = stdev, sigma = sigma, theta = theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, 
+                  theta_phi_ind = theta_phi_ind, stationary = roots, n = n, p = p, q = 1, k = 1)
   # Define class
   class(out) <- "ARmdl"
   # get log-likelihood
   out$logLike <- logLikelihood(out)
   # get standard errors if 'con$getSE' is 'TRUE'
   if (con$getSE==TRUE){
-    Hess <- getHessian(out)
-    info_mat <- inv(-Hess)
-    nearPD_used <- FALSE
-    if (any(diag(info_mat)<0)){
-      info_mat <- nearPD(info_mat)
-      nearPD_used <- TRUE
-    }
-    theta_stderr <- sqrt(diag(inv(-Hess)))
-    out$Hess <- Hess
-    out$theta_se <- theta_stderr
-    out$info_mat <- info_mat
-    out$nearPD_used <- nearPD_used
+    out <- thetaSE(out)
   }
   return(out)
 }
@@ -147,7 +136,7 @@ ARmdl <- function(Y, p, control = list()){
 #'   \item{Fmat - }{matrix of dimension (qp x qp) of companion form.}
 #'   \item{logLike - }{log-likelihood.}
 #'   \item{Hess - }{Hessian matrix. Approximated using numDeriv package and only returned if getSE='TRUE'.}
-#'   \item{infoMat - }{Information matrix. Computed as the inverse of -Hess which is approximated using numDeriv package. If matrix is not PD then nearest PD matrix is obtained using nearPD. Only returned if getSE='TRUE'.}
+#'   \item{info_mat - }{Information matrix. Computed as the inverse of -Hess which is approximated using numDeriv package. If matrix is not PD then nearest PD matrix is obtained using nearPD. Only returned if getSE='TRUE'.}
 #'   \item{nearPD_used - }{Bool determining whether nearPD was used on infoMat 'TRUE' or not 'FALSE'. Only returned if getSE='TRUE'.}
 #'   \item{theta_se - }{standard errors of parameters in theta. Only returned if getSE='TRUE'.}
 #' }
@@ -197,28 +186,17 @@ VARmdl <- function(Y, p, control = list()){
   theta_mu_ind  <- c(rep(1,q),rep(0,length(theta)-q))
   theta_sig_ind <- c(rep(0,q),rep(1,q*(q+1)/2),rep(0,q*q*p))
   theta_phi_ind <- c(rep(0,length(theta)-q*q*p),rep(1,q*q*p))
-  # ----- output
+  # ----- Output
   out     <- list(y = y, X = X, x = x, resid = resid, mu = mu, coef = b0, intercept = inter, phi = phi,
-                  stdev = stdev, sigma = sigma, theta = theta, theta_mu_ind = theta_mu_ind, stationary = stationary, 
-                  theta_sig_ind = theta_sig_ind, theta_phi_ind = theta_phi_ind, n = n, p = p, q = q, k = 1, Fmat = Fmat)
+                  stdev = stdev, sigma = sigma, theta = theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_phi_ind = theta_phi_ind, 
+                  stationary = stationary, n = n, p = p, q = q, k = 1, Fmat = Fmat)
   # Define class
   class(out) <- "VARmdl"
   # get log-likelihood
   out$logLike <- logLikelihood(out)
   # get standard errors if 'con$getSE' is 'TRUE'
   if (con$getSE==TRUE){
-    Hess <- getHessian(out)
-    info_mat <- inv(-Hess)
-    nearPD_used <- FALSE
-    if (any(diag(info_mat)<0)){
-      info_mat <- nearPD(info_mat)
-      nearPD_used <- TRUE
-    }
-    theta_stderr <- sqrt(diag(inv(-Hess)))
-    out$Hess <- Hess
-    out$theta_stderr <- theta_stderr
-    out$info_mat <- info_mat
-    out$nearPD_used <- nearPD_used
+    out <- thetaSE(out)
   }
   return(out)
 }
@@ -232,7 +210,7 @@ VARmdl <- function(Y, p, control = list()){
 #' @description This function estimates a Markov-switching autoregressive model using the Expectation Minimization (EM) algorithm of Dempster, Laird and Rubin (1977) as explained in Hamilton (1990).
 #' 
 #' @param Y (Tx1) vector with observational data. Required argument.
-#' @param ar integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.
+#' @param p integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.
 #' @param k integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.
 #' @param control List with optimization options including: 
 #' \itemize{
@@ -272,18 +250,20 @@ VARmdl <- function(Y, p, control = list()){
 #'                 use_diff_init = 10)
 #' 
 #' # Estimate model
-#' y_ms_mdl <- MSARmdl_EM(y_ms_simu$y, ar = y_ms_simu$ar, k = y_ms_simu$k, control)
+#' y_ms_mdl <- MSARmdl(y_ms_simu$y, ar = y_ms_simu$ar, k = y_ms_simu$k, control)
 #' 
-MSARmdl_EM <- function(Y, ar, k, control = list()){
+MSARmdl <- function(Y, p, k, control = list()){
   # ----- Set control values
-  con <- list(msmu = TRUE, 
-              msvar = TRUE, 
+  con <- list(const = TRUE,
+              getSE = TRUE,
+              msmu = TRUE, 
+              msvar = TRUE,
+              method = "EM",
               maxit = 10000, 
               thtol = 1.e-6, 
-              getSE = FALSE, 
               max_init = 500, 
               use_diff_init = 1, 
-              init_value = NULL)
+              init_theta = NULL)
   # Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
@@ -291,40 +271,41 @@ MSARmdl_EM <- function(Y, ar, k, control = list()){
     warning("unknown names in control: ", paste(noNms,collapse=", ")) 
   }
   # ---------- Optimization options
-  optim_options <- list(maxit = con[["maxit"]], thtol = con[["thtol"]])
-  # ---------- Estimate linear model to use for initial values
-  mdl_out <- ARmdl_cpp(Y, ar = ar, intercept = TRUE, getSE = con[["getSE"]])
-  msmu <- con[["msmu"]]
-  msvar <- con[["msvar"]]
-  mdl_out[["msmu"]] = msmu
-  mdl_out[["msvar"]] = msvar
-  # ---------- Estimate model 
-  EM_output_all <- list(con[["use_diff_init"]])
-  max_loglik <- matrix(0, con[["use_diff_init"]], 1)
-  if (is.null(con[["init_value"]])==FALSE){
-    # ----- Estimate using initial values provided
-    EM_output <- MS_EMest(con[["init_value"]], mdl_out, k, optim_options)
-    EM_output[["theta_0"]] <- con[["init_value"]]
-    EM_output[["init_used"]] <- 1
-  }else{
+  optim_options <- list(maxit = con$maxit, thtol = con$thtol)
+  # pre-define list and matrix length for results
+  EM_output_all <- list(con$use_diff_init)
+  max_loglik <- matrix(0, con$use_diff_init, 1)
+  if (is.null(con$init_theta)==TRUE){
+    # ---------- Estimate linear model to use for initial values
+    init_control <- list(con$const, con$getSE)
+    init_mdl <- ARmdl(Y, p = p, init_control)
+    init_mdl$msmu = con$msmu
+    init_mdl$msvar = con$msvar
     # ----- Estimate using 'use_diff_init' different initial values
-    for (xi in 1:con[["use_diff_init"]]){
+    for (xi in 1:con$use_diff_init){
       init_used <- 0
       converge_check <- FALSE
-      while ((converge_check==FALSE) & (init_used<con[["max_init"]])){
+      while ((converge_check==FALSE) & (init_used<con$max_init)){
         # ----- Initial values
-        theta_0 <- initValsMS(mdl_out, k)
-        # ----- Estimate using EM algorithm 
-        EM_output_tmp <- MS_EMest(theta_0, mdl_out, k, optim_options)
-        EM_output_tmp[["theta_0"]] = theta_0
-        # ----- Convergence check
-        logLike_tmp = EM_output_tmp[["logLike"]]
-        theta_tmp = EM_output_tmp[["theta"]]
-        converge_check = ((is.finite(logLike_tmp)) & (all(is.finite(theta_tmp))))
+        theta_0 <- initValsMS(init_mdl, k)
+        if (con$method=="EM"){
+          # ----- Estimate using EM algorithm and initial values provided
+          EM_output_tmp <- MS_EMest(theta_0, init_mdl, k, optim_options)
+          EM_output_tmp$theta_0 = theta_0
+          # ----- Convergence check
+          logLike_tmp = EM_output_tmp$logLike
+          theta_tmp = EM_output_tmp$theta
+          converge_check = ((is.finite(logLike_tmp)) & (all(is.finite(theta_tmp))))
+        }else if (con$method=="NR"){
+          # ----- Estimate using roptim and initial values provided 
+          
+          # ----- Convergence check
+          
+        }
         init_used = init_used + 1
       }
       max_loglik[xi] = logLike_tmp
-      EM_output_tmp[["init_used"]] = init_used
+      EM_output_tmp$init_used = init_used
       EM_output_all[[xi]] = EM_output_tmp
     }
     if (con[["use_diff_init"]]==1){
@@ -338,48 +319,39 @@ MSARmdl_EM <- function(Y, ar, k, control = list()){
         EM_output = EM_output_all[[xl]] 
       }
     }
+  }else{
+    
+    if (con$method=="EM"){
+      # ----- Estimate using EM algorithm and initial values provided
+      EM_output <- MS_EMest(con$init_value, mdl_out, k, optim_options)
+      EM_output$theta_0 <- con$init_value
+      EM_output$init_used <- 1  
+    }else if (con$method=="NR"){
+      # ----- Estimate using roptim and initial values provided 
+      
+    }
   }
   # ---------- organize output
-  theta_mu_ind <- c(rep(1, 1 + (k-1)*msmu), rep(0, 1 + (k-1)*msvar + ar + k*k))
-  theta_sig_ind <- c(rep(0, 1 + (k-1)*msmu), rep(1, 1 + (k-1)*msvar), rep(0, ar + k*k))
-  theta_phi_ind <- c(rep(0, 2 + (k-1)*msmu + (k-1)*msvar), rep(1, ar), rep(0, k*k))
-  theta_P_ind <- c(rep(0, 2 + (k-1)*msmu + (k-1)*msvar + ar), rep(1, k*k))
-  MSARmdl_output <- EM_output
-  MSARmdl_output[["theta_mu_ind"]] = theta_mu_ind
-  MSARmdl_output[["theta_sig_ind"]] = theta_sig_ind
-  MSARmdl_output[["theta_phi_ind"]] = theta_phi_ind
-  MSARmdl_output[["theta_P_ind"]] = theta_P_ind
-  MSARmdl_output[["stdev"]] <- sqrt(EM_output[["sigma"]])
-  MSARmdl_output[["y"]] <- mdl_out[["y"]]
-  MSARmdl_output[["ar"]] <- ar
-  MSARmdl_output[["n"]] <- mdl_out[["n"]]
-  MSARmdl_output[["q"]] <- 1
-  MSARmdl_output[["k"]] <- k
-  MSARmdl_output[["x"]] <- mdl_out[["x"]]
-  MSARmdl_output[["X"]] <- mdl_out[["X"]]
-  MSARmdl_output[["msmu"]] <- con[["msmu"]]
-  MSARmdl_output[["msvar"]] <- con[["msvar"]]
-  MSARmdl_output[["control"]] <- con
-  if (con[["getSE"]]==TRUE){
-    Hess <- getHess(MSARmdl_output, k)
-    info_mat <- solve(-Hess)
-    nearPD_used <- FALSE
-    if ((all(is.na(Hess)==FALSE)) & (any(diag(info_mat)<0))){
-      info_mat <- nearPD(info_mat)
-      nearPD_used <- TRUE
-    }
-    MSARmdl_output[["Hess"]] <- Hess
-    MSARmdl_output[["theta_stderr"]] <- sqrt(diag(info_mat))
-    MSARmdl_output[["info_mat"]] <- info_mat
-    MSARmdl_output[["nearPD_used"]] <- nearPD_used
+  theta_mu_ind <- c(rep(1, 1 + (k-1)*con$msmu), rep(0, 1 + (k-1)*con$msvar + p + k*k))
+  theta_sig_ind <- c(rep(0, 1 + (k-1)*con$msmu), rep(1, 1 + (k-1)*con$msvar), rep(0, p + k*k))
+  theta_phi_ind <- c(rep(0, 2 + (k-1)*con$msmu + (k-1)*con$msvar), rep(1, p), rep(0, k*k))
+  theta_P_ind <- c(rep(0, 2 + (k-1)*con$msmu + (k-1)*con$msvar + p), rep(1, k*k))
+  # ----- output
+  out <- list(y = init_mdl$y, X = init_mdl$X, x = init_mdl$x, resid = EM_output$residuals, mu = EM_output$mu, coef = NA, intercept = NA, phi = EM_output$phi,
+              stdev = sqrt(EM_output$sigma), sigma = EM_output$sigma, theta = EM_output$theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, 
+              theta_phi_ind = theta_phi_ind, stationary = NA, n = init_mdl$n, p = p, q = 1, k = k, logLike = EM_output$logLike, P = EM_output$P, pinf = EM_output$pinf, 
+              St = EM_output$St, eta = EM_output$eta, thl = EM_output$thl, deltath = EM_output$deltath,  iterations = EM_output$iterations, theta_0 = EM_output$theta_0,
+              init_used = EM_output$init_used, msmu = con$msmu, msvar = con$msvar, control = con)
+  # Define class
+  class(out) <- "MSARmdl"
+  if (con$getSE==TRUE){
+    out <- thetaSE(out)
   }
-  if (is.null(con[["init_value"]])){
-    MSARmdl_output[["trace"]] <- EM_output_all
+  if (is.null(con$init_theta)){
+    out$trace <- EM_output_all
   }
-  return(MSARmdl_output)
+  return(out)
 }
-
-# MSARmdl (Optimization)
 
 
 #' @title Markov-switching vector autoregressive model by Expectation Minimization algorithm

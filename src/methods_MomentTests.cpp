@@ -1,5 +1,4 @@
 #include <RcppArmadillo.h>
-#include "models.h"
 #include "methods.h"
 //[[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
