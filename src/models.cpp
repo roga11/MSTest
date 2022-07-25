@@ -20,14 +20,14 @@ double AR_loglik_fun(arma::vec theta, List mdl){
   // ---------- Initialize parameters
   arma::vec y = mdl["y"];
   arma::mat x = mdl["x"];
-  int ar = mdl["ar"];
+  int p = mdl["p"];
   int Tsize = y.n_elem;
   // ---------- Compute log-likehood
   double logLike;
   double pi = arma::datum::pi;
-  arma::mat repmu(Tsize,ar,arma::fill::ones);
+  arma::mat repmu(Tsize, p,arma::fill::ones);
   logLike = sum(log((1/sqrt(2*pi*theta(1)))*
-    exp(-pow((y - theta(0)) - (x-(theta(0)*repmu))*theta.subvec(2, 2+ar-1),2)/(2*theta(1)))));
+    exp(-pow((y - theta(0)) - (x-(theta(0)*repmu))*theta.subvec(2, 2+p-1),2)/(2*theta(1)))));
   return(logLike);
 }
 
@@ -42,23 +42,25 @@ double AR_loglik_fun(arma::vec theta, List mdl){
 //' @param intercept boolean indicator determining whether or not to include constant. Default is TRUE.
 //' @param getSE boolean indicator determining whether or not to estimate standard errors
 //' 
-//' @return List with model attributes which include
-//' - y: transformed process
-//' - X: matrix of lagged observations (with or without vector of 1s depending on const=1 or const=0)
-//' - x: matrix of lagged observations without vector of 1s
-//' - n: number of observations (T-ar)
-//' - ar: number of autoregressive parameters
-//' - coef: coefficient estimates. This is the same as phi is const=0
-//' - phi: autoregressive coefficient estimates
-//' - mu: the mean of the process
-//' - residuals: vectot of residuals
-//' - stdev: standard deviations
-//' - se: standard errors of parameter estimtes
-//' - logLike: the log-likelihood 
+//' @return List with model attributes which include:
+//' \itemize{
+//'   \item{y - }{a ((T-ar) x 1) vector of observations}
+//'   \item{X - }{matrix of lagged observations (with or without vector of 1s depending on const=1 or const=0)}
+//'   \item{x - }{matrix of lagged observations without vector of 1s}
+//'   \item{n - }{number of observations (T-ar)}
+//'   \item{ar - }{number of autoregressive parameters}
+//'   \item{coef - }{coefficient estimates. This is the same as phi is const=0}
+//'   \item{phi - }{autoregressive coefficient estimates}
+//'   \item{mu - }{mean of the process}
+//'   \item{resid - }{vectot of residuals}
+//'   \item{stdev - }{standard deviations}
+//'   \item{se - }{standard errors of parameter estimtes}
+//'   \item{logLike - }{log-likelihood}
+//' }
 //' 
 //' @export
 // [[Rcpp::export]]
-List ARmdl(arma::vec Y, int ar, bool intercept = 1, bool getSE = 0){
+List ARmdl_cpp(arma::vec Y, int ar, bool intercept = 1, bool getSE = 0){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function hessian = mstest["getHess"];
   Rcpp::Environment lmf("package:lmf");
@@ -104,11 +106,11 @@ List ARmdl(arma::vec Y, int ar, bool intercept = 1, bool getSE = 0){
   ARmdl_out["n"] = n;
   ARmdl_out["q"] = 1;
   ARmdl_out["k"] = 1;
-  ARmdl_out["ar"] = ar;
+  ARmdl_out["p"] = ar;
   ARmdl_out["coef"] = b0;
   ARmdl_out["phi"] = phi;
   ARmdl_out["mu"] = mu;
-  ARmdl_out["residuals"] = u;
+  ARmdl_out["resid"] = u;
   ARmdl_out["stdev"] = stdev;
   ARmdl_out["sigma"] = sigma;
   ARmdl_out["theta"] = theta;
@@ -1195,7 +1197,7 @@ List MS_EMest(arma::vec theta_0, List mdl, int k, List optim_options){
 // ==============================================================================
 //' @title Estimation of Markov-switching vector autoregressive model by EM Algorithm 
 //' 
-//' @description Estimate Markov-switching vector  autoregressive model by EM algorithm. This function is used by MSmdl_EM() which organizes the output and takes raw data as input.
+//' @description Estimate Markov-switching vector autoregressive model by EM algorithm. This function is used by MSmdl_EM() which organizes the output and takes raw data as input.
 //' 
 //' @param theta_0 vector with initital values for parameters
 //' @param mdl List with model attributes

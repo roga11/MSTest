@@ -45,6 +45,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// logLike_AR
+double logLike_AR(arma::vec theta, List mdl);
+RcppExport SEXP _MSTest_logLike_AR(SEXP thetaSEXP, SEXP mdlSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< List >::type mdl(mdlSEXP);
+    rcpp_result_gen = Rcpp::wrap(logLike_AR(theta, mdl));
+    return rcpp_result_gen;
+END_RCPP
+}
+// logLike_VAR
+double logLike_VAR(arma::vec theta, List mdl);
+RcppExport SEXP _MSTest_logLike_VAR(SEXP thetaSEXP, SEXP mdlSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< List >::type mdl(mdlSEXP);
+    rcpp_result_gen = Rcpp::wrap(logLike_VAR(theta, mdl));
+    return rcpp_result_gen;
+END_RCPP
+}
 // randP
 arma::mat randP(int k);
 RcppExport SEXP _MSTest_randP(SEXP kSEXP) {
@@ -482,9 +506,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// ARmdl
-List ARmdl(arma::vec Y, int ar, bool intercept, bool getSE);
-RcppExport SEXP _MSTest_ARmdl(SEXP YSEXP, SEXP arSEXP, SEXP interceptSEXP, SEXP getSESEXP) {
+// ARmdl_cpp
+List ARmdl_cpp(arma::vec Y, int ar, bool intercept, bool getSE);
+RcppExport SEXP _MSTest_ARmdl_cpp(SEXP YSEXP, SEXP arSEXP, SEXP interceptSEXP, SEXP getSESEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -492,7 +516,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type ar(arSEXP);
     Rcpp::traits::input_parameter< bool >::type intercept(interceptSEXP);
     Rcpp::traits::input_parameter< bool >::type getSE(getSESEXP);
-    rcpp_result_gen = Rcpp::wrap(ARmdl(Y, ar, intercept, getSE));
+    rcpp_result_gen = Rcpp::wrap(ARmdl_cpp(Y, ar, intercept, getSE));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -687,6 +711,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_cov2corr", (DL_FUNC) &_MSTest_cov2corr, 1},
     {"_MSTest_covar_vech", (DL_FUNC) &_MSTest_covar_vech, 1},
     {"_MSTest_covar_unvech", (DL_FUNC) &_MSTest_covar_unvech, 2},
+    {"_MSTest_logLike_AR", (DL_FUNC) &_MSTest_logLike_AR, 2},
+    {"_MSTest_logLike_VAR", (DL_FUNC) &_MSTest_logLike_VAR, 2},
     {"_MSTest_randP", (DL_FUNC) &_MSTest_randP, 1},
     {"_MSTest_limP", (DL_FUNC) &_MSTest_limP, 1},
     {"_MSTest_ts_lagged", (DL_FUNC) &_MSTest_ts_lagged, 2},
@@ -718,7 +744,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_DLMMCpval_fun", (DL_FUNC) &_MSTest_DLMMCpval_fun, 8},
     {"_MSTest_DLMMCpval_fun_max", (DL_FUNC) &_MSTest_DLMMCpval_fun_max, 8},
     {"_MSTest_AR_loglik_fun", (DL_FUNC) &_MSTest_AR_loglik_fun, 2},
-    {"_MSTest_ARmdl", (DL_FUNC) &_MSTest_ARmdl, 4},
+    {"_MSTest_ARmdl_cpp", (DL_FUNC) &_MSTest_ARmdl_cpp, 4},
     {"_MSTest_VAR_loglik_fun", (DL_FUNC) &_MSTest_VAR_loglik_fun, 2},
     {"_MSTest_VARmdl", (DL_FUNC) &_MSTest_VARmdl, 4},
     {"_MSTest_MSloglik_fun", (DL_FUNC) &_MSTest_MSloglik_fun, 3},

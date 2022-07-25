@@ -19,5 +19,5 @@ MSVAR_EMest(theta_0, mdl, k, optim_options)
 List with model results
 }
 \description{
-Estimate Markov-switching vector  autoregressive model by EM algorithm. This function is used by MSmdl_EM() which organizes the output and takes raw data as input.
+Estimate Markov-switching vector autoregressive model by EM algorithm. This function is used by MSmdl_EM() which organizes the output and takes raw data as input.
 }

@@ -41,6 +41,34 @@ covar_unvech <- function(sig, n) {
     .Call(`_MSTest_covar_unvech`, sig, n)
 }
 
+#' @title Autoregressive log-likelihood objective function
+#' 
+#' @description This function computes the log-likelihood for an autoregressive model
+#' 
+#' @param theta vector of model parameters
+#' @param mdl List with model attributes
+#' 
+#' @return log-likelihood given data
+#' 
+#' @export
+logLike_AR <- function(theta, mdl) {
+    .Call(`_MSTest_logLike_AR`, theta, mdl)
+}
+
+#' @title Vector autoregressive log-likelihood objective function 
+#' 
+#' @description This function computes the log-likelihood for a vector autoregressive model
+#' 
+#' @param theta vector of model parameters
+#' @param mdl List with model attributes
+#' 
+#' @return log-likelihood given data
+#' 
+#' @export
+logLike_VAR <- function(theta, mdl) {
+    .Call(`_MSTest_logLike_VAR`, theta, mdl)
+}
+
 #' @title Random Transition Matrix
 #' 
 #' @description This function creates a random transition matrix
@@ -583,23 +611,25 @@ AR_loglik_fun <- function(theta, mdl) {
 #' @param intercept boolean indicator determining whether or not to include constant. Default is TRUE.
 #' @param getSE boolean indicator determining whether or not to estimate standard errors
 #' 
-#' @return List with model attributes which include
-#' - y: transformed process
-#' - X: matrix of lagged observations (with or without vector of 1s depending on const=1 or const=0)
-#' - x: matrix of lagged observations without vector of 1s
-#' - n: number of observations (T-ar)
-#' - ar: number of autoregressive parameters
-#' - coef: coefficient estimates. This is the same as phi is const=0
-#' - phi: autoregressive coefficient estimates
-#' - mu: the mean of the process
-#' - residuals: vectot of residuals
-#' - stdev: standard deviations
-#' - se: standard errors of parameter estimtes
-#' - logLike: the log-likelihood 
+#' @return List with model attributes which include:
+#' \itemize{
+#'   \item{y - }{a ((T-ar) x 1) vector of observations}
+#'   \item{X - }{matrix of lagged observations (with or without vector of 1s depending on const=1 or const=0)}
+#'   \item{x - }{matrix of lagged observations without vector of 1s}
+#'   \item{n - }{number of observations (T-ar)}
+#'   \item{ar - }{number of autoregressive parameters}
+#'   \item{coef - }{coefficient estimates. This is the same as phi is const=0}
+#'   \item{phi - }{autoregressive coefficient estimates}
+#'   \item{mu - }{mean of the process}
+#'   \item{resid - }{vectot of residuals}
+#'   \item{stdev - }{standard deviations}
+#'   \item{se - }{standard errors of parameter estimtes}
+#'   \item{logLike - }{log-likelihood}
+#' }
 #' 
 #' @export
-ARmdl <- function(Y, ar, intercept = 1L, getSE = 0L) {
-    .Call(`_MSTest_ARmdl`, Y, ar, intercept, getSE)
+ARmdl_cpp <- function(Y, ar, intercept = 1L, getSE = 0L) {
+    .Call(`_MSTest_ARmdl_cpp`, Y, ar, intercept, getSE)
 }
 
 #' @title Vector autoregressive log-likelihood objective function 
@@ -805,7 +835,7 @@ MS_EMest <- function(theta_0, mdl, k, optim_options) {
 
 #' @title Estimation of Markov-switching vector autoregressive model by EM Algorithm 
 #' 
-#' @description Estimate Markov-switching vector  autoregressive model by EM algorithm. This function is used by MSmdl_EM() which organizes the output and takes raw data as input.
+#' @description Estimate Markov-switching vector autoregressive model by EM algorithm. This function is used by MSmdl_EM() which organizes the output and takes raw data as input.
 #' 
 #' @param theta_0 vector with initital values for parameters
 #' @param mdl List with model attributes

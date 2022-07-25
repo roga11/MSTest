@@ -1,3 +1,25 @@
+#' @title Companion Matrix
+#'
+#' @description This function converts the (q x 1)  vector of constants and (q x qp) matrix of autoregressive coefficients into (qp x qp) matrix belonging to the companion form
+#'
+#' @param phi matrix of dimension (q x qp) containing autoregressive coefficients
+#' @param inter vector of dimension (q x 1) containing constants
+#' @param p integer for number of autoregressive lags
+#' @param q integer for number of series
+#'
+#' @return matrix of dimension (qp x qp) of companion form 
+#' 
+#' @export
+companionMat <- function(phi, inter, p, q){
+  interzero   <- matrix(0,q*(p-1), 1)
+  comp_inter  <- as.matrix(c(c(inter),interzero))
+  F_tmp       <- phi
+  diagmat     <- diag(q*(p-1))
+  diagzero    <- matrix(0, q*(p-1), q)
+  Mn          <- cbind(diagmat,diagzero)
+  compMat     <- rbind(F_tmp,Mn)
+  return(compMat)
+}
 
 
 
@@ -103,35 +125,116 @@ varGrid <- function(mu, sigma, k, ar, msmu, msvar){
   return(musig_out)
 }
 
+#' @title Log likelihood  
+#' 
+#' @description This function is used to compute the log-likelihood for a given model
+#'
+#' @param mdl List with model properties
+#'
+#' @return Log-likelihood
+#' 
+#' @export
+logLikelihood <- function(mdl){
+  UseMethod("logLikelihood", mdl)
+}
+
+#' @title Log likelihood for autoregressive model  
+#' 
+#' @description This function is used to compute the log-likelihood for an autoregressive model
+#'
+#' @param mdl List with model properties
+#'
+#' @return Log-likelihood
+#' 
+#' @export
+logLikelihood.ARmdl <- function(mdl){
+  logLike <- logLike_AR(mdl$theta, mdl)
+  return(logLike)
+}
+
+#' @title Log likelihood for vector autoregressive model  
+#' 
+#' @description This function is used to compute the log-likelihood for a vector autoregressive model
+#'
+#' @param mdl List with model properties
+#'
+#' @return Log-likelihood
+#' 
+#' @export
+logLikelihood.VARmdl <- function(mdl){
+  logLike <- logLike_VAR(mdl$theta, mdl)
+  return(logLike)
+}
+
 
 #' @title Hessian matrix 
 #' 
-#' @description This function is used to obtain a numerical approximation of the Hessian matrix which is then used to get standard errors of parameters.
+#' @description This function is used to obtain a numerical approximation of a Hessian matrix
 #'
 #' @param mdl List with model properties
-#' @param k integer determining the number of regimes
 #'
 #' @return Hessian matrix
 #' 
 #' @export
-getHess <- function(md, k){
-  q <- mdl[["q"]]
-  theta = mdl[["theta"]]
-  if (q==1){
-    if (k==1){
-      hess <- numDeriv::hessian(AR_loglik_fun, theta, method = "Richardson", mdl = mdl) 
-    }
-    if (k>1){
-      hess <- numDeriv::hessian(MSloglik_fun, theta, method = "Richardson", mdl = mdl, k = k) 
-    } 
-  }else{
-    if (k==1){
-      hess <- numDeriv::hessian(VAR_loglik_fun, theta, method = "Richardson", mdl = mdl) 
-    }
-    if (k>1){
-      hess <- numDeriv::hessian(MSVARloglik_fun, theta, method = "Richardson", mdl = mdl, k = k) 
-    } 
-  }
+getHessian <- function(mdl){
+  UseMethod("getHessian", mdl)
+}
+
+#' @title Hessian matrix of autoregressive model
+#' 
+#' @description This function is used to obtain a numerical approximation of a Hessian matrix for an autoregressive model
+#'
+#' @param mdl List with model properties
+#'
+#' @return Hessian matrix
+#' 
+#' @export
+getHessian.ARmdl <- function(mdl){
+  hess <- numDeriv::hessian(logLike_AR, mdl$theta, method = "Richardson", mdl = mdl) 
   return(hess)
 }
+
+#' @title Hessian matrix of vector autoregressive model 
+#' 
+#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a vector autoregressive model
+#'
+#' @param mdl List with model properties
+#'
+#' @return Hessian matrix
+#' 
+#' @export
+getHessian.VARmdl <- function(mdl){
+  hess <- numDeriv::hessian(logLike_VAR, mdl$theta, method = "Richardson", mdl = mdl) 
+  return(hess)
+}
+
+#' @title Hessian matrix of Markov-switching autoregressive model
+#' 
+#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a Markov-switching autoregressive model
+#'
+#' @param mdl List with model properties
+#'
+#' @return Hessian matrix
+#' 
+#' @export
+getHessian.MSARmdl <- function(mdl){
+  hess <- numDeriv::hessian(MSloglik_fun, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
+  return(hess)
+}
+
+#' @title Hessian matrix of Markov-switching vector autoregressive
+#' 
+#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a Markov-switching vector autoregressive model
+#'
+#' @param mdl List with model properties
+#'
+#' @return Hessian matrix
+#' 
+#' @export
+getHessian.MSVARmdl <- function(mdl){
+  hess <- numDeriv::hessian(MSVARloglik_fun, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
+  return(hess)
+}
+
+
 

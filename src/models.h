@@ -6,7 +6,7 @@ using namespace Rcpp;
 
 double AR_loglik_fun(arma::vec theta, List mdl);
   
-List ARmdl(arma::vec Y, int ar, bool intercept = 1, bool getSE = 0);
+List ARmdl_cpp(arma::vec Y, int ar, bool intercept = 1, bool getSE = 0);
 
 double VAR_loglik_fun(arma::vec theta, List mdl);
 

@@ -53,7 +53,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
         while (LRT_finite==FALSE){
           List y0_out = simuAR(mdl_h0, burnin);
           arma::vec y0 = y0_out["y"];
-          List mdl_h0_tmp = ARmdl(y0, ar, inter, getSE);
+          List mdl_h0_tmp = ARmdl_cpp(y0, ar, inter, getSE);
           List mdl_h1_tmp = MSmdl_EM(y0, ar, k1, control);
           // test stat
           double l_0 = mdl_h0_tmp["logLike"];

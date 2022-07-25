@@ -4,6 +4,7 @@
 //[[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 
+
 // ==============================================================================
 //' @title Covariance to correlation matrix
 //' 
@@ -68,6 +69,81 @@ arma::mat covar_unvech(arma::vec sig, int n){
     }
   }
   return(sigma_mat);
+}
+
+
+
+// ==============================================================================
+//' @title Autoregressive log-likelihood objective function
+//' 
+//' @description This function computes the log-likelihood for an autoregressive model
+//' 
+//' @param theta vector of model parameters
+//' @param mdl List with model attributes
+//' 
+//' @return log-likelihood given data
+//' 
+//' @export
+// [[Rcpp::export]]
+double logLike_AR(arma::vec theta, List mdl){
+  // ---------- Initialize parameters
+  arma::vec y = mdl["y"];
+  arma::mat x = mdl["x"];
+  int p = mdl["p"];
+  int Tsize = y.n_elem;
+  // ---------- Compute log-likehood
+  double logLike;
+  double pi = arma::datum::pi;
+  arma::mat repmu(Tsize, p,arma::fill::ones);
+  logLike = sum(log((1/sqrt(2*pi*theta(1)))*
+    exp(-pow((y - theta(0)) - (x-(theta(0)*repmu))*theta.subvec(2, 2+p-1),2)/(2*theta(1)))));
+  return(logLike);
+}
+
+// ==============================================================================
+//' @title Vector autoregressive log-likelihood objective function 
+//' 
+//' @description This function computes the log-likelihood for a vector autoregressive model
+//' 
+//' @param theta vector of model parameters
+//' @param mdl List with model attributes
+//' 
+//' @return log-likelihood given data
+//' 
+//' @export
+// [[Rcpp::export]]
+double logLike_VAR(arma::vec theta, List mdl){
+  // ---------- model parameters
+  arma::mat y = mdl["y"];
+  arma::mat x = mdl["x"];
+  int p = mdl["p"];
+  int Tsize = y.n_rows;
+  int q = y.n_cols;
+  // ---------- pre-define variables
+  int sigN = (q*(q+1))/2;
+  arma::vec mu = theta.subvec(0, q-1);
+  arma::vec sig = theta.subvec(q,q+sigN-1);
+  arma::mat sigma = covar_unvech(sig, q);
+  int phiN = q+sigN;
+  arma::vec phi_tmp = theta.subvec(phiN, phiN+q*q*p-1);
+  arma::mat phi = reshape(phi_tmp, q*p, q);
+  arma::mat repmu(Tsize, 1, arma::fill::ones);
+  arma::mat z = y-repmu*trans(mu);
+  arma::mat xz_tmp(Tsize, q*p, arma::fill::zeros); 
+  // ---------- compute residual
+  for (int xp = 0; xp<p; xp++){
+    xz_tmp.submat(0,q*xp,Tsize-1,q*xp+q-1) = x.submat(0,q*xp,Tsize-1,q*xp+q-1) - repmu*trans(mu);
+  }
+  arma::mat resid = z - xz_tmp*phi;
+  // ---------- Compute log-likehood
+  double pi = arma::datum::pi;
+  arma::vec f_t(Tsize, arma::fill::zeros);
+  for (int xt = 0; xt<Tsize; xt++){
+    f_t(xt) = as_scalar((1/sqrt(det(sigma)*pow(2*pi,q)))*
+      exp(-0.5*(resid.row(xt)*inv(sigma)*trans(resid.row(xt)))));
+  }
+  double logLike = sum(log(f_t));
+  return(logLike);  
 }
 
 
@@ -864,8 +940,6 @@ List simuNorm(List mdl_h0){
   simuVAR_out["resid"] = eps_corr;
   return(simuVAR_out);
 }
-
-
 
 
 // ==============================================================================
