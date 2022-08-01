@@ -3,16 +3,14 @@
 #' @description This function converts the (q x 1)  vector of constants and (q x qp) matrix of autoregressive coefficients into (qp x qp) matrix belonging to the companion form
 #'
 #' @param phi matrix of dimension (q x qp) containing autoregressive coefficients
-#' @param inter vector of dimension (q x 1) containing constants
 #' @param p integer for number of autoregressive lags
 #' @param q integer for number of series
 #'
 #' @return matrix of dimension (qp x qp) of companion form 
 #' 
 #' @export
-companionMat <- function(phi, inter, p, q){
+companionMat <- function(phi, p, q){
   interzero   <- matrix(0,q*(p-1), 1)
-  comp_inter  <- as.matrix(c(c(inter),interzero))
   F_tmp       <- phi
   diagmat     <- diag(q*(p-1))
   diagzero    <- matrix(0, q*(p-1), q)
@@ -21,7 +19,36 @@ companionMat <- function(phi, inter, p, q){
   return(compMat)
 }
 
+#' @title Compute AIC
+#'
+#' @description This function computes the AIC when given the log-likelihood and number of parameters.
+#'
+#' @param logLike log-likelihood of estimated model
+#' @param param_len number of parameters in model
+#'
+#' @return AIC
+#' 
+#' @export
+aic <- function(logLike, param_len){
+  aic_val <- -2*(logLike) + 2*param_len
+  return(aic_val)
+}
 
+#' @title Compute BIC
+#'
+#' @description This function computes the BIC when given the log-likelihood, number of observations, and number of parameters.
+#'
+#' @param logLike log-likelihood of estimated model
+#' @param n number of time series observations
+#' @param param_len number of parameters in model
+#'
+#' @return BIC
+#' 
+#' @export
+bic <- function(logLike, n, param_len){
+  bic_val <- -param_len*log(n) -2*(logLike) 
+  return(bic_val)
+}
 
 #' @title Autoregressive transition matrix
 #'
@@ -64,7 +91,7 @@ arP <- function(P, k, ar){
 #' @return List with (M x ar+1) matrix of means for each regime M (where M = k^(ar+1)) and each time t,... t-ar, vector with variance for each regime M, and vector indicating the corresponded 1,..., k regime. 
 #' 
 #' @export
-arGrid <- function(mu, sig, k, ar, msmu, msvar){
+argrid_MSARmdl <- function(mu, sig, k, ar, msmu, msvar){
   if (msmu==FALSE){
     mu <- rep(mu, k)
   }
@@ -105,7 +132,7 @@ arGrid <- function(mu, sig, k, ar, msmu, msvar){
 #' @return List with M regime specific (q x k) matrices of means, List with M regime specific covariance matrices, and vector indicating the corresponded 1,..., k regime. 
 #' 
 #' @export
-varGrid <- function(mu, sigma, k, ar, msmu, msvar){
+argrid_MSVARmdl <- function(mu, sigma, k, ar, msmu, msvar){
   # create grid of regimes
   lx <-list()
   for (xi in 1:(ar+1)) lx[[xi]] <- 1:k
@@ -138,6 +165,20 @@ logLikelihood <- function(mdl){
   UseMethod("logLikelihood", mdl)
 }
 
+#' @title Log likelihood for Normal model  
+#' 
+#' @description This function is used to compute the log-likelihood for a normally distributed model
+#'
+#' @param mdl List with model properties
+#'
+#' @return Log-likelihood
+#' 
+#' @export
+logLikelihood.Nmdl <- function(mdl){
+  logLike <- logLike_Nmdl(mdl$theta, mdl)
+  return(logLike)
+}
+
 #' @title Log likelihood for autoregressive model  
 #' 
 #' @description This function is used to compute the log-likelihood for an autoregressive model
@@ -148,7 +189,7 @@ logLikelihood <- function(mdl){
 #' 
 #' @export
 logLikelihood.ARmdl <- function(mdl){
-  logLike <- logLike_AR(mdl$theta, mdl)
+  logLike <- logLike_ARmdl(mdl$theta, mdl)
   return(logLike)
 }
 
@@ -162,10 +203,51 @@ logLikelihood.ARmdl <- function(mdl){
 #' 
 #' @export
 logLikelihood.VARmdl <- function(mdl){
-  logLike <- logLike_VAR(mdl$theta, mdl)
+  logLike <- logLike_VARmdl(mdl$theta, mdl)
   return(logLike)
 }
 
+#' @title Log likelihood for Hidden Markov model  
+#' 
+#' @description This function is used to compute the log-likelihood for a Hidden Markov model
+#'
+#' @param mdl List with model properties
+#'
+#' @return Log-likelihood
+#' 
+#' @export
+logLikelihood.HMmdl <- function(mdl){
+  logLike <- logLike_HMmdl(mdl$theta, mdl, mdl$k)
+  return(logLike)
+}
+
+#' @title Log likelihood for Markov-switching autoregressive model  
+#' 
+#' @description This function is used to compute the log-likelihood for a Markov-switching autoregressive model
+#'
+#' @param mdl List with model properties
+#'
+#' @return Log-likelihood
+#' 
+#' @export
+logLikelihood.MSARmdl <- function(mdl){
+  logLike <- logLike_MSARmdl(mdl$theta, mdl, mdl$k)
+  return(logLike)
+}
+
+#' @title Log likelihood for Markov-switching vector autoregressive model  
+#' 
+#' @description This function is used to compute the log-likelihood for a Markv-switching vector autoregressive model
+#'
+#' @param mdl List with model properties
+#'
+#' @return Log-likelihood
+#' 
+#' @export
+logLikelihood.MSVARmdl <- function(mdl){
+  logLike <- logLike_MSVARmdl(mdl$theta, mdl, mdl$k)
+  return(logLike)
+}
 
 #' @title Hessian matrix 
 #' 
@@ -180,6 +262,20 @@ getHessian <- function(mdl){
   UseMethod("getHessian", mdl)
 }
 
+#' @title Hessian matrix of normal model
+#' 
+#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a normally distributed model
+#'
+#' @param mdl List with model properties
+#'
+#' @return Hessian matrix
+#' 
+#' @export
+getHessian.Nmdl <- function(mdl){
+  hess <- numDeriv::hessian(logLike_Nmdl, mdl$theta, method = "Richardson", mdl = mdl) 
+  return(hess)
+}
+
 #' @title Hessian matrix of autoregressive model
 #' 
 #' @description This function is used to obtain a numerical approximation of a Hessian matrix for an autoregressive model
@@ -190,7 +286,7 @@ getHessian <- function(mdl){
 #' 
 #' @export
 getHessian.ARmdl <- function(mdl){
-  hess <- numDeriv::hessian(logLike_AR, mdl$theta, method = "Richardson", mdl = mdl) 
+  hess <- numDeriv::hessian(logLike_ARmdl, mdl$theta, method = "Richardson", mdl = mdl) 
   return(hess)
 }
 
@@ -204,7 +300,21 @@ getHessian.ARmdl <- function(mdl){
 #' 
 #' @export
 getHessian.VARmdl <- function(mdl){
-  hess <- numDeriv::hessian(logLike_VAR, mdl$theta, method = "Richardson", mdl = mdl) 
+  hess <- numDeriv::hessian(logLike_VARmdl, mdl$theta, method = "Richardson", mdl = mdl) 
+  return(hess)
+}
+
+#' @title Hessian matrix of Hidden Markov model
+#' 
+#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a Hidden Markov model
+#'
+#' @param mdl List with model properties
+#'
+#' @return Hessian matrix
+#' 
+#' @export
+getHessian.HMmdl <- function(mdl){
+  hess <- numDeriv::hessian(logLike_HMmdl, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
   return(hess)
 }
 
@@ -218,11 +328,11 @@ getHessian.VARmdl <- function(mdl){
 #' 
 #' @export
 getHessian.MSARmdl <- function(mdl){
-  hess <- numDeriv::hessian(MSloglik_fun, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
+  hess <- numDeriv::hessian(logLike_MSARmdl, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
   return(hess)
 }
 
-#' @title Hessian matrix of Markov-switching vector autoregressive
+#' @title Hessian matrix of Markov-switching vector autoregressive model
 #' 
 #' @description This function is used to obtain a numerical approximation of a Hessian matrix for a Markov-switching vector autoregressive model
 #'
@@ -232,7 +342,7 @@ getHessian.MSARmdl <- function(mdl){
 #' 
 #' @export
 getHessian.MSVARmdl <- function(mdl){
-  hess <- numDeriv::hessian(MSVARloglik_fun, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
+  hess <- numDeriv::hessian(logLike_MSVARmdl, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
   return(hess)
 }
 
@@ -243,12 +353,12 @@ getHessian.MSVARmdl <- function(mdl){
 #'
 #' @param mdl List with model properties
 #'
-#' @return List prvided as input with additional attributes 'HESS,'theta_se', 'info_mat', and 'nearPD_used'.
+#' @return List provided as input with additional attributes 'HESS,'theta_se', 'info_mat', and 'nearPD_used'.
 #' 
 #' @export
 thetaSE <- function(mdl){
   Hess <- getHessian(mdl)
-  info_mat <- inv(-Hess)
+  info_mat <- solve(-Hess)
   nearPD_used <- FALSE
   if ((all(is.na(Hess)==FALSE)) & (any(diag(info_mat)<0))){
     info_mat <- nearPD(info_mat)
@@ -260,3 +370,297 @@ thetaSE <- function(mdl){
   mdl$nearPD_used <- nearPD_used 
   return(mdl)
 }
+
+#' @title Markov-switching autoregressive maximum likelihood estimation
+#' 
+#' @description This function computes estimate a Markov-switching autoregressive model using MLE.
+#' 
+#' @param theta_0 vector containing initial values to use in optimization
+#' @param mdl_in List with model properties (can be obtained from estimating linear model i.e., using \code{ARmdl()})
+#' @param k integer determining the number of regimes
+#' @param optim_options List containing 
+#' \itemize{
+#'  \item{maxit - }{maximum number of iterations.}
+#'  \item{thtol - }{convergence criterion.}
+#'}
+#'
+#' @return List with model attributes
+#' 
+#' @export
+MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
+  # ----- Define function environment
+  MSARmdl_mle_env <- rlang::env()
+  # set environment variables
+  MSARmdl_mle_env$p <- mdl_in$p
+  MSARmdl_mle_env$k <- k
+  MSARmdl_mle_env$msmu <- mdl_in$msmu
+  MSARmdl_mle_env$msvar <- mdl_in$msvar
+  MSARmdl_mle_env$var_k1 <- mdl_in$sigma
+  MSARmdl_mle_env$mle_stationary_constraint <- mdl_in$mle_stationary_constraint
+  MSARmdl_mle_env$mle_variance_constraint <- mdl_in$mle_variance_constraint
+  # ----------- MSARmdl_mle equality constraint functions
+  loglik_const_eq_MSARmdl <- function(theta){
+    # ----- Load equality constraint parameters
+    k <- get("k", envir = MSARmdl_mle_env)
+    # ----- constraint
+    P = matrix(theta[(length(theta)-k*k+1):(length(theta))],k,k)
+    constraint = colSums(P)-1
+    return(constraint)
+  }
+  # ---------- MSARmdl_mle inequality constraint functions
+  loglik_const_ineq_MSARmdl <- function(theta){
+    # ----- Load inequality constraint parameters
+    p <- get("p", envir = MSARmdl_mle_env)
+    k <- get("k", envir = MSARmdl_mle_env)
+    msmu <- get("msmu", envir = MSARmdl_mle_env)
+    msvar <- get("msvar", envir = MSARmdl_mle_env)
+    var_k1 <- get("var_k1", envir = MSARmdl_mle_env)
+    mle_stationary_constraint <- get("mle_stationary_constraint", envir = MSARmdl_mle_env)
+    mle_variance_constraint <- get("mle_variance_constraint", envir = MSARmdl_mle_env)
+    # ----- constraint
+    # transition probabilities
+    Pvec <- theta[(length(theta)-k*k+1):(length(theta))]
+    ineq_constraint <- c(Pvec, 1-Pvec)
+    if (mle_stationary_constraint==TRUE){
+      # roots of characteristic function
+      n_p <- 3 + msmu*(k-1)+msvar*(k-1)
+      poly_fun <- c(1,-theta[n_p:(n_p+p-1)])
+      roots <- Mod(polyroot(poly_fun))
+      ineq_constraint = c((roots-1), ineq_constraint)
+    }
+    if (mle_variance_constraint>=0){
+      # variances (lower bound is 1% of single regime variance)
+      vars <- theta[c(rep(0, 1 + (k-1)*msmu), rep(1, 1 + (k-1)*msvar), rep(0, p + k*k))==1] - mle_variance_constraint*var_k1
+      ineq_constraint <- c(vars, ineq_constraint)
+    }
+    return(ineq_constraint)
+  }
+  # use nloptr optimization to minimize (maximize) likelihood
+  res <- nloptr::slsqp(x0 = theta_0,
+                       fn = logLike_MSARmdl_min,
+                       gr = NULL,
+                       lower = NULL,
+                       upper = NULL,
+                       hin = loglik_const_ineq_MSARmdl,
+                       heq = loglik_const_eq_MSARmdl,
+                       nl.info = FALSE,
+                       control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
+                       mdl = mdl_in,
+                       k = k) 
+  output <- ExpectationM_MSARmdl(res$par, mdl_in, k)
+  output$iterations <- res$iter
+  output$St <- output$xi_t_T
+  return(output)
+}
+
+
+#' @title Markov-switching vector autoregressive maximum likelihood estimation
+#' 
+#' @description This function computes estimate a Markov-switching vector autoregressive model using MLE.
+#' 
+#' @param theta_0 vector containing initial values to use in optimization
+#' @param mdl_in List with model properties (can be obtained from estimating linear model i.e., using \code{VARmdl()})
+#' @param k integer determining the number of regimes
+#' @param optim_options List containing 
+#' \itemize{
+#'  \item{maxit - }{maximum number of iterations.}
+#'  \item{thtol - }{convergence criterion.}
+#'}
+#'
+#' @return List with model attributes
+#' 
+#' @export
+MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
+  # ---------- Define function environment
+  MSVARmdl_mle_env <- rlang::env()
+  # set environment variables
+  MSVARmdl_mle_env$p <- mdl_in$p
+  MSVARmdl_mle_env$k <- k
+  MSVARmdl_mle_env$q <- mdl_in$q
+  MSVARmdl_mle_env$msmu <- mdl_in$msmu
+  MSVARmdl_mle_env$msvar <- mdl_in$msvar
+  MSVARmdl_mle_env$mle_stationary_constraint <- mdl_in$mle_stationary_constraint
+  MSVARmdl_mle_env$mle_variance_constraint <- mdl_in$mle_variance_constraint
+  # ---------- MSVARmdl_mle equality constraint functions
+  loglik_const_eq_MSVARmdl <- function(theta){
+    # ----- Load equality constraint parameters
+    k <- get("k", envir = MSVARmdl_mle_env)
+    # ----- constraint
+    P <- matrix(theta[(length(theta)-k*k+1):(length(theta))],k,k)
+    constraint <- colSums(P)-1
+    return(constraint)
+  }
+  # ---------- MSVARmdl_mle inequality constraint functions
+  loglik_const_ineq_MSVARmdl <- function(theta){
+    # ----- Load inequality constraint parameters
+    p <- get("p", envir = MSVARmdl_mle_env)
+    k <- get("k", envir = MSVARmdl_mle_env)
+    q <- get("q", envir = MSVARmdl_mle_env)
+    msmu <- get("msmu", envir = MSVARmdl_mle_env)
+    msvar <- get("msvar", envir = MSVARmdl_mle_env)
+    mle_stationary_constraint <- get("mle_stationary_constraint", envir = MSVARmdl_mle_env)
+    mle_variance_constraint <- get("mle_variance_constraint", envir = MSVARmdl_mle_env)
+    Nsig <- (q*(q+1))/2
+    phi_len <- q*p*q
+    # ----- constraint 
+    Pvec = theta[(length(theta)-k*k+1):(length(theta))]
+    ineq_constraint = c(Pvec, 1-Pvec)
+    if (mle_stationary_constraint==TRUE){
+      # eigen values of companion matrix
+      phi <- t(matrix(theta[c(rep(0, q + q*(k-1)*msmu + Nsig + Nsig*(k-1)*msvar), rep(1, phi_len), rep(0, k*k))==1], q*p, q))
+      Fmat <- companionMat(phi,p,q)
+      stationary  <- abs(Mod(eigen(Fmat)[[1]]) - 1)
+      ineq_constraint = c(stationary, 1-stationary, ineq_constraint)
+    }
+    if (mle_variance_constraint>=0){
+      # eigen values of covariance matrices
+      eigen_vals <- c()
+      sig <- theta[c(rep(0, q + q*(k-1)*msmu), rep(1, Nsig + Nsig*(k-1)*msvar), rep(0, phi_len + k*k))==1]
+      if (msvar==TRUE){
+        for (xk in  1:k){
+          sig_tmp <- sig[(Nsig*(xk-1)+1):(Nsig*(xk-1)+Nsig)]
+          sigma <- covar_unvech(sig_tmp, q)
+          eigen_vals <- c(eigen_vals,eigen(sigma)[[1]])
+        } 
+      }else{
+        sigma <- covar_unvech(sig, q)
+        eigen_vals <- c(eigen_vals,eigen(sigma)[[1]])
+      }
+      ineq_constraint = c(eigen_vals-mle_variance_constraint, ineq_constraint)
+    }
+    return(ineq_constraint)
+  }
+  # use nloptr optimization to minimize (maximize) likelihood
+  res <- nloptr::slsqp(x0 = theta_0,
+                       fn = logLike_MSVARmdl_min,
+                       gr = NULL,
+                       lower = NULL,
+                       upper = NULL,
+                       hin = loglik_const_ineq_MSVARmdl,
+                       heq = loglik_const_eq_MSVARmdl,
+                       nl.info = FALSE,
+                       control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
+                       mdl = mdl_in,
+                       k = k) 
+  output <- ExpectationM_MSVARmdl(res$par, mdl_in, k)
+  output$iterations <- res$iter
+  output$St <- output$xi_t_T
+  return(output)
+}
+
+
+
+#' @title Print summary of an \code{ARmdl} object
+#'
+#'
+#' @inheritParams base::print
+#' @export
+#'
+print.ARmdl <- function(mdl, digits = getOption("digits")){
+  cat("\nAutoregressive model\n")
+  frame_tmp <- data.frame(coef = mdl$theta)
+  if (mdl$control$getSE==TRUE){
+    frame_tmp["s.e."] <- mdl$theta_se
+  }
+  rownames(frame_tmp) <- names(mdl$theta)
+  print(format(signif(frame_tmp, max(1L, digits - 2L))))
+  cat(paste("\nlog-likelihood = "),mdl$logLike)
+  cat(paste("\nAIC = "),mdl$AIC)
+  cat(paste("\nBIC = "),mdl$BIC)
+  invisible(mdl)
+}
+
+#' @title Print summary of an \code{VARmdl} object
+#'
+#'
+#' @inheritParams base::print
+#' @export
+#'
+print.VARmdl <- function(mdl, digits = getOption("digits")){
+  cat("\nVector autoregressive model\n")
+  frame_tmp <- data.frame(coef = mdl$theta)
+  if (mdl$control$getSE==TRUE){
+    frame_tmp["s.e."] <- mdl$theta_se
+  }
+  rownames(frame_tmp) <- names(mdl$theta)
+  print(format(signif(frame_tmp, max(1L, digits - 2L))))
+  cat(paste("\nlog-likelihood = "),mdl$logLike)
+  cat(paste("\nAIC = "),mdl$AIC)
+  cat(paste("\nBIC = "),mdl$BIC)
+  invisible(mdl)
+}
+
+#' @title Print summary of a \code{HMmdl} object
+#'
+#'
+#' @inheritParams base::print
+#' @export
+#'
+print.HMmdl <- function(mdl, digits = getOption("digits")){
+  cat("\nHidden Markov Model\n")
+  frame_tmp <- data.frame(coef = mdl$theta)
+  if (mdl$control$getSE==TRUE){
+    frame_tmp["s.e."] <- mdl$theta_se
+  }
+  rownames(frame_tmp) <- names(mdl$theta)
+  print(format(signif(frame_tmp, max(1L, digits - 2L))))
+  cat(paste("\nlog-likelihood = "),mdl$logLike)
+  cat(paste("\nAIC = "),mdl$AIC)
+  cat(paste("\nBIC = "),mdl$BIC)
+  invisible(mdl)
+}  
+
+
+
+#' @title Print summary of a \code{MSARmdl} object
+#'
+#'
+#' @inheritParams base::print
+#' @export
+#'
+print.MSARmdl <- function(mdl, digits = getOption("digits")){
+  cat("\nMarkov-switching autoregressive model\n")
+  frame_tmp <- data.frame(coef = mdl$theta)
+  if (mdl$control$getSE==TRUE){
+    frame_tmp["s.e."] <- mdl$theta_se
+  }
+  rownames(frame_tmp) <- names(mdl$theta)
+  print(format(signif(frame_tmp, max(1L, digits - 2L))))
+  cat(paste("\nlog-likelihood = "),mdl$logLike)
+  cat(paste("\nAIC = "),mdl$AIC)
+  cat(paste("\nBIC = "),mdl$BIC)
+  invisible(mdl)
+}  
+
+
+#' @title Print summary of a \code{MSVARmdl} object
+#'
+#'
+#' @inheritParams base::print
+#' @export
+#'
+print.MSVARmdl <- function(mdl, digits = getOption("digits")){
+  cat("\nMarkov-switching vector autoregressive model\n")
+  frame_tmp <- data.frame(coef = mdl$theta)
+  if (mdl$control$getSE==TRUE){
+    frame_tmp["s.e."] <- mdl$theta_se
+  }
+  rownames(frame_tmp) <- names(mdl$theta)
+  print(format(signif(frame_tmp, max(1L, digits - 2L))))
+  cat(paste("\nlog-likelihood = "),mdl$logLike)
+  cat(paste("\nAIC = "),mdl$AIC)
+  cat(paste("\nBIC = "),mdl$BIC)
+  invisible(mdl)
+}  
+
+
+
+
+
+
+
+
+
+
+
+

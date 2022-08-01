@@ -1,4 +1,61 @@
-
+#' @title Normal dis model
+#' 
+#' @description This function estimates a normally distributed model
+#' 
+#' @param Y matrix of observations with dimension (n x q) 
+#' @param control List with model options including:
+#' \itemize{
+#' \item{const - }{boolean determining whether to estimate model with constant, if 'TRUE', or not, if 'FALSE'.}
+#' \item{getSE - }{boolean determining whether to compute standard errors of parameters, if 'TRUE', or not, if 'FALSE'.}
+#' }
+#' 
+#' @export
+Nmdl <- function(Y, control = list()){
+  # ----- Set control values
+  con <- list(const = TRUE, 
+              getSE = TRUE)
+  # Perform some checks for controls
+  nmsC <- names(con)
+  con[(namc <- names(control))] <- control
+  if(length(noNms <- namc[!namc %in% nmsC])){
+    warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+  }
+  # ----- Get process dimensions
+  n <- nrow(Y)
+  q <- ncol(Y)
+  # ----- estimate model
+  if (con$const==TRUE){
+    mu <- colMeans(Y)
+  }else{
+    mu <- rep(0, q)
+  }
+  # ----- Obtain variables of interest
+  resid       <- Y - matrix(1, n, 1)%*%t(as.matrix(mu))
+  sigma       <- (t(resid)%*%resid)/(n-1)
+  stdev       <- sqrt(diag(sigma))
+  theta       <- c(mu,covar_vech(sigma))
+  # theta indicators
+  theta_mu_ind  <- c(rep(1, q),rep(0,length(theta)-q))
+  theta_sig_ind <- c(rep(0, q),rep(1,q*(q+1)/2))
+  # ----- Output
+  out     <- list(y = Y, resid = resid, mu = mu, stdev = stdev, sigma = sigma, theta = theta, 
+                  theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, n = n, q = q, k = 1, control = con)
+  # Define class
+  class(out) <- "Nmdl"
+  # get log-likelihood
+  out$logLike <- logLikelihood(out)
+  # get information criterion
+  out$AIC <- aic(out$logLike, length(out$theta))
+  out$BIC <- bic(out$logLike, out$n, length(out$theta))
+  # names
+  names(out$theta) <- c(paste0("mu_",(1:q)),
+                        paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))))
+  # get standard errors if 'con$getSE' is 'TRUE'
+  if (con$getSE==TRUE){
+    out <- thetaSE(out)
+  }
+  return(out)
+}
 
 #' @title Autoregressive Model
 #' 
@@ -40,6 +97,8 @@
 #'   \item{theta_se - }{standard errors of parameters in theta. Only returned if getSE='TRUE'.}
 #' }
 #' 
+#' @seealso \code{\link{MSARmdl}}
+#' @example /examples/ARmdl_examples.R
 #' @export
 ARmdl <- function(Y, p, control = list()){
   # ----- Set control values
@@ -58,17 +117,15 @@ ARmdl <- function(Y, p, control = list()){
   b0 <- matrix(0, p + con$const,1)
   phi <- matrix(0, p , 1)
   n = nrow(lagged_vals$y)
-  npar = p
   # ----- estimate model
   if (con$const==TRUE){
     X     <- cbind(1, x)
-    npar  <- npar + 1
-    b0    <- inv(t(X)%*%X)%*%t(X)%*%y
+    b0    <- solve(t(X)%*%X)%*%t(X)%*%y
     phi   <- b0[(2:npar),1]
     inter <- b0[1,1]
   }else{
     X     <- x
-    b0    <- inv(t(X)%*%X)%*%t(X)%*%y
+    b0    <- solve(t(X)%*%X)%*%t(X)%*%y
     phi   <- b0
     inter <- 0
   }
@@ -88,11 +145,16 @@ ARmdl <- function(Y, p, control = list()){
   # ----- Output
   out     <- list(y = y, X = X, x = x, resid = resid, mu = mu, coef = b0, intercept = inter, phi = phi,
                   stdev = stdev, sigma = sigma, theta = theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, 
-                  theta_phi_ind = theta_phi_ind, stationary = roots, n = n, p = p, q = 1, k = 1)
+                  theta_phi_ind = theta_phi_ind, stationary = roots, n = n, p = p, q = 1, k = 1, control = con)
   # Define class
   class(out) <- "ARmdl"
   # get log-likelihood
   out$logLike <- logLikelihood(out)
+  # get information criterion
+  out$AIC <- aic(out$logLike, length(out$theta))
+  out$BIC <- bic(out$logLike, out$n, length(out$theta))
+  # names 
+  names(out$theta) <- c(c("mu","sig"), paste0("phi_",(1:p)))
   # get standard errors if 'con$getSE' is 'TRUE'
   if (con$getSE==TRUE){
     out <- thetaSE(out)
@@ -141,6 +203,8 @@ ARmdl <- function(Y, p, control = list()){
 #'   \item{theta_se - }{standard errors of parameters in theta. Only returned if getSE='TRUE'.}
 #' }
 #' 
+#' @seealso \code{\link{MSVARmdl}}
+#' @example /examples/VARmdl_examples.R
 #' @export
 VARmdl <- function(Y, p, control = list()){
   # ----- Set control values
@@ -159,24 +223,22 @@ VARmdl <- function(Y, p, control = list()){
   lagged_vals <- ts_lagged(Y, p)
   y <- lagged_vals$y
   x <- lagged_vals$X
-  npar <- p
   # ----- estimate model
   if (con$const==TRUE){
     X     <- cbind(1,x)
-    npar  <- npar + 1
-    b0    <- inv(t(X)%*%X)%*%t(X)%*%y
+    b0    <- solve(t(X)%*%X)%*%t(X)%*%y
     inter <- t(b0[1,])
     phi   <- t(b0[-1,])
   }else{
     X     <- x
-    b0    <- inv(t(X)%*%X)%*%t(X)%*%y
+    b0    <- solve(t(X)%*%X)%*%t(X)%*%y
     inter <- matrix(0,q,1)
     phi   <- t(b0)
   }
   # ----- Obtain variables of interest
-  Fmat        <- companionMat(phi,inter,p,q)
+  Fmat        <- companionMat(phi,p,q)
   stationary  <- all(abs(eigen(Fmat)[[1]])<1)
-  mu_tmp      <- inv(diag(q*p)-Fmat)%*%as.matrix(c(inter,rep(0,q*(p-1))))
+  mu_tmp      <- solve(diag(q*p)-Fmat)%*%as.matrix(c(inter,rep(0,q*(p-1))))
   mu          <- mu_tmp[(1:(q))]
   resid       <- y - X%*%b0
   sigma       <- (t(resid)%*%resid)/(n-1)
@@ -189,11 +251,19 @@ VARmdl <- function(Y, p, control = list()){
   # ----- Output
   out     <- list(y = y, X = X, x = x, resid = resid, mu = mu, coef = b0, intercept = inter, phi = phi,
                   stdev = stdev, sigma = sigma, theta = theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_phi_ind = theta_phi_ind, 
-                  stationary = stationary, n = n, p = p, q = q, k = 1, Fmat = Fmat)
+                  stationary = stationary, n = n, p = p, q = q, k = 1, Fmat = Fmat, control = con)
   # Define class
   class(out) <- "VARmdl"
   # get log-likelihood
   out$logLike <- logLikelihood(out)
+  # get information criterion
+  out$AIC <- aic(out$logLike, length(out$theta))
+  out$BIC <- bic(out$logLike, out$n, length(out$theta))
+  # names
+  phi_n_tmp <- expand.grid((1:q),(1:p),(1:q))
+  names(out$theta) <- c(paste0("mu_",(1:q)),
+                        paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))),
+                        paste0("phi_",paste0(phi_n_tmp[,2],",",phi_n_tmp[,3],phi_n_tmp[,1])))
   # get standard errors if 'con$getSE' is 'TRUE'
   if (con$getSE==TRUE){
     out <- thetaSE(out)
@@ -202,69 +272,37 @@ VARmdl <- function(Y, p, control = list()){
 }
 
 
-# HMM
-
-
-#' @title Markov-switching autoregressive model by Expectation Minimization algorithm
+#' @title Hidden Markov model 
 #' 
-#' @description This function estimates a Markov-switching autoregressive model using the Expectation Minimization (EM) algorithm of Dempster, Laird and Rubin (1977) as explained in Hamilton (1990).
+#' @description This function estimates a Hidden Markov model
 #' 
-#' @param Y (Tx1) vector with observational data. Required argument.
+#' @param Y (Txq) vector with observational data. Required argument.
 #' @param p integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.
 #' @param k integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.
-#' @param control List with optimization options including: 
-#' \itemize{
-#'  \item{msmu - }{indicator for switch in mean (TRUE) or constant mean (FALSE). Default is TRUE.}
-#'  \item{msvar - }{bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is TRUE.}
-#'  \item{maxit - }{integer determining the maximum number of EM iterations.}
-#'  \item{thtol - }{double determining the convergence criterion for the absolute difference in parameter estimates (theta) between iterations. Default is 1e-6.}
-#'  \item{getSE - }{bool if 'TRUE' standard errors are computed and returned. If 'FALSE' standard errors are not computed. Default is 'FALSE'.}
-#'  \item{max_init - }{integer determining the maximum number of initial values to attempt in case solution is NaN. Default is 500.}
-#'  \item{use_diff_init - }{integer determining how many different initial values (that do not return NaN) to try. Default is 1.}
-#'  \item{init_value - }{vector of initial values. This is optional. Default is NUll, in which case 'initValsMS()' is used to generate initial values.}
-#' }
+#' @param control List with optimization options including:
 #' 
 #' @return List with model characteristics
 #' 
-#' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” Journal of the Royal Statistical Society. Series B 39 (1): 1–38
 #' @references Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” Journal of econometrics, 45 (1-2): 39–70
+#' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” Journal of the Royal Statistical Society. Series B 39 (1): 1–38
+#' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.” In Markov-Switching Vector Autoregressions, 6–28. Springer
 #' 
+#' @seealso \code{\link{Nmdl}}
+#' @example /examples/HMmdl_examples.R
 #' @export
-#' 
-#' @examples 
-#' # Define DGP of MS AR process
-#' mdl_ms2 <- list(n     = 500, 
-#'                 mu    = c(5,10),
-#'                 sigma = c(1,2),
-#'                 phi   = c(0.5,0.2),
-#'                 k     = 2,
-#'                 P     = rbind(c(0.1,0.9),
-#'                               c(0.9,0.1)))
-#'                               
-#' # Simulate process using simuMSAR() function
-#' y_ms_simu <- simuMSAR(mdl_ms2)
-#' 
-#' # Set options for model estimation
-#' control <- list(msmu  = TRUE, 
-#'                 msvar = TRUE, 
-#'                 use_diff_init = 10)
-#' 
-#' # Estimate model
-#' y_ms_mdl <- MSARmdl(y_ms_simu$y, ar = y_ms_simu$ar, k = y_ms_simu$k, control)
-#' 
-MSARmdl <- function(Y, p, k, control = list()){
+HMmdl <- function(Y, k, control = list()){
   # ----- Set control values
-  con <- list(const = TRUE,
-              getSE = TRUE,
+  con <- list(getSE = TRUE,
               msmu = TRUE, 
               msvar = TRUE,
+              init_value = NULL,
               method = "EM",
-              maxit = 10000, 
+              maxit = 10000,
               thtol = 1.e-6, 
-              max_init = 500, 
-              use_diff_init = 1, 
-              init_theta = NULL)
-  # Perform some checks for controls
+              maxit_converge = 500, 
+              use_diff_init = 1,
+              mle_variance_constraint = 1e-6)
+  # ----- Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
   if(length(noNms <- namc[!namc %in% nmsC])){
@@ -273,247 +311,470 @@ MSARmdl <- function(Y, p, k, control = list()){
   # ---------- Optimization options
   optim_options <- list(maxit = con$maxit, thtol = con$thtol)
   # pre-define list and matrix length for results
-  EM_output_all <- list(con$use_diff_init)
+  output_all <- list(con$use_diff_init)
   max_loglik <- matrix(0, con$use_diff_init, 1)
+  # ---------- Estimate linear model to use for initial values & transformed series
+  init_control <- list(const = TRUE, getSE = FALSE)
+  init_mdl <- Nmdl(Y, init_control)
+  init_mdl$msmu <- con$msmu
+  init_mdl$msvar <- con$msvar
   if (is.null(con$init_theta)==TRUE){
-    # ---------- Estimate linear model to use for initial values
-    init_control <- list(con$const, con$getSE)
-    init_mdl <- ARmdl(Y, p = p, init_control)
-    init_mdl$msmu = con$msmu
-    init_mdl$msvar = con$msvar
-    # ----- Estimate using 'use_diff_init' different initial values
-    for (xi in 1:con$use_diff_init){
-      init_used <- 0
-      converge_check <- FALSE
-      while ((converge_check==FALSE) & (init_used<con$max_init)){
-        # ----- Initial values
-        theta_0 <- initValsMS(init_mdl, k)
-        if (con$method=="EM"){
+    if (con$method=="EM"){
+      # ----- Estimate using 'use_diff_init' different initial values
+      for (xi in 1:con$use_diff_init){
+        init_used <- 0
+        converge_check <- FALSE
+        while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
+          # ----- Initial values
+          theta_0 <- initVals_HMmdl(init_mdl, k)
           # ----- Estimate using EM algorithm and initial values provided
-          EM_output_tmp <- MS_EMest(theta_0, init_mdl, k, optim_options)
-          EM_output_tmp$theta_0 = theta_0
+          output_tmp <- HMmdl_em(theta_0, init_mdl, k, optim_options)
           # ----- Convergence check
-          logLike_tmp = EM_output_tmp$logLike
-          theta_tmp = EM_output_tmp$theta
-          converge_check = ((is.finite(logLike_tmp)) & (all(is.finite(theta_tmp))))
-        }else if (con$method=="NR"){
-          # ----- Estimate using roptim and initial values provided 
-          
-          # ----- Convergence check
-          
+          logLike_tmp <- output_tmp$logLike
+          theta_tmp <- output_tmp$theta
+          converge_check <- ((is.finite(output_tmp$logLike)) & (all(is.finite(output_tmp$theta))))
+          init_used <- init_used + 1
         }
-        init_used = init_used + 1
+        output_tmp$theta_0 <- theta_0
+        max_loglik[xi] <- output_tmp$logLike
+        output_tmp$init_used <- init_used
+        output_all[[xi]] <- output_tmp
       }
-      max_loglik[xi] = logLike_tmp
-      EM_output_tmp$init_used = init_used
-      EM_output_all[[xi]] = EM_output_tmp
+    }else if (con$method=="MLE"){
+      init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
+      init_mdl$mle_variance_constraint <- con$mle_variance_constraint
+      # ----- Estimate using 'use_diff_init' different initial values
+      for (xi in 1:con$use_diff_init){
+        init_used <- 0
+        converge_check <- FALSE
+        while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
+          # ----- Initial values
+          theta_0 <- initVals_MSVARmdl(init_mdl, k)
+          # ----- Estimate using roptim and initial values provided 
+          output_tmp <- NULL
+          try(
+            output_tmp <- HMmdl_mle(theta_0, init_mdl, k, optim_options)  
+          )
+          # ----- Convergence check
+          if (is.null(output_tmp)==FALSE){
+            converge_check <- TRUE
+          }else{
+            converge_check <- FALSE
+          }
+          init_used = init_used + 1
+        }
+        output_tmp$theta_0 <- theta_0
+        max_loglik[xi] <- output_tmp$logLike
+        output_tmp$init_used <- init_used
+        output_all[[xi]] <- output_tmp
+      }
     }
-    if (con[["use_diff_init"]]==1){
-      EM_output = EM_output_tmp
+    if (con$use_diff_init==1){
+      output = output_tmp
     }else{
       xl = which.max(max_loglik)
       if (length(xl)==0){
-        warning("Model(s) did not converge. Use higher 'use_diff_init' or 'max_init'.")
-        EM_output = EM_output_all[[1]] 
+        warning("Model(s) did not converge. Use higher 'use_diff_init' or 'maxit_converge'.")
+        output <- output_all[[1]] 
       }else{
-        EM_output = EM_output_all[[xl]] 
+        output <- output_all[[xl]] 
       }
     }
   }else{
-    
     if (con$method=="EM"){
       # ----- Estimate using EM algorithm and initial values provided
-      EM_output <- MS_EMest(con$init_value, mdl_out, k, optim_options)
-      EM_output$theta_0 <- con$init_value
-      EM_output$init_used <- 1  
-    }else if (con$method=="NR"){
+      output <- HMmdl_em(con$init_value, init_mdl, k, optim_options)
+      output$theta_0 <- con$init_value
+      output$init_used <- 1  
+    }else if (con$method=="MLE"){
+      init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
+      init_mdl$mle_variance_constraint <- con$mle_variance_constraint
       # ----- Estimate using roptim and initial values provided 
-      
+      output_tmp <- HMmdl_mle(con$init_value, init_mdl, k, optim_options)  
+      output$theta_0 <- con$init_value
+      output$init_used <- 1  
     }
   }
-  # ---------- organize output
-  theta_mu_ind <- c(rep(1, 1 + (k-1)*con$msmu), rep(0, 1 + (k-1)*con$msvar + p + k*k))
-  theta_sig_ind <- c(rep(0, 1 + (k-1)*con$msmu), rep(1, 1 + (k-1)*con$msvar), rep(0, p + k*k))
-  theta_phi_ind <- c(rep(0, 2 + (k-1)*con$msmu + (k-1)*con$msvar), rep(1, p), rep(0, k*k))
-  theta_P_ind <- c(rep(0, 2 + (k-1)*con$msmu + (k-1)*con$msvar + p), rep(1, k*k))
-  # ----- output
-  out <- list(y = init_mdl$y, X = init_mdl$X, x = init_mdl$x, resid = EM_output$residuals, mu = EM_output$mu, coef = NA, intercept = NA, phi = EM_output$phi,
-              stdev = sqrt(EM_output$sigma), sigma = EM_output$sigma, theta = EM_output$theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, 
-              theta_phi_ind = theta_phi_ind, stationary = NA, n = init_mdl$n, p = p, q = 1, k = k, logLike = EM_output$logLike, P = EM_output$P, pinf = EM_output$pinf, 
-              St = EM_output$St, eta = EM_output$eta, thl = EM_output$thl, deltath = EM_output$deltath,  iterations = EM_output$iterations, theta_0 = EM_output$theta_0,
-              init_used = EM_output$init_used, msmu = con$msmu, msvar = con$msvar, control = con)
+  # ----- Obtain variables of interest
+  q <- ncol(Y)
+  Nsig <- (q*(q+1))/2
+  theta_mu_ind <- c(rep(1, q + q*(k-1)*con$msmu), rep(0, Nsig + Nsig*(k-1)*con$msvar + k*k))
+  theta_sig_ind <- c(rep(0, q + q*(k-1)*con$msmu), rep(1, Nsig + Nsig*(k-1)*con$msvar), rep(0, k*k))
+  theta_var_ind <- c(rep(0, q + q*(k-1)*con$msmu), rep(t(covar_vech(diag(q))), 1+(k-1)*con$msvar), rep(0, k*k))
+  theta_P_ind <- c(rep(0, q + q*(k-1)*con$msmu + Nsig + Nsig*(k-1)*con$msvar), rep(1, k*k))
+  out <- list(y = init_mdl$y, resid = output$resid, mu = output$mu, sigma = output$sigma, theta = output$theta, 
+              theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, n = init_mdl$n, q = q, k = k, 
+              logLike = output$logLike, P = output$P, pinf = output$pinf, St = output$St, eta = output$eta, 
+              thl = output$thl, deltath = output$deltath,  iterations = output$iterations, theta_0 = output$theta_0,
+              init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, control = con)
+  out$AIC <- aic(out$logLike, length(out$theta))
+  out$BIC <- bic(out$logLike, out$n, length(out$theta))
+  stdev <- list(k)
+  for (xk in 1:k){
+    stdev[[xk]] <- diag(sqrt(diag(out$sigma[[xk]])))
+  }
+  out$stdev <- stdev
+  # names
+  mu_n_tmp <- expand.grid((1:q),(1:k))
+  sig_n_tmp <- expand.grid(covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q))),(1:k))
+  names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_",mu_n_tmp[,1],",",mu_n_tmp[,2]) else  paste0("mu_",(1:q)),
+                        if (con$msvar==TRUE) paste0("sig_",sig_n_tmp[,1],",",sig_n_tmp[,2]) else paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))),
+                        paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
   # Define class
-  class(out) <- "MSARmdl"
+  class(out) <- "HMmdl"
   if (con$getSE==TRUE){
     out <- thetaSE(out)
   }
   if (is.null(con$init_theta)){
-    out$trace <- EM_output_all
+    out$trace <- output_all
   }
   return(out)
 }
 
 
-#' @title Markov-switching vector autoregressive model by Expectation Minimization algorithm
+
+#' @title Markov-switching autoregressive model 
 #' 
-#' @description This function estimates a Markov-switching vector autoregressive model using the Expectation Minimization (EM) algorithm of Dempster, Laird and Rubin (1977) as explained in Krolzig (1997).
+#' @description This function estimates a Markov-switching autoregressive model
 #' 
 #' @param Y (Tx1) vector with observational data. Required argument.
-#' @param ar integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.
+#' @param p integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.
 #' @param k integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.
-#' @param control List with optimization options including:
+#' @param control List with optimization options including: 
 #' \itemize{
+#'  \item{getSE - }{bool if 'TRUE' standard errors are computed and returned. If 'FALSE' standard errors are not computed. Default is 'FALSE'.}
 #'  \item{msmu - }{indicator for switch in mean (TRUE) or constant mean (FALSE). Default is TRUE.}
 #'  \item{msvar - }{bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is TRUE.}
+#'  \item{init_value - }{vector of initial values. This is optional. Default is NULL, in which case \code{initVals_MSARmdl} is used to generate initial values.}
+#'  \item{method - }{string determining which method to use. Options are 'EM' for EM algorithm or 'MLE' for Maximum Likelihood Estimation.}
 #'  \item{maxit - }{integer determining the maximum number of EM iterations.}
 #'  \item{thtol - }{double determining the convergence criterion for the absolute difference in parameter estimates (theta) between iterations. Default is 1e-6.}
-#'  \item{getSE - }{bool if 'TRUE' standard errors are computed and returned. If 'FALSE' standard errors are not computed. Default is 'FALSE'.}
-#'  \item{max_init - }{integer determining the maximum number of initial values to attempt in case solution is NaN. Default is 500.}
+#'  \item{maxit_converge - }{integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in 'theta' or 'logLike' is NaN another set of initital values (up to 'maxit_converge') is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration in 'maxit'. Default is 500.}
 #'  \item{use_diff_init - }{integer determining how many different initial values (that do not return NaN) to try. Default is 1.}
-#'  \item{init_value - }{vector of initial values. This is optional. Default is NUll, in which case 'initValsMS()' is used to generate initial values.}
+#'  \item{mle_stationary_constraint - }{bool indicator determining if only stationary solutions should be considered for autoregressive coefficients (if 'TRUE') or if non-stationary solutions are allowed (if 'FALSE'). This is only used when method='MLE'. Default is 'TRUE'.}
+#'  \item{mle_variance_constraint - }{double used to determine the lower bound on variance. Specifically, this value is multiplied by the variance of the linear (one regime) model to determine the lower bound. For example, if '0.01' then lower bound is 1% of variance from linear model. This is only used when method='MLE' and should be between 0 and 1. Default is '0.01'.}
 #' }
 #' 
 #' @return List with model characteristics
 #' 
 #' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” Journal of the Royal Statistical Society. Series B 39 (1): 1–38
-#' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.” In Markov-Switching Vector Autoregressions, 6–28. Springer
+#' @references Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” Journal of econometrics, 45 (1-2): 39–70
+#' 
+#' @seealso \code{\link{ARmdl}}
+#' @example /examples/MSARmdl_examples.R
 #' @export
-#' 
-#' @examples 
-#' # Define DGP of MS VAR process
-#' mdl_msvar2 <- list(n     = 500, 
-#'                    ar    = 1,
-#'                    mu    = rbind(c(5,-2),
-#'                                  c(10,2)),
-#'                    sigma = list(rbind(c(5.0, 1.5),
-#'                                       c(1.5, 1.0)),
-#'                                 rbind(c(7.0, 3.0),
-#'                                       c(3.0, 2.0))),
-#'                    phi   = rbind(c(0.50, 0.30),
-#'                                  c(0.20, 0.70)),
-#'                    k     = 2,
-#'                    P     = rbind(c(0.1,0.9),
-#'                                  c(0.9,0.1)))
-#'                                  
-#' # Simulate process using simuMSVAR() function
-#' y_msvar_simu <- simuMSVAR(mdl_msvar2)
-#' 
-#' # Set options for model estimation
-#' control <- list(msmu = TRUE, 
-#'                 msvar = TRUE, 
-#'                 use_diff_init = 10)
-#'                 
-#' # Estimate model
-#' y_msvar_mdl <- MSVARmdl_EM(y_msvar_simu$y, ar = y_msvar_simu$ar, k = y_msvar_simu$k, control)
-#' 
-MSVARmdl_EM <- function(Y, ar, k, control = list()){
+MSARmdl <- function(Y, p, k, control = list()){
   # ----- Set control values
-  con <- list(msmu = TRUE, 
-              msvar = TRUE, 
+  con <- list(getSE = TRUE,
+              msmu = TRUE, 
+              msvar = TRUE,
+              init_theta = NULL,
+              method = "EM",
               maxit = 10000, 
               thtol = 1.e-6, 
-              getSE = FALSE, 
-              max_init = 500, 
+              maxit_converge = 500, 
               use_diff_init = 1, 
-              init_value = NULL)
-  # Perform some checks for controls
+              mle_stationary_constraint = TRUE,
+              mle_variance_constraint = 0.01)
+  # ----- Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
   if(length(noNms <- namc[!namc %in% nmsC])){
     warning("unknown names in control: ", paste(noNms,collapse=", ")) 
   }
   # ---------- Optimization options
-  optim_options <- list(maxit = con[["maxit"]], thtol = con[["thtol"]])
-  # ---------- Estimate linear model to use for initial values
-  mdl_out = VARmdl(Y, ar = ar, intercept = TRUE, getSE = con[["getSE"]])
-  msmu <- con[["msmu"]]
-  msvar <- con[["msvar"]]
-  mdl_out[["msmu"]] = msmu
-  mdl_out[["msvar"]] = msvar
-  # ---------- Estimate model 
-  EM_output_all <- list(con[["use_diff_init"]])
-  max_loglik <- matrix(0, con[["use_diff_init"]], 1)
-  if (is.null(con[["init_value"]])==FALSE){
-    # ----- Estimate using initial values provided
-    EM_output <- MSVAR_EMest(con[["init_value"]], mdl_out, k, optim_options)
-    EM_output[["theta_0"]] <- con[["init_value"]]
-    EM_output[["init_used"]] <- 1
-  }else{
-    for (xi in 1:con[["use_diff_init"]]){
-      init_used <- 0
-      converge_check <- FALSE
-      while ((converge_check==FALSE) & (init_used<con[["max_init"]])){
-        # ----- Initial values
-        theta_0 <- initValsMSVAR(mdl_out, k)
-        # ----- Estimate using EM algorithm 
-        EM_output_tmp <- MSVAR_EMest(theta_0, mdl_out, k, optim_options)
-        EM_output_tmp[["theta_0"]] = theta_0
-        # ----- Convergence check
-        logLike_tmp = EM_output_tmp[["logLike"]]
-        theta_tmp = EM_output_tmp[["theta"]]
-        converge_check = ((is.finite(logLike_tmp)) & (all(is.finite(theta_tmp))))
-        init_used = init_used + 1
+  optim_options <- list(maxit = con$maxit, thtol = con$thtol)
+  # pre-define list and matrix length for results
+  output_all <- list(con$use_diff_init)
+  max_loglik <- matrix(0, con$use_diff_init, 1)
+  # ---------- Estimate linear model to use for initial values & transformed series
+  init_control <- list(const = TRUE, getSE = FALSE)
+  init_mdl <- ARmdl(Y, p = p, init_control)
+  init_mdl$msmu <- con$msmu
+  init_mdl$msvar <- con$msvar
+  if (is.null(con$init_theta)==TRUE){
+    if (con$method=="EM"){
+      # ----- Estimate using 'use_diff_init' different initial values
+      for (xi in 1:con$use_diff_init){
+        init_used <- 0
+        converge_check <- FALSE
+        while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
+          # ----- Initial values
+          theta_0 <- initVals_MSARmdl(init_mdl, k)  
+          # ----- Estimate using EM algorithm and initial values provided
+          output_tmp <- MSARmdl_em(theta_0, init_mdl, k, optim_options)
+          # ----- Convergence check
+          logLike_tmp <- output_tmp$logLike
+          theta_tmp <- output_tmp$theta
+          converge_check <- ((is.finite(output_tmp$logLike)) & (all(is.finite(output_tmp$theta))))
+          init_used <- init_used + 1
+        }
+        output_tmp$theta_0 <- theta_0
+        max_loglik[xi] <- output_tmp$logLike
+        output_tmp$init_used <- init_used
+        output_all[[xi]] <- output_tmp
       }
-      max_loglik[xi] = logLike_tmp
-      EM_output_tmp[["init_used"]] = init_used
-      EM_output_all[[xi]] = EM_output_tmp
+    }else if (con$method=="MLE"){
+      init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
+      init_mdl$mle_variance_constraint <- con$mle_variance_constraint
+      # ----- Estimate using 'use_diff_init' different initial values
+      for (xi in 1:con$use_diff_init){
+        init_used <- 0
+        converge_check <- FALSE
+        while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
+          # ----- Initial values
+          theta_0 <- initVals_MSARmdl(init_mdl, k)  
+          # ----- Estimate using roptim and initial values provided 
+          output_tmp <- NULL
+          try(
+            output_tmp <- MSARmdl_mle(theta_0, init_mdl, k, optim_options)  
+          )
+          # ----- Convergence check
+          if (is.null(output_tmp)==FALSE){
+            converge_check <- TRUE
+          }else{
+            converge_check <- FALSE
+          }
+          init_used = init_used + 1 
+        }
+        output_tmp$theta_0 <- theta_0
+        max_loglik[xi] <- output_tmp$logLike
+        output_tmp$init_used <- init_used
+        output_all[[xi]] <- output_tmp
+      }
     }
-    if (con[["use_diff_init"]]==1){
-      EM_output = EM_output_tmp
+    if (con$use_diff_init==1){
+      output <- output_tmp
     }else{
       xl = which.max(max_loglik)
       if (length(xl)==0){
-        warning("Model(s) did not converge. Use higher 'use_diff_init' or 'max_init'.")
-        EM_output = EM_output_all[[1]] 
+        warning("Model(s) did not converge. Use higher 'use_diff_init' or 'maxit_converge'.")
+        output <- output_all[[1]] 
       }else{
-        EM_output = EM_output_all[[xl]] 
+        output <- output_all[[xl]] 
       }
     }
-  }
-  # ---------- organize output
-  q <- ncol(Y)
-  Nsig <- (q*(q+1))/2
-  phi_len <- length(c(mdl_out[["phi"]]))
-  theta_mu_ind <- c(rep(1, q + q*(k-1)*msmu), rep(0, Nsig + Nsig*(k-1)*msvar + phi_len + k*k))
-  theta_sig_ind <- c(rep(0, q + q*(k-1)*msmu), rep(1, Nsig + Nsig*(k-1)*msvar), rep(0, phi_len + k*k))
-  theta_var_ind <- c(rep(0, q + q*(k-1)*msmu),rep(t(covar_vech(diag(q))), 1+(k-1)*msvar), rep(0, phi_len + k*k))
-  theta_phi_ind <- c(rep(0, q + q*(k-1)*msmu + Nsig + Nsig*(k-1)*msvar), rep(1, phi_len), rep(0, k*k))
-  theta_P_ind <- c(rep(0, q + q*(k-1)*msmu + Nsig + Nsig*(k-1)*msvar + phi_len), rep(1, k*k))
-  MSVARmdl_output <- EM_output
-  MSVARmdl_output[["theta_mu_ind"]] = theta_mu_ind
-  MSVARmdl_output[["theta_sig_ind"]] = theta_sig_ind
-  MSVARmdl_output[["theta_var_ind"]] = theta_var_ind
-  MSVARmdl_output[["theta_phi_ind"]] = theta_phi_ind
-  MSVARmdl_output[["theta_P_ind"]] = theta_P_ind
-  MSVARmdl_output[["y"]] = mdl_out[["y"]]
-  MSVARmdl_output[["ar"]] = ar
-  MSVARmdl_output[["phi"]] = t(MSVARmdl_output[["phi"]])
-  MSVARmdl_output[["n"]] = mdl_out[["n"]]
-  MSVARmdl_output[["q"]] = mdl_out[["q"]]
-  MSVARmdl_output[["k"]] = k
-  MSVARmdl_output[["x"]] = mdl_out[["x"]]
-  MSVARmdl_output[["X"]] = mdl_out[["X"]]
-  MSVARmdl_output[["msmu"]] = con[["msmu"]]
-  MSVARmdl_output[["msvar"]] = con[["msvar"]]
-  MSVARmdl_output[["control"]] <- con
-  if (con[["getSE"]]==TRUE){
-    Hess <- getHess(MSVARmdl_output, k)
-    info_mat <- solve(-Hess)
-    nearPD_used <- FALSE
-    if ((all(is.na(Hess)==FALSE)) & (any(diag(info_mat)<0))){
-      info_mat <- nearPD(info_mat)
-      nearPD_used <- TRUE
+  }else{
+    if (con$method=="EM"){
+      # ----- Estimate using EM algorithm and initial values provided
+      output <- MSARmdl_em(con$init_value, init_mdl, k, optim_options)
+      output$theta_0 <- con$init_value
+      output$init_used <- 1  
+    }else if (con$method=="MLE"){
+      init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
+      init_mdl$mle_variance_constraint <- con$mle_variance_constraint
+      # ----- Estimate using roptim and initial values provided 
+      output_tmp <- MSARmdl_mle(con$init_value, init_mdl, k, optim_options)  
+      output$theta_0 <- con$init_value
+      output$init_used <- 1  
     }
-    MSVARmdl_output[["Hess"]] <- Hess
-    MSVARmdl_output[["theta_stderr"]] <- sqrt(diag(info_mat))
-    MSVARmdl_output[["info_mat"]] <- info_mat
-    MSVARmdl_output[["nearPD_used"]] <- nearPD_used
   }
-  if (is.null(con[["init_value"]])){
-    MSVARmdl_output[["trace"]] <- EM_output_all
+  # ----- Obtain variables of interest
+  theta_mu_ind <- c(rep(1, 1 + (k-1)*con$msmu), rep(0, 1 + (k-1)*con$msvar + p + k*k))
+  theta_sig_ind <- c(rep(0, 1 + (k-1)*con$msmu), rep(1, 1 + (k-1)*con$msvar), rep(0, p + k*k))
+  theta_phi_ind <- c(rep(0, 2 + (k-1)*con$msmu + (k-1)*con$msvar), rep(1, p), rep(0, k*k))
+  theta_P_ind <- c(rep(0, 2 + (k-1)*con$msmu + (k-1)*con$msvar + p), rep(1, k*k))
+  # ----- Output
+  out <- list(y = init_mdl$y, X = init_mdl$X, x = init_mdl$x, resid = output$resid, mu = output$mu, 
+              coef = NULL, intercept = NULL, phi = output$phi, stdev = sqrt(output$sigma), sigma = output$sigma, 
+              theta = output$theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, 
+              theta_phi_ind = theta_phi_ind, theta_P_ind = theta_P_ind, stationary = NULL, 
+              n = init_mdl$n, p = p, q = 1, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, 
+              St = output$St, eta = output$eta, thl = output$thl, deltath = output$deltath, 
+              iterations = output$iterations, theta_0 = output$theta_0, init_used = output$init_used, 
+              msmu = con$msmu, msvar = con$msvar, control = con)
+  out$AIC <- aic(out$logLike, length(out$theta))
+  out$BIC <- bic(out$logLike, out$n, length(out$theta))
+  # names 
+  names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_", (1:k)) else "mu",
+                        if (con$msvar==TRUE) paste0("sig_", (1:k)) else "sig",
+                        paste0("phi_",(1:p)),
+                        paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
+  # Define class
+  class(out) <- "MSARmdl"
+  if (con$getSE==TRUE){
+    out <- thetaSE(out)
   }
-  return(MSVARmdl_output)
+  if (is.null(con$init_theta)){
+    out$trace <- output_all
+  }
+  return(out)
 }
 
 
-# MSVARmdl (Optimization)
+
+#' @title Markov-switching vector autoregressive model 
+#' 
+#' @description This function estimates a Markov-switching vector autoregressive model 
+#' 
+#' @param Y (Txq) vector with observational data. Required argument.
+#' @param p integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.
+#' @param k integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.
+#' @param control List with optimization options including:
+#' \itemize{
+#'  \item{getSE - }{bool if 'TRUE' standard errors are computed and returned. If 'FALSE' standard errors are not computed. Default is 'FALSE'.}
+#'  \item{msmu - }{indicator for switch in mean (TRUE) or constant mean (FALSE). Default is TRUE.}
+#'  \item{msvar - }{bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is TRUE.}
+#'  \item{init_value - }{vector of initial values. This is optional. Default is NULL, in which case \code{initVals_MSARmdl} is used to generate initial values.}
+#'  \item{method - }{string determining which method to use. Options are 'EM' for EM algorithm or 'MLE' for Maximum Likelihood Estimation.}
+#'  \item{maxit - }{integer determining the maximum number of EM iterations.}
+#'  \item{thtol - }{double determining the convergence criterion for the absolute difference in parameter estimates (theta) between iterations. Default is 1e-6.}
+#'  \item{maxit_converge - }{integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in 'theta' or 'logLike' is NaN another set of initital values (up to 'maxit_converge') is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration in 'maxit'. Default is 500.}
+#'  \item{use_diff_init - }{integer determining how many different initial values (that do not return NaN) to try. Default is 1.}
+#'  \item{mle_stationary_constraint - }{bool indicator determining if only stationary solutions should be considered for autoregressive coefficients (if 'TRUE') or if non-stationary solutions are allowed (if 'FALSE'). This is only used when method='MLE'. Default is 'TRUE'.}
+#'  \item{mle_variance_constraint - }{double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is '1e-6'.}
+#' }
+#' 
+#' @return List with model characteristics
+#' 
+#' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” Journal of the Royal Statistical Society. Series B 39 (1): 1–38
+#' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.” In Markov-Switching Vector Autoregressions, 6–28. Springer
+#' 
+#' @seealso \code{\link{VARmdl}}
+#' @example /examples/MSVARmdl_examples.R
+#' @export
+MSVARmdl <- function(Y, p, k, control = list()){
+  # ----- Set control values
+  con <- list(getSE = TRUE,
+              msmu = TRUE, 
+              msvar = TRUE,
+              init_value = NULL,
+              method = "EM",
+              maxit = 10000,
+              thtol = 1.e-6, 
+              maxit_converge = 500, 
+              use_diff_init = 1,
+              mle_stationary_constraint = TRUE,
+              mle_variance_constraint = 1e-6)
+  # ----- Perform some checks for controls
+  nmsC <- names(con)
+  con[(namc <- names(control))] <- control
+  if(length(noNms <- namc[!namc %in% nmsC])){
+    warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+  }
+  # ---------- Optimization options
+  optim_options <- list(maxit = con$maxit, thtol = con$thtol)
+  # pre-define list and matrix length for results
+  output_all <- list(con$use_diff_init)
+  max_loglik <- matrix(0, con$use_diff_init, 1)
+  # ---------- Estimate linear model to use for initial values & transformed series
+  init_control <- list(const = TRUE, getSE = FALSE)
+  init_mdl <- VARmdl(Y, p = p, init_control)
+  init_mdl$msmu <- con$msmu
+  init_mdl$msvar <- con$msvar
+  if (is.null(con$init_theta)==TRUE){
+    if (con$method=="EM"){
+      # ----- Estimate using 'use_diff_init' different initial values
+      for (xi in 1:con$use_diff_init){
+        init_used <- 0
+        converge_check <- FALSE
+        while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
+          # ----- Initial values
+          theta_0 <- initVals_MSVARmdl(init_mdl, k)
+          # ----- Estimate using EM algorithm and initial values provided
+          output_tmp <- MSVARmdl_em(theta_0, init_mdl, k, optim_options)
+          # ----- Convergence check
+          logLike_tmp <- output_tmp$logLike
+          theta_tmp <- output_tmp$theta
+          converge_check <- ((is.finite(output_tmp$logLike)) & (all(is.finite(output_tmp$theta))))
+          init_used <- init_used + 1
+        }
+        output_tmp$theta_0 <- theta_0
+        max_loglik[xi] <- output_tmp$logLike
+        output_tmp$init_used <- init_used
+        output_all[[xi]] <- output_tmp
+      }
+    }else if (con$method=="MLE"){
+      init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
+      init_mdl$mle_variance_constraint <- con$mle_variance_constraint
+      # ----- Estimate using 'use_diff_init' different initial values
+      for (xi in 1:con$use_diff_init){
+        init_used <- 0
+        converge_check <- FALSE
+        while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
+          # ----- Initial values
+          theta_0 <- initVals_MSVARmdl(init_mdl, k)
+          # ----- Estimate using roptim and initial values provided 
+          output_tmp <- NULL
+          try(
+            output_tmp <- MSVARmdl_mle(theta_0, init_mdl, k, optim_options)  
+          )
+          # ----- Convergence check
+          if (is.null(output_tmp)==FALSE){
+            converge_check <- TRUE
+          }else{
+            converge_check <- FALSE
+          }
+          init_used = init_used + 1
+        }
+        output_tmp$theta_0 <- theta_0
+        max_loglik[xi] <- output_tmp$logLike
+        output_tmp$init_used <- init_used
+        output_all[[xi]] <- output_tmp
+      }
+    }
+    if (con$use_diff_init==1){
+      output = output_tmp
+    }else{
+      xl = which.max(max_loglik)
+      if (length(xl)==0){
+        warning("Model(s) did not converge. Use higher 'use_diff_init' or 'maxit_converge'.")
+        output <- output_all[[1]] 
+      }else{
+        output <- output_all[[xl]] 
+      }
+    }
+  }else{
+    if (con$method=="EM"){
+      # ----- Estimate using EM algorithm and initial values provided
+      output <- MSVARmdl_em(con$init_value, init_mdl, k, optim_options)
+      output$theta_0 <- con$init_value
+      output$init_used <- 1  
+    }else if (con$method=="MLE"){
+      init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
+      init_mdl$mle_variance_constraint <- con$mle_variance_constraint
+      # ----- Estimate using roptim and initial values provided 
+      output_tmp <- MSVARmdl_mle(con$init_value, init_mdl, k, optim_options)  
+      output$theta_0 <- con$init_value
+      output$init_used <- 1  
+    }
+  }
+  # ----- Obtain variables of interest
+  q <- ncol(Y)
+  Nsig <- (q*(q+1))/2
+  phi_len <- q*p*q 
+  theta_mu_ind <- c(rep(1, q + q*(k-1)*con$msmu), rep(0, Nsig + Nsig*(k-1)*con$msvar + phi_len + k*k))
+  theta_sig_ind <- c(rep(0, q + q*(k-1)*con$msmu), rep(1, Nsig + Nsig*(k-1)*con$msvar), rep(0, phi_len + k*k))
+  theta_var_ind <- c(rep(0, q + q*(k-1)*con$msmu), rep(t(covar_vech(diag(q))), 1+(k-1)*con$msvar), rep(0, phi_len + k*k))
+  theta_phi_ind <- c(rep(0, q + q*(k-1)*con$msmu + Nsig + Nsig*(k-1)*con$msvar), rep(1, phi_len), rep(0, k*k))
+  theta_P_ind <- c(rep(0, q + q*(k-1)*con$msmu + Nsig + Nsig*(k-1)*con$msvar + phi_len), rep(1, k*k))
+  out <- list(y = init_mdl$y, X = init_mdl$X, x = init_mdl$x, resid = output$resid, mu = output$mu, coef = NULL, intercept = NULL, phi = output$phi,
+              sigma = output$sigma, theta = output$theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, 
+              theta_phi_ind = theta_phi_ind, stationary = NULL, n = init_mdl$n, p = p, q = q, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, 
+              St = output$St, eta = output$eta, thl = output$thl, deltath = output$deltath,  iterations = output$iterations, theta_0 = output$theta_0,
+              init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, control = con)
+  out$AIC <- aic(out$logLike, length(out$theta))
+  out$BIC <- bic(out$logLike, out$n, length(out$theta))
+  stdev <- list(k)
+  for (xk in 1:k){
+    stdev[[xk]] <- diag(sqrt(diag(out$sigma[[xk]])))
+  }
+  out$stdev <- stdev
+  # names
+  phi_n_tmp <- expand.grid((1:q),(1:p),(1:q))
+  mu_n_tmp <- expand.grid((1:q),(1:k))
+  sig_n_tmp <- expand.grid(covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q))),(1:k))
+  names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_",mu_n_tmp[,1],",",mu_n_tmp[,2]) else  paste0("mu_",(1:q)),
+                        if (con$msvar==TRUE) paste0("sig_",sig_n_tmp[,1],",",sig_n_tmp[,2]) else paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))),
+                        paste0("phi_",paste0(phi_n_tmp[,2],",",phi_n_tmp[,3],phi_n_tmp[,1])),
+                        paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
+  # Define class
+  class(out) <- "MSVARmdl"
+  if (con$getSE==TRUE){
+    out <- thetaSE(out)
+  }
+  if (is.null(con$init_theta)){
+    out$trace <- output_all
+  }
+  return(out)
+}

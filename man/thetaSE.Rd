@@ -10,7 +10,7 @@ thetaSE(mdl)
 \item{mdl}{List with model properties}
 }
 \value{
-List prvided as input with additional attributes 'HESS,'theta_se', 'info_mat', and 'nearPD_used'.
+List provided as input with additional attributes 'HESS,'theta_se', 'info_mat', and 'nearPD_used'.
 }
 \description{
 This function computes the standard errors of the parameters in vector theta. This is done using an approximation of the Hessian matrix (using numDeriv and nearPD if info mat is not PD).

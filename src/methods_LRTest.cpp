@@ -15,8 +15,8 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
   // ---------- Load R functions
   // =============================================================================
   Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function MSmdl_EM = mstest["MSmdl_EM"];
-  Rcpp::Function MSVARmdl_EM = mstest["MSVARmdl_EM"];
+  Rcpp::Function MSmdl = mstest["MSmdl"];
+  Rcpp::Function MSVARmdl = mstest["MSVARmdl"];
   Rcpp::Function ARmdl = mstest["ARmdl"];
   Rcpp::Function VARmdl = mstest["VARmdl"];
   // =============================================================================
@@ -56,7 +56,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
           arma::vec y0 = y0_out["y"];
           //List mdl_h0_tmp = ARmdl_cpp(y0, ar, inter, getSE);
           List mdl_h0_tmp = ARmdl(y0, ar);
-          List mdl_h1_tmp = MSmdl_EM(y0, ar, k1, control);
+          List mdl_h1_tmp = MSmdl(y0, ar, k1, control);
           // test stat
           double l_0 = mdl_h0_tmp["logLike"];
           double l_1 = mdl_h1_tmp["logLike"];
@@ -95,8 +95,8 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
         while (LRT_finite==FALSE){
           List y0_out = simuMSAR(mdl_h0_c, burnin);
           arma::vec y0 = y0_out["y"];
-          List mdl_h0_tmp = MSmdl_EM(y0, ar, k0, control);
-          List mdl_h1_tmp = MSmdl_EM(y0, ar, k1, control);
+          List mdl_h0_tmp = MSmdl(y0, ar, k0, control);
+          List mdl_h1_tmp = MSmdl(y0, ar, k1, control);
           // test stat
           double l_0 = mdl_h0_tmp["logLike"];
           double l_1 = mdl_h1_tmp["logLike"];
@@ -128,7 +128,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
           arma::mat y0 = y0_out["y"];
           //List mdl_h0_tmp = VARmdl(y0, ar, inter, getSE);
           List mdl_h0_tmp = VARmdl(y0, ar);
-          List mdl_h1_tmp = MSVARmdl_EM(y0, ar, k1, control);
+          List mdl_h1_tmp = MSVARmdl(y0, ar, k1, control);
           // test stat
           double l_0 = mdl_h0_tmp["logLike"];
           double l_1 = mdl_h1_tmp["logLike"];
@@ -171,8 +171,8 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
         while (LRT_finite==FALSE){
           List y0_out = simuMSVAR(mdl_h0_c, burnin);
           arma::mat y0 = y0_out["y"];
-          List mdl_h0_tmp = MSVARmdl_EM(y0, ar, k0, control);
-          List mdl_h1_tmp = MSVARmdl_EM(y0, ar, k1, control);
+          List mdl_h0_tmp = MSVARmdl(y0, ar, k0, control);
+          List mdl_h1_tmp = MSVARmdl(y0, ar, k1, control);
           // test stat
           double l_0 = mdl_h0_tmp["logLike"];
           double l_1 = mdl_h1_tmp["logLike"];
@@ -320,22 +320,22 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
     // compute test stat
     if ((k0==1) and (q==1)){
       // MS model & linear model under null hypothesis
-      logL0 = logLike_AR(theta_h0, mdl_h0);  
-      logL1 = MSloglik_fun(theta_h1, mdl_h1, k1);
+      logL0 = logLike_ARmdl(theta_h0, mdl_h0);  
+      logL1 = logLike_MSARmdl(theta_h1, mdl_h1, k1);
     }else if ((k0>1) and (q==1)){
       // MS models
-      logL0 = MSloglik_fun(theta_h0, mdl_h0, k0);
+      logL0 = logLike_MSARmdl(theta_h0, mdl_h0, k0);
       mdl_h0_tmp["P"] = P_h0;
-      logL1 = MSloglik_fun(theta_h1, mdl_h1, k1);
+      logL1 = logLike_MSARmdl(theta_h1, mdl_h1, k1);
     }else if ((k0==1) & (q>1)){
       // MSVAR model & linear model under null hypothesis
-      logL0 = logLike_VAR(theta_h0, mdl_h0);  
-      logL1 = MSVARloglik_fun(theta_h1, mdl_h1, k1);
+      logL0 = logLike_VARmdl(theta_h0, mdl_h0);  
+      logL1 = logLike_MSVARmdl(theta_h1, mdl_h1, k1);
     }else if ((k0>1) & (q>1)){
       // MSVAR models
-      logL0 = MSVARloglik_fun(theta_h0, mdl_h0, k0);
+      logL0 = logLike_MSVARmdl(theta_h0, mdl_h0, k0);
       mdl_h0_tmp["P"] = P_h0;
-      logL1 = MSVARloglik_fun(theta_h1, mdl_h1, k1);
+      logL1 = logLike_MSVARmdl(theta_h1, mdl_h1, k1);
     }else{
       stop("Number of regimes under the Null and number of columns of Y must be >=1");
     }

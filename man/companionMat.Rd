@@ -4,12 +4,10 @@
 \alias{companionMat}
 \title{Companion Matrix}
 \usage{
-companionMat(phi, inter, p, q)
+companionMat(phi, p, q)
 }
 \arguments{
 \item{phi}{matrix of dimension (q x qp) containing autoregressive coefficients}
-
-\item{inter}{vector of dimension (q x 1) containing constants}
 
 \item{p}{integer for number of autoregressive lags}
 

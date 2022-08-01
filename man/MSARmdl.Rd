@@ -2,7 +2,7 @@
 % Please edit documentation in R/models.R
 \name{MSARmdl}
 \alias{MSARmdl}
-\title{Markov-switching autoregressive model by Expectation Minimization algorithm}
+\title{Markov-switching autoregressive model}
 \usage{
 MSARmdl(Y, p, k, control = list())
 }
@@ -12,49 +12,67 @@ MSARmdl(Y, p, k, control = list())
 \item{p}{integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.}
 
 \item{k}{integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.}
-
-\item{control}{List with optimization options including: 
-\itemize{
- \item{msmu - }{indicator for switch in mean (TRUE) or constant mean (FALSE). Default is TRUE.}
- \item{msvar - }{bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is TRUE.}
- \item{maxit - }{integer determining the maximum number of EM iterations.}
- \item{thtol - }{double determining the convergence criterion for the absolute difference in parameter estimates (theta) between iterations. Default is 1e-6.}
- \item{getSE - }{bool if 'TRUE' standard errors are computed and returned. If 'FALSE' standard errors are not computed. Default is 'FALSE'.}
- \item{max_init - }{integer determining the maximum number of initial values to attempt in case solution is NaN. Default is 500.}
- \item{use_diff_init - }{integer determining how many different initial values (that do not return NaN) to try. Default is 1.}
- \item{init_value - }{vector of initial values. This is optional. Default is NUll, in which case 'initValsMS()' is used to generate initial values.}
-}}
 }
 \value{
 List with model characteristics
 }
 \description{
-This function estimates a Markov-switching autoregressive model using the Expectation Minimization (EM) algorithm of Dempster, Laird and Rubin (1977) as explained in Hamilton (1990).
+This function estimates a Markov-switching autoregressive model
 }
 \examples{
+
+
+# ----------------------- Use GNP growth 1951Q2 - 1984Q4 ----------------------- 
+y_gnp_gw_84 <- hamilton84GNP$GNP_logdiff
+
+
+# Set options for model estimation
+control <- list(msmu   = TRUE, 
+                msvar  = FALSE, 
+                method = "MLE",
+                use_diff_init = 10)
+
+# Estimate model with p=4 and switch in mean only as in Hamilton (1989)
+hamilton89_mdl <- MSARmdl(as.matrix(y_gnp_gw_84), p = 4, k = 2, control)
+
+hamilton89_mdl
+
+# plot smoothed probability of each state
+plot(hamilton89_mdl$St[,1], type = 'l')
+plot(hamilton89_mdl$St[,2], type = 'l')
+
+# --------------------------- Use simulated process ----------------------------
 # Define DGP of MS AR process
 mdl_ms2 <- list(n     = 500, 
                 mu    = c(5,10),
                 sigma = c(1,2),
                 phi   = c(0.5,0.2),
                 k     = 2,
-                P     = rbind(c(0.1,0.9),
-                              c(0.9,0.1)))
+                P     = rbind(c(0.90, 0.10),
+                              c(0.10, 0.90)))
                               
 # Simulate process using simuMSAR() function
 y_ms_simu <- simuMSAR(mdl_ms2)
 
 # Set options for model estimation
-control <- list(msmu  = TRUE, 
-                msvar = TRUE, 
+control <- list(msmu   = TRUE, 
+                msvar  = TRUE, 
+                method = "EM",
                 use_diff_init = 10)
 
 # Estimate model
-y_ms_mdl <- MSARmdl(y_ms_simu$y, ar = y_ms_simu$ar, k = y_ms_simu$k, control)
+y_ms_mdl <- MSARmdl(y_ms_simu$y, p = 2, k = 2, control)
+
+y_ms_mdl
+
+
 
 }
 \references{
 Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” Journal of the Royal Statistical Society. Series B 39 (1): 1–38
 
 Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” Journal of econometrics, 45 (1-2): 39–70
+}
+\seealso{
+\code{\link{ARmdl}}
 }

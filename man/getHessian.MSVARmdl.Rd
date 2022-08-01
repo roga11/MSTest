@@ -2,7 +2,7 @@
 % Please edit documentation in R/methods.R
 \name{getHessian.MSVARmdl}
 \alias{getHessian.MSVARmdl}
-\title{Hessian matrix of Markov-switching vector autoregressive}
+\title{Hessian matrix of Markov-switching vector autoregressive model}
 \usage{
 \method{getHessian}{MSVARmdl}(mdl)
 }
