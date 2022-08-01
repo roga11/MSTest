@@ -17,13 +17,5 @@ mdl_msvar2 <- list(n     = 1000,
 # Simulate process using simuMSVAR() function
 y_msvar_simu <- simuMSVAR(mdl_msvar2)
 
-# Set options for model estimation
-control <- list(msmu   = TRUE, 
-                msvar  = TRUE,
-                method = "EM",
-                use_diff_init = 10)
-                
-# Estimate model
-y_msvar_mdl <- MSVARmdl(y_msvar_simu$y, p = 1, k = 2, control)
-
-y_msvar_mdl
+plot(y_msvar_simu$y[,1], type = 'l')
+plot(y_msvar_simu$y[,2], type = 'l')

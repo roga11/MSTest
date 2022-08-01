@@ -1,4 +1,5 @@
-# --------------------- Simulated bivariate VAR(1) process ---------------------
+# -------------------------- Bivariate VAR(1) process --------------------------
+set.seed(1234)
 # Define DGP of VAR process
 mdl_var <- list(n     = 1000, 
                 p     = 1,
@@ -20,7 +21,8 @@ y_var_mdl <- VARmdl(y_simu$y, p = 1, control)
 
 y_var_mdl
 
-# --------------------- Simulated 3 variable VAR(2) process --------------------
+# ----------------------- VAR(2) process with 3 variables ----------------------
+set.seed(1234)
 # Define DGP of VAR process
 mdl_3var2 <- list(n     = 1000, 
                   p     = 2,

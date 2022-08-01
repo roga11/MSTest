@@ -8,11 +8,5 @@ mdl_ar <- list(n     = 500,
 # Simulate process using simuAR() function
 y_simu <- simuAR(mdl_ar)
 
-# Set options for model estimation
-control <- list(const  = TRUE, 
-                getSE  = TRUE)
 
-# Estimate model
-y_ar_mdl <- ARmdl(y_simu$y, p = 2, control)
-
-y_ar_mdl
+plot(y_simu$y, type = 'l')

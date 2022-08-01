@@ -238,6 +238,7 @@ MCpval <- function(test_stat, null_vec, type = "geq") {
 #' 
 #' @return List with simulated autoregressive series and its DGP parameters
 #' 
+#' @example /examples/simuAR_examples.R
 #' @export
 simuAR <- function(mdl_h0, burnin = 100L) {
     .Call(`_MSTest_simuAR`, mdl_h0, burnin)
@@ -259,6 +260,7 @@ simuAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @return List with simulated Markov-switching autoregressive process and its DGP properties
 #' 
+#' @example /examples/simuMSAR_examples.R
 #' @export
 simuMSAR <- function(mdl_h0, burnin = 100L) {
     .Call(`_MSTest_simuMSAR`, mdl_h0, burnin)
@@ -279,6 +281,7 @@ simuMSAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @return List with simulated vector autoregressive series and its DGP parameters
 #' 
+#' @example /examples/simuVAR_examples.R
 #' @export
 simuVAR <- function(mdl_h0, burnin = 100L) {
     .Call(`_MSTest_simuVAR`, mdl_h0, burnin)
@@ -301,6 +304,7 @@ simuVAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @return List with simulated vector autoregressive series and its DGP parameters
 #' 
+#' @example /examples/simuMSVAR_examples.R
 #' @export
 simuMSVAR <- function(mdl_h0, burnin = 100L) {
     .Call(`_MSTest_simuMSVAR`, mdl_h0, burnin)
@@ -317,6 +321,7 @@ simuMSVAR <- function(mdl_h0, burnin = 100L) {
 #'   
 #' @return List with simulated series and its DGP parameters
 #' 
+#' @example /examples/simuNorm_examples.R
 #' @export
 simuNorm <- function(mdl_h0) {
     .Call(`_MSTest_simuNorm`, mdl_h0)
@@ -337,6 +342,7 @@ simuNorm <- function(mdl_h0) {
 #' 
 #' @return List with simulated series and its DGP parameters
 #' 
+#' @example /examples/simuHMM_examples.R
 #' @export
 simuHMM <- function(mdl_h0, burnin = 100L) {
     .Call(`_MSTest_simuHMM`, mdl_h0, burnin)

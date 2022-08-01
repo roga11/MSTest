@@ -117,9 +117,11 @@ ARmdl <- function(Y, p, control = list()){
   b0 <- matrix(0, p + con$const,1)
   phi <- matrix(0, p , 1)
   n = nrow(lagged_vals$y)
+  npar = p
   # ----- estimate model
   if (con$const==TRUE){
     X     <- cbind(1, x)
+    npar  <- npar + 1
     b0    <- solve(t(X)%*%X)%*%t(X)%*%y
     phi   <- b0[(2:npar),1]
     inter <- b0[1,1]
@@ -341,7 +343,6 @@ HMmdl <- function(Y, k, control = list()){
         output_all[[xi]] <- output_tmp
       }
     }else if (con$method=="MLE"){
-      init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
       init_mdl$mle_variance_constraint <- con$mle_variance_constraint
       # ----- Estimate using 'use_diff_init' different initial values
       for (xi in 1:con$use_diff_init){
@@ -349,7 +350,7 @@ HMmdl <- function(Y, k, control = list()){
         converge_check <- FALSE
         while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
           # ----- Initial values
-          theta_0 <- initVals_MSVARmdl(init_mdl, k)
+          theta_0 <- initVals_HMmdl(init_mdl, k)
           # ----- Estimate using roptim and initial values provided 
           output_tmp <- NULL
           try(
@@ -387,7 +388,6 @@ HMmdl <- function(Y, k, control = list()){
       output$theta_0 <- con$init_value
       output$init_used <- 1  
     }else if (con$method=="MLE"){
-      init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
       init_mdl$mle_variance_constraint <- con$mle_variance_constraint
       # ----- Estimate using roptim and initial values provided 
       output_tmp <- HMmdl_mle(con$init_value, init_mdl, k, optim_options)  
@@ -415,11 +415,17 @@ HMmdl <- function(Y, k, control = list()){
   }
   out$stdev <- stdev
   # names
-  mu_n_tmp <- expand.grid((1:q),(1:k))
-  sig_n_tmp <- expand.grid(covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q))),(1:k))
-  names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_",mu_n_tmp[,1],",",mu_n_tmp[,2]) else  paste0("mu_",(1:q)),
-                        if (con$msvar==TRUE) paste0("sig_",sig_n_tmp[,1],",",sig_n_tmp[,2]) else paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))),
-                        paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
+  if (q>1){
+    mu_n_tmp <- expand.grid((1:q),(1:k))
+    sig_n_tmp <- expand.grid(covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q))),(1:k))
+    names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_",mu_n_tmp[,1],",",mu_n_tmp[,2]) else  paste0("mu_",(1:q)),
+                          if (con$msvar==TRUE) paste0("sig_",sig_n_tmp[,1],",",sig_n_tmp[,2]) else paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))),
+                          paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))  
+  }else if (q==1){
+    names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_", (1:k)) else "mu",
+                          if (con$msvar==TRUE) paste0("sig_", (1:k)) else "sig",
+                          paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
+  }
   # Define class
   class(out) <- "HMmdl"
   if (con$getSE==TRUE){
@@ -437,22 +443,22 @@ HMmdl <- function(Y, k, control = list()){
 #' 
 #' @description This function estimates a Markov-switching autoregressive model
 #' 
-#' @param Y (Tx1) vector with observational data. Required argument.
+#' @param Y (T x 1) vector with observational data. Required argument.
 #' @param p integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.
 #' @param k integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.
 #' @param control List with optimization options including: 
 #' \itemize{
 #'  \item{getSE - }{bool if 'TRUE' standard errors are computed and returned. If 'FALSE' standard errors are not computed. Default is 'FALSE'.}
-#'  \item{msmu - }{indicator for switch in mean (TRUE) or constant mean (FALSE). Default is TRUE.}
-#'  \item{msvar - }{bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is TRUE.}
-#'  \item{init_value - }{vector of initial values. This is optional. Default is NULL, in which case \code{initVals_MSARmdl} is used to generate initial values.}
+#'  \item{msmu - }{indicator for switch in mean (TRUE) or constant mean (FALSE). Default is 'TRUE.'}
+#'  \item{msvar - }{bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is 'TRUE.'}
+#'  \item{init_value - }{vector of initial values. This is optional. Default is 'NULL', in which case \code{initVals_MSARmdl} is used to generate initial values.}
 #'  \item{method - }{string determining which method to use. Options are 'EM' for EM algorithm or 'MLE' for Maximum Likelihood Estimation.}
 #'  \item{maxit - }{integer determining the maximum number of EM iterations.}
 #'  \item{thtol - }{double determining the convergence criterion for the absolute difference in parameter estimates (theta) between iterations. Default is 1e-6.}
 #'  \item{maxit_converge - }{integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in 'theta' or 'logLike' is NaN another set of initital values (up to 'maxit_converge') is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration in 'maxit'. Default is 500.}
 #'  \item{use_diff_init - }{integer determining how many different initial values (that do not return NaN) to try. Default is 1.}
 #'  \item{mle_stationary_constraint - }{bool indicator determining if only stationary solutions should be considered for autoregressive coefficients (if 'TRUE') or if non-stationary solutions are allowed (if 'FALSE'). This is only used when method='MLE'. Default is 'TRUE'.}
-#'  \item{mle_variance_constraint - }{double used to determine the lower bound on variance. Specifically, this value is multiplied by the variance of the linear (one regime) model to determine the lower bound. For example, if '0.01' then lower bound is 1% of variance from linear model. This is only used when method='MLE' and should be between 0 and 1. Default is '0.01'.}
+#'  \item{mle_variance_constraint - }{double used to determine the lower bound on variance. Specifically, this value is multiplied by the variance of the linear (one regime) model to determine the lower bound. For example, if '0.01' then lower bound is 1 \% of variance from linear model. This is only used when method='MLE' and should be between 0 and 1. Default is '0.01'.}
 #' }
 #' 
 #' @return List with model characteristics

@@ -371,6 +371,77 @@ thetaSE <- function(mdl){
   return(mdl)
 }
 
+#' @title Hidden Markov model maximum likelihood estimation
+#' 
+#' @description This function computes estimate a Hidden Markov model using MLE.
+#' 
+#' @param theta_0 vector containing initial values to use in optimization
+#' @param mdl_in List with model properties (can be obtained from estimating linear model i.e., using \code{ARmdl()})
+#' @param k integer determining the number of regimes
+#' @param optim_options List containing 
+#' \itemize{
+#'  \item{maxit - }{maximum number of iterations.}
+#'  \item{thtol - }{convergence criterion.}
+#'}
+#'
+#' @return List with model attributes
+#' 
+#' @export
+HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
+  # ----- Define function environment
+  HMmdl_mle_env <- rlang::env()
+  # set environment variables
+  HMmdl_mle_env$k <- k
+  HMmdl_mle_env$msmu <- mdl_in$msmu
+  HMmdl_mle_env$msvar <- mdl_in$msvar
+  HMmdl_mle_env$var_k1 <- mdl_in$sigma
+  HMmdl_mle_env$mle_variance_constraint <- mdl_in$mle_variance_constraint
+  # ----------- MSARmdl_mle equality constraint functions
+  loglik_const_eq_HMmdl <- function(theta){
+    # ----- Load equality constraint parameters
+    k <- get("k", envir = HMmdl_mle_env)
+    # ----- constraint
+    P = matrix(theta[(length(theta)-k*k+1):(length(theta))],k,k)
+    constraint = colSums(P)-1
+    return(constraint)
+  }
+  # ---------- MSARmdl_mle inequality constraint functions
+  loglik_const_ineq_HMmdl <- function(theta){
+    # ----- Load inequality constraint parameters
+    k <- get("k", envir = HMmdl_mle_env)
+    msmu <- get("msmu", envir = HMmdl_mle_env)
+    msvar <- get("msvar", envir = HMmdl_mle_env)
+    var_k1 <- get("var_k1", envir = HMmdl_mle_env)
+    mle_variance_constraint <- get("mle_variance_constraint", envir = HMmdl_mle_env)
+    # ----- constraint
+    # transition probabilities
+    Pvec <- theta[(length(theta)-k*k+1):(length(theta))]
+    ineq_constraint <- c(Pvec, 1-Pvec)
+    if (mle_variance_constraint>=0){
+      # variances (lower bound is 1% of single regime variance)
+      vars <- theta[c(rep(0, 1 + (k-1)*msmu), rep(1, 1 + (k-1)*msvar), rep(0, k*k))==1] - mle_variance_constraint*var_k1
+      ineq_constraint <- c(vars, ineq_constraint)
+    }
+    return(ineq_constraint)
+  }
+  # use nloptr optimization to minimize (maximize) likelihood
+  res <- nloptr::slsqp(x0 = theta_0,
+                       fn = logLike_HMmdl_min,
+                       gr = NULL,
+                       lower = NULL,
+                       upper = NULL,
+                       hin = loglik_const_ineq_HMmdl,
+                       heq = loglik_const_eq_HMmdl,
+                       nl.info = FALSE,
+                       control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
+                       mdl = mdl_in,
+                       k = k) 
+  output <- ExpectationM_HMmdl(res$par, mdl_in, k)
+  output$iterations <- res$iter
+  output$St <- output$xi_t_T
+  return(output)
+}
+
 #' @title Markov-switching autoregressive maximum likelihood estimation
 #' 
 #' @description This function computes estimate a Markov-switching autoregressive model using MLE.
@@ -548,6 +619,26 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   return(output)
 }
 
+
+#' @title Print summary of a \code{Nmdl} object
+#'
+#'
+#' @inheritParams base::print
+#' @export
+#'
+print.Nmdl <- function(mdl, digits = getOption("digits")){
+  cat("\nNormally distributed model\n")
+  frame_tmp <- data.frame(coef = mdl$theta)
+  if (mdl$control$getSE==TRUE){
+    frame_tmp["s.e."] <- mdl$theta_se
+  }
+  rownames(frame_tmp) <- names(mdl$theta)
+  print(format(signif(frame_tmp, max(1L, digits - 2L))))
+  cat(paste("\nlog-likelihood = "),mdl$logLike)
+  cat(paste("\nAIC = "),mdl$AIC)
+  cat(paste("\nBIC = "),mdl$BIC)
+  invisible(mdl)
+}
 
 
 #' @title Print summary of an \code{ARmdl} object

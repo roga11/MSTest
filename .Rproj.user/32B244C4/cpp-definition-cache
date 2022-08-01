@@ -1,7 +1,7 @@
 [
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-        "file_last_write": 1659330000.0,
+        "file_last_write": 1659377460.0,
         "definitions": [
             {
                 "usr": "c:@F@cov2corr#$@N@arma@S@Mat>#d#",
@@ -149,7 +149,7 @@
                 "parent_name": "",
                 "name": "simuAR(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 579,
+                "line": 580,
                 "column": 6,
                 "hidden": false
             },
@@ -159,7 +159,7 @@
                 "parent_name": "",
                 "name": "simuMSAR(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 632,
+                "line": 634,
                 "column": 6,
                 "hidden": false
             },
@@ -169,7 +169,7 @@
                 "parent_name": "",
                 "name": "simuVAR(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 726,
+                "line": 729,
                 "column": 6,
                 "hidden": false
             },
@@ -179,7 +179,7 @@
                 "parent_name": "",
                 "name": "simuMSVAR(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 791,
+                "line": 795,
                 "column": 6,
                 "hidden": false
             },
@@ -189,7 +189,7 @@
                 "parent_name": "",
                 "name": "simuNorm(Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 893,
+                "line": 898,
                 "column": 6,
                 "hidden": false
             },
@@ -199,7 +199,7 @@
                 "parent_name": "",
                 "name": "simuHMM(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 948,
+                "line": 954,
                 "column": 6,
                 "hidden": false
             },
@@ -209,7 +209,7 @@
                 "parent_name": "",
                 "name": "logLike_Nmdl(arma::vec, Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1030,
+                "line": 1036,
                 "column": 8,
                 "hidden": false
             },
@@ -219,7 +219,7 @@
                 "parent_name": "",
                 "name": "logLike_ARmdl(arma::vec, Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1065,
+                "line": 1071,
                 "column": 8,
                 "hidden": false
             },
@@ -229,7 +229,7 @@
                 "parent_name": "",
                 "name": "logLike_VARmdl(arma::vec, Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1092,
+                "line": 1098,
                 "column": 8,
                 "hidden": false
             },
@@ -239,7 +239,7 @@
                 "parent_name": "",
                 "name": "logLike_HMmdl(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1139,
+                "line": 1145,
                 "column": 8,
                 "hidden": false
             },
@@ -249,7 +249,7 @@
                 "parent_name": "",
                 "name": "logLike_HMmdl_min(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1224,
+                "line": 1230,
                 "column": 8,
                 "hidden": false
             },
@@ -259,7 +259,7 @@
                 "parent_name": "",
                 "name": "logLike_MSARmdl(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1242,
+                "line": 1248,
                 "column": 8,
                 "hidden": false
             },
@@ -269,7 +269,7 @@
                 "parent_name": "",
                 "name": "logLike_MSARmdl_min(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1321,
+                "line": 1327,
                 "column": 8,
                 "hidden": false
             },
@@ -279,7 +279,7 @@
                 "parent_name": "",
                 "name": "logLike_MSVARmdl(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1340,
+                "line": 1346,
                 "column": 8,
                 "hidden": false
             },
@@ -289,7 +289,7 @@
                 "parent_name": "",
                 "name": "logLike_MSVARmdl_min(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1461,
+                "line": 1467,
                 "column": 8,
                 "hidden": false
             },
@@ -299,7 +299,7 @@
                 "parent_name": "",
                 "name": "ExpectationM_HMmdl(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1482,
+                "line": 1488,
                 "column": 6,
                 "hidden": false
             },
@@ -309,7 +309,7 @@
                 "parent_name": "",
                 "name": "ExpectationM_MSARmdl(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1601,
+                "line": 1607,
                 "column": 6,
                 "hidden": false
             },
@@ -319,7 +319,7 @@
                 "parent_name": "",
                 "name": "ExpectationM_MSVARmdl(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1712,
+                "line": 1718,
                 "column": 6,
                 "hidden": false
             },
@@ -329,7 +329,7 @@
                 "parent_name": "",
                 "name": "EMaximization_HMmdl(arma::vec, Rcpp::List, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1828,
+                "line": 1835,
                 "column": 6,
                 "hidden": false
             },
@@ -339,7 +339,7 @@
                 "parent_name": "",
                 "name": "EMaximization_MSARmdl(arma::vec, Rcpp::List, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1950,
+                "line": 1957,
                 "column": 6,
                 "hidden": false
             },
@@ -349,7 +349,7 @@
                 "parent_name": "",
                 "name": "EMaximization_MSVARmdl(arma::vec, Rcpp::List, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 2087,
+                "line": 2094,
                 "column": 6,
                 "hidden": false
             },
@@ -359,7 +359,7 @@
                 "parent_name": "",
                 "name": "EMiter_HMmdl(Rcpp::List, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 2269,
+                "line": 2276,
                 "column": 6,
                 "hidden": false
             },
@@ -369,7 +369,7 @@
                 "parent_name": "",
                 "name": "EMiter_MSARmdl(Rcpp::List, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 2316,
+                "line": 2323,
                 "column": 6,
                 "hidden": false
             },
@@ -379,7 +379,7 @@
                 "parent_name": "",
                 "name": "EMiter_MSVARmdl(Rcpp::List, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 2364,
+                "line": 2371,
                 "column": 6,
                 "hidden": false
             },
@@ -389,7 +389,7 @@
                 "parent_name": "",
                 "name": "HMmdl_em(arma::vec, Rcpp::List, int, Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 2414,
+                "line": 2421,
                 "column": 6,
                 "hidden": false
             },
@@ -399,7 +399,7 @@
                 "parent_name": "",
                 "name": "MSARmdl_em(arma::vec, Rcpp::List, int, Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 2452,
+                "line": 2459,
                 "column": 6,
                 "hidden": false
             },
@@ -409,7 +409,7 @@
                 "parent_name": "",
                 "name": "MSVARmdl_em(arma::vec, Rcpp::List, int, Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 2489,
+                "line": 2496,
                 "column": 6,
                 "hidden": false
             }

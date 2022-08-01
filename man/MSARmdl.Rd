@@ -7,11 +7,26 @@
 MSARmdl(Y, p, k, control = list())
 }
 \arguments{
-\item{Y}{(Tx1) vector with observational data. Required argument.}
+\item{Y}{(T x 1) vector with observational data. Required argument.}
 
 \item{p}{integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.}
 
 \item{k}{integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.}
+
+\item{control}{List with optimization options including: 
+\itemize{
+ \item{getSE - }{bool if 'TRUE' standard errors are computed and returned. If 'FALSE' standard errors are not computed. Default is 'FALSE'.}
+ \item{msmu - }{indicator for switch in mean (TRUE) or constant mean (FALSE). Default is 'TRUE.'}
+ \item{msvar - }{bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is 'TRUE.'}
+ \item{init_value - }{vector of initial values. This is optional. Default is 'NULL', in which case \code{initVals_MSARmdl} is used to generate initial values.}
+ \item{method - }{string determining which method to use. Options are 'EM' for EM algorithm or 'MLE' for Maximum Likelihood Estimation.}
+ \item{maxit - }{integer determining the maximum number of EM iterations.}
+ \item{thtol - }{double determining the convergence criterion for the absolute difference in parameter estimates (theta) between iterations. Default is 1e-6.}
+ \item{maxit_converge - }{integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in 'theta' or 'logLike' is NaN another set of initital values (up to 'maxit_converge') is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration in 'maxit'. Default is 500.}
+ \item{use_diff_init - }{integer determining how many different initial values (that do not return NaN) to try. Default is 1.}
+ \item{mle_stationary_constraint - }{bool indicator determining if only stationary solutions should be considered for autoregressive coefficients (if 'TRUE') or if non-stationary solutions are allowed (if 'FALSE'). This is only used when method='MLE'. Default is 'TRUE'.}
+ \item{mle_variance_constraint - }{double used to determine the lower bound on variance. Specifically, this value is multiplied by the variance of the linear (one regime) model to determine the lower bound. For example, if '0.01' then lower bound is 1 \% of variance from linear model. This is only used when method='MLE' and should be between 0 and 1. Default is '0.01'.}
+}}
 }
 \value{
 List with model characteristics
@@ -42,6 +57,7 @@ plot(hamilton89_mdl$St[,1], type = 'l')
 plot(hamilton89_mdl$St[,2], type = 'l')
 
 # --------------------------- Use simulated process ----------------------------
+set.seed(1234)
 # Define DGP of MS AR process
 mdl_ms2 <- list(n     = 500, 
                 mu    = c(5,10),
@@ -50,7 +66,7 @@ mdl_ms2 <- list(n     = 500,
                 k     = 2,
                 P     = rbind(c(0.90, 0.10),
                               c(0.10, 0.90)))
-                              
+
 # Simulate process using simuMSAR() function
 y_ms_simu <- simuMSAR(mdl_ms2)
 

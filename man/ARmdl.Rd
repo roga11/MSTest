@@ -50,6 +50,7 @@ List with model attributes which include:
 This function estimates an autoregresive model
 }
 \examples{
+set.seed(1234)
 # Define DGP of AR process
 mdl_ar <- list(n     = 500, 
                mu    = 5,
