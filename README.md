@@ -1,6 +1,6 @@
 # MSTest
 
-This package implements hypothesis testing procedures that can be used to identify the number of regimes in a Markov-Switching model. It includes the likelihood ratio test described in Hansen (1992), the optimal test for regime switching of Carrasco, Hu, & Ploberger (2014), the Monte Carlo moment-based test of Dufour & Luger (2017), the parametric bootstrap test described in Qu & Zhuo (2021) and Kasahara & Shimotsu (2018), and finally the Monte Carlo Likelihood ratio tests of Rodriguez Rondon & Dufour (2022). 
+This package implements hypothesis testing procedures that can be used to identify the number of regimes in a Markov-Switching model. It includes the Monte Carlo moment-based test of Dufour & Luger (2017), the parametric bootstrap test described in Qu & Zhuo (2021) and Kasahara & Shimotsu (2018), the Monte Carlo Likelihood ratio tests of Rodriguez Rondon & Dufour (2022), the optimal test for regime switching of Carrasco, Hu, & Ploberger (2014), and the likelihood ratio test described in Hansen (1992).
 
 In addition to testing procedures, the package also includes functions that can be used to simulate: autoregressive, vector autoregressive, Markov switching autoregressive, and Markov switching vector autoregressive processes among others. Model estimation procedures are also available.
 
