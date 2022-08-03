@@ -70,7 +70,7 @@ lines(y_ms_simu$St, col = 'red', lty = 2)
 
 This third example, the 'simuMSVAR' function to simulate a bivariate Markov switching vector autoregressive process and then uses 'MSVARmdl' to estimate the model. Estimated coefficients may be compared with the true parameters used to generate the data. A plot also shows the fit of the smoothed probabilities. 
 
-```{r}
+```r
 set.seed(1234)
 # Define DGP of MS VAR process
 mdl_msvar2 <- list(n     = 1000, 
