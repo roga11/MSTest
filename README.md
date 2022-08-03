@@ -10,15 +10,15 @@ For a more detailed description of this package see Rodriguez Rondon & Dufour (2
 
 Currently, this package is only available through github. To install it you can use the following (requires 'devtools' package): 
 
-```{r}
+```r
 devtools::install_github("roga11/MSTest")
 ```
 
 ## Examples
 
-This first example uses the US GNP growth data from 1951Q2-1984Q4 considered in Hamilton (1989). The data is made available as \code{\link{hamilton84GNP}} through this package. In Hamilton (1989), the model is estimated with four autoregressive lags and only the mean is allowed to change between two (i.e., expansionary and recessionary) regimes and it is estimated by MLE and so we begin by estimating that model.  Estimation results can be compared with those found in Hamilton (1994) p. 698. Note however, that standard errors here were obtained using a different approximation method and hence these may differ slightly. 
+This first example uses the US GNP growth data from 1951Q2-1984Q4 considered in Hamilton (1989). The data is made available as 'hamilton84GNP' through this package. In Hamilton (1989), the model is estimated with four autoregressive lags and only the mean is allowed to change between two (i.e., expansionary and recessionary) regimes and it is estimated by MLE and so we begin by estimating that model.  Estimation results can be compared with those found in Hamilton (1994) p. 698. Note however, that standard errors here were obtained using a different approximation method and hence these may differ slightly. 
 
-```{r}
+```r
 y_gnp_gw_84 <- hamilton84GNP$GNP_logdiff
 
 
@@ -37,9 +37,9 @@ hamilton89_mdl
 plot(hamilton89_mdl$St[,2], type = 'l')
 ```
  
-This next example uses the \code{\link{simuMSAR}} function to simulate a Markov switching autoregressive process and then uses \code{\link{MSARmdl}} to estimate the model. Estimated coefficients may be compared with the true parameters used to generate the data. A plot also shows the fit of the smoothed probabilities. 
+This next example uses the 'simuMSAR' function to simulate a Markov switching autoregressive process and then uses 'MSARmdl' to estimate the model. Estimated coefficients may be compared with the true parameters used to generate the data. A plot also shows the fit of the smoothed probabilities. 
 
-```{r}
+```r
 set.seed(1234)
 # Define DGP of MS AR process
 mdl_ms2 <- list(n     = 500, 
@@ -68,7 +68,7 @@ plot(y_ms_mdl$St[,1], type = 'l')
 lines(y_ms_simu$St, col = 'red', lty = 2)
 ```
 
-This third example, the \code{\link{simuMSVAR}} function to simulate a bivariate Markov switching vector autoregressive process and then uses \code{\link{MSVARmdl}} to estimate the model. Estimated coefficients may be compared with the true parameters used to generate the data. A plot also shows the fit of the smoothed probabilities. 
+This third example, the 'simuMSVAR' function to simulate a bivariate Markov switching vector autoregressive process and then uses 'MSVARmdl' to estimate the model. Estimated coefficients may be compared with the true parameters used to generate the data. A plot also shows the fit of the smoothed probabilities. 
 
 ```{r}
 set.seed(1234)
