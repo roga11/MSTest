@@ -52,8 +52,7 @@ hamilton89_mdl <- MSARmdl(as.matrix(y_gnp_gw_84), p = 4, k = 2, control)
 
 hamilton89_mdl
 
-# plot smoothed probability of each state
-plot(hamilton89_mdl$St[,1], type = 'l')
+# plot smoothed probability of recessionary state
 plot(hamilton89_mdl$St[,2], type = 'l')
 
 # --------------------------- Use simulated process ----------------------------
@@ -81,6 +80,8 @@ y_ms_mdl <- MSARmdl(y_ms_simu$y, p = 2, k = 2, control)
 
 y_ms_mdl
 
+plot(y_ms_mdl$St[,1], type = 'l')
+lines(y_ms_simu$St, col = 'red', lty = 2)
 
 
 }

@@ -27,3 +27,6 @@ control <- list(msmu   = TRUE,
 y_msvar_mdl <- MSVARmdl(y_msvar_simu$y, p = 1, k = 2, control)
 
 y_msvar_mdl
+
+plot(y_msvar_mdl$St[,2], type = 'l')
+lines(y_msvar_simu$St, col = 'red', lty = 2)
