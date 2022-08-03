@@ -7,47 +7,51 @@
 ARmdl(Y, p, control = list())
 }
 \arguments{
-\item{Y}{vector of observations with dimension (n x 1)}
+\item{Y}{a \code{(T x 1)} matrix of observations. Required.}
 
-\item{p}{integer determining the number of autoregressive lags}
+\item{p}{integer determining the number of autoregressive lags. Required.}
 
-\item{control}{List with model options including:
+\item{control}{List with model options including: 
 \itemize{
-\item{const - }{boolean determining whether to estimate model with constant, if 'TRUE', or not, if 'FALSE'.}
-\item{getSE - }{boolean determining whether to compute standard errors of parameters, if 'TRUE', or not, if 'FALSE'.}
+\item{\code{const}: }{Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.}
+\item{\code{getSE}: }{Boolean determining whether to compute standard errors of parameters if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.}
 }}
 }
 \value{
-List with model attributes which include:
+List of class \code{ARmdl} (\code{S3} object) with model attributes including:
 \itemize{
-  \item{y - }{vector of observations of dimension (n x 1).}
-  \item{X - }{matrix of lagged observations (with or without vector of 1s depending on const='TRUE' or const='FALSE').}
-  \item{x - }{matrix of lagged observations without vector of 1s.}
-  \item{resid - }{vector of residuals.}
-  \item{mu - }{mean of the process}
-  \item{coef - }{coefficient estimates. This is the same as phi if const='FALSE'.}
-  \item{intercept - }{coefficient estimate of intercept.}
-  \item{phi - }{autoregressive coefficient estimates. This is the same as coef if const='FALSE'.}
-  \item{stdev - }{standard deviations.}
-  \item{sigma - }{variance.}
-  \item{theta - }{vector containing: mu, sigma, and phi.}
-  \item{theta_mu_ind - }{vector indicating location of mean.}
-  \item{theta_sig_ind - }{vector indicating location of variance.}
-  \item{theta_phi_ind - }{vector indicating location of autoregressive coefficients.}
-  \item{stationary - }{bool indicating if process is stationary 'TRUE' or non-stationary 'FALSE'.}
-  \item{n - }{number of observations after transofrmation due to lags (i.e., T-p observations).}
-  \item{p - }{number of autoregressive parameters.}
-  \item{q - }{number of serires. This is always 1 in ARmdl.}
-  \item{k - }{number of regimes. This is always 1 in ARmdl.}
-  \item{logLike - }{log-likelihood.}
-  \item{Hess - }{Hessian matrix. Approximated using numDeriv package and only returned if getSE='TRUE'.}
-  \item{info_mat - }{Information matrix. Computed as the inverse of -Hess which is approximated using numDeriv package. If matrix is not PD then nearest PD matrix is obtained using nearPD. Only returned if getSE='TRUE'.}
-  \item{nearPD_used - }{Bool determining whether nearPD was used on infoMat 'TRUE' or not 'FALSE'. Only returned if getSE='TRUE'.}
-  \item{theta_se - }{standard errors of parameters in theta. Only returned if getSE='TRUE'.}
+  \item{\code{y}: }{a \code{(T-p x 1)} matrix of observations.}
+  \item{\code{X}: }{a \code{(T-p x p + const)} matrix of lagged observations with a leading column of \code{1}s if \code{const=TRUE} or not if \code{const=FALSE}.}
+  \item{\code{x}: }{a \code{(T-p x p)} matrix of lagged observations.}
+  \item{\code{resid}: }{a \code{(T-p x 1)} matrix of residuals.}
+  \item{\code{mu}: }{estimated mean of the process.}
+  \item{\code{coef}: }{coefficient estimates. First value is the intercept (i.e., not \code{mu}) if \code{const=TRUE}. This is the same as \code{phi} if \code{const=FALSE}.}
+  \item{\code{intercept}: }{estimate of intercept.}
+  \item{\code{phi}: }{estimates of autoregressive coefficients.}
+  \item{\code{stdev}: }{estimated standard deviation of the process.}
+  \item{\code{sigma}: }{estimated variance of the process.}
+  \item{\code{theta}: }{vector containing: \code{mu}, \code{sigma}, and \code{phi}.}
+  \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
+  \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
+  \item{\code{theta_var_ind}: }{vector indicating location of variances with \code{1} and \code{0} otherwise. This is the same as \code{theta_sig_ind} in \code{ARmdl}.}
+  \item{\code{theta_phi_ind}: }{vector indicating location of autoregressive coefficients with \code{1} and \code{0} otherwise.}
+  \item{\code{stationary}: }{Boolean indicating if process is stationary if \code{TRUE} or non-stationary if \code{FALSE}.}
+  \item{\code{n}: }{number of observations after lag transformation (i.e., \code{n = T-p}).}
+  \item{\code{p}: }{number of autoregressive lags.}
+  \item{\code{q}: }{number of series. This is always \code{1} in \code{ARmdl}.}
+  \item{\code{k}: }{number of regimes. This is always \code{1} in \code{ARmdl}.}
+  \item{\code{control}: }{List with model options used.}
+  \item{\code{logLike}: }{log-likelihood.}
+  \item{\code{AIC}: }{Akaike information criterion.}
+  \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
+  \item{\code{Hess}: }{Hessian matrix. Approximated using \code{numDeriv} package and only returned if \code{getSE=TRUE}.}
+  \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess} which is approximated using \code{hessian} function from the \code{numDeriv} package. If matrix is not PD then nearest PD matrix is obtained using \code{nearPD} function from \code{lfm} package. Only returned if \code{getSE=TRUE}.}
+  \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
+  \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
 }
 }
 \description{
-This function estimates an autoregresive model
+This function estimates an autoregresive model with \code{p} lags. This can be used for the null hypothesis of a linear model against an alternative hypothesis of a Markov switching auttoregresive model with k regimes.
 }
 \examples{
 set.seed(1234)

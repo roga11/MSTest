@@ -2,19 +2,61 @@
 % Please edit documentation in R/models.R
 \name{Nmdl}
 \alias{Nmdl}
-\title{Normal dis model}
+\title{Normal distribution model}
 \usage{
 Nmdl(Y, control = list())
 }
 \arguments{
-\item{Y}{matrix of observations with dimension (n x q)}
+\item{Y}{a \code{(T x q)} matrix of observations. Required.}
 
 \item{control}{List with model options including:
 \itemize{
-\item{const - }{boolean determining whether to estimate model with constant, if 'TRUE', or not, if 'FALSE'.}
-\item{getSE - }{boolean determining whether to compute standard errors of parameters, if 'TRUE', or not, if 'FALSE'.}
+\item{\code{const}: }{Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.}
+\item{\code{getSE}: }{Boolean determining whether to compute standard errors of parameters if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.}
 }}
 }
+\value{
+List of class \code{Nmdl} (\code{S3} object) with model attributes including:
+\itemize{
+  \item{\code{y}: }{a \code{(T x q)} matrix of observations.}
+  \item{\code{resid}: }{a \code{(T x q)} matrix of residuals.}
+  \item{\code{mu}: }{a \code{(1 x q)} vector of estimated means of each process.}
+  \item{\code{stdev}: }{a \code{(q x 1)} vector of estimated standard deviation of each process.}
+  \item{\code{sigma}: }{a \code{(q x q)} estimated covariance matrix.}
+  \item{\code{theta}: }{vector containing: \code{mu} and \code{vech(sigma)}.}
+  \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
+  \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
+  \item{\code{theta_var_ind}: }{vector indicating location of variances with \code{1} and \code{0} otherwise.}
+  \item{\code{n}: }{number of observations (same as \code{T}).}
+  \item{\code{q}: }{number of series.}
+  \item{\code{k}: }{number of regimes. This is always \code{1} in \code{Nmdl}.}
+  \item{\code{control}: }{List with model options used.}
+  \item{\code{logLike}: }{log-likelihood.}
+  \item{\code{AIC}: }{Akaike information criterion.}
+  \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
+  \item{\code{Hess}: }{Hessian matrix. Approximated using \code{numDeriv} package and only returned if \code{getSE=TRUE}.}
+  \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess} which is approximated using \code{hessian} function from the \code{numDeriv} package. If matrix is not PD then nearest PD matrix is obtained using \code{nearPD} function from \code{lfm} package. Only returned if \code{getSE=TRUE}.}
+  \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
+  \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
+}
+}
 \description{
-This function estimates a normally distributed model
+This function estimates a univariate or multivariate normally distributed model. This can be used for the null hypothesis of a linear model against an alternative hypothesis of a HMM with k regimes.
+}
+\examples{
+set.seed(1234)
+# Define DGP 
+mdl_norm <- list(n     = 1000, 
+                 mu    = c(5,-2),
+                 sigma = rbind(c(5.0, 1.5),
+                               c(1.5, 1.0)))
+
+# Simulate process using simuNorm() function
+y_norm_simu <- simuNorm(mdl_norm)
+
+# estimate parameters
+y_norm_mdl <- Nmdl(y_norm_simu$y)
+
+y_norm_mdl
+
 }

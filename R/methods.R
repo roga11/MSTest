@@ -392,11 +392,12 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   HMmdl_mle_env <- rlang::env()
   # set environment variables
   HMmdl_mle_env$k <- k
+  HMmdl_mle_env$q <- mdl_in$q
   HMmdl_mle_env$msmu <- mdl_in$msmu
   HMmdl_mle_env$msvar <- mdl_in$msvar
   HMmdl_mle_env$var_k1 <- mdl_in$sigma
   HMmdl_mle_env$mle_variance_constraint <- mdl_in$mle_variance_constraint
-  # ----------- MSARmdl_mle equality constraint functions
+  # ----------- HMmdl_mle equality constraint functions
   loglik_const_eq_HMmdl <- function(theta){
     # ----- Load equality constraint parameters
     k <- get("k", envir = HMmdl_mle_env)
@@ -405,10 +406,11 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     constraint = colSums(P)-1
     return(constraint)
   }
-  # ---------- MSARmdl_mle inequality constraint functions
+  # ---------- HMmdl_mle inequality constraint functions
   loglik_const_ineq_HMmdl <- function(theta){
     # ----- Load inequality constraint parameters
     k <- get("k", envir = HMmdl_mle_env)
+    q <- get("q", envir = HMmdl_mle_env)
     msmu <- get("msmu", envir = HMmdl_mle_env)
     msvar <- get("msvar", envir = HMmdl_mle_env)
     var_k1 <- get("var_k1", envir = HMmdl_mle_env)
@@ -419,8 +421,22 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     ineq_constraint <- c(Pvec, 1-Pvec)
     if (mle_variance_constraint>=0){
       # variances (lower bound is 1% of single regime variance)
-      vars <- theta[c(rep(0, 1 + (k-1)*msmu), rep(1, 1 + (k-1)*msvar), rep(0, k*k))==1] - mle_variance_constraint*var_k1
-      ineq_constraint <- c(vars, ineq_constraint)
+      #vars <- theta[c(rep(0, 1 + (k-1)*msmu), rep(1, 1 + (k-1)*msvar), rep(0, k*k))==1] - mle_variance_constraint*var_k1
+      #ineq_constraint <- c(vars, ineq_constraint)
+      Nsig <- (q*(q+1))/2
+      eigen_vals <- c()
+      sig <- theta[c(rep(0, q + q*(k-1)*msmu), rep(1, Nsig + Nsig*(k-1)*msvar))==1]
+      if (msvar==TRUE){
+        for (xk in  1:k){
+          sig_tmp <- sig[(Nsig*(xk-1)+1):(Nsig*(xk-1)+Nsig)]
+          sigma <- covar_unvech(sig_tmp, q)
+          eigen_vals <- c(eigen_vals,eigen(sigma)[[1]])
+        } 
+      }else{
+        sigma <- covar_unvech(sig, q)
+        eigen_vals <- c(eigen_vals,eigen(sigma)[[1]])
+      }
+      ineq_constraint = c(eigen_vals-mle_variance_constraint, ineq_constraint)
     }
     return(ineq_constraint)
   }

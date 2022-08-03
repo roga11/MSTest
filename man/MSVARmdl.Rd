@@ -25,7 +25,7 @@ MSVARmdl(Y, p, k, control = list())
  \item{maxit_converge - }{integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in 'theta' or 'logLike' is NaN another set of initital values (up to 'maxit_converge') is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration in 'maxit'. Default is 500.}
  \item{use_diff_init - }{integer determining how many different initial values (that do not return NaN) to try. Default is 1.}
  \item{mle_stationary_constraint - }{bool indicator determining if only stationary solutions should be considered for autoregressive coefficients (if 'TRUE') or if non-stationary solutions are allowed (if 'FALSE'). This is only used when method='MLE'. Default is 'TRUE'.}
- \item{mle_variance_constraint - }{double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is '1e-6'.}
+ \item{mle_variance_constraint - }{double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is '1e-3'.}
 }}
 }
 \value{

@@ -1,14 +1,39 @@
-#' @title Normal dis model
+#' @title Normal distribution model
 #' 
-#' @description This function estimates a normally distributed model
+#' @description This function estimates a univariate or multivariate normally distributed model. This can be used for the null hypothesis of a linear model against an alternative hypothesis of a HMM with k regimes. 
 #' 
-#' @param Y matrix of observations with dimension (n x q) 
+#' @param Y a \code{(T x q)} matrix of observations. Required. 
 #' @param control List with model options including:
 #' \itemize{
-#' \item{const - }{boolean determining whether to estimate model with constant, if 'TRUE', or not, if 'FALSE'.}
-#' \item{getSE - }{boolean determining whether to compute standard errors of parameters, if 'TRUE', or not, if 'FALSE'.}
+#' \item{\code{const}: }{Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.}
+#' \item{\code{getSE}: }{Boolean determining whether to compute standard errors of parameters if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.}
 #' }
 #' 
+#' @return List of class \code{Nmdl} (\code{S3} object) with model attributes including:
+#' \itemize{
+#'   \item{\code{y}: }{a \code{(T x q)} matrix of observations.}
+#'   \item{\code{resid}: }{a \code{(T x q)} matrix of residuals.}
+#'   \item{\code{mu}: }{a \code{(1 x q)} vector of estimated means of each process.}
+#'   \item{\code{stdev}: }{a \code{(q x 1)} vector of estimated standard deviation of each process.}
+#'   \item{\code{sigma}: }{a \code{(q x q)} estimated covariance matrix.}
+#'   \item{\code{theta}: }{vector containing: \code{mu} and \code{vech(sigma)}.}
+#'   \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
+#'   \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
+#'   \item{\code{theta_var_ind}: }{vector indicating location of variances with \code{1} and \code{0} otherwise.}
+#'   \item{\code{n}: }{number of observations (same as \code{T}).}
+#'   \item{\code{q}: }{number of series.}
+#'   \item{\code{k}: }{number of regimes. This is always \code{1} in \code{Nmdl}.}
+#'   \item{\code{control}: }{List with model options used.}
+#'   \item{\code{logLike}: }{log-likelihood.}
+#'   \item{\code{AIC}: }{Akaike information criterion.}
+#'   \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
+#'   \item{\code{Hess}: }{Hessian matrix. Approximated using \code{numDeriv} package and only returned if \code{getSE=TRUE}.}
+#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess} which is approximated using \code{hessian} function from the \code{numDeriv} package. If matrix is not PD then nearest PD matrix is obtained using \code{nearPD} function from \code{lfm} package. Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
+#' }
+#' 
+#' @example /examples/Nmdl_examples.R
 #' @export
 Nmdl <- function(Y, control = list()){
   # ----- Set control values
@@ -35,11 +60,13 @@ Nmdl <- function(Y, control = list()){
   stdev       <- sqrt(diag(sigma))
   theta       <- c(mu,covar_vech(sigma))
   # theta indicators
-  theta_mu_ind  <- c(rep(1, q),rep(0,length(theta)-q))
-  theta_sig_ind <- c(rep(0, q),rep(1,q*(q+1)/2))
+  theta_mu_ind  <- c(rep(1, q), rep(0,length(theta)-q))
+  theta_sig_ind <- c(rep(0, q), rep(1,q*(q+1)/2))
+  theta_var_ind <- c(rep(0, q), t(covar_vech(diag(q))))
   # ----- Output
   out     <- list(y = Y, resid = resid, mu = mu, stdev = stdev, sigma = sigma, theta = theta, 
-                  theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, n = n, q = q, k = 1, control = con)
+                  theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind,
+                  n = n, q = q, k = 1, control = con)
   # Define class
   class(out) <- "Nmdl"
   # get log-likelihood
@@ -59,42 +86,46 @@ Nmdl <- function(Y, control = list()){
 
 #' @title Autoregressive Model
 #' 
-#' @description This function estimates an autoregresive model
+#' @description This function estimates an autoregresive model with \code{p} lags. This can be used for the null hypothesis of a linear model against an alternative hypothesis of a Markov switching auttoregresive model with k regimes. 
 #' 
-#' @param Y vector of observations with dimension (n x 1)
-#' @param p integer determining the number of autoregressive lags
-#' @param control List with model options including:
+#' @param Y a \code{(T x 1)} matrix of observations. Required. 
+#' @param p integer determining the number of autoregressive lags. Required. 
+#' @param control List with model options including: 
 #' \itemize{
-#' \item{const - }{boolean determining whether to estimate model with constant, if 'TRUE', or not, if 'FALSE'.}
-#' \item{getSE - }{boolean determining whether to compute standard errors of parameters, if 'TRUE', or not, if 'FALSE'.}
+#' \item{\code{const}: }{Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.}
+#' \item{\code{getSE}: }{Boolean determining whether to compute standard errors of parameters if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.}
 #' }
 #' 
-#' @return List with model attributes which include:
+#' @return List of class \code{ARmdl} (\code{S3} object) with model attributes including:
 #' \itemize{
-#'   \item{y - }{vector of observations of dimension (n x 1).}
-#'   \item{X - }{matrix of lagged observations (with or without vector of 1s depending on const='TRUE' or const='FALSE').}
-#'   \item{x - }{matrix of lagged observations without vector of 1s.}
-#'   \item{resid - }{vector of residuals.}
-#'   \item{mu - }{mean of the process}
-#'   \item{coef - }{coefficient estimates. This is the same as phi if const='FALSE'.}
-#'   \item{intercept - }{coefficient estimate of intercept.}
-#'   \item{phi - }{autoregressive coefficient estimates. This is the same as coef if const='FALSE'.}
-#'   \item{stdev - }{standard deviations.}
-#'   \item{sigma - }{variance.}
-#'   \item{theta - }{vector containing: mu, sigma, and phi.}
-#'   \item{theta_mu_ind - }{vector indicating location of mean.}
-#'   \item{theta_sig_ind - }{vector indicating location of variance.}
-#'   \item{theta_phi_ind - }{vector indicating location of autoregressive coefficients.}
-#'   \item{stationary - }{bool indicating if process is stationary 'TRUE' or non-stationary 'FALSE'.}
-#'   \item{n - }{number of observations after transofrmation due to lags (i.e., T-p observations).}
-#'   \item{p - }{number of autoregressive parameters.}
-#'   \item{q - }{number of serires. This is always 1 in ARmdl.}
-#'   \item{k - }{number of regimes. This is always 1 in ARmdl.}
-#'   \item{logLike - }{log-likelihood.}
-#'   \item{Hess - }{Hessian matrix. Approximated using numDeriv package and only returned if getSE='TRUE'.}
-#'   \item{info_mat - }{Information matrix. Computed as the inverse of -Hess which is approximated using numDeriv package. If matrix is not PD then nearest PD matrix is obtained using nearPD. Only returned if getSE='TRUE'.}
-#'   \item{nearPD_used - }{Bool determining whether nearPD was used on infoMat 'TRUE' or not 'FALSE'. Only returned if getSE='TRUE'.}
-#'   \item{theta_se - }{standard errors of parameters in theta. Only returned if getSE='TRUE'.}
+#'   \item{\code{y}: }{a \code{(T-p x 1)} matrix of observations.}
+#'   \item{\code{X}: }{a \code{(T-p x p + const)} matrix of lagged observations with a leading column of \code{1}s if \code{const=TRUE} or not if \code{const=FALSE}.}
+#'   \item{\code{x}: }{a \code{(T-p x p)} matrix of lagged observations.}
+#'   \item{\code{resid}: }{a \code{(T-p x 1)} matrix of residuals.}
+#'   \item{\code{mu}: }{estimated mean of the process.}
+#'   \item{\code{coef}: }{coefficient estimates. First value is the intercept (i.e., not \code{mu}) if \code{const=TRUE}. This is the same as \code{phi} if \code{const=FALSE}.}
+#'   \item{\code{intercept}: }{estimate of intercept.}
+#'   \item{\code{phi}: }{estimates of autoregressive coefficients.}
+#'   \item{\code{stdev}: }{estimated standard deviation of the process.}
+#'   \item{\code{sigma}: }{estimated variance of the process.}
+#'   \item{\code{theta}: }{vector containing: \code{mu}, \code{sigma}, and \code{phi}.}
+#'   \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
+#'   \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
+#'   \item{\code{theta_var_ind}: }{vector indicating location of variances with \code{1} and \code{0} otherwise. This is the same as \code{theta_sig_ind} in \code{ARmdl}.}
+#'   \item{\code{theta_phi_ind}: }{vector indicating location of autoregressive coefficients with \code{1} and \code{0} otherwise.}
+#'   \item{\code{stationary}: }{Boolean indicating if process is stationary if \code{TRUE} or non-stationary if \code{FALSE}.}
+#'   \item{\code{n}: }{number of observations after lag transformation (i.e., \code{n = T-p}).}
+#'   \item{\code{p}: }{number of autoregressive lags.}
+#'   \item{\code{q}: }{number of series. This is always \code{1} in \code{ARmdl}.}
+#'   \item{\code{k}: }{number of regimes. This is always \code{1} in \code{ARmdl}.}
+#'   \item{\code{control}: }{List with model options used.}
+#'   \item{\code{logLike}: }{log-likelihood.}
+#'   \item{\code{AIC}: }{Akaike information criterion.}
+#'   \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
+#'   \item{\code{Hess}: }{Hessian matrix. Approximated using \code{numDeriv} package and only returned if \code{getSE=TRUE}.}
+#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess} which is approximated using \code{hessian} function from the \code{numDeriv} package. If matrix is not PD then nearest PD matrix is obtained using \code{nearPD} function from \code{lfm} package. Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
 #' }
 #' 
 #' @seealso \code{\link{MSARmdl}}
@@ -143,11 +174,13 @@ ARmdl <- function(Y, p, control = list()){
   # theta indicators
   theta_mu_ind  <- c(1,rep(0,length(theta)-1))
   theta_sig_ind <- c(0,1,rep(0,p))
+  theta_var_ind <- c(0,1,rep(0,p))
   theta_phi_ind <- c(0,0,rep(1,p))
   # ----- Output
   out     <- list(y = y, X = X, x = x, resid = resid, mu = mu, coef = b0, intercept = inter, phi = phi,
-                  stdev = stdev, sigma = sigma, theta = theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, 
-                  theta_phi_ind = theta_phi_ind, stationary = roots, n = n, p = p, q = 1, k = 1, control = con)
+                  stdev = stdev, sigma = sigma, theta = theta, theta_mu_ind = theta_mu_ind, 
+                  theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_phi_ind = theta_phi_ind, 
+                  stationary = roots, n = n, p = p, q = 1, k = 1, control = con)
   # Define class
   class(out) <- "ARmdl"
   # get log-likelihood
@@ -166,43 +199,47 @@ ARmdl <- function(Y, p, control = list()){
 
 #' @title Vector autoregressive model
 #' 
-#' @description This function estimates a vector autoregresive model
+#' @description This function estimates a vector autoregresive model with \code{p} lags. This can be used for the null hypothesis of a linear model against an alternative hypothesis of a Markov switching vector auttoregresive model with k regimes. 
 #' 
-#' @param Y matrix of observations with dimension (n x q) 
-#' @param p integer determining the number of autoregressive lags
+#' @param Y a \code{(T x q)} matrix of observations. Required.
+#' @param p integer determining the number of autoregressive lags. Required.
 #' @param control List with model options including:
 #' \itemize{
-#' \item{const - }{boolean determining whether to estimate model with constant, if 'TRUE', or not, if 'FALSE'.}
-#' \item{getSE - }{boolean determining whether to compute standard errors of parameters, if 'TRUE', or not, if 'FALSE'.}
+#' \item{\code{const}: }{Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.}
+#' \item{\code{getSE}: }{Boolean determining whether to compute standard errors of parameters if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.}
 #' }
 #' 
-#' @return List with model attributes which include:
+#' @return List of class \code{VARmdl} (\code{S3} object) with model attributes including:
 #' \itemize{
-#'   \item{y - }{vector of observations of dimension (n x q).}
-#'   \item{X - }{matrix of lagged observations (with or without vector of 1s depending on const='TRUE' or const='FALSE').}
-#'   \item{x - }{matrix of lagged observations without vector of 1s.}
-#'   \item{resid - }{vector of residuals.}
-#'   \item{mu - }{vector of dimension (q x 1) containing means of each process.}
-#'   \item{coef - }{coefficient estimates. This is the same as phi if const='FALSE'.}
-#'   \item{intercept - }{vector of dimension (q x 1) containing coefficient estimate of intercepts.}
-#'   \item{phi - }{matrix of dimension (q x q*p) autoregressive coefficient estimates. This is the same as coef if const='FALSE'.}
-#'   \item{stdev - }{standard deviations of each process (i.e., square root of diagonal of 'sigma'.)}
-#'   \item{sigma - }{covariance matrix.}
-#'   \item{theta - }{vector containing: mu, vech(sigma), and phi.}
-#'   \item{theta_mu_ind - }{vector indicating location of mean.}
-#'   \item{theta_sig_ind - }{vector indicating location of variance.}
-#'   \item{theta_phi_ind - }{vector indicating location of autoregressive coefficients.}
-#'   \item{stationary - }{bool indicating if process is stationary 'TRUE' or non-stationary 'FALSE'.}
-#'   \item{n - }{number of observations after transofrmation due to lags (i.e., T-p observations).}
-#'   \item{p - }{number of autoregressive lags.}
-#'   \item{q - }{number of serires.}
-#'   \item{k - }{number of regimes. This is always 1 in VARmdl.}
-#'   \item{Fmat - }{matrix of dimension (qp x qp) of companion form.}
-#'   \item{logLike - }{log-likelihood.}
-#'   \item{Hess - }{Hessian matrix. Approximated using numDeriv package and only returned if getSE='TRUE'.}
-#'   \item{info_mat - }{Information matrix. Computed as the inverse of -Hess which is approximated using numDeriv package. If matrix is not PD then nearest PD matrix is obtained using nearPD. Only returned if getSE='TRUE'.}
-#'   \item{nearPD_used - }{Bool determining whether nearPD was used on infoMat 'TRUE' or not 'FALSE'. Only returned if getSE='TRUE'.}
-#'   \item{theta_se - }{standard errors of parameters in theta. Only returned if getSE='TRUE'.}
+#'   \item{\code{y}: }{a \code{(T-p x q)} matrix of observations.}
+#'   \item{\code{X}: }{a \code{(T-p x p*q + const)} matrix of lagged observations with a leading column of \code{1}s if \code{const=TRUE} or not if \code{const=FALSE}.}
+#'   \item{\code{x}: }{a \code{(T-p x p*q)} matrix of lagged observations.}
+#'   \item{\code{resid}: }{a \code{(T-p x q)} matrix of residuals.}
+#'   \item{\code{mu}: }{a \code{(1 x q)} vector of estimated means of each process.}
+#'   \item{\code{coef}: }{coefficient estimates. First row are the intercept (i.e., not \code{mu}) if \code{const=TRUE}. This is the same as \code{t(phi)} if \code{const=FALSE}.}
+#'   \item{\code{intercept}: }{estimate of intercepts.}
+#'   \item{\code{phi}: }{a \code{(q x p*q)} matrix of estimated autoregressive coefficients.}
+#'   \item{\code{stdev}: }{a \code{(q x 1)} vector of estimated standard deviation of each process.}
+#'   \item{\code{sigma}: }{a \code{(q x q)} estimated covariance matrix.}
+#'   \item{\code{theta}: }{vector containing: \code{mu}, \code{vech(sigma)}, and \code{vec(t(phi))}.}
+#'   \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
+#'   \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
+#'   \item{\code{theta_var_ind}: }{vector indicating location of variances with \code{1} and \code{0} otherwise.}
+#'   \item{\code{theta_phi_ind}: }{vector indicating location of autoregressive coefficients with \code{1} and \code{0} otherwise.}
+#'   \item{\code{stationary}: }{Boolean indicating if process is stationary if \code{TRUE} or non-stationary if \code{FALSE}.}
+#'   \item{\code{n}: }{number of observations after lag transformation (i.e., \code{n = T-p}).}
+#'   \item{\code{p}: }{number of autoregressive lags.}
+#'   \item{\code{q}: }{number of series.}
+#'   \item{\code{k}: }{number of regimes. This is always \code{1} in \code{VARmdl}.}
+#'   \item{\code{Fmat}: }{matrix from companion form. Used to determine is process is stationary.}
+#'   \item{\code{control}: }{List with model options used.}
+#'   \item{\code{logLike}: }{log-likelihood.}
+#'   \item{\code{AIC}: }{Akaike information criterion.}
+#'   \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
+#'   \item{\code{Hess}: }{Hessian matrix. Approximated using \code{numDeriv} package and only returned if \code{getSE=TRUE}.}
+#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess} which is approximated using \code{hessian} function from the \code{numDeriv} package. If matrix is not PD then nearest PD matrix is obtained using \code{nearPD} function from \code{lfm} package. Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
 #' }
 #' 
 #' @seealso \code{\link{MSVARmdl}}
@@ -218,13 +255,13 @@ VARmdl <- function(Y, p, control = list()){
   if(length(noNms <- namc[!namc %in% nmsC])){
     warning("unknown names in control: ", paste(noNms,collapse=", ")) 
   }
-  # ----- Get process dimensions
-  n <- nrow(Y)
-  q <- ncol(Y)
   # ----- transform data
   lagged_vals <- ts_lagged(Y, p)
   y <- lagged_vals$y
   x <- lagged_vals$X
+  # ----- Get process dimensions
+  n <- nrow(y)
+  q <- ncol(y)
   # ----- estimate model
   if (con$const==TRUE){
     X     <- cbind(1,x)
@@ -249,10 +286,12 @@ VARmdl <- function(Y, p, control = list()){
   # theta indicators
   theta_mu_ind  <- c(rep(1,q),rep(0,length(theta)-q))
   theta_sig_ind <- c(rep(0,q),rep(1,q*(q+1)/2),rep(0,q*q*p))
+  theta_var_ind <- c(rep(0, q), t(covar_vech(diag(q))),rep(0,q*q*p))
   theta_phi_ind <- c(rep(0,length(theta)-q*q*p),rep(1,q*q*p))
   # ----- Output
   out     <- list(y = y, X = X, x = x, resid = resid, mu = mu, coef = b0, intercept = inter, phi = phi,
-                  stdev = stdev, sigma = sigma, theta = theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_phi_ind = theta_phi_ind, 
+                  stdev = stdev, sigma = sigma, theta = theta, theta_mu_ind = theta_mu_ind, 
+                  theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_phi_ind = theta_phi_ind, 
                   stationary = stationary, n = n, p = p, q = q, k = 1, Fmat = Fmat, control = con)
   # Define class
   class(out) <- "VARmdl"
@@ -276,18 +315,61 @@ VARmdl <- function(Y, p, control = list()){
 
 #' @title Hidden Markov model 
 #' 
-#' @description This function estimates a Hidden Markov model
+#' @description This function estimates a Hidden Markov model with \code{k} regimes.
 #' 
-#' @param Y (Txq) vector with observational data. Required argument.
-#' @param p integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.
-#' @param k integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.
-#' @param control List with optimization options including:
+#' @param Y a \code{(T x q)} matrix of observations. Required. 
+#' @param k integer determining the number of regimes to use in estimation. Must be greater than or equal to \code{2}. Required.
+#' @param control List with model options including:
+#' \itemize{
+#'  \item{\code{getSE}: }{Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.}
+#'  \item{\code{msmu}: }{Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.}
+#'  \item{\code{msvar}: }{Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.}
+#'  \item{\code{init_value}: }{vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.}
+#'  \item{\code{method}: }{string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.}
+#'  \item{\code{maxit}: }{integer determining the maximum number of EM iterations.}
+#'  \item{\code{thtol}: }{double determining the convergence criterion for the absolute difference in parameter estimates \code{theta} between iterations. Default is \code{1e-6}.}
+#'  \item{\code{maxit_converge}: }{integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{500}.}
+#'  \item{\code{use_diff_init}: }{integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.}
+#'  \item{\code{mle_variance_constraint}: }{double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is \code{1e-3}.}
+#' }
 #' 
-#' @return List with model characteristics
+#' @return List of class \code{HMmdl} (\code{S3} object) with model attributes including:
+#' \itemize{
+#'   \item{\code{y}: }{a \code{(T x q)} matrix of observations.}
+#'   \item{\code{resid}: }{a \code{(T x q)} matrix of residuals.}
+#'   \item{\code{mu}: }{a \code{(1 x q)} vector of estimated means of each process.}
+#'   \item{\code{stdev}: }{a \code{(q x 1)} vector of estimated standard deviation of each process.}
+#'   \item{\code{sigma}: }{a \code{(q x q)} estimated covariance matrix.}
+#'   \item{\code{theta}: }{vector containing: \code{mu} and \code{vech(sigma)}.}
+#'   \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
+#'   \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
+#'   \item{\code{theta_var_ind}: }{vector indicating location of variances with \code{1} and \code{0} otherwise.}
+#'   \item{\code{n}: }{number of observations (same as \code{T}).}
+#'   \item{\code{q}: }{number of series.}
+#'   \item{\code{k}: }{number of regimes in estimated model.}
+#'   \item{\code{P}: }{a \code{(k x k)} transition matrix.}
+#'   \item{\code{pinf}: }{a \code{(k x 1)} vector with limiting probabilities of each regime.}
+#'   \item{\code{St}: }{a \code{(T x k)} vector with smoothed probabilities of each regime at each time \code{t}.}
+#'   \item{\code{deltath}: }{double with maximum absolute difference in vector \code{theta} between last iteration.}
+#'   \item{\code{iterations}: }{number of EM iterations performed to achieve convergence (if less than \code{maxit}).}
+#'   \item{\code{theta_0}: }{vector of initial values used.}
+#'   \item{\code{init_used}: }{number of different initial values used to get a finite solution. See description of input \code{maxit_converge}.}
+#'   \item{\code{msmu}: }{Boolean. If \code{TRUE} model was estimated with switch in mean. If \code{FALSE} model was estimated with constant mean.}
+#'   \item{\code{msvar}: }{Boolean. If \code{TRUE} model was estimated with switch in variance. If \code{FALSE} model was estimated with constant variance.}
+#'   \item{\code{control}: }{List with model options used.}
+#'   \item{\code{logLike}: }{log-likelihood.}
+#'   \item{\code{AIC}: }{Akaike information criterion.}
+#'   \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
+#'   \item{\code{Hess}: }{Hessian matrix. Approximated using \code{numDeriv} package and only returned if \code{getSE=TRUE}.}
+#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess} which is approximated using \code{hessian} function from the \code{numDeriv} package. If matrix is not PD then nearest PD matrix is obtained using \code{nearPD} function from \code{lfm} package. Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{trace}: }{List with Lists of estimation output for each initial value used due to \code{use_diff_init > 1}.}
+#' }
 #' 
-#' @references Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” Journal of econometrics, 45 (1-2): 39–70
-#' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” Journal of the Royal Statistical Society. Series B 39 (1): 1–38
-#' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.” In Markov-Switching Vector Autoregressions, 6–28. Springer
+#' @references Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” Journal of econometrics, 45 (1-2): 39–70.
+#' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” Journal of the Royal Statistical Society. Series B 39 (1): 1–38.
+#' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.” In Markov-Switching Vector Autoregressions, 6–28. Springer.
 #' 
 #' @seealso \code{\link{Nmdl}}
 #' @example /examples/HMmdl_examples.R
@@ -303,12 +385,15 @@ HMmdl <- function(Y, k, control = list()){
               thtol = 1.e-6, 
               maxit_converge = 500, 
               use_diff_init = 1,
-              mle_variance_constraint = 1e-6)
+              mle_variance_constraint = 1e-3)
   # ----- Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
   if(length(noNms <- namc[!namc %in% nmsC])){
     warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+  }
+  if (k<2){
+    stop("value for 'k' must be greater than or equal to 2.")
   }
   # ---------- Optimization options
   optim_options <- list(maxit = con$maxit, thtol = con$thtol)
@@ -403,9 +488,9 @@ HMmdl <- function(Y, k, control = list()){
   theta_var_ind <- c(rep(0, q + q*(k-1)*con$msmu), rep(t(covar_vech(diag(q))), 1+(k-1)*con$msvar), rep(0, k*k))
   theta_P_ind <- c(rep(0, q + q*(k-1)*con$msmu + Nsig + Nsig*(k-1)*con$msvar), rep(1, k*k))
   out <- list(y = init_mdl$y, resid = output$resid, mu = output$mu, sigma = output$sigma, theta = output$theta, 
-              theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, n = init_mdl$n, q = q, k = k, 
-              logLike = output$logLike, P = output$P, pinf = output$pinf, St = output$St, eta = output$eta, 
-              thl = output$thl, deltath = output$deltath,  iterations = output$iterations, theta_0 = output$theta_0,
+              theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, 
+              n = init_mdl$n, q = q, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, St = output$St,
+              deltath = output$deltath,  iterations = output$iterations, theta_0 = output$theta_0,
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, control = con)
   out$AIC <- aic(out$logLike, length(out$theta))
   out$BIC <- bic(out$logLike, out$n, length(out$theta))
@@ -487,6 +572,9 @@ MSARmdl <- function(Y, p, k, control = list()){
   con[(namc <- names(control))] <- control
   if(length(noNms <- namc[!namc %in% nmsC])){
     warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+  }
+  if (k<2){
+    stop("value for 'k' must be greater than or equal to 2.")
   }
   # ---------- Optimization options
   optim_options <- list(maxit = con$maxit, thtol = con$thtol)
@@ -628,7 +716,7 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'  \item{maxit_converge - }{integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in 'theta' or 'logLike' is NaN another set of initital values (up to 'maxit_converge') is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration in 'maxit'. Default is 500.}
 #'  \item{use_diff_init - }{integer determining how many different initial values (that do not return NaN) to try. Default is 1.}
 #'  \item{mle_stationary_constraint - }{bool indicator determining if only stationary solutions should be considered for autoregressive coefficients (if 'TRUE') or if non-stationary solutions are allowed (if 'FALSE'). This is only used when method='MLE'. Default is 'TRUE'.}
-#'  \item{mle_variance_constraint - }{double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is '1e-6'.}
+#'  \item{mle_variance_constraint - }{double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is '1e-3'.}
 #' }
 #' 
 #' @return List with model characteristics
@@ -651,12 +739,15 @@ MSVARmdl <- function(Y, p, k, control = list()){
               maxit_converge = 500, 
               use_diff_init = 1,
               mle_stationary_constraint = TRUE,
-              mle_variance_constraint = 1e-6)
+              mle_variance_constraint = 1e-3)
   # ----- Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
   if(length(noNms <- namc[!namc %in% nmsC])){
     warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+  }
+  if (k<2){
+    stop("value for 'k' must be greater than or equal to 2.")
   }
   # ---------- Optimization options
   optim_options <- list(maxit = con$maxit, thtol = con$thtol)
