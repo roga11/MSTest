@@ -1,6 +1,6 @@
 Package: MSTest
 Type: Package
-Title: MSTest: An R-package For Testing Markov-Switching Models
+Title: Hypothesis Testing For Markov Switching Models
 Date: 2022-08-03
 Version: 0.1.2
 Authors@R: c(
