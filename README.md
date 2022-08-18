@@ -109,20 +109,20 @@ lines(y_msvar_simu$St, col = 'red', lty = 2)
 
 ## References
 
-Carrasco, M., Liang H., and W. Ploberger. 2014. “Optimal test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
+Carrasco, M., Liang H., and W. Ploberger. 2014. “Optimal test for Markov switching parameters.” *Econometrica* 82 (2): 765–784.
 
-Dufour, Jean-Marie, and Richard Luger. 2017. “Identification-robust moment-based tests for Markov switching in autoregressive models.” Econometric Reviews 36 (6-9): 713–727.
+Dufour, J. M., and R. Luger. 2017. “Identification-robust moment-based tests for Markov switching in autoregressive models.” *Econometric Reviews* 36 (6-9): 713–727.
 
-Kasahara, Hiroyuki, and Katsumi Shimotsu. 2018. “Testing the number of regimes in Markov regime switching models.” arXiv preprint arXiv:1801.06862.
+Kasahara, H., and K. Shimotsu. 2018. “Testing the number of regimes in Markov regime switching models.” arXiv preprint arXiv:1801.06862.
 
-Hamilton, James D. 1989. “A new approach to the economic analysis of nonstationary time series and the business cycle.” Econometrica: Journal of the Econometric Society, 357–384.
+Hamilton, J. D. 1989. “A new approach to the economic analysis of nonstationary time series and the business cycle.” *Econometrica* 57 (2): 357–384.
 
-Hamilton, James Douglas. 1994. Time series analysis. Princeton university press.
+Hamilton, J. D. 1994. "Time series analysis". Princeton university press.
 
-Hansen, Bruce E. 1992. “The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP.” Journal of applied Econometrics 7 (S1): S61–S82.
+Hansen, B. E. 1992. “The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP.” *Journal of applied Econometrics* 7 (S1): S61–S82.
 
-Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” Unpublished manuscript.
+Rodriguez Rondon, G. and J. M. Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” Unpublished manuscript.
 
-Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “MSTest: An R-package for Testing Markov-Switching Models.” Unpublished manuscript.
+Rodriguez Rondon, G and J. M. Dufour. 2022. “MSTest: An R-package for Testing Markov-Switching Models.” Unpublished manuscript.
 
-Qu, Zhongjun, and Fan Zhuo. 2021. “Likelihood Ratio-Based Tests for Markov Regime Switching.” The Review of Economic Studies 88 (2): 937–968
+Qu, Z., and F. Zhuo. 2021. “Likelihood Ratio-Based Tests for Markov Regime Switching.” *The Review of Economic Studies* 88 (2): 937–968.
