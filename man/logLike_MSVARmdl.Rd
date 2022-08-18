@@ -7,15 +7,15 @@
 logLike_MSVARmdl(theta, mdl, k)
 }
 \arguments{
-\item{theta}{vector of model parameters}
+\item{\code{theta}}{Vector of model parameters.}
 
-\item{mdl}{List with model attributes}
+\item{\code{mdl}}{List with model attributes.}
 
-\item{k}{integer determining the number of regimes}
+\item{\code{k}}{Integer determining the number of regimes.}
 }
 \value{
-log-likelihood given data
+Log-likelihood value.
 }
 \description{
-This function computes the log-likelihood for a markov-switching vector autoregressive model
+This function computes the log-likelihood for a markov-switching vector autoregressive model.
 }

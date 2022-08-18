@@ -1,12 +1,12 @@
 #' @title Companion Matrix
 #'
-#' @description This function converts the (q x 1)  vector of constants and (q x qp) matrix of autoregressive coefficients into (qp x qp) matrix belonging to the companion form
+#' @description This function converts the (\code{q x 1})  vector of constants and (\code{q x qp}) matrix of autoregressive coefficients into (\code{qp x qp}) matrix belonging to the companion form
 #'
-#' @param phi matrix of dimension (q x qp) containing autoregressive coefficients
-#' @param p integer for number of autoregressive lags
-#' @param q integer for number of series
+#' @param phi matrix of dimension (\code{q x qp}) containing autoregressive coefficients.
+#' @param p integer for number of autoregressive lags.
+#' @param q integer for number of series.
 #'
-#' @return matrix of dimension (qp x qp) of companion form 
+#' @return matrix of dimension (\code{qp x qp}) of companion form.
 #' 
 #' @export
 companionMat <- function(phi, p, q){
@@ -23,10 +23,10 @@ companionMat <- function(phi, p, q){
 #'
 #' @description This function computes the AIC when given the log-likelihood and number of parameters.
 #'
-#' @param logLike log-likelihood of estimated model
-#' @param param_len number of parameters in model
+#' @param logLike log-likelihood of estimated model.
+#' @param param_len number of parameters in model.
 #'
-#' @return AIC
+#' @return AIC value. 
 #' 
 #' @export
 aic <- function(logLike, param_len){
@@ -38,11 +38,11 @@ aic <- function(logLike, param_len){
 #'
 #' @description This function computes the BIC when given the log-likelihood, number of observations, and number of parameters.
 #'
-#' @param logLike log-likelihood of estimated model
-#' @param n number of time series observations
-#' @param param_len number of parameters in model
+#' @param logLike log-likelihood of estimated model.
+#' @param n number of time series observations.
+#' @param param_len number of parameters in model.
 #'
-#' @return BIC
+#' @return BIC value.
 #' 
 #' @export
 bic <- function(logLike, n, param_len){
@@ -54,11 +54,11 @@ bic <- function(logLike, n, param_len){
 #'
 #' @description This function converts a transition matrix to the transition matrix consistent with a Markov-switching autoregressive model.
 #'
-#' @param P original transition matrix
-#' @param k integer determining the number of regimes
-#' @param ar number of autoregressive lags
+#' @param P original transition matrix.
+#' @param k integer determining the number of regimes.
+#' @param ar number of autoregressive lags.
 #'
-#' @return transformed transition matrix
+#' @return transformed transition matrix.
 #' 
 #' @export
 arP <- function(P, k, ar){
@@ -81,15 +81,15 @@ arP <- function(P, k, ar){
 #'
 #' @description This function creates a grid of mean and variance consistent with a Markov-switching autoregressive model.
 #'
-#' @param mu vector (k x 1) of mu in each regime
-#' @param sig vector (k x 1) of sigma in each regime
-#' @param k integer determining the number of regimes
-#' @param ar number of autoregressive lags
-#' @param msmu boolean indicator. If 'TRUE' mean is subject to change. If 'FALSE' mean is constant across regimes
-#' @param msvar boolean indicator. If 'TRUE' variance is subject to change. If 'FALSE' variance is constant across regimes
+#' @param mu vector (\code{k x 1}) of mu in each regime.
+#' @param sig vector (\code{k x 1}) of sigma in each regime.
+#' @param k integer determining the number of regimes.
+#' @param ar number of autoregressive lags.
+#' @param msmu Boolean indicator. If \code{TRUE} mean is subject to change. If \code{FALSE} mean is constant across regimes.
+#' @param msvar Boolean indicator. If \code{TRUE} variance is subject to change. If \code{FALSE} variance is constant across regimes.
 #'
-#' @return List with (M x ar+1) matrix of means for each regime M (where M = k^(ar+1)) and each time t,... t-ar, vector with variance for each regime M, and vector indicating the corresponded 1,..., k regime. 
-#' 
+#' @return List with (\code{M x ar+1}) matrix of means for each regime \code{M} (where \code{M = k^(ar+1)}) and each time \code{t,... t-ar}, vector with variance for each regime \code{M}, and vector indicating the corresponded \code{1,..., k} regime. 
+#'
 #' @export
 argrid_MSARmdl <- function(mu, sig, k, ar, msmu, msvar){
   if (msmu==FALSE){
@@ -120,16 +120,16 @@ argrid_MSARmdl <- function(mu, sig, k, ar, msmu, msvar){
 
 #' @title Vector autoregressive moment grid
 #'
-#' @description Creates grid of means and covariance matrices consistent  with a Markov-switching vector autoregressive model.
+#' @description Creates grid of means and covariance matrices consistent with a Markov-switching vector autoregressive model.
 #'
-#' @param mu (k x q) matrix of means in each regime (for k regimes and q time series)
-#' @param sig list with k regime specific (q x q) covariance matrices 
-#' @param k integer determining the number of regimes
-#' @param ar number of autoregressive lags
-#' @param msmu boolean indicator. If 'TRUE' mean is subject to change. If 'FALSE' mean is constant across regimes
-#' @param msvar boolean indicator. If 'TRUE' variance is subject to change. If 'FALSE' variance is constant across regimes
+#' @param mu a (\code{k x q}) matrix of means in each regime (for \code{k} regimes and \code{q} time series).
+#' @param sig list with \code{k} regime specific (\code{q x q}) covariance matrices.
+#' @param k integer determining the number of regimes.
+#' @param ar number of autoregressive lags.
+#' @param msmu Boolean indicator. If \code{TRUE} mean is subject to change. If \code{FALSE} mean is constant across regimes.
+#' @param msvar Boolean indicator. If \code{TRUE} variance is subject to change. If \code{FALSE} variance is constant across regimes.
 #'
-#' @return List with M regime specific (q x k) matrices of means, List with M regime specific covariance matrices, and vector indicating the corresponded 1,..., k regime. 
+#' @return List with M regime specific (\code{q x k}) matrices of means, List with \code{M} regime specific covariance matrices, and vector indicating the corresponded \code{1,..., k} regime. 
 #' 
 #' @export
 argrid_MSVARmdl <- function(mu, sigma, k, ar, msmu, msvar){
@@ -154,11 +154,11 @@ argrid_MSVARmdl <- function(mu, sigma, k, ar, msmu, msvar){
 
 #' @title Log likelihood  
 #' 
-#' @description This function is used to compute the log-likelihood for a given model
+#' @description This function is used to compute the log-likelihood for a given model.
 #'
-#' @param mdl List with model properties
+#' @param mdl List with model properties.
 #'
-#' @return Log-likelihood
+#' @return Log-likelihood value.
 #' 
 #' @export
 logLikelihood <- function(mdl){
@@ -167,11 +167,11 @@ logLikelihood <- function(mdl){
 
 #' @title Log likelihood for Normal model  
 #' 
-#' @description This function is used to compute the log-likelihood for a normally distributed model
+#' @description This function is used to compute the log-likelihood for a normally distributed model.
 #'
-#' @param mdl List with model properties
+#' @param mdl List with model properties.
 #'
-#' @return Log-likelihood
+#' @return Log-likelihood value.
 #' 
 #' @export
 logLikelihood.Nmdl <- function(mdl){
@@ -181,11 +181,11 @@ logLikelihood.Nmdl <- function(mdl){
 
 #' @title Log likelihood for autoregressive model  
 #' 
-#' @description This function is used to compute the log-likelihood for an autoregressive model
+#' @description This function is used to compute the log-likelihood for an autoregressive model.
 #'
-#' @param mdl List with model properties
+#' @param mdl List with model properties.
 #'
-#' @return Log-likelihood
+#' @return Log-likelihood value.
 #' 
 #' @export
 logLikelihood.ARmdl <- function(mdl){
@@ -195,11 +195,11 @@ logLikelihood.ARmdl <- function(mdl){
 
 #' @title Log likelihood for vector autoregressive model  
 #' 
-#' @description This function is used to compute the log-likelihood for a vector autoregressive model
+#' @description This function is used to compute the log-likelihood for a vector autoregressive model.
 #'
-#' @param mdl List with model properties
+#' @param mdl List with model properties.
 #'
-#' @return Log-likelihood
+#' @return Log-likelihood value.
 #' 
 #' @export
 logLikelihood.VARmdl <- function(mdl){
@@ -209,11 +209,11 @@ logLikelihood.VARmdl <- function(mdl){
 
 #' @title Log likelihood for Hidden Markov model  
 #' 
-#' @description This function is used to compute the log-likelihood for a Hidden Markov model
+#' @description This function is used to compute the log-likelihood for a Hidden Markov model.
 #'
-#' @param mdl List with model properties
+#' @param mdl List with model properties.
 #'
-#' @return Log-likelihood
+#' @return Log-likelihood value. 
 #' 
 #' @export
 logLikelihood.HMmdl <- function(mdl){
@@ -223,11 +223,11 @@ logLikelihood.HMmdl <- function(mdl){
 
 #' @title Log likelihood for Markov-switching autoregressive model  
 #' 
-#' @description This function is used to compute the log-likelihood for a Markov-switching autoregressive model
+#' @description This function is used to compute the log-likelihood for a Markov-switching autoregressive model.
 #'
-#' @param mdl List with model properties
+#' @param mdl List with model properties.
 #'
-#' @return Log-likelihood
+#' @return Log-likelihood value.
 #' 
 #' @export
 logLikelihood.MSARmdl <- function(mdl){
@@ -237,11 +237,11 @@ logLikelihood.MSARmdl <- function(mdl){
 
 #' @title Log likelihood for Markov-switching vector autoregressive model  
 #' 
-#' @description This function is used to compute the log-likelihood for a Markv-switching vector autoregressive model
+#' @description This function is used to compute the log-likelihood for a Markv-switching vector autoregressive model.
 #'
-#' @param mdl List with model properties
+#' @param mdl List with model properties.
 #'
-#' @return Log-likelihood
+#' @return Log-likelihood value.
 #' 
 #' @export
 logLikelihood.MSVARmdl <- function(mdl){
@@ -251,11 +251,11 @@ logLikelihood.MSVARmdl <- function(mdl){
 
 #' @title Hessian matrix 
 #' 
-#' @description This function is used to obtain a numerical approximation of a Hessian matrix
+#' @description This function is used to obtain a numerical approximation of a Hessian matrix.
 #'
-#' @param mdl List with model properties
+#' @param mdl List with model properties.
 #'
-#' @return Hessian matrix
+#' @return Hessian matrix.
 #' 
 #' @export
 getHessian <- function(mdl){
@@ -264,11 +264,11 @@ getHessian <- function(mdl){
 
 #' @title Hessian matrix of normal model
 #' 
-#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a normally distributed model
+#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a normally distributed model.
 #'
-#' @param mdl List with model properties
+#' @param mdl List with model properties.
 #'
-#' @return Hessian matrix
+#' @return Hessian matrix.
 #' 
 #' @export
 getHessian.Nmdl <- function(mdl){
@@ -278,11 +278,11 @@ getHessian.Nmdl <- function(mdl){
 
 #' @title Hessian matrix of autoregressive model
 #' 
-#' @description This function is used to obtain a numerical approximation of a Hessian matrix for an autoregressive model
+#' @description This function is used to obtain a numerical approximation of a Hessian matrix for an autoregressive model.
 #'
-#' @param mdl List with model properties
+#' @param mdl List with model properties.
 #'
-#' @return Hessian matrix
+#' @return Hessian matrix.
 #' 
 #' @export
 getHessian.ARmdl <- function(mdl){
@@ -292,11 +292,11 @@ getHessian.ARmdl <- function(mdl){
 
 #' @title Hessian matrix of vector autoregressive model 
 #' 
-#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a vector autoregressive model
+#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a vector autoregressive model.
 #'
-#' @param mdl List with model properties
+#' @param mdl List with model properties.
 #'
-#' @return Hessian matrix
+#' @return Hessian matrix.
 #' 
 #' @export
 getHessian.VARmdl <- function(mdl){
@@ -306,11 +306,11 @@ getHessian.VARmdl <- function(mdl){
 
 #' @title Hessian matrix of Hidden Markov model
 #' 
-#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a Hidden Markov model
+#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a Hidden Markov model.
 #'
-#' @param mdl List with model properties
+#' @param mdl List with model properties.
 #'
-#' @return Hessian matrix
+#' @return Hessian matrix.
 #' 
 #' @export
 getHessian.HMmdl <- function(mdl){
@@ -320,11 +320,11 @@ getHessian.HMmdl <- function(mdl){
 
 #' @title Hessian matrix of Markov-switching autoregressive model
 #' 
-#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a Markov-switching autoregressive model
+#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a Markov-switching autoregressive model.
 #'
-#' @param mdl List with model properties
+#' @param mdl List with model properties.
 #'
-#' @return Hessian matrix
+#' @return Hessian matrix.
 #' 
 #' @export
 getHessian.MSARmdl <- function(mdl){
@@ -334,11 +334,11 @@ getHessian.MSARmdl <- function(mdl){
 
 #' @title Hessian matrix of Markov-switching vector autoregressive model
 #' 
-#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a Markov-switching vector autoregressive model
+#' @description This function is used to obtain a numerical approximation of a Hessian matrix for a Markov-switching vector autoregressive model.
 #'
-#' @param mdl List with model properties
+#' @param mdl List with model properties.
 #'
-#' @return Hessian matrix
+#' @return Hessian matrix.
 #' 
 #' @export
 getHessian.MSVARmdl <- function(mdl){
@@ -349,11 +349,11 @@ getHessian.MSVARmdl <- function(mdl){
 
 #' @title Theta standard errors
 #' 
-#' @description This function computes the standard errors of the parameters in vector theta. This is done using an approximation of the Hessian matrix (using numDeriv and nearPD if info mat is not PD).
+#' @description This function computes the standard errors of the parameters in vector theta. This is done using an approximation of the Hessian matrix (using \code{\link[numDeriv]{hessian}} and \code{nearPD} if \code{info_mat} is not PD).
 #'
 #' @param mdl List with model properties
 #'
-#' @return List provided as input with additional attributes 'HESS,'theta_se', 'info_mat', and 'nearPD_used'.
+#' @return List provided as input with additional attributes \code{HESS},\code{theta_se}, \code{info_mat}, and \code{nearPD_used}.
 #' 
 #' @export
 thetaSE <- function(mdl){
@@ -376,12 +376,12 @@ thetaSE <- function(mdl){
 #' @description This function computes estimate a Hidden Markov model using MLE.
 #' 
 #' @param theta_0 vector containing initial values to use in optimization
-#' @param mdl_in List with model properties (can be obtained from estimating linear model i.e., using \code{ARmdl()})
+#' @param mdl_in List with model properties (can be obtained from estimating linear model i.e., using \code{\link{ARmdl}})
 #' @param k integer determining the number of regimes
 #' @param optim_options List containing 
 #' \itemize{
-#'  \item{maxit - }{maximum number of iterations.}
-#'  \item{thtol - }{convergence criterion.}
+#'  \item{\code{maxit}: }{maximum number of iterations.}
+#'  \item{\code{thtol}: }{convergence criterion.}
 #'}
 #'
 #' @return List with model attributes
@@ -463,12 +463,12 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 #' @description This function computes estimate a Markov-switching autoregressive model using MLE.
 #' 
 #' @param theta_0 vector containing initial values to use in optimization
-#' @param mdl_in List with model properties (can be obtained from estimating linear model i.e., using \code{ARmdl()})
+#' @param mdl_in List with model properties (can be obtained from estimating linear model i.e., using \code{\link{ARmdl}})
 #' @param k integer determining the number of regimes
 #' @param optim_options List containing 
 #' \itemize{
-#'  \item{maxit - }{maximum number of iterations.}
-#'  \item{thtol - }{convergence criterion.}
+#'  \item{\code{maxit}: }{maximum number of iterations.}
+#'  \item{\code{thtol}: }{convergence criterion.}
 #'}
 #'
 #' @return List with model attributes
@@ -546,12 +546,12 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 #' @description This function computes estimate a Markov-switching vector autoregressive model using MLE.
 #' 
 #' @param theta_0 vector containing initial values to use in optimization
-#' @param mdl_in List with model properties (can be obtained from estimating linear model i.e., using \code{VARmdl()})
+#' @param mdl_in List with model properties (can be obtained from estimating linear model i.e., using \code{\link{VARmdl}})
 #' @param k integer determining the number of regimes
 #' @param optim_options List containing 
 #' \itemize{
-#'  \item{maxit - }{maximum number of iterations.}
-#'  \item{thtol - }{convergence criterion.}
+#'  \item{\code{maxit}: }{maximum number of iterations.}
+#'  \item{\code{thtol}: }{convergence criterion.}
 #'}
 #'
 #' @return List with model attributes
@@ -638,10 +638,9 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 
 #' @title Print summary of a \code{Nmdl} object
 #'
-#'
 #' @inheritParams base::print
+#' 
 #' @export
-#'
 print.Nmdl <- function(mdl, digits = getOption("digits")){
   cat("\nNormally distributed model\n")
   frame_tmp <- data.frame(coef = mdl$theta)
@@ -659,10 +658,9 @@ print.Nmdl <- function(mdl, digits = getOption("digits")){
 
 #' @title Print summary of an \code{ARmdl} object
 #'
-#'
 #' @inheritParams base::print
+#' 
 #' @export
-#'
 print.ARmdl <- function(mdl, digits = getOption("digits")){
   cat("\nAutoregressive model\n")
   frame_tmp <- data.frame(coef = mdl$theta)
@@ -682,7 +680,6 @@ print.ARmdl <- function(mdl, digits = getOption("digits")){
 #'
 #' @inheritParams base::print
 #' @export
-#'
 print.VARmdl <- function(mdl, digits = getOption("digits")){
   cat("\nVector autoregressive model\n")
   frame_tmp <- data.frame(coef = mdl$theta)
@@ -699,10 +696,9 @@ print.VARmdl <- function(mdl, digits = getOption("digits")){
 
 #' @title Print summary of a \code{HMmdl} object
 #'
-#'
 #' @inheritParams base::print
+#' 
 #' @export
-#'
 print.HMmdl <- function(mdl, digits = getOption("digits")){
   cat("\nHidden Markov Model\n")
   frame_tmp <- data.frame(coef = mdl$theta)
@@ -715,16 +711,15 @@ print.HMmdl <- function(mdl, digits = getOption("digits")){
   cat(paste("\nAIC = "),mdl$AIC)
   cat(paste("\nBIC = "),mdl$BIC)
   invisible(mdl)
-}  
+}
 
 
 
 #' @title Print summary of a \code{MSARmdl} object
 #'
-#'
 #' @inheritParams base::print
+#' 
 #' @export
-#'
 print.MSARmdl <- function(mdl, digits = getOption("digits")){
   cat("\nMarkov-switching autoregressive model\n")
   frame_tmp <- data.frame(coef = mdl$theta)
@@ -737,15 +732,14 @@ print.MSARmdl <- function(mdl, digits = getOption("digits")){
   cat(paste("\nAIC = "),mdl$AIC)
   cat(paste("\nBIC = "),mdl$BIC)
   invisible(mdl)
-}  
+}
 
 
 #' @title Print summary of a \code{MSVARmdl} object
 #'
-#'
 #' @inheritParams base::print
+#' 
 #' @export
-#'
 print.MSVARmdl <- function(mdl, digits = getOption("digits")){
   cat("\nMarkov-switching vector autoregressive model\n")
   frame_tmp <- data.frame(coef = mdl$theta)
@@ -758,16 +752,7 @@ print.MSVARmdl <- function(mdl, digits = getOption("digits")){
   cat(paste("\nAIC = "),mdl$AIC)
   cat(paste("\nBIC = "),mdl$BIC)
   invisible(mdl)
-}  
-
-
-
-
-
-
-
-
-
+}
 
 
 

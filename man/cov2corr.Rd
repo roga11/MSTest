@@ -7,11 +7,11 @@
 cov2corr(cov_mat)
 }
 \arguments{
-\item{(n}{x n) covariance matrix}
+\item{\code{cov_mat}}{A (\code{n x n}) covariance matrix.}
 }
 \value{
-(n x n) correlation matrix
+A (\code{n x n}) correlation matrix.
 }
 \description{
-This function takes an (n x n) covariance matrix and returns the associated (n x n) correlation matrix
+This function takes an (\code{n x n}) covariance matrix and returns the associated (\code{n x n}) correlation matrix.
 }

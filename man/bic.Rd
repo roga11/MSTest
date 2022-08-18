@@ -7,14 +7,14 @@
 bic(logLike, n, param_len)
 }
 \arguments{
-\item{logLike}{log-likelihood of estimated model}
+\item{logLike}{log-likelihood of estimated model.}
 
-\item{n}{number of time series observations}
+\item{n}{number of time series observations.}
 
-\item{param_len}{number of parameters in model}
+\item{param_len}{number of parameters in model.}
 }
 \value{
-BIC
+BIC value.
 }
 \description{
 This function computes the BIC when given the log-likelihood, number of observations, and number of parameters.

@@ -4,16 +4,16 @@
 \alias{ts_lagged}
 \title{Lagged Time Series Data}
 \usage{
-ts_lagged(Y, ar)
+ts_lagged(Y, p)
 }
 \arguments{
-\item{Y}{vector with time series observations. Required argument.}
+\item{\code{Y}}{Vector with time series observations.}
 
-\item{ar}{integer for the number of lags to use in estimation. Must be greater than or equal to 1. Default is 1.}
+\item{\code{p}}{integer for the number of lags to use in estimation. Must be greater than or equal to \code{1}.}
 }
 \value{
-List with vector y (vector of lagged Y) and matrix X of lagged observations.
+List with vector \code{y} (vector of lagged \code{Y}) and matrix \code{X} of lagged observations.
 }
 \description{
-This function takes a (T x 1) vector Y and returns the (T-p x 1) vector y and the (T-p x p) matrix of lagged observations.
+This function takes a (\code{T x 1}) vector \code{Y} and returns the (\code{T-p x 1}) vector \code{y} and the (\code{T-p x p}) matrix of lagged observations.
 }

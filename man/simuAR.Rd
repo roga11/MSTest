@@ -7,19 +7,21 @@
 simuAR(mdl_h0, burnin = 100L)
 }
 \arguments{
-\item{mdl_h0:}{List containing the following DGP parameters
-- n: length of series
-- mu: mean of process 
-- sigma: standard deviation of process
-- phi: vector of autoregressive coefficients}
+\item{\code{mdl_h0}}{List containing the following DGP parameters
+\itemize{
+  \item{\code{n}: }{Length of series.}
+  \item{\code{mu}: }{Mmean of process.}
+  \item{\code{sigma}: }{Standard deviation of process.}
+  \item{\code{phi}: }{Vector of autoregressive coefficients.}
+}}
 
-\item{burnin:}{number of simulated observations to remove from beginning. Default is 100}
+\item{\code{burnin}}{Number of simulated observations to remove from beginning. Default is \code{100}.}
 }
 \value{
-List with simulated autoregressive series and its DGP parameters
+List with simulated autoregressive series and its DGP parameters.
 }
 \description{
-This function simulates an autoregresive process
+This function simulates an autoregresive process.
 }
 \examples{
 set.seed(1234)

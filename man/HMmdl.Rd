@@ -7,9 +7,9 @@
 HMmdl(Y, k, control = list())
 }
 \arguments{
-\item{Y}{a \code{(T x q)} matrix of observations. Required.}
+\item{Y}{a \code{(T x q)} matrix of observations.}
 
-\item{k}{integer determining the number of regimes to use in estimation. Must be greater than or equal to \code{2}. Required.}
+\item{k}{integer determining the number of regimes to use in estimation. Must be greater than or equal to \code{2}.}
 
 \item{control}{List with model options including:
 \itemize{
@@ -37,6 +37,7 @@ List of class \code{HMmdl} (\code{S3} object) with model attributes including:
   \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
   \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
   \item{\code{theta_var_ind}: }{vector indicating location of variances with \code{1} and \code{0} otherwise.}
+  \item{\code{theta_var_ind}: }{vector indicating location of transition matrix elements with \code{1} and \code{0} otherwise.}
   \item{\code{n}: }{number of observations (same as \code{T}).}
   \item{\code{q}: }{number of series.}
   \item{\code{k}: }{number of regimes in estimated model.}
@@ -53,8 +54,8 @@ List of class \code{HMmdl} (\code{S3} object) with model attributes including:
   \item{\code{logLike}: }{log-likelihood.}
   \item{\code{AIC}: }{Akaike information criterion.}
   \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
-  \item{\code{Hess}: }{Hessian matrix. Approximated using \code{numDeriv} package and only returned if \code{getSE=TRUE}.}
-  \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess} which is approximated using \code{hessian} function from the \code{numDeriv} package. If matrix is not PD then nearest PD matrix is obtained using \code{nearPD} function from \code{lfm} package. Only returned if \code{getSE=TRUE}.}
+  \item{\code{Hess}: }{Hessian matrix. Approximated using \code{\link[numDeriv]{hessian}} and only returned if \code{getSE=TRUE}.}
+  \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lfm]{nearPD}}. Only returned if \code{getSE=TRUE}.}
   \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
   \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
   \item{\code{trace}: }{List with Lists of estimation output for each initial value used due to \code{use_diff_init > 1}.}
@@ -123,11 +124,11 @@ y_hmm_mdl
 
 }
 \references{
-Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” Journal of econometrics, 45 (1-2): 39–70.
+Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38..
 
-Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” Journal of the Royal Statistical Society. Series B 39 (1): 1–38.
+Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” \emph{Journal of econometrics}, 45 (1-2): 39–70.
 
-Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.” In Markov-Switching Vector Autoregressions, 6–28. Springer.
+Krolzig, H. M. 1997. “The markov-switching vector autoregressive model.”. Springer.
 }
 \seealso{
 \code{\link{Nmdl}}

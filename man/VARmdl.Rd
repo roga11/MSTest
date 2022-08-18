@@ -7,9 +7,9 @@
 VARmdl(Y, p, control = list())
 }
 \arguments{
-\item{Y}{a \code{(T x q)} matrix of observations. Required.}
+\item{Y}{a \code{(T x q)} matrix of observations.}
 
-\item{p}{integer determining the number of autoregressive lags. Required.}
+\item{p}{integer determining the number of autoregressive lags.}
 
 \item{control}{List with model options including:
 \itemize{
@@ -45,14 +45,14 @@ List of class \code{VARmdl} (\code{S3} object) with model attributes including:
   \item{\code{logLike}: }{log-likelihood.}
   \item{\code{AIC}: }{Akaike information criterion.}
   \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
-  \item{\code{Hess}: }{Hessian matrix. Approximated using \code{numDeriv} package and only returned if \code{getSE=TRUE}.}
-  \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess} which is approximated using \code{hessian} function from the \code{numDeriv} package. If matrix is not PD then nearest PD matrix is obtained using \code{nearPD} function from \code{lfm} package. Only returned if \code{getSE=TRUE}.}
+  \item{\code{Hess}: }{Hessian matrix. Approximated using \code{\link[numDeriv]{hessian}} and only returned if \code{getSE=TRUE}.}
+  \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lfm]{nearPD}}. Only returned if \code{getSE=TRUE}.}
   \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
   \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
 }
 }
 \description{
-This function estimates a vector autoregresive model with \code{p} lags. This can be used for the null hypothesis of a linear model against an alternative hypothesis of a Markov switching vector auttoregresive model with k regimes.
+This function estimates a vector autoregresive model with \code{p} lags. This can be used for the null hypothesis of a linear model against an alternative hypothesis of a Markov switching vector autoregressive model with \code{k} regimes.
 }
 \examples{
 # -------------------------- Bivariate VAR(1) process --------------------------

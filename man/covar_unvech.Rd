@@ -7,11 +7,12 @@
 covar_unvech(sig, n)
 }
 \arguments{
-\item{sig:}{(n+1)*n/2 vector 
-n: integer determining shape of the orginal matrix}
+\item{\code{sig}}{A (n+1)*n/2 vector.}
+
+\item{\code{n}}{Integer determining shape of the original matrix.}
 }
 \value{
-(n x n) covariance matrix
+A (\code{n x n}) covariance matrix.
 }
 \description{
 This function undoes the half-vectorization of a covariance matrix.

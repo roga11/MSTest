@@ -7,12 +7,12 @@
 aic(logLike, param_len)
 }
 \arguments{
-\item{logLike}{log-likelihood of estimated model}
+\item{logLike}{log-likelihood of estimated model.}
 
-\item{param_len}{number of parameters in model}
+\item{param_len}{number of parameters in model.}
 }
 \value{
-AIC
+AIC value.
 }
 \description{
 This function computes the AIC when given the log-likelihood and number of parameters.

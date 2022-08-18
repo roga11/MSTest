@@ -7,16 +7,14 @@
 ExpectationM_MSARmdl(theta, mdl, k)
 }
 \arguments{
-\item{theta}{vector of model parameters}
+\item{\code{theta}}{Vector of model parameters.}
 
-\item{mdl}{List with model attributes}
+\item{\code{mdl}}{List with model attributes.}
 
-\item{k}{integer determining the number of regimes}
+\item{\code{k}}{Integer determining the number of regimes.}
 }
 \value{
-log-likelihood given data
-
-List with log-likelihood (log-likelihood), and smoothed probabilities of each regime (xi_t_T).
+List which includes log-likelihood and smoothed probabilities of each regime.
 }
 \description{
 This function computes the log-likelihood for a markov-switching autoregressive model and uses the Hamilton smoother to obtain smoothed probabilities of each state. This is also the expectation step in the Expectation Maximization algorithm for a Markov-switching autoregressive model.

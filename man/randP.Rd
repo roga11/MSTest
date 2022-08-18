@@ -7,11 +7,11 @@
 randP(k)
 }
 \arguments{
-\item{k}{number of regimes. Must be greater than or equal to 2.}
+\item{\code{k}}{Number of regimes. Must be greater than or equal to \code{2}.}
 }
 \value{
-transition matrix with randomly generated entries.
+Transition matrix with randomly generated entries.
 }
 \description{
-This function creates a random transition matrix
+This function creates a random transition matrix.
 }

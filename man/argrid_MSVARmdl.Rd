@@ -7,21 +7,21 @@
 argrid_MSVARmdl(mu, sigma, k, ar, msmu, msvar)
 }
 \arguments{
-\item{mu}{(k x q) matrix of means in each regime (for k regimes and q time series)}
+\item{mu}{a (\code{k x q}) matrix of means in each regime (for \code{k} regimes and \code{q} time series).}
 
-\item{k}{integer determining the number of regimes}
+\item{k}{integer determining the number of regimes.}
 
-\item{ar}{number of autoregressive lags}
+\item{ar}{number of autoregressive lags.}
 
-\item{msmu}{boolean indicator. If 'TRUE' mean is subject to change. If 'FALSE' mean is constant across regimes}
+\item{msmu}{Boolean indicator. If \code{TRUE} mean is subject to change. If \code{FALSE} mean is constant across regimes.}
 
-\item{msvar}{boolean indicator. If 'TRUE' variance is subject to change. If 'FALSE' variance is constant across regimes}
+\item{msvar}{Boolean indicator. If \code{TRUE} variance is subject to change. If \code{FALSE} variance is constant across regimes.}
 
-\item{sig}{list with k regime specific (q x q) covariance matrices}
+\item{sig}{list with \code{k} regime specific (\code{q x q}) covariance matrices.}
 }
 \value{
-List with M regime specific (q x k) matrices of means, List with M regime specific covariance matrices, and vector indicating the corresponded 1,..., k regime.
+List with M regime specific (\code{q x k}) matrices of means, List with \code{M} regime specific covariance matrices, and vector indicating the corresponded \code{1,..., k} regime.
 }
 \description{
-Creates grid of means and covariance matrices consistent  with a Markov-switching vector autoregressive model.
+Creates grid of means and covariance matrices consistent with a Markov-switching vector autoregressive model.
 }

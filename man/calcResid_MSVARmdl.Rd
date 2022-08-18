@@ -7,15 +7,15 @@
 calcResid_MSVARmdl(mdl, mu, k)
 }
 \arguments{
-\item{mdl}{List containing relevant parameters.}
+\item{\code{mdl}}{List containing relevant parameters.}
 
-\item{mu}{vector with mean in each regime.}
+\item{\code{mu}}{Vector with mean in each regime.}
 
-\item{k}{number of regimes. Must be greater than or equal to 2.}
+\item{\code{k}}{Number of regimes. Must be greater than or equal to \code{2}.}
 }
 \value{
-List with M (Txq) matrix of residuals in each regime M where M=k^(ar+1)
+List with \code{M} (\code{Txq}) matrices of residuals in each regime \code{M} where \code{M=k^(ar+1)}.
 }
 \description{
-This function computes residuals of a Markov-switching vector autoregressive model. Note that
+This function computes residuals of a Markov-switching vector autoregressive model.
 }

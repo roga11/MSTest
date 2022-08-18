@@ -7,21 +7,23 @@
 simuMSAR(mdl_h0, burnin = 100L)
 }
 \arguments{
-\item{mdl_h0:}{List containing the following DGP parameters
-- n: length of series
-- k: number of regimes
-- mu: (k x 1) vector with mean of process in each regime
-- sigma: (k x 1) vector with standard deviation of process in each regime
-- phi: vector of autoregressive coefficients
-- P: (k x k) transition matrix (columns must sum to one)}
+\item{\code{mdl_h0}}{List containing the following DGP parameters
+\itemize{
+  \item{\code{n}: }{Length of series.}
+  \item{\code{k}: }{Number of regimes.}
+  \item{\code{mu}: }{A (\code{k x 1}) vector with mean of process in each regime.}
+  \item{\code{sigma}: }{A (\code{k x 1}) vector with standard deviation of process in each regime.}
+  \item{\code{phi}: }{Vector of autoregressive coefficients.}
+  \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+}}
 
-\item{burnin:}{number of simulated observations to remove from beginning. Default is 100}
+\item{\code{burnin}}{Number of simulated observations to remove from beginning. Default is \code{100}.}
 }
 \value{
-List with simulated Markov-switching autoregressive process and its DGP properties
+List with simulated Markov-switching autoregressive process and its DGP properties.
 }
 \description{
-This function simulates a Markov-switching autoregressive process
+This function simulates a Markov-switching autoregressive process.
 }
 \examples{
 set.seed(1234)

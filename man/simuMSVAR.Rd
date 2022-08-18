@@ -7,22 +7,24 @@
 simuMSVAR(mdl_h0, burnin = 100L)
 }
 \arguments{
-\item{mdl_h0:}{List containing the following DGP parameters
-- n: length of series
-- k: number of regimes
-- mu: (k x q) matrix of means 
-- sigma: List with k (q x q) covariance matrices
-- phi: (q x qp) matrix of autoregressive coefficients
-- ar: number of autoregressive lags (i.e, p)
-- P: (k x k) transition matrix (columns must sum to one)}
+\item{\code{mdl_h0}}{List containing the following DGP parameters
+\itemize{
+  \item{\code{n}: }{Length of series.}
+  \item{\code{k}: }{Number of regimes.}
+  \item{\code{mu}: }{A (\code{k x q}) matrix of means.}
+  \item{\code{sigma}: }{List with \code{k} (\code{q x q}) covariance matrices.}
+  \item{\code{phi}: }{A (\code{q x qp}) matrix of autoregressive coefficients.}
+  \item{\code{p}: }{Number of autoregressive lags.}
+  \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+}}
 
-\item{burnin:}{number of simulated observations to remove from beginning. Default is 100}
+\item{\code{burnin}}{Number of simulated observations to remove from beginning. Default is \code{100}.}
 }
 \value{
-List with simulated vector autoregressive series and its DGP parameters
+List with simulated vector autoregressive series and its DGP parameters.
 }
 \description{
-This function simulates a Markov-switching vector autoregressive process
+This function simulates a Markov-switching vector autoregressive process.
 }
 \examples{
 set.seed(1234)

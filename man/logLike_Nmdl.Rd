@@ -7,13 +7,13 @@
 logLike_Nmdl(theta, mdl)
 }
 \arguments{
-\item{theta}{vector of model parameters}
+\item{\code{theta}}{Vector of model parameters.}
 
-\item{mdl}{List with model attributes}
+\item{\code{mdl}}{List with model attributes.}
 }
 \value{
-log-likelihood given data
+Log-likelihood value.
 }
 \description{
-This function computes the log-likelihood for a normally distributed model
+This function computes the log-likelihood for a normally distributed model.
 }

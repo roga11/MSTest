@@ -3,11 +3,11 @@
 
 #' @title Covariance to correlation matrix
 #' 
-#' @description This function takes an (n x n) covariance matrix and returns the associated (n x n) correlation matrix
+#' @description This function takes an (\code{n x n}) covariance matrix and returns the associated (\code{n x n}) correlation matrix.
 #' 
-#' @param (n x n) covariance matrix
+#' @param \code{cov_mat} A (\code{n x n}) covariance matrix.
 #' 
-#' @return (n x n) correlation matrix
+#' @return A (\code{n x n}) correlation matrix.
 #' 
 #' @export
 cov2corr <- function(cov_mat) {
@@ -18,9 +18,9 @@ cov2corr <- function(cov_mat) {
 #' 
 #' @description This function returns the half-vectorization of an input matrix as a column vector.
 #' 
-#' @param mat: (n x n) covariance matrix
+#' @param \code{mat} A (\code{n x n}) covariance matrix.
 #' 
-#' @return (n+1)*n/2 column vector 
+#' @return A \code{(n+1)*n/2} column vector.
 #' 
 #' @export
 covar_vech <- function(mat) {
@@ -31,10 +31,10 @@ covar_vech <- function(mat) {
 #' 
 #' @description This function undoes the half-vectorization of a covariance matrix.
 #' 
-#' @param sig: (n+1)*n/2 vector 
-#' n: integer determining shape of the orginal matrix
+#' @param \code{sig} A (n+1)*n/2 vector.
+#' @param \code{n} Integer determining shape of the original matrix.
 #' 
-#' @return (n x n) covariance matrix
+#' @return A (\code{n x n}) covariance matrix.
 #' 
 #' @export
 covar_unvech <- function(sig, n) {
@@ -43,11 +43,11 @@ covar_unvech <- function(sig, n) {
 
 #' @title Random Transition Matrix
 #' 
-#' @description This function creates a random transition matrix
+#' @description This function creates a random transition matrix.
 #' 
-#' @param k number of regimes. Must be greater than or equal to 2. 
+#' @param \code{k} Number of regimes. Must be greater than or equal to \code{2}. 
 #' 
-#' @return transition matrix with randomly generated entries.
+#' @return Transition matrix with randomly generated entries.
 #' 
 #' @export
 randP <- function(k) {
@@ -56,11 +56,11 @@ randP <- function(k) {
 
 #' @title Ergodic (limiting) probabilities of states
 #' 
-#' @description Takes a transition matrix and returns the limiting probabilities
+#' @description Takes a transition matrix and returns the limiting probabilities.
 #' 
-#' @param P: matrix with transition probabilities
+#' @param \code{P} Matrix with transition probabilities.
 #' 
-#' @return (k x 1) vector of limiting probabilities
+#' @return A (\code{k x 1}) vector of limiting probabilities.
 #' 
 #' @export
 limP <- function(P) {
@@ -69,29 +69,29 @@ limP <- function(P) {
 
 #' @title Lagged Time Series Data
 #' 
-#' @description This function takes a (T x 1) vector Y and returns the (T-p x 1) vector y and the (T-p x p) matrix of lagged observations.
+#' @description This function takes a (\code{T x 1}) vector \code{Y} and returns the (\code{T-p x 1}) vector \code{y} and the (\code{T-p x p}) matrix of lagged observations.
 #' 
-#' @param Y vector with time series observations. Required argument. 
-#' @param ar integer for the number of lags to use in estimation. Must be greater than or equal to 1. Default is 1.
+#' @param \code{Y} Vector with time series observations.
+#' @param \code{p} integer for the number of lags to use in estimation. Must be greater than or equal to \code{1}.
 #' 
-#' @return List with vector y (vector of lagged Y) and matrix X of lagged observations.
+#' @return List with vector \code{y} (vector of lagged \code{Y}) and matrix \code{X} of lagged observations.
 #' 
 #' @export
-ts_lagged <- function(Y, ar) {
-    .Call(`_MSTest_ts_lagged`, Y, ar)
+ts_lagged <- function(Y, p) {
+    .Call(`_MSTest_ts_lagged`, Y, p)
 }
 
 #' @title Parameter list for Markov-switching autoregressive model
 #' 
-#' @description This function takes the parameter vector of interest and converts it to a list with specific parameter vectors needed for univariate Markov-switching functions
+#' @description This function takes the parameter vector of interest and converts it to a list with specific parameter vectors needed for univariate Markov-switching functions.
 #' 
-#' @param theta: vector of parameters.
-#' @param ar: umber of autoregressive lags
-#' @param k: number of regimes
-#' @param msmu: bool indicating is the mean switches with regime 
-#' @param msvar: bool indicating is the variance switches with regime 
+#' @param \code{theta} Vector of parameters.
+#' @param \code{p} Number of autoregressive lags.
+#' @param \code{k} Number of regimes.
+#' @param \code{msmu} Boolean indicating if the mean switches with regime.
+#' @param \code{msvar}Boolean indicating if the variance switches with regime. 
 #' 
-#' @return List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators
+#' @return List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators.
 #' 
 #' @export
 paramList_MSARmdl <- function(theta, p, k, msmu, msvar) {
@@ -100,31 +100,31 @@ paramList_MSARmdl <- function(theta, p, k, msmu, msvar) {
 
 #' @title Parameter list for Markov-switching vector autoregressive model
 #' 
-#' @description This function takes the parameter vector of interest and converts it to a list with specific parameter vectors needed for multivariate Markov-switching functions
+#' @description This function takes the parameter vector of interest and converts it to a list with specific parameter vectors needed for multivariate Markov-switching functions.
 #' 
-#' @param theta: vector of parameters.
-#' @param q: number of time series 
-#' @param ar: umber of autoregressive lags
-#' @param k: number of regimes
-#' @param msmu: bool indicating is the mean switches with regime 
-#' @param msvar: bool indicating is the variance switches with regime 
+#' @param \code{theta} Vector of parameters.
+#' @param \code{q} Number of time series.
+#' @param \code{p} Number of autoregressive lags.
+#' @param \code{k} Number of regimes.
+#' @param \code{msmu} Boolean indicating if the mean switches with regime.
+#' @param \code{msvar} Boolean indicating if the variance switches with regime. 
 #' 
-#' @return List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators
+#' @return List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators.
 #' 
 #' @export
-paramList_MSVARmdl <- function(theta, q, ar, k, msmu, msvar) {
-    .Call(`_MSTest_paramList_MSVARmdl`, theta, q, ar, k, msmu, msvar)
+paramList_MSVARmdl <- function(theta, q, p, k, msmu, msvar) {
+    .Call(`_MSTest_paramList_MSVARmdl`, theta, q, p, k, msmu, msvar)
 }
 
 #' @title Markov-switching autoregressive model residuals
 #' 
-#' @description This function computes residuals of a Markov-switching autoregressive model
+#' @description This function computes residuals of a Markov-switching autoregressive model.
 #' 
-#' @param mdl List containing relevant parameters.
-#' @param mu vector with mean in each regime.
-#' @param k number of regimes. Must be greater than or equal to 2. 
+#' @param \code{mdl} List containing relevant parameters.
+#' @param \code{mu} Vector with mean in each regime.
+#' @param \code{k} number of regimes. Must be greater than or equal to \code{2}. 
 #' 
-#' @return (TxM) matrix of residuals in each regime M where M=k^(ar+1)
+#' @return A (\code{TxM}) matrix of residuals in each regime \code{M} where \code{M=k^(ar+1)}.
 #' 
 #' @export
 calcResid_MSARmdl <- function(mdl, mu, k) {
@@ -133,13 +133,13 @@ calcResid_MSARmdl <- function(mdl, mu, k) {
 
 #' @title Markov-switching vector autoregressive model residuals
 #' 
-#' @description This function computes residuals of a Markov-switching vector autoregressive model. Note that 
+#' @description This function computes residuals of a Markov-switching vector autoregressive model. 
 #' 
-#' @param mdl List containing relevant parameters.
-#' @param mu vector with mean in each regime.
-#' @param k number of regimes. Must be greater than or equal to 2. 
+#' @param \code{mdl} List containing relevant parameters.
+#' @param \code{mu} Vector with mean in each regime.
+#' @param \code{k} Number of regimes. Must be greater than or equal to \code{2}. 
 #' 
-#' @return List with M (Txq) matrix of residuals in each regime M where M=k^(ar+1)
+#' @return List with \code{M} (\code{Txq}) matrices of residuals in each regime \code{M} where \code{M=k^(ar+1)}.
 #' 
 #' @export
 calcResid_MSVARmdl <- function(mdl, mu, k) {
@@ -148,16 +148,18 @@ calcResid_MSVARmdl <- function(mdl, mu, k) {
 
 #' @title Initial values for Hidden Markov model
 #' 
-#' @description This function generates a random parameter vector to be used as initial values for a Hidden Markov model
+#' @description This function generates a random parameter vector to be used as initial values for a Hidden Markov model.
 #' 
-#' @param mdl: List with parameter values of simple (one-regime) model. This includes
-#'   - mu: vector of means
-#'   - sigma: covariance matrix
-#'   - msmu: boolean indicator. If TRUE, mean is function of markov process. If FALSE, mean is constant across regimes
-#'   - msvar: boolean indicator. If TRUE, standard deviation is function of markov process. If FALSE, standard deviation is constant across regimes
-#' @param k: number of regimes
+#' @param \code{mdl} List with parameter values of simple (one-regime) model. This includes:
+#' \itemize{
+#'   \item{\code{mu}: }{Vector of means.}
+#'   \item{\code{sigma}: }{covariance matrix.}
+#'   \item{\code{msmu}: }{Boolean indicator. If \code{TRUE}, mean is function of markov process. If \code{FALSE}, mean is constant across regimes.}
+#'   \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, standard deviation is function of markov process. If \code{FALSE}, standard deviation is constant across regimes.}
+#' }
+#' @param \code{k} Number of regimes.
 #' 
-#' @return vector of initial parameter values
+#' @return Vector of initial parameter values.
 #' 
 #' @export
 initVals_HMmdl <- function(mdl, k) {
@@ -166,17 +168,19 @@ initVals_HMmdl <- function(mdl, k) {
 
 #' @title Initial values for Markov-switching autoregressive model
 #' 
-#' @description This function generates a random parameter vector to be used as initial values for a Markov-switching autoregressive model
+#' @description This function generates a random parameter vector to be used as initial values for a Markov-switching autoregressive model.
 #' 
-#' @param mdl: List with parameter values of simple (one-regime) autoregressive model. This includes
-#'   - phi: vector autoregressive coefficients
-#'   - mu: mean of process 
-#'   - stdev: standard deviation
-#'   - msmu: boolean indicator. If TRUE, mean is function of markov process. If FALSE, mean is constant across regimes
-#'   - msvar: boolean indicator. If TRUE, standard deviation is function of markov process. If FALSE, standard deviation is constant across regimes
-#' @param k: number of regimes
+#' @param \code{mdl} List with parameter values of simple (one-regime) autoregressive model. This includes:
+#' \itemize{
+#'   \item{\code{phi}: }{Vector autoregressive coefficients.}
+#'   \item{\code{mu}: }{Mean of process.}
+#'   \item{\code{stdev}: }{Standard deviation.}
+#'   \item{\code{msmu}: }{Boolean indicator. If \code{TRUE}, mean is function of markov process. If \code{FALSE}, mean is constant across regimes.}
+#'   \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, standard deviation is function of markov process. If \code{FALSE}, standard deviation is constant across regimes.}
+#' }
+#' @param \code{k} Number of regimes.
 #' 
-#' @return vector of initial parameter values
+#' @return Vector of initial parameter values.
 #' 
 #' @export
 initVals_MSARmdl <- function(mdl, k) {
@@ -185,17 +189,19 @@ initVals_MSARmdl <- function(mdl, k) {
 
 #' @title Initial values for Markov-switching vector autoregressive model
 #' 
-#' @description This function generates a random parameter vector to be used as initial values for a Markov-switching vector autoregressive model
+#' @description This function generates a random parameter vector to be used as initial values for a Markov-switching vector autoregressive model.
 #' 
-#' @param mdl: List with parameter values of simple (one-regime) vector autoregressive model. This includes
-#'   - phi: matrix autoregressive coefficients
-#'   - mu: vector of means
-#'   - sigma: covariance matrix
-#'   - msmu: boolean indicator. If TRUE, mean is function of markov process. If FALSE, mean is constant across regimes
-#'   - msvar: boolean indicator. If TRUE, standard deviation is function of markov process. If FALSE, standard deviation is constant across regimes
-#' @param k: number of regimes
+#' @param \code{mdl} List with parameter values of simple (one-regime) vector autoregressive model. This includes:
+#'   \itemize{
+#'    \item{\code{phi}: }{Matrix autoregressive coefficients.}
+#'    \item{\code{mu}: }{Vector of means.}
+#'    \item{\code{sigma}: }{Covariance matrix.}
+#'    \item{\code{msmu}: }{Boolean indicator. If \code{TRUE}, mean is function of markov process. If \code{FALSE}, mean is constant across regimes.}
+#'    \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, standard deviation is function of markov process. If \code{FALSE}, standard deviation is constant across regimes.}
+#' }
+#' @param \code{k} Number of regimes.
 #' 
-#' @return vector of initial parameter values
+#' @return Vector of initial parameter values.
 #' 
 #' @export
 initVals_MSVARmdl <- function(mdl, k) {
@@ -204,20 +210,16 @@ initVals_MSVARmdl <- function(mdl, k) {
 
 #' @title Monte Carlo P-value
 #' 
-#' @description This function computes the Monte Carlo P-value
+#' @description This function computes the Monte Carlo P-value.
 #' 
-#' @param test_stat: test statistic under the alternative (e.g. S_0)
-#' @param null_vec: (N x 1) vector with test statistic under the null hypothesis
-#' @param type: type of test of test. options are: "geq" for right-tail test, "leq" for 
-#' left-tail test, "abs" for absolute vallue test and "two-tail" for two-tail test.
+#' @param \code{test_stat} Test statistic under the alternative (e.g. \code{S_0}).
+#' @param \code{null_vec} A (\code{N x 1}) vector with test statistic under the null hypothesis.
+#' @param \code{type} String determining type of test. options are: "geq" for right-tail test, "leq" for left-tail test, "abs" for absolute value test and "two-tail" for two-tail test.
 #' 
 #' @return MC p-value of test
 #' 
-#' @references Dufour, J. M. (2006). Monte Carlo tests with nuisance parameters: 
-#' A general approach to finite-sample inference and nonstandard asymptotics. 
-#' Journal of Econometrics, 133(2), 443-477.
-#' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-#' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+#' @references Dufour, J. M. (2006). Monte Carlo tests with nuisance parameters: A general approach to finite-sample inference and nonstandard asymptotics. \emph{Journal of Econometrics}, 133(2), 443-477.
+#' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based tests for Markov switching in autoregressive models. \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
 #' @export
 MCpval <- function(test_stat, null_vec, type = "geq") {
@@ -226,17 +228,18 @@ MCpval <- function(test_stat, null_vec, type = "geq") {
 
 #' @title Simulate autoregressive process
 #' 
-#' @description This function simulates an autoregresive process
+#' @description This function simulates an autoregresive process.
 #' 
-#' @param mdl_h0: List containing the following DGP parameters
-#'   - n: length of series
-#'   - mu: mean of process 
-#'   - sigma: standard deviation of process
-#'   - phi: vector of autoregressive coefficients
-#'   
-#' @param burnin: number of simulated observations to remove from beginning. Default is 100
+#' @param \code{mdl_h0} List containing the following DGP parameters
+#' \itemize{
+#'   \item{\code{n}: }{Length of series.}
+#'   \item{\code{mu}: }{Mmean of process.}
+#'   \item{\code{sigma}: }{Standard deviation of process.}
+#'   \item{\code{phi}: }{Vector of autoregressive coefficients.}
+#' }
+#' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
-#' @return List with simulated autoregressive series and its DGP parameters
+#' @return List with simulated autoregressive series and its DGP parameters.
 #' 
 #' @example /examples/simuAR_examples.R
 #' @export
@@ -246,19 +249,20 @@ simuAR <- function(mdl_h0, burnin = 100L) {
 
 #' @title Simulate Markov-switching autoregressive process
 #' 
-#' @description This function simulates a Markov-switching autoregressive process
+#' @description This function simulates a Markov-switching autoregressive process.
 #' 
-#' @param mdl_h0: List containing the following DGP parameters
-#'   - n: length of series
-#'   - k: number of regimes
-#'   - mu: (k x 1) vector with mean of process in each regime
-#'   - sigma: (k x 1) vector with standard deviation of process in each regime
-#'   - phi: vector of autoregressive coefficients
-#'   - P: (k x k) transition matrix (columns must sum to one)
-#'   
-#' @param burnin: number of simulated observations to remove from beginning. Default is 100
+#' @param \code{mdl_h0} List containing the following DGP parameters
+#' \itemize{
+#'   \item{\code{n}: }{Length of series.}
+#'   \item{\code{k}: }{Number of regimes.}
+#'   \item{\code{mu}: }{A (\code{k x 1}) vector with mean of process in each regime.}
+#'   \item{\code{sigma}: }{A (\code{k x 1}) vector with standard deviation of process in each regime.}
+#'   \item{\code{phi}: }{Vector of autoregressive coefficients.}
+#'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+#' }
+#' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
-#' @return List with simulated Markov-switching autoregressive process and its DGP properties
+#' @return List with simulated Markov-switching autoregressive process and its DGP properties.
 #' 
 #' @example /examples/simuMSAR_examples.R
 #' @export
@@ -268,18 +272,19 @@ simuMSAR <- function(mdl_h0, burnin = 100L) {
 
 #' @title Simulate VAR process
 #' 
-#' @description This function simulates a vector autoregresive process
+#' @description This function simulates a vector autoregresive process.
 #' 
-#' @param mdl_h0: List containing the following DGP parameters
-#'   - n: length of series
-#'   - mu: (q x 1) vector of means 
-#'   - sigma: (q x q) covariance matrix 
-#'   - phi: (q x qp) matrix of autoregressive coefficients
-#'   - ar: number of autoregressive lags (i.e, p)
-#'   
-#' @param burnin: number of simulated observations to remove from beginning. Default is 100
+#' @param \code{mdl_h0} List containing the following DGP parameters
+#' \itemize{
+#'   \item{\code{n}: }{Length of series.}
+#'   \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
+#'   \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
+#'   \item{\code{phi}: }{ A (\code{q x qp}) matrix of autoregressive coefficients.}
+#'   \item{\code{p}: }{Number of autoregressive lags.}
+#' }
+#' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
-#' @return List with simulated vector autoregressive series and its DGP parameters
+#' @return List with simulated vector autoregressive series and its DGP parameters.
 #' 
 #' @example /examples/simuVAR_examples.R
 #' @export
@@ -289,20 +294,21 @@ simuVAR <- function(mdl_h0, burnin = 100L) {
 
 #' @title Simulate Markov-switching vector autoregressive process
 #' 
-#' @description This function simulates a Markov-switching vector autoregressive process
+#' @description This function simulates a Markov-switching vector autoregressive process.
 #' 
-#' @param mdl_h0: List containing the following DGP parameters
-#'   - n: length of series
-#'   - k: number of regimes
-#'   - mu: (k x q) matrix of means 
-#'   - sigma: List with k (q x q) covariance matrices
-#'   - phi: (q x qp) matrix of autoregressive coefficients
-#'   - ar: number of autoregressive lags (i.e, p)
-#'   - P: (k x k) transition matrix (columns must sum to one)
-#'   
-#' @param burnin: number of simulated observations to remove from beginning. Default is 100
+#' @param \code{mdl_h0} List containing the following DGP parameters
+#' \itemize{
+#'   \item{\code{n}: }{Length of series.}
+#'   \item{\code{k}: }{Number of regimes.}
+#'   \item{\code{mu}: }{A (\code{k x q}) matrix of means.}
+#'   \item{\code{sigma}: }{List with \code{k} (\code{q x q}) covariance matrices.}
+#'   \item{\code{phi}: }{A (\code{q x qp}) matrix of autoregressive coefficients.}
+#'   \item{\code{p}: }{Number of autoregressive lags.}
+#'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+#' }
+#' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
-#' @return List with simulated vector autoregressive series and its DGP parameters
+#' @return List with simulated vector autoregressive series and its DGP parameters.
 #' 
 #' @example /examples/simuMSVAR_examples.R
 #' @export
@@ -312,14 +318,16 @@ simuMSVAR <- function(mdl_h0, burnin = 100L) {
 
 #' @title Simulate normally distributed process
 #' 
-#' @description This function simulates a normally distributed process
+#' @description This function simulates a normally distributed process.
 #' 
-#' @param mdl_h0: List containing the following DGP parameters
-#'   - n: length of series
-#'   - mu: (q x 1) vector of means 
-#'   - sigma: (q x q) covariance matrix. If simulating a univariate process (i.e., length of mu is 1), this should be the standard devation and not the variance.
-#'   
-#' @return List with simulated series and its DGP parameters
+#' @param \code{mdl_h0} List containing the following DGP parameters
+#' \itemize{
+#'   \item{\code{n}: }{Length of series.}
+#'   \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
+#'   \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
+#' }
+#' 
+#' @return List with simulated series and its DGP parameters.
 #' 
 #' @example /examples/simuNorm_examples.R
 #' @export
@@ -329,18 +337,19 @@ simuNorm <- function(mdl_h0) {
 
 #' @title Simulate Hidden Markov model with normally distributed errors
 #' 
-#' @description This function simulates a Hidden Markov Model process
+#' @description This function simulates a Hidden Markov Model process.
 #' 
-#' @param mdl_h0: List containing the following DGP parameters
-#'   - n: length of series
-#'   - k: number of regimes
-#'   - mu: (k x q) vector of means 
-#'   - sigma: (q x q) covariance matrix. If simulating a univariate process (i.e., length of mu is 1), this should be the standard devation and not the variance.
-#'   - P: (k x k) transition matrix (columns must sum to one)
-#'   
-#' @param burnin: number of simulated observations to remove from beginning. Default is 100
+#' @param \code{mdl_h0} List containing the following DGP parameters
+#' \itemize{
+#'   \item{\code{n}: }{Length of series.}
+#'   \item{\code{k}: }{Number of regimes.}
+#'   \item{\code{mu}: }{A (\code{k x q}) vector of means.}
+#'   \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
+#'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+#' }
+#' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
-#' @return List with simulated series and its DGP parameters
+#' @return List with simulated series and its DGP parameters.
 #' 
 #' @example /examples/simuHMM_examples.R
 #' @export
@@ -350,12 +359,12 @@ simuHMM <- function(mdl_h0, burnin = 100L) {
 
 #' @title Normal log-likelihood objective function 
 #' 
-#' @description This function computes the log-likelihood for a normally distributed model
+#' @description This function computes the log-likelihood for a normally distributed model.
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
 #' 
-#' @return log-likelihood given data
+#' @return Log-likelihood value.
 #' 
 #' @export
 logLike_Nmdl <- function(theta, mdl) {
@@ -364,12 +373,12 @@ logLike_Nmdl <- function(theta, mdl) {
 
 #' @title Autoregressive log-likelihood objective function
 #' 
-#' @description This function computes the log-likelihood for an autoregressive model
+#' @description This function computes the log-likelihood for an autoregressive model.
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
 #' 
-#' @return log-likelihood given data
+#' @return Log-likelihood value.
 #' 
 #' @export
 logLike_ARmdl <- function(theta, mdl) {
@@ -378,12 +387,12 @@ logLike_ARmdl <- function(theta, mdl) {
 
 #' @title Vector autoregressive log-likelihood objective function 
 #' 
-#' @description This function computes the log-likelihood for a vector autoregressive model
+#' @description This function computes the log-likelihood for a vector autoregressive model.
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
 #' 
-#' @return log-likelihood given data
+#' @return Log-likelihood value.
 #' 
 #' @export
 logLike_VARmdl <- function(theta, mdl) {
@@ -392,13 +401,13 @@ logLike_VARmdl <- function(theta, mdl) {
 
 #' @title Hidden Markov model log-likelihood function 
 #' 
-#' @description This function computes the log-likelihood for a markov-switching autoregressive model
+#' @description This function computes the log-likelihood for a markov-switching autoregressive model.
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
-#' @param k integer determining the number of regimes
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{k} Integer determining the number of regimes.
 #'  
-#' @return List with log-likelihood (log-likelihood), and smoothed probabilities of each regime (xi_t_T).
+#' @return Log-likelihood value.
 #' 
 #' @export
 logLike_HMmdl <- function(theta, mdl, k) {
@@ -407,13 +416,13 @@ logLike_HMmdl <- function(theta, mdl, k) {
 
 #' @title Hidden Markov model log-likelihood function  (minimization version)
 #' 
-#' @description This function computes the (negative) log-likelihood for a markov-switching autoregressive model
+#' @description This function computes the (negative) log-likelihood for a markov-switching autoregressive model.
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
-#' @param k integer determining the number of regimes
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{k} integer determining the number of regimes.
 #' 
-#' @return negative log-likelihood given data
+#' @return Negative log-likelihood value.
 #' 
 #' @export
 logLike_HMmdl_min <- function(theta, mdl, k) {
@@ -422,13 +431,13 @@ logLike_HMmdl_min <- function(theta, mdl, k) {
 
 #' @title Markov-switching autoregressive log-likelihood objective function
 #' 
-#' @description This function computes the log-likelihood for a markov-switching autoregressive model
+#' @description This function computes the log-likelihood for a markov-switching autoregressive model.
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
-#' @param k integer determining the number of regimes
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{k} Integer determining the number of regimes.
 #' 
-#' @return log-likelihood given data
+#' @return Log-likelihood value.
 #' 
 #' @export
 logLike_MSARmdl <- function(theta, mdl, k) {
@@ -437,13 +446,13 @@ logLike_MSARmdl <- function(theta, mdl, k) {
 
 #' @title Markov-switching autoregressive log-likelihood objective function (minimization version)
 #' 
-#' @description This function computes the (negative) log-likelihood for a markov-switching autoregressive model
+#' @description This function computes the (negative) log-likelihood for a markov-switching autoregressive model.
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
-#' @param k integer determining the number of regimes
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{k} integer determining the number of regimes.
 #' 
-#' @return negative log-likelihood given data
+#' @return Negative log-likelihood value.
 #' 
 #' @export
 logLike_MSARmdl_min <- function(theta, mdl, k) {
@@ -452,13 +461,13 @@ logLike_MSARmdl_min <- function(theta, mdl, k) {
 
 #' @title Markov-switching vector autoregressive log-likelihood objective function
 #' 
-#' @description This function computes the log-likelihood for a markov-switching vector autoregressive model
+#' @description This function computes the log-likelihood for a markov-switching vector autoregressive model.
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
-#' @param k integer determining the number of regimes
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{k} Integer determining the number of regimes.
 #' 
-#' @return log-likelihood given data
+#' @return Log-likelihood value.
 #' 
 #' @export
 logLike_MSVARmdl <- function(theta, mdl, k) {
@@ -469,11 +478,11 @@ logLike_MSVARmdl <- function(theta, mdl, k) {
 #' 
 #' @description This function computes the (negative) log-likelihood for a markov-switching vector autoregressive model
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
-#' @param k integer determining the number of regimes
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{k} Integer determining the number of regimes.
 #' 
-#' @return negative log-likelihood given data
+#' @return Negative log-likelihood value.
 #' 
 #' @export
 logLike_MSVARmdl_min <- function(theta, mdl, k) {
@@ -484,13 +493,11 @@ logLike_MSVARmdl_min <- function(theta, mdl, k) {
 #' 
 #' @description This function computes the log-likelihood for a Hidden MArkov model and uses the Hamilton smoother to obtain smoothed probabilities of each state. This is also the expectation step in the Expectation Maximization algorithm for a Markov-switching autoregressive model.
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
-#' @param k integer determining the number of regimes
-#' 
-#' @return log-likelihood given data
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{k} Integer determining the number of regimes.
 #'  
-#' @return List with log-likelihood (log-likelihood), and smoothed probabilities of each regime (xi_t_T).
+#' @return List which includes log-likelihood value and smoothed probabilities of each regime.
 #' 
 #' @export
 ExpectationM_HMmdl <- function(theta, mdl, k) {
@@ -501,13 +508,11 @@ ExpectationM_HMmdl <- function(theta, mdl, k) {
 #' 
 #' @description This function computes the log-likelihood for a markov-switching autoregressive model and uses the Hamilton smoother to obtain smoothed probabilities of each state. This is also the expectation step in the Expectation Maximization algorithm for a Markov-switching autoregressive model.
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
-#' @param k integer determining the number of regimes
-#' 
-#' @return log-likelihood given data
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{k} Integer determining the number of regimes.
 #'  
-#' @return List with log-likelihood (log-likelihood), and smoothed probabilities of each regime (xi_t_T).
+#' @return List which includes log-likelihood and smoothed probabilities of each regime.
 #' 
 #' @export
 ExpectationM_MSARmdl <- function(theta, mdl, k) {
@@ -518,13 +523,11 @@ ExpectationM_MSARmdl <- function(theta, mdl, k) {
 #' 
 #' @description This function computes the log-likelihood for a markov-switching vector autoregressive model and uses the Hamilton smoother to obtain smoothed probabilities of each state. This is also the expectation step in the Expectation Maximization algorithm for a Markov-switching autoregressive model.
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
-#' @param k integer determining the number of regimes
-#' 
-#' @return log-likelihood given data
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{k} Integer determining the number of regimes.
 #'  
-#' @return List with log-likelihood (log-likelihood), and smoothed probabilities of each regime (xi_t_T).
+#' @return List which includes log-likelihood and smoothed probabilities of each regime.
 #' 
 #' @export
 ExpectationM_MSVARmdl <- function(theta, mdl, k) {
@@ -535,12 +538,12 @@ ExpectationM_MSVARmdl <- function(theta, mdl, k) {
 #' 
 #' @description This function performs the maximization step of the Expectation Maximization algorithm for Hidden Markov models.
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
-#' @param MSloglik_output List with output from Expectation step of EM algorithm for Markov-switching vector autoregressive model
-#' @param k integer determining the number of regimes
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{MSloglik_output} List with output from \code{\link{ExpectationM_HMmdl}}.
+#' @param \code{k} Integer determining the number of regimes.
 #'  
-#' @return List with new maximized parameters
+#' @return List with new maximized parameters.
 #' 
 #' @export
 EMaximization_HMmdl <- function(theta, mdl, MSloglik_output, k) {
@@ -551,12 +554,12 @@ EMaximization_HMmdl <- function(theta, mdl, MSloglik_output, k) {
 #' 
 #' @description This function performs the maximization step of the Expectation Maximization algorithm for Markov-switching autoregressive model.
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
-#' @param MSloglik_output List with output from Expectation step of EM algorithm for Markov-switching autoregressive model
-#' @param k integer determining the number of regimes
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{MSloglik_output} List with output from \code{\link{ExpectationM_MSARmdl}}.
+#' @param \code{k} Integer determining the number of regimes.
 #' 
-#' @return List with new maximized parameters
+#' @return List with new maximized parameters.
 #' 
 #' @export
 EMaximization_MSARmdl <- function(theta, mdl, MSloglik_output, k) {
@@ -567,12 +570,12 @@ EMaximization_MSARmdl <- function(theta, mdl, MSloglik_output, k) {
 #' 
 #' @description This function performs the maximization step of the Expectation Maximization algorithm for Markov-switching vector autoregressive model.
 #' 
-#' @param theta vector of model parameters
-#' @param mdl List with model attributes
-#' @param MSloglik_output List with output from Expectation step of EM algorithm for Markov-switching vector autoregressive model
-#' @param k integer determining the number of regimes
+#' @param \code{theta} Vector of model parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{MSloglik_output} List with output from \code{\link{ExpectationM_MSVARmdl}}.
+#' @param \code{k} Integer determining the number of regimes.
 #'  
-#' @return List with new maximized parameters
+#' @return List with new maximized parameters.
 #' 
 #' @export
 EMaximization_MSVARmdl <- function(theta, mdl, MSloglik_output, k) {
@@ -583,11 +586,11 @@ EMaximization_MSVARmdl <- function(theta, mdl, MSloglik_output, k) {
 #' 
 #' @description This function performs the one iteration (E-step and M-step) of the Expectation Maximization algorithm for a Hidden Markov model.
 #' 
-#' @param mdl List with model attributes
-#' @param EMest_output List with attributes from previous iteration
-#' @param k integer determining the number of regimes
+#' @param \code{mdl} List with model attributes.
+#' @param \code{EMest_output} List with attributes from previous iteration.
+#' @param \code{k} Integer determining the number of regimes.
 #' 
-#' @return List with attributes from new iteration
+#' @return List with attributes from new iteration.
 #' @export
 EMiter_HMmdl <- function(mdl, EMest_output, k) {
     .Call(`_MSTest_EMiter_HMmdl`, mdl, EMest_output, k)
@@ -597,11 +600,11 @@ EMiter_HMmdl <- function(mdl, EMest_output, k) {
 #' 
 #' @description This function performs the one iteration (E-step and M-step) of the Expectation Maximization algorithm for Markov-switching autoregressive model.
 #' 
-#' @param mdl List with model attributes
-#' @param EMest_output List with attributes from previous iteration
-#' @param k integer determining the number of regimes
+#' @param \code{mdl} List with model attributes.
+#' @param \code{EMest_output} List with attributes from previous iteration.
+#' @param \code{k} Integer determining the number of regimes.
 #' 
-#' @return List with attributes from new iteration
+#' @return List with attributes from new iteration.
 #' 
 #' @export
 EMiter_MSARmdl <- function(mdl, EMest_output, k) {
@@ -612,11 +615,12 @@ EMiter_MSARmdl <- function(mdl, EMest_output, k) {
 #' 
 #' @description This function performs the one iteration (E-step and M-step) of the Expectation Maximization algorithm for Markov-switching vector autoregressive model.
 #' 
-#' @param mdl List with model attributes
-#' @param EMest_output List with attributes from previous iteration
-#' @param k integer determining the number of regimes
+#' @param \code{mdl} List with model attributes.
+#' @param \code{EMest_output} List with attributes from previous iteration.
+#' @param \code{k} Integer determining the number of regimes.
 #' 
-#' @return List with attributes from new iteration
+#' @return List with attributes from new iteration.
+#' 
 #' @export
 EMiter_MSVARmdl <- function(mdl, EMest_output, k) {
     .Call(`_MSTest_EMiter_MSVARmdl`, mdl, EMest_output, k)
@@ -626,12 +630,14 @@ EMiter_MSVARmdl <- function(mdl, EMest_output, k) {
 #' 
 #' @description Estimate Hidden Markov model by EM algorithm. This function is used by \code{\link{HMmdl}} which organizes the output and takes raw data as input.
 #' 
-#' @param theta_0 vector with initital values for parameters
-#' @param mdl List with model attributes
-#' @param k integer determining the number of regimes
-#' @param optim_options List with optimiztion options
+#' @param \code{theta_0} vector with initial values for parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{k} Integer determining the number of regimes.
+#' @param \code{optim_options} List with optimization options.
 #' 
-#' @return List with model results
+#' @return List with model results.
+#' 
+#' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38.
 #' 
 #' @export
 HMmdl_em <- function(theta_0, mdl, k, optim_options) {
@@ -642,12 +648,15 @@ HMmdl_em <- function(theta_0, mdl, k, optim_options) {
 #' 
 #' @description Estimate Markov-switching autoregressive model by EM algorithm. This function is used by \code{\link{MSARmdl}} which organizes the output and takes raw data as input.
 #' 
-#' @param theta_0 vector with initital values for parameters
-#' @param mdl List with model attributes
-#' @param k integer determining the number of regimes
-#' @param optim_options List with optimiztion options
+#' @param \code{theta_0} vector with initial values for parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{k} Integer determining the number of regimes.
+#' @param \code{optim_options} List with optimization options.
 #' 
-#' @return List with model results
+#' @return List with model results.
+#' 
+#' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38.
+#' @references Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” \emph{Journal of econometrics}, 45 (1-2): 39–70.
 #' 
 #' @export
 MSARmdl_em <- function(theta_0, mdl, k, optim_options) {
@@ -658,12 +667,15 @@ MSARmdl_em <- function(theta_0, mdl, k, optim_options) {
 #' 
 #' @description Estimate Markov-switching vector autoregressive model by EM algorithm. This function is used by \code{\link{MSVARmdl}} which organizes the output and takes raw data as input.
 #' 
-#' @param theta_0 vector with initital values for parameters
-#' @param mdl List with model attributes
-#' @param k integer determining the number of regimes
-#' @param optim_options List with optimiztion options
+#' @param \code{theta_0} vector with initial values for parameters.
+#' @param \code{mdl} List with model attributes.
+#' @param \code{k} Integer determining the number of regimes.
+#' @param \code{optim_options} List with optimization options.
 #' 
-#' @return List with model results
+#' @return List with model results.
+#' 
+#' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38.
+#' @references Krolzig, H. M. 1997. “The markov-switching vector autoregressive model.”. Springer.
 #' 
 #' @export
 MSVARmdl_em <- function(theta_0, mdl, k, optim_options) {
@@ -741,8 +753,7 @@ chpStat <- function(mdl, rho_b, ltmt, var_switch) {
 #' 
 #' @return Bootstrap critical values
 #' 
-#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
-#' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
 #' @export
 bootCV <- function(mdl, rho_b, N, var_switch) {

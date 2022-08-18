@@ -7,17 +7,20 @@
 HMmdl_em(theta_0, mdl, k, optim_options)
 }
 \arguments{
-\item{theta_0}{vector with initital values for parameters}
+\item{\code{theta_0}}{vector with initial values for parameters.}
 
-\item{mdl}{List with model attributes}
+\item{\code{mdl}}{List with model attributes.}
 
-\item{k}{integer determining the number of regimes}
+\item{\code{k}}{Integer determining the number of regimes.}
 
-\item{optim_options}{List with optimiztion options}
+\item{\code{optim_options}}{List with optimization options.}
 }
 \value{
-List with model results
+List with model results.
 }
 \description{
 Estimate Hidden Markov model by EM algorithm. This function is used by \code{\link{HMmdl}} which organizes the output and takes raw data as input.
+}
+\references{
+Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38.
 }

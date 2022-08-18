@@ -7,11 +7,11 @@
 limP(P)
 }
 \arguments{
-\item{P:}{matrix with transition probabilities}
+\item{\code{P}}{Matrix with transition probabilities.}
 }
 \value{
-(k x 1) vector of limiting probabilities
+A (\code{k x 1}) vector of limiting probabilities.
 }
 \description{
-Takes a transition matrix and returns the limiting probabilities
+Takes a transition matrix and returns the limiting probabilities.
 }

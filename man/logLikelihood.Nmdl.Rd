@@ -7,11 +7,11 @@
 \method{logLikelihood}{Nmdl}(mdl)
 }
 \arguments{
-\item{mdl}{List with model properties}
+\item{mdl}{List with model properties.}
 }
 \value{
-Log-likelihood
+Log-likelihood value.
 }
 \description{
-This function is used to compute the log-likelihood for a normally distributed model
+This function is used to compute the log-likelihood for a normally distributed model.
 }

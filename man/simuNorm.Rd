@@ -7,16 +7,18 @@
 simuNorm(mdl_h0)
 }
 \arguments{
-\item{mdl_h0:}{List containing the following DGP parameters
-- n: length of series
-- mu: (q x 1) vector of means 
-- sigma: (q x q) covariance matrix. If simulating a univariate process (i.e., length of mu is 1), this should be the standard devation and not the variance.}
+\item{\code{mdl_h0}}{List containing the following DGP parameters
+\itemize{
+  \item{\code{n}: }{Length of series.}
+  \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
+  \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
+}}
 }
 \value{
-List with simulated series and its DGP parameters
+List with simulated series and its DGP parameters.
 }
 \description{
-This function simulates a normally distributed process
+This function simulates a normally distributed process.
 }
 \examples{
 set.seed(1234)

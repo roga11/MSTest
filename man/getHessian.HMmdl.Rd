@@ -7,11 +7,11 @@
 \method{getHessian}{HMmdl}(mdl)
 }
 \arguments{
-\item{mdl}{List with model properties}
+\item{mdl}{List with model properties.}
 }
 \value{
-Hessian matrix
+Hessian matrix.
 }
 \description{
-This function is used to obtain a numerical approximation of a Hessian matrix for a Hidden Markov model
+This function is used to obtain a numerical approximation of a Hessian matrix for a Hidden Markov model.
 }

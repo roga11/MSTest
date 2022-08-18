@@ -7,15 +7,15 @@
 companionMat(phi, p, q)
 }
 \arguments{
-\item{phi}{matrix of dimension (q x qp) containing autoregressive coefficients}
+\item{phi}{matrix of dimension (\code{q x qp}) containing autoregressive coefficients.}
 
-\item{p}{integer for number of autoregressive lags}
+\item{p}{integer for number of autoregressive lags.}
 
-\item{q}{integer for number of series}
+\item{q}{integer for number of series.}
 }
 \value{
-matrix of dimension (qp x qp) of companion form
+matrix of dimension (\code{qp x qp}) of companion form.
 }
 \description{
-This function converts the (q x 1)  vector of constants and (q x qp) matrix of autoregressive coefficients into (qp x qp) matrix belonging to the companion form
+This function converts the (\code{q x 1})  vector of constants and (\code{q x qp}) matrix of autoregressive coefficients into (\code{qp x qp}) matrix belonging to the companion form
 }

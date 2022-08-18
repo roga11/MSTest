@@ -7,14 +7,14 @@
 arP(P, k, ar)
 }
 \arguments{
-\item{P}{original transition matrix}
+\item{P}{original transition matrix.}
 
-\item{k}{integer determining the number of regimes}
+\item{k}{integer determining the number of regimes.}
 
-\item{ar}{number of autoregressive lags}
+\item{ar}{number of autoregressive lags.}
 }
 \value{
-transformed transition matrix
+transformed transition matrix.
 }
 \description{
 This function converts a transition matrix to the transition matrix consistent with a Markov-switching autoregressive model.

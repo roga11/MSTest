@@ -7,10 +7,10 @@
 covar_vech(mat)
 }
 \arguments{
-\item{mat:}{(n x n) covariance matrix}
+\item{\code{mat}}{A (\code{n x n}) covariance matrix.}
 }
 \value{
-(n+1)*n/2 column vector
+A \code{(n+1)*n/2} column vector.
 }
 \description{
 This function returns the half-vectorization of an input matrix as a column vector.

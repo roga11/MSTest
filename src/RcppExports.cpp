@@ -68,14 +68,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // ts_lagged
-List ts_lagged(arma::mat Y, int ar);
-RcppExport SEXP _MSTest_ts_lagged(SEXP YSEXP, SEXP arSEXP) {
+List ts_lagged(arma::mat Y, int p);
+RcppExport SEXP _MSTest_ts_lagged(SEXP YSEXP, SEXP pSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::mat >::type Y(YSEXP);
-    Rcpp::traits::input_parameter< int >::type ar(arSEXP);
-    rcpp_result_gen = Rcpp::wrap(ts_lagged(Y, ar));
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    rcpp_result_gen = Rcpp::wrap(ts_lagged(Y, p));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -95,18 +95,18 @@ BEGIN_RCPP
 END_RCPP
 }
 // paramList_MSVARmdl
-List paramList_MSVARmdl(arma::vec theta, int q, int ar, int k, bool msmu, bool msvar);
-RcppExport SEXP _MSTest_paramList_MSVARmdl(SEXP thetaSEXP, SEXP qSEXP, SEXP arSEXP, SEXP kSEXP, SEXP msmuSEXP, SEXP msvarSEXP) {
+List paramList_MSVARmdl(arma::vec theta, int q, int p, int k, bool msmu, bool msvar);
+RcppExport SEXP _MSTest_paramList_MSVARmdl(SEXP thetaSEXP, SEXP qSEXP, SEXP pSEXP, SEXP kSEXP, SEXP msmuSEXP, SEXP msvarSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::vec >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< int >::type q(qSEXP);
-    Rcpp::traits::input_parameter< int >::type ar(arSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
     Rcpp::traits::input_parameter< int >::type k(kSEXP);
     Rcpp::traits::input_parameter< bool >::type msmu(msmuSEXP);
     Rcpp::traits::input_parameter< bool >::type msvar(msvarSEXP);
-    rcpp_result_gen = Rcpp::wrap(paramList_MSVARmdl(theta, q, ar, k, msmu, msvar));
+    rcpp_result_gen = Rcpp::wrap(paramList_MSVARmdl(theta, q, p, k, msmu, msvar));
     return rcpp_result_gen;
 END_RCPP
 }

@@ -7,20 +7,22 @@
 simuVAR(mdl_h0, burnin = 100L)
 }
 \arguments{
-\item{mdl_h0:}{List containing the following DGP parameters
-- n: length of series
-- mu: (q x 1) vector of means 
-- sigma: (q x q) covariance matrix 
-- phi: (q x qp) matrix of autoregressive coefficients
-- ar: number of autoregressive lags (i.e, p)}
+\item{\code{mdl_h0}}{List containing the following DGP parameters
+\itemize{
+  \item{\code{n}: }{Length of series.}
+  \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
+  \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
+  \item{\code{phi}: }{ A (\code{q x qp}) matrix of autoregressive coefficients.}
+  \item{\code{p}: }{Number of autoregressive lags.}
+}}
 
-\item{burnin:}{number of simulated observations to remove from beginning. Default is 100}
+\item{\code{burnin}}{Number of simulated observations to remove from beginning. Default is \code{100}.}
 }
 \value{
-List with simulated vector autoregressive series and its DGP parameters
+List with simulated vector autoregressive series and its DGP parameters.
 }
 \description{
-This function simulates a vector autoregresive process
+This function simulates a vector autoregresive process.
 }
 \examples{
 set.seed(1234)

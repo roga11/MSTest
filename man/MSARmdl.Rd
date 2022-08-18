@@ -7,29 +7,67 @@
 MSARmdl(Y, p, k, control = list())
 }
 \arguments{
-\item{Y}{(T x 1) vector with observational data. Required argument.}
+\item{Y}{(T x 1) vector with observational data.}
 
-\item{p}{integer for the number of lags to use in estimation. Must be greater than or equal to 0. Default is 0.}
+\item{p}{integer for the number of lags to use in estimation. Must be greater than or equal to \code{1}.}
 
-\item{k}{integer for the number of regimes to use in estimation. Must be greater than or equal to 2. Default is 2.}
+\item{k}{integer for the number of regimes to use in estimation. Must be greater than or equal to \code{2}.}
 
-\item{control}{List with optimization options including: 
+\item{control}{List with model options including:
 \itemize{
- \item{getSE - }{bool if 'TRUE' standard errors are computed and returned. If 'FALSE' standard errors are not computed. Default is 'FALSE'.}
- \item{msmu - }{indicator for switch in mean (TRUE) or constant mean (FALSE). Default is 'TRUE.'}
- \item{msvar - }{bool indicator for switch in variance (TRUE) or constant variance (FALSE). Default is 'TRUE.'}
- \item{init_value - }{vector of initial values. This is optional. Default is 'NULL', in which case \code{initVals_MSARmdl} is used to generate initial values.}
- \item{method - }{string determining which method to use. Options are 'EM' for EM algorithm or 'MLE' for Maximum Likelihood Estimation.}
- \item{maxit - }{integer determining the maximum number of EM iterations.}
- \item{thtol - }{double determining the convergence criterion for the absolute difference in parameter estimates (theta) between iterations. Default is 1e-6.}
- \item{maxit_converge - }{integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in 'theta' or 'logLike' is NaN another set of initital values (up to 'maxit_converge') is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration in 'maxit'. Default is 500.}
- \item{use_diff_init - }{integer determining how many different initial values (that do not return NaN) to try. Default is 1.}
- \item{mle_stationary_constraint - }{bool indicator determining if only stationary solutions should be considered for autoregressive coefficients (if 'TRUE') or if non-stationary solutions are allowed (if 'FALSE'). This is only used when method='MLE'. Default is 'TRUE'.}
- \item{mle_variance_constraint - }{double used to determine the lower bound on variance. Specifically, this value is multiplied by the variance of the linear (one regime) model to determine the lower bound. For example, if '0.01' then lower bound is 1 \% of variance from linear model. This is only used when method='MLE' and should be between 0 and 1. Default is '0.01'.}
+ \item{\code{getSE}: }{Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.}
+ \item{\code{msmu}: }{Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.}
+ \item{\code{msvar}: }{Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.}
+ \item{\code{init_value}: }{vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.}
+ \item{\code{method}: }{string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.}
+ \item{\code{maxit}: }{integer determining the maximum number of EM iterations.}
+ \item{\code{thtol}: }{double determining the convergence criterion for the absolute difference in parameter estimates \code{theta} between iterations. Default is \code{1e-6}.}
+ \item{\code{maxit_converge}: }{integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{500}.}
+ \item{\code{use_diff_init}: }{integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.}
+ \item{\code{mle_stationary_constraint}: }{Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.}
+ \item{\code{mle_variance_constraint}: }{double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is \code{1e-3}.}
 }}
 }
 \value{
-List with model characteristics
+List of class \code{MSARmdl} (\code{S3} object) with model attributes including:
+\itemize{
+  \item{\code{y}: }{a \code{(T x 1)} matrix of observations.}
+  \item{\code{X}: }{a \code{(T-p x p + const)} matrix of lagged observations with a leading column of \code{1}s.}
+  \item{\code{x}: }{a \code{(T-p x p)} matrix of lagged observations.}
+  \item{\code{resid}: }{a \code{(T x 1)} matrix of residuals.}
+  \item{\code{mu}: }{a \code{(k x 1)} vector of estimated means of each process.}
+  \item{\code{phi}: }{estimates of autoregressive coefficients.}
+  \item{\code{stdev}: }{a \code{(k x 1)} vector of estimated standard deviation of each process.}
+  \item{\code{sigma}: }{a \code{(k x 1)} estimated covariance matrix.}
+  \item{\code{theta}: }{vector containing: \code{mu} and \code{vech(sigma)}.}
+  \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
+  \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
+  \item{\code{theta_var_ind}: }{vector indicating location of variances with \code{1} and \code{0} otherwise.}
+  \item{\code{theta_P_ind}: }{vector indicating location of transition matrix elements with \code{1} and \code{0} otherwise.}
+  \item{\code{stationary}: }{Boolean indicating if process is stationary if \code{TRUE} or non-stationary if \code{FALSE}.}
+  \item{\code{n}: }{number of observations (same as \code{T}).}
+  \item{\code{p}: }{number of autoregressive lags.}
+  \item{\code{q}: }{number of series. This is always \code{1} in \code{MSARmdl}.}
+  \item{\code{k}: }{number of regimes in estimated model.}
+  \item{\code{P}: }{a \code{(k x k)} transition matrix.}
+  \item{\code{pinf}: }{a \code{(k x 1)} vector with limiting probabilities of each regime.}
+  \item{\code{St}: }{a \code{(T x k)} vector with smoothed probabilities of each regime at each time \code{t}.}
+  \item{\code{deltath}: }{double with maximum absolute difference in vector \code{theta} between last iteration.}
+  \item{\code{iterations}: }{number of EM iterations performed to achieve convergence (if less than \code{maxit}).}
+  \item{\code{theta_0}: }{vector of initial values used.}
+  \item{\code{init_used}: }{number of different initial values used to get a finite solution. See description of input \code{maxit_converge}.}
+  \item{\code{msmu}: }{Boolean. If \code{TRUE} model was estimated with switch in mean. If \code{FALSE} model was estimated with constant mean.}
+  \item{\code{msvar}: }{Boolean. If \code{TRUE} model was estimated with switch in variance. If \code{FALSE} model was estimated with constant variance.}
+  \item{\code{control}: }{List with model options used.}
+  \item{\code{logLike}: }{log-likelihood.}
+  \item{\code{AIC}: }{Akaike information criterion.}
+  \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
+  \item{\code{Hess}: }{Hessian matrix. Approximated using \code{\link[numDeriv]{hessian}} and only returned if \code{getSE=TRUE}.}
+  \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lfm]{nearPD}}. Only returned if \code{getSE=TRUE}.}
+  \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
+  \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
+  \item{\code{trace}: }{List with Lists of estimation output for each initial value used due to \code{use_diff_init > 1}.}
+}
 }
 \description{
 This function estimates a Markov-switching autoregressive model
@@ -86,9 +124,9 @@ lines(y_ms_simu$St, col = 'red', lty = 2)
 
 }
 \references{
-Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” Journal of the Royal Statistical Society. Series B 39 (1): 1–38
+Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38..
 
-Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” Journal of econometrics, 45 (1-2): 39–70
+Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” \emph{Journal of econometrics}, 45 (1-2): 39–70.
 }
 \seealso{
 \code{\link{ARmdl}}

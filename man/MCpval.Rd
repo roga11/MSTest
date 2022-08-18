@@ -7,24 +7,20 @@
 MCpval(test_stat, null_vec, type = "geq")
 }
 \arguments{
-\item{test_stat:}{test statistic under the alternative (e.g. S_0)}
+\item{\code{test_stat}}{Test statistic under the alternative (e.g. \code{S_0}).}
 
-\item{null_vec:}{(N x 1) vector with test statistic under the null hypothesis}
+\item{\code{null_vec}}{A (\code{N x 1}) vector with test statistic under the null hypothesis.}
 
-\item{type:}{type of test of test. options are: "geq" for right-tail test, "leq" for 
-left-tail test, "abs" for absolute vallue test and "two-tail" for two-tail test.}
+\item{\code{type}}{String determining type of test. options are: "geq" for right-tail test, "leq" for left-tail test, "abs" for absolute value test and "two-tail" for two-tail test.}
 }
 \value{
 MC p-value of test
 }
 \description{
-This function computes the Monte Carlo P-value
+This function computes the Monte Carlo P-value.
 }
 \references{
-Dufour, J. M. (2006). Monte Carlo tests with nuisance parameters: 
-A general approach to finite-sample inference and nonstandard asymptotics. 
-Journal of Econometrics, 133(2), 443-477.
+Dufour, J. M. (2006). Monte Carlo tests with nuisance parameters: A general approach to finite-sample inference and nonstandard asymptotics. \emph{Journal of Econometrics}, 133(2), 443-477.
 
-Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based tests for Markov switching in autoregressive models. \emph{Econometric Reviews}, 36(6-9), 713-727.
 }

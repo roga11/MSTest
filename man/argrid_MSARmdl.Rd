@@ -7,20 +7,20 @@
 argrid_MSARmdl(mu, sig, k, ar, msmu, msvar)
 }
 \arguments{
-\item{mu}{vector (k x 1) of mu in each regime}
+\item{mu}{vector (\code{k x 1}) of mu in each regime.}
 
-\item{sig}{vector (k x 1) of sigma in each regime}
+\item{sig}{vector (\code{k x 1}) of sigma in each regime.}
 
-\item{k}{integer determining the number of regimes}
+\item{k}{integer determining the number of regimes.}
 
-\item{ar}{number of autoregressive lags}
+\item{ar}{number of autoregressive lags.}
 
-\item{msmu}{boolean indicator. If 'TRUE' mean is subject to change. If 'FALSE' mean is constant across regimes}
+\item{msmu}{Boolean indicator. If \code{TRUE} mean is subject to change. If \code{FALSE} mean is constant across regimes.}
 
-\item{msvar}{boolean indicator. If 'TRUE' variance is subject to change. If 'FALSE' variance is constant across regimes}
+\item{msvar}{Boolean indicator. If \code{TRUE} variance is subject to change. If \code{FALSE} variance is constant across regimes.}
 }
 \value{
-List with (M x ar+1) matrix of means for each regime M (where M = k^(ar+1)) and each time t,... t-ar, vector with variance for each regime M, and vector indicating the corresponded 1,..., k regime.
+List with (\code{M x ar+1}) matrix of means for each regime \code{M} (where \code{M = k^(ar+1)}) and each time \code{t,... t-ar}, vector with variance for each regime \code{M}, and vector indicating the corresponded \code{1,..., k} regime.
 }
 \description{
 This function creates a grid of mean and variance consistent with a Markov-switching autoregressive model.

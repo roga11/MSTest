@@ -1,7 +1,7 @@
 [
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-        "file_last_write": 1659377460.0,
+        "file_last_write": 1660851241.0,
         "definitions": [
             {
                 "usr": "c:@F@cov2corr#$@N@arma@S@Mat>#d#",
@@ -84,7 +84,7 @@
                 "hidden": false
             },
             {
-                "usr": "c:@F@calcResid_MSARmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#$@N@arma@S@Mat>#d#I#",
+                "usr": "c:@F@calcResid_MSARmdl#I#$@N@arma@S@Mat>#d#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "calcResid_MSARmdl(Rcpp::List, arma::mat, int)",
@@ -94,7 +94,7 @@
                 "hidden": false
             },
             {
-                "usr": "c:@F@calcResid_MSVARmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S0_#I#",
+                "usr": "c:@F@calcResid_MSVARmdl#I#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "calcResid_MSVARmdl(Rcpp::List, Rcpp::List, int)",
@@ -104,32 +104,32 @@
                 "hidden": false
             },
             {
-                "usr": "c:@F@initVals_HMmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@initVals_HMmdl#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "initVals_HMmdl(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 374,
+                "line": 376,
                 "column": 11,
                 "hidden": false
             },
             {
-                "usr": "c:@F@initVals_MSARmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@initVals_MSARmdl#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "initVals_MSARmdl(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 433,
+                "line": 437,
                 "column": 11,
                 "hidden": false
             },
             {
-                "usr": "c:@F@initVals_MSVARmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@initVals_MSVARmdl#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "initVals_MSVARmdl(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 478,
+                "line": 484,
                 "column": 11,
                 "hidden": false
             },
@@ -139,277 +139,277 @@
                 "parent_name": "",
                 "name": "MCpval(double, arma::vec, Rcpp::String)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 542,
+                "line": 544,
                 "column": 8,
                 "hidden": false
             },
             {
-                "usr": "c:@F@simuAR#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@simuAR#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "simuAR(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 580,
+                "line": 583,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@simuMSAR#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@simuMSAR#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "simuMSAR(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 634,
+                "line": 638,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@simuVAR#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@simuVAR#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "simuVAR(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 729,
+                "line": 734,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@simuMSVAR#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@simuMSVAR#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "simuMSVAR(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 795,
+                "line": 801,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@simuNorm#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "usr": "c:@F@simuNorm#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "simuNorm(Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 898,
+                "line": 906,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@simuHMM#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@simuHMM#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "simuHMM(Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 954,
+                "line": 963,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@logLike_Nmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "usr": "c:@F@logLike_Nmdl#$@N@arma@S@Col>#d#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "logLike_Nmdl(arma::vec, Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1036,
+                "line": 1045,
                 "column": 8,
                 "hidden": false
             },
             {
-                "usr": "c:@F@logLike_ARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "usr": "c:@F@logLike_ARmdl#$@N@arma@S@Col>#d#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "logLike_ARmdl(arma::vec, Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1071,
+                "line": 1080,
                 "column": 8,
                 "hidden": false
             },
             {
-                "usr": "c:@F@logLike_VARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "usr": "c:@F@logLike_VARmdl#$@N@arma@S@Col>#d#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "logLike_VARmdl(arma::vec, Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1098,
+                "line": 1107,
                 "column": 8,
                 "hidden": false
             },
             {
-                "usr": "c:@F@logLike_HMmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@logLike_HMmdl#$@N@arma@S@Col>#d#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "logLike_HMmdl(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1145,
+                "line": 1154,
                 "column": 8,
                 "hidden": false
             },
             {
-                "usr": "c:@F@logLike_HMmdl_min#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@logLike_HMmdl_min#$@N@arma@S@Col>#d#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "logLike_HMmdl_min(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1230,
+                "line": 1239,
                 "column": 8,
                 "hidden": false
             },
             {
-                "usr": "c:@F@logLike_MSARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@logLike_MSARmdl#$@N@arma@S@Col>#d#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "logLike_MSARmdl(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1248,
+                "line": 1257,
                 "column": 8,
                 "hidden": false
             },
             {
-                "usr": "c:@F@logLike_MSARmdl_min#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@logLike_MSARmdl_min#$@N@arma@S@Col>#d#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "logLike_MSARmdl_min(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1327,
+                "line": 1336,
                 "column": 8,
                 "hidden": false
             },
             {
-                "usr": "c:@F@logLike_MSVARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@logLike_MSVARmdl#$@N@arma@S@Col>#d#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "logLike_MSVARmdl(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1346,
+                "line": 1355,
                 "column": 8,
                 "hidden": false
             },
             {
-                "usr": "c:@F@logLike_MSVARmdl_min#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@logLike_MSVARmdl_min#$@N@arma@S@Col>#d#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "logLike_MSVARmdl_min(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1467,
+                "line": 1476,
                 "column": 8,
                 "hidden": false
             },
             {
-                "usr": "c:@F@ExpectationM_HMmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@ExpectationM_HMmdl#$@N@arma@S@Col>#d#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "ExpectationM_HMmdl(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1488,
+                "line": 1495,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@ExpectationM_MSARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@ExpectationM_MSARmdl#$@N@arma@S@Col>#d#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "ExpectationM_MSARmdl(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1607,
+                "line": 1612,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@ExpectationM_MSVARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "usr": "c:@F@ExpectationM_MSVARmdl#$@N@arma@S@Col>#d#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "ExpectationM_MSVARmdl(arma::vec, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1718,
+                "line": 1721,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@EMaximization_HMmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S1_#I#",
+                "usr": "c:@F@EMaximization_HMmdl#$@N@arma@S@Col>#d#I#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "EMaximization_HMmdl(arma::vec, Rcpp::List, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1835,
+                "line": 1838,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@EMaximization_MSARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S1_#I#",
+                "usr": "c:@F@EMaximization_MSARmdl#$@N@arma@S@Col>#d#I#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "EMaximization_MSARmdl(arma::vec, Rcpp::List, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 1957,
+                "line": 1960,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@EMaximization_MSVARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S1_#I#",
+                "usr": "c:@F@EMaximization_MSVARmdl#$@N@arma@S@Col>#d#I#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "EMaximization_MSVARmdl(arma::vec, Rcpp::List, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 2094,
+                "line": 2097,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@EMiter_HMmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S0_#I#",
+                "usr": "c:@F@EMiter_HMmdl#I#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "EMiter_HMmdl(Rcpp::List, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 2276,
+                "line": 2279,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@EMiter_MSARmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S0_#I#",
+                "usr": "c:@F@EMiter_MSARmdl#I#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "EMiter_MSARmdl(Rcpp::List, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 2323,
+                "line": 2325,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@EMiter_MSVARmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S0_#I#",
+                "usr": "c:@F@EMiter_MSVARmdl#I#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "EMiter_MSVARmdl(Rcpp::List, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 2371,
+                "line": 2373,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@HMmdl_em#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#S1_#",
+                "usr": "c:@F@HMmdl_em#$@N@arma@S@Col>#d#I#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "HMmdl_em(arma::vec, Rcpp::List, int, Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 2421,
+                "line": 2424,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@MSARmdl_em#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#S1_#",
+                "usr": "c:@F@MSARmdl_em#$@N@arma@S@Col>#d#I#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "MSARmdl_em(arma::vec, Rcpp::List, int, Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 2459,
+                "line": 2465,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@MSVARmdl_em#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#S1_#",
+                "usr": "c:@F@MSVARmdl_em#$@N@arma@S@Col>#d#I#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "MSVARmdl_em(arma::vec, Rcpp::List, int, Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-                "line": 2496,
+                "line": 2505,
                 "column": 6,
                 "hidden": false
             }
@@ -424,7 +424,7 @@
     },
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_CHPTest.cpp",
-        "file_last_write": 1645308985.0,
+        "file_last_write": 1660850574.0,
         "definitions": [
             {
                 "usr": "c:@F@calc_mu2t_mv#I#d#I#$@N@arma@S@Col>#d#",
@@ -462,7 +462,7 @@
                 "parent_name": "",
                 "name": "bootCV(Rcpp::List, double, int, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_CHPTest.cpp",
-                "line": 220,
+                "line": 219,
                 "column": 11,
                 "hidden": false
             }

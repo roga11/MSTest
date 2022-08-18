@@ -7,19 +7,19 @@
 paramList_MSARmdl(theta, p, k, msmu, msvar)
 }
 \arguments{
-\item{theta:}{vector of parameters.}
+\item{\code{theta}}{Vector of parameters.}
 
-\item{ar:}{umber of autoregressive lags}
+\item{\code{p}}{Number of autoregressive lags.}
 
-\item{k:}{number of regimes}
+\item{\code{k}}{Number of regimes.}
 
-\item{msmu:}{bool indicating is the mean switches with regime}
+\item{\code{msmu}}{Boolean indicating if the mean switches with regime.}
 
-\item{msvar:}{bool indicating is the variance switches with regime}
+\item{\code{msvar}Boolean}{indicating if the variance switches with regime.}
 }
 \value{
-List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators
+List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators.
 }
 \description{
-This function takes the parameter vector of interest and converts it to a list with specific parameter vectors needed for univariate Markov-switching functions
+This function takes the parameter vector of interest and converts it to a list with specific parameter vectors needed for univariate Markov-switching functions.
 }

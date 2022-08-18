@@ -7,16 +7,16 @@
 EMaximization_MSARmdl(theta, mdl, MSloglik_output, k)
 }
 \arguments{
-\item{theta}{vector of model parameters}
+\item{\code{theta}}{Vector of model parameters.}
 
-\item{mdl}{List with model attributes}
+\item{\code{mdl}}{List with model attributes.}
 
-\item{MSloglik_output}{List with output from Expectation step of EM algorithm for Markov-switching autoregressive model}
+\item{\code{MSloglik_output}}{List with output from \code{\link{ExpectationM_MSARmdl}}.}
 
-\item{k}{integer determining the number of regimes}
+\item{\code{k}}{Integer determining the number of regimes.}
 }
 \value{
-List with new maximized parameters
+List with new maximized parameters.
 }
 \description{
 This function performs the maximization step of the Expectation Maximization algorithm for Markov-switching autoregressive model.

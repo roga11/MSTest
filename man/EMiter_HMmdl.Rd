@@ -7,14 +7,14 @@
 EMiter_HMmdl(mdl, EMest_output, k)
 }
 \arguments{
-\item{mdl}{List with model attributes}
+\item{\code{mdl}}{List with model attributes.}
 
-\item{EMest_output}{List with attributes from previous iteration}
+\item{\code{EMest_output}}{List with attributes from previous iteration.}
 
-\item{k}{integer determining the number of regimes}
+\item{\code{k}}{Integer determining the number of regimes.}
 }
 \value{
-List with attributes from new iteration
+List with attributes from new iteration.
 }
 \description{
 This function performs the one iteration (E-step and M-step) of the Expectation Maximization algorithm for a Hidden Markov model.

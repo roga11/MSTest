@@ -9,14 +9,14 @@ MSARmdl_mle(theta_0, mdl_in, k, optim_options)
 \arguments{
 \item{theta_0}{vector containing initial values to use in optimization}
 
-\item{mdl_in}{List with model properties (can be obtained from estimating linear model i.e., using \code{ARmdl()})}
+\item{mdl_in}{List with model properties (can be obtained from estimating linear model i.e., using \code{\link{ARmdl}})}
 
 \item{k}{integer determining the number of regimes}
 
 \item{optim_options}{List containing 
 \itemize{
- \item{maxit - }{maximum number of iterations.}
- \item{thtol - }{convergence criterion.}
+ \item{\code{maxit}: }{maximum number of iterations.}
+ \item{\code{thtol}: }{convergence criterion.}
 }}
 }
 \value{

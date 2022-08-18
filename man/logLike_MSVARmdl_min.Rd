@@ -7,14 +7,14 @@
 logLike_MSVARmdl_min(theta, mdl, k)
 }
 \arguments{
-\item{theta}{vector of model parameters}
+\item{\code{theta}}{Vector of model parameters.}
 
-\item{mdl}{List with model attributes}
+\item{\code{mdl}}{List with model attributes.}
 
-\item{k}{integer determining the number of regimes}
+\item{\code{k}}{Integer determining the number of regimes.}
 }
 \value{
-negative log-likelihood given data
+Negative log-likelihood value.
 }
 \description{
 This function computes the (negative) log-likelihood for a markov-switching vector autoregressive model

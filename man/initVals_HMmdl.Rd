@@ -7,17 +7,19 @@
 initVals_HMmdl(mdl, k)
 }
 \arguments{
-\item{mdl:}{List with parameter values of simple (one-regime) model. This includes
-- mu: vector of means
-- sigma: covariance matrix
-- msmu: boolean indicator. If TRUE, mean is function of markov process. If FALSE, mean is constant across regimes
-- msvar: boolean indicator. If TRUE, standard deviation is function of markov process. If FALSE, standard deviation is constant across regimes}
+\item{\code{mdl}}{List with parameter values of simple (one-regime) model. This includes:
+\itemize{
+  \item{\code{mu}: }{Vector of means.}
+  \item{\code{sigma}: }{covariance matrix.}
+  \item{\code{msmu}: }{Boolean indicator. If \code{TRUE}, mean is function of markov process. If \code{FALSE}, mean is constant across regimes.}
+  \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, standard deviation is function of markov process. If \code{FALSE}, standard deviation is constant across regimes.}
+}}
 
-\item{k:}{number of regimes}
+\item{\code{k}}{Number of regimes.}
 }
 \value{
-vector of initial parameter values
+Vector of initial parameter values.
 }
 \description{
-This function generates a random parameter vector to be used as initial values for a Hidden Markov model
+This function generates a random parameter vector to be used as initial values for a Hidden Markov model.
 }
