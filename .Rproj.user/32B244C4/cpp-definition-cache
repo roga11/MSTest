@@ -1,7 +1,7 @@
 [
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
-        "file_last_write": 1660851241.0,
+        "file_last_write": 1660852577.0,
         "definitions": [
             {
                 "usr": "c:@F@cov2corr#$@N@arma@S@Mat>#d#",
@@ -424,7 +424,7 @@
     },
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_CHPTest.cpp",
-        "file_last_write": 1660850574.0,
+        "file_last_write": 1660852100.0,
         "definitions": [
             {
                 "usr": "c:@F@calc_mu2t_mv#I#d#I#$@N@arma@S@Col>#d#",
@@ -432,7 +432,7 @@
                 "parent_name": "",
                 "name": "calc_mu2t_mv(Rcpp::List, double, Rcpp::List, arma::vec)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_CHPTest.cpp",
-                "line": 23,
+                "line": 22,
                 "column": 11,
                 "hidden": false
             },
@@ -442,7 +442,7 @@
                 "parent_name": "",
                 "name": "calc_mu2t(Rcpp::List, double, Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_CHPTest.cpp",
-                "line": 84,
+                "line": 83,
                 "column": 11,
                 "hidden": false
             },
@@ -452,7 +452,7 @@
                 "parent_name": "",
                 "name": "chpStat(Rcpp::List, double, Rcpp::List, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_CHPTest.cpp",
-                "line": 117,
+                "line": 115,
                 "column": 11,
                 "hidden": false
             },
@@ -462,7 +462,7 @@
                 "parent_name": "",
                 "name": "bootCV(Rcpp::List, double, int, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_CHPTest.cpp",
-                "line": 219,
+                "line": 217,
                 "column": 11,
                 "hidden": false
             }

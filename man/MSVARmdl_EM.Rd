@@ -24,5 +24,5 @@ Estimate Markov-switching vector autoregressive model by EM algorithm. This func
 \references{
 Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38.
 
-Krolzig, H. M. 1997. “The markov-switching vector autoregressive model.”. Springer.
+Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.”. Springer.
 }

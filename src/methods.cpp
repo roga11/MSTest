@@ -536,8 +536,8 @@ arma::vec initVals_MSVARmdl(List mdl, int k){
 //' 
 //' @return MC p-value of test
 //' 
-//' @references Dufour, J. M. (2006). Monte Carlo tests with nuisance parameters: A general approach to finite-sample inference and nonstandard asymptotics. \emph{Journal of Econometrics}, 133(2), 443-477.
-//' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based tests for Markov switching in autoregressive models. \emph{Econometric Reviews}, 36(6-9), 713-727.
+//' @references Dufour, Jean-Marie 2006. "Monte Carlo tests with nuisance parameters: A general approach to finite-sample inference and nonstandard asymptotics". \emph{Journal of Econometrics}, 133(2), 443-477.
+//' @references Dufour, Jean-Marie, and Richard Luger. 2017. "Identification-robust moment-based tests for Markov switching in autoregressive models". \emph{Econometric Reviews}, 36(6-9), 713-727.
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -2498,7 +2498,7 @@ List MSARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
 //' @return List with model results.
 //' 
 //' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38.
-//' @references Krolzig, H. M. 1997. “The markov-switching vector autoregressive model.”. Springer.
+//' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.”. Springer.
 //' 
 //' @export
 // [[Rcpp::export]]

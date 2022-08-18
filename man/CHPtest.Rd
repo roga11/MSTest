@@ -26,6 +26,5 @@ This function can be used to recreate results from Table III of the paper. Econo
 publisher and source code can be found here: https://www.econometricsociety.org/content/supplement-optimal-test-markov-switching-parameters.
 }
 \references{
-Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
-“Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 }

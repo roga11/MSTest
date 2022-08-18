@@ -218,8 +218,8 @@ initVals_MSVARmdl <- function(mdl, k) {
 #' 
 #' @return MC p-value of test
 #' 
-#' @references Dufour, J. M. (2006). Monte Carlo tests with nuisance parameters: A general approach to finite-sample inference and nonstandard asymptotics. \emph{Journal of Econometrics}, 133(2), 443-477.
-#' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based tests for Markov switching in autoregressive models. \emph{Econometric Reviews}, 36(6-9), 713-727.
+#' @references Dufour, Jean-Marie 2006. "Monte Carlo tests with nuisance parameters: A general approach to finite-sample inference and nonstandard asymptotics". \emph{Journal of Econometrics}, 133(2), 443-477.
+#' @references Dufour, Jean-Marie, and Richard Luger. 2017. "Identification-robust moment-based tests for Markov switching in autoregressive models". \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
 #' @export
 MCpval <- function(test_stat, null_vec, type = "geq") {
@@ -675,7 +675,7 @@ MSARmdl_em <- function(theta_0, mdl, k, optim_options) {
 #' @return List with model results.
 #' 
 #' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38.
-#' @references Krolzig, H. M. 1997. “The markov-switching vector autoregressive model.”. Springer.
+#' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.”. Springer.
 #' 
 #' @export
 MSVARmdl_em <- function(theta_0, mdl, k, optim_options) {
@@ -695,8 +695,7 @@ MSVARmdl_em <- function(theta_0, mdl, k, optim_options) {
 #' 
 #' @return mu_2t from eq. 2.5 and used in test-statistic caluclation
 #' 
-#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
-#' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
 #' @export
 calc_mu2t_mv <- function(mdl, rho, ltmt, hv) {
@@ -716,8 +715,8 @@ calc_mu2t_mv <- function(mdl, rho, ltmt, hv) {
 #' 
 #' @return mu_2t from eq. 2.5 and used in test-statistic caluclation
 #' 
-#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
-#' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+#' 
 #' @export
 calc_mu2t <- function(mdl, rho, ltmt) {
     .Call(`_MSTest_calc_mu2t`, mdl, rho, ltmt)
@@ -734,8 +733,7 @@ calc_mu2t <- function(mdl, rho, ltmt) {
 #' 
 #' @return Test Statistic
 #' 
-#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
-#' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
 #' @export
 chpStat <- function(mdl, rho_b, ltmt, var_switch) {
@@ -753,7 +751,7 @@ chpStat <- function(mdl, rho_b, ltmt, var_switch) {
 #' 
 #' @return Bootstrap critical values
 #' 
-#' @references Carrasco, M., L. Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+#' @references Carrasco, M., L. Hu, and W. Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
 #' @export
 bootCV <- function(mdl, rho_b, N, var_switch) {

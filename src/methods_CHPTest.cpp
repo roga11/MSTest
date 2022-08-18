@@ -15,8 +15,7 @@ using namespace Rcpp;
 //' 
 //' @return mu_2t from eq. 2.5 and used in test-statistic caluclation
 //' 
-//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
-//' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -77,8 +76,8 @@ arma::vec calc_mu2t_mv(List mdl, double rho, List ltmt, arma::vec hv){
 //' 
 //' @return mu_2t from eq. 2.5 and used in test-statistic caluclation
 //' 
-//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
-//' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+//' 
 //' @export
 // [[Rcpp::export]]
 arma::vec calc_mu2t(List mdl, double rho, List ltmt){
@@ -109,8 +108,7 @@ arma::vec calc_mu2t(List mdl, double rho, List ltmt){
 //' 
 //' @return Test Statistic
 //' 
-//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
-//' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -212,7 +210,7 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,int var_switch){
 //' 
 //' @return Bootstrap critical values
 //' 
-//' @references Carrasco, M., L. Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+//' @references Carrasco, M., L. Hu, and W. Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 //' 
 //' @export
 // [[Rcpp::export]]

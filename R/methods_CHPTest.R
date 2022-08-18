@@ -13,8 +13,7 @@
 #' 
 #' @return 
 #' 
-#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
-#' “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
 #' @export
 CHPtest <- function(Y, p = 1, N = 3000, rho_b = 0.7, var_switch = FALSE){
@@ -57,6 +56,8 @@ CHPtest <- function(Y, p = 1, N = 3000, rho_b = 0.7, var_switch = FALSE){
 #' calculated if only the Mean is subject to regime switch. 
 #' 
 #' @return List containing relevant first and second derivatves of log likelihood function.
+#' 
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
 #' @export
 chpDmat <-function(Mdl, var_switch){

@@ -128,7 +128,7 @@ Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from 
 
 Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” \emph{Journal of econometrics}, 45 (1-2): 39–70.
 
-Krolzig, H. M. 1997. “The markov-switching vector autoregressive model.”. Springer.
+Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.”. Springer.
 }
 \seealso{
 \code{\link{Nmdl}}

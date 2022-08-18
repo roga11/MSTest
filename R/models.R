@@ -370,7 +370,7 @@ VARmdl <- function(Y, p, control = list()){
 #' 
 #' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38..
 #' @references Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” \emph{Journal of econometrics}, 45 (1-2): 39–70.
-#' @references Krolzig, H. M. 1997. “The markov-switching vector autoregressive model.”. Springer.
+#' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.”. Springer.
 #' 
 #' @seealso \code{\link{Nmdl}}
 #' @example /examples/HMmdl_examples.R
@@ -801,7 +801,7 @@ MSARmdl <- function(Y, p, k, control = list()){
 #' @return List with model characteristics
 #' 
 #' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38..
-#' @references Krolzig, H. M. 1997. “The markov-switching vector autoregressive model.”. Springer.
+#' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.”. Springer.
 #'  
 #' @seealso \code{\link{VARmdl}}
 #' @example /examples/MSVARmdl_examples.R

@@ -20,7 +20,7 @@ MC p-value of test
 This function computes the Monte Carlo P-value.
 }
 \references{
-Dufour, J. M. (2006). Monte Carlo tests with nuisance parameters: A general approach to finite-sample inference and nonstandard asymptotics. \emph{Journal of Econometrics}, 133(2), 443-477.
+Dufour, Jean-Marie 2006. "Monte Carlo tests with nuisance parameters: A general approach to finite-sample inference and nonstandard asymptotics". \emph{Journal of Econometrics}, 133(2), 443-477.
 
-Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based tests for Markov switching in autoregressive models. \emph{Econometric Reviews}, 36(6-9), 713-727.
+Dufour, Jean-Marie, and Richard Luger. 2017. "Identification-robust moment-based tests for Markov switching in autoregressive models". \emph{Econometric Reviews}, 36(6-9), 713-727.
 }

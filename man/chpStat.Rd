@@ -22,6 +22,5 @@ Test Statistic
 Calculate supTS and expTS test-statistics from CHP (2014).
 }
 \references{
-Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. 
-“Optimal test for Markov switch- ing parameters.” \emph{Econometrica} \bold{82 (2)}: 765–784.
+Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 }

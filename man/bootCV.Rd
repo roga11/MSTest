@@ -22,5 +22,5 @@ Bootstrap critical values
 This bootstrap procedure is described on page 771 of CHP (2014)
 }
 \references{
-Carrasco, M., L. Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+Carrasco, M., L. Hu, and W. Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 }
