@@ -753,7 +753,7 @@ chpStat <- function(mdl, rho_b, ltmt, var_switch) {
 #' 
 #' @return Bootstrap critical values
 #' 
-#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+#' @references Carrasco, M., L. Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
 #' @export
 bootCV <- function(mdl, rho_b, N, var_switch) {
