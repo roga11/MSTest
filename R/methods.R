@@ -755,4 +755,59 @@ print.MSVARmdl <- function(mdl, digits = getOption("digits")){
 }
 
 
+#' @title Print summary of a \code{CHPTest} object
+#'
+#' @inheritParams base::print
+#' 
+#' @export
+print.CHPTest <- function(mdl, digits = getOption("digits")){
+  cat("\nRestricted Model\n")
+  frame_tmp <- data.frame(coef = mdl$mdl_h0$theta)
+  if (mdl$mdl_h0$control$getSE==TRUE){
+    frame_tmp["s.e."] <- mdl$mdl_h0$theta_se
+  }
+  rownames(frame_tmp) <- names(mdl$mdl_h0$theta)
+  print(format(signif(frame_tmp, max(1L, digits - 2L))))
+  cat(paste("\nlog-likelihood = "),mdl$mdl_h0$logLike)
+  cat(paste("\nAIC = "),mdl$mdl_h0$AIC)
+  cat(paste("\nBIC = "),mdl$mdl_h0$BIC)
+  cat("\n")
+  if (mdl$control$msvar){
+    cat("\nCarrasco, Hu, & Ploberger (2014) Parameter Stability Test -  Switch in Mean and Variance\n")
+  }else{
+    cat("\nCarrasco, Hu, & Ploberger (2014) Parameter Stability Test -  Switch in Mean only\n") 
+  }
+  out <- data.frame(rbind(c(mdl$supTS, mdl$supTS_cv, mdl$pval_supTS),
+                          c(mdl$expTS, mdl$expTS_cv, mdl$pval_expTS)))
+  colnames(out) <- c("test-stat", names(mdl$supTS_cv), "p-value")
+  rownames(out) <- c("supTS", "expTS")
+  print(format(signif(out, max(1L, digits - 2L))))
+  invisible(mdl)
+}
+
+#' @title Print summary of a \code{DLMCTest} object
+#'
+#' @inheritParams base::print
+#' 
+#' @export
+print.DLMCTest <- function(mdl, digits = getOption("digits")){
+  cat("\nRestricted Model\n") 
+  frame_tmp <- data.frame(coef = mdl$mdl_h0$theta)
+  if (mdl$mdl_h0$control$getSE==TRUE){
+    frame_tmp["s.e."] <- mdl$mdl_h0$theta_se
+  }
+  rownames(frame_tmp) <- names(mdl$mdl_h0$theta)
+  print(format(signif(frame_tmp, max(1L, digits - 2L))))
+  cat(paste("\nlog-likelihood = "),mdl$mdl_h0$logLike)
+  cat(paste("\nAIC = "),mdl$mdl_h0$AIC)
+  cat(paste("\nBIC = "),mdl$mdl_h0$BIC)
+  cat("\n")
+  cat("\nDufour & Luger (2017) Moment-based Local Monte Carlo Test\n")
+  out <- data.frame(rbind(c(mdl$Fmin, mdl$Fmin_cv, mdl$pval_min),
+                          c(mdl$Fprod, mdl$Fprod_cv, mdl$pval_prod)))
+  colnames(out) <- c("test-stat", names(mdl$Fmin_cv), "p-value")
+  rownames(out) <- c("LMC_min", "LMC_prod")
+  print(format(signif(out, max(1L, digits - 2L))))
+  invisible(mdl)
+}
 

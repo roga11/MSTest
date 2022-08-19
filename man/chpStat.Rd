@@ -2,25 +2,27 @@
 % Please edit documentation in R/RcppExports.R
 \name{chpStat}
 \alias{chpStat}
-\title{CHP Test Statistic}
+\title{Test statistic for CHP 2014 parameter stability test}
 \usage{
-chpStat(mdl, rho_b, ltmt, var_switch)
+chpStat(mdl, rho_b, ltmt, msvar)
 }
 \arguments{
-\item{mdl}{List containing model information}
+\item{\code{mdl}}{List containing model attributes (see \code{\link{ARmdl}}).}
 
-\item{rho_b}{bound for rho (nuisance param space)}
+\item{\code{rho_b}}{Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).}
 
-\item{ltmt}{List containing  relevant first and second derivatives of log likelihood function.}
+\item{\code{ltmt}}{List containing derivatives output from \code{\link{chpDmat}}.}
 
-\item{var_switch}{variance switch indicator}
+\item{\code{msvar}}{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
 }
 \value{
-Test Statistic
+A (\code{2 x 1}) vector with supTS test statistic as first element and expTS test-statistics as second element.
 }
 \description{
-Calculate supTS and expTS test-statistics from CHP (2014).
+This function computes the supTS and expTS test-statistics 
+proposed in CHP 2014.
 }
 \references{
-Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
+test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 }

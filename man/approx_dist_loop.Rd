@@ -2,22 +2,20 @@
 % Please edit documentation in R/RcppExports.R
 \name{approx_dist_loop}
 \alias{approx_dist_loop}
-\title{Loop for \emph{approxDist}}
+\title{Loop for \code{\link{approxDist}}}
 \usage{
 approx_dist_loop(SN2)
 }
 \arguments{
-\item{SN2}{matrix of Tx4 test-statistics}
+\item{\code{SN2}}{A (\code{T x 4}) matrix of  test-statistics.}
 }
 \value{
-The four test statistics from smulated data in [0,1]. Used for NLS to get 
-params needed to combine p-values
+The test statistics from simulated data. Used for NLS to get \code{params} needed to combine p-values.
 }
 \description{
-This function performs the loop in \emph{approxDist}. It is written in C++ for better 
-performance in terms of speed.
+This function performs the loop in required in \code{\link{approxDist}}.
 }
 \references{
-Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 }

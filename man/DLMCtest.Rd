@@ -2,35 +2,62 @@
 % Please edit documentation in R/methods_MomentTest.R
 \name{DLMCTest}
 \alias{DLMCTest}
-\title{Monte-Carlo Moment-based test for Markov-switching model}
+\title{Monte-Carlo moment-based test for Markov-switching model}
 \usage{
-DLMCTest(Y, ar, control = list())
+DLMCTest(Y, p, control = list())
 }
 \arguments{
 \item{Y}{Series to be tested}
 
-\item{ar}{Order of autoregressive components AR(p)}
+\item{p}{Number of autoregressive lags.}
 
-\item{control}{List of control parameters. See “Details”.}
+\item{control}{List with test procedure options including: 
+\itemize{
+  \item{\code{N}: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
+  \item{\code{simdist_N}: }{Integer determining the number of simulations for CDF distribution approximation. Default is set to \code{10000}.}
+  \item{\code{getSE}: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated.}
+}}
 }
 \value{
-List with model and test results
+List of class \code{DLMCTest} (\code{S3} object) with model attributes including: 
+\itemize{
+  \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} if \code{p>0} or \code{Nmdl} otherwise (\code{S3} objects). See \code{\link{ARmdl}} or \code{\link{Nmdl}}.}    
+  \item{\code{Fmin}: }{test statistic value for min version of Local Monte Carlo moment-based test.}
+  \item{\code{Fprod}: }{test statistic value for prod version of Local Monte Carlo moment-based test.}
+  \item{\code{Fmin_N}: }{A (\code{N x 1}) vector with simulated test statistics for min version of Local Monte Carlo moment-based test under null hypothesis.}
+  \item{\code{Fprod_N}: }{A (\code{N x 1}) vector with simulated test statistics for prod version of Local Monte Carlo moment-based test under null hypothesis.}
+  \item{\code{pval_min}: }{P-value for min version of Local Monte Carlo moment-based test.}
+  \item{\code{pval_prod}: }{P-value for prod version of Local Monte Carlo moment-based test.}
+  \item{\code{Fmin_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for min version of Local Monte Carlo moment-based test.}
+  \item{\code{Fprod_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for prod version of Local Monte Carlo moment-based test.}
+  \item{\code{control}: }{List with test procedure options used.}
+}
 }
 \description{
-This function performs the Local Monte-Carlo Moment-Based test for
+This function performs the Local Monte-Carlo moment-based test for
 Markov-switching autoregressive models proposed in Dufour & Luger (2017).
 }
-\details{
-The control argument is a list that can supply any of the following components:
-\itemize{
-  \item N: length of generate series fosample distribution. Default is N=99.
-  \item simdist_N: length of simulation used to approximate distribution of p-value distribution. 
- Default is simdist_N=10000
- \item getSE: Boolean value which determines if standard errors should be returned with AR model 
- (only when AR model is used). If TRUE, standard errors are obtained. Default is getSE=FALSE.
-}
+\examples{
+# load data used in Hamilton 1989 and extended data used in CHP 2014 
+y84 <- as.matrix(hamilton84GNP$GNP_logdiff)
+y10 <- as.matrix(carhuplo10GNP$GNP_logdiff)
+
+# Set test procedure options
+control = list(N = 99,
+               simdist_N = 10000,
+               getSE = TRUE)
+  
+# perform test with switch in mean only on Hamilton 1989 data
+mdl_84_msmu <- DLMCTest(y84, p = 4, control = control)
+
+mdl_84_msmu
+
+# perform test with switch in mean only on extended data used in CHP 2014
+mdl_10_msmu <- DLMCTest(y10, p = 4, control = control)
+
+mdl_10_msmu
 }
 \references{
-Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based tests for 
-Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based tests for 
+Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 }

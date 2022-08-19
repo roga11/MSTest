@@ -2,21 +2,20 @@
 % Please edit documentation in R/RcppExports.R
 \name{calc_DLmoments}
 \alias{calc_DLmoments}
-\title{Calculate Dufour & Luger (2017) Moment-Based Test-Statistics}
+\title{Moment-based test statistics}
 \usage{
 calc_DLmoments(ehat)
 }
 \arguments{
-\item{ehat}{vector containing series of residuals from model.}
+\item{\code{ehat}}{A (\code{T x 1}) vector of restricted model residuals.}
 }
 \value{
-The four test statistics (eq. 11 - 14 in paper)
+Vector containing the four test statistics.
 }
 \description{
-This function computes the four momment-based test-statistics (eq. 11 - 14 in paper) 
-for a given series. The series should be the residuals from an AR model.
+This function computes the four moment-based test statistics (eq. \code{11} - \code{14}) discussed in Dufour & Luger 2017.
 }
 \references{
-Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 }

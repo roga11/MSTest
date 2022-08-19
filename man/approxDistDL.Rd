@@ -2,23 +2,22 @@
 % Please edit documentation in R/methods_MomentTest.R
 \name{approxDistDL}
 \alias{approxDistDL}
-\title{Approximate Distribuion For Dufour & Luger Test}
+\title{Approximate CDF distribution}
 \usage{
 approxDistDL(Tsize, simdist_N)
 }
 \arguments{
-\item{Tsize}{sample size}
+\item{Tsize}{Sample size.}
 
-\item{simdist_N}{number of draws (simulations)}
+\item{simdist_N}{Number of simulations to approximate CDF distribution.}
 }
 \value{
-params the paramters gamma in eq. 16 of Dufour & Luger (2017).
+A (\code{2 x 4}) matrix with parameters of CDF distributions. The first row contains \eqn{\gamma_0} for each moment and the second row contains \eqn{\gamma_1} for each moment.
 }
 \description{
-This function obtains the parameters needed in eq. 16 which is used for 
-combining p-values.
+This function obtains the parameters in eq. 16 of the CDF distribution needed for combining moment-based test statistics.
 }
 \references{
-Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 }

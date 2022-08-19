@@ -7,9 +7,9 @@
 ARmdl(Y, p, control = list())
 }
 \arguments{
-\item{Y}{a \code{(T x 1)} matrix of observations.}
+\item{Y}{A \code{(T x 1)} matrix of observations.}
 
-\item{p}{integer determining the number of autoregressive lags.}
+\item{p}{Integer determining the number of autoregressive lags.}
 
 \item{control}{List with model options including: 
 \itemize{

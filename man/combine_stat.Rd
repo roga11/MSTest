@@ -7,41 +7,31 @@
 combine_stat(s0, sN, params, type)
 }
 \arguments{
-\item{s0}{test-statistic under the alternative}
+\item{\code{s0}}{A (\code{4 x 1}) vector with four moment-based test statistic under from observed data.}
 
-\item{sN}{test-statistics under the null}
+\item{\code{sN}}{A (\code{N x 4}) matrix with \code{N} different simulated moment-based test statistics.}
 
-\item{type}{the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher (1932) 
-and Pearson (1933). If set to "prod" the product of p-values is used as in Tippett (1931) 
-and Wilkinson (1951).}
+\item{\code{param}}{A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.}
 
-\item{param}{output from \emph{approxDist} which obtains the parameters needed in eq. 16 which is used for 
-combining p-values.}
-
-\item{N}{total number of test statistics (i.e. simulated + observed = N)}
+\item{\code{type}}{String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
+is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.}
 }
 \value{
-The four test statistics (eq. 11 - 14 in paper)
+A (\code{N+1 x 1}) vector with test statistics. The last element is the test statistc from observed data.
 }
 \description{
-This function is used to combine the p-values as in eq 17 and 18 of Dufour & Luger (2017).
-The input parameter \emph{type} can be used to used to specify the method for combining 
-the pvalues. If set to "min" the min method of combining p-values is used as in Fisher (1932) 
-and Pearson (1933). If set to "prod" the product of p-values is used as in Tippett (1931) 
-and Wilkinson (1951).
+This function is used to combine the four moment-based p-values as in eq. \code{17} and \code{18} of Dufour & Luger 2017.
 }
 \references{
-Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 
-Tippett, L. (1931). The Method of Statistics. London: Williams & Norgate.
+Tippett, L. 1931. "The Method of Statistics". London: Williams & Norgate.
 
-Wilkinson, B. (1951). A statistical consideration in psychological research. 
-Psychology Bulletin 48:156–158.
+Wilkinson, B. 1951. "A statistical consideration in psychological research." \emph{Psychology Bulletin} 48:156–158.
 
-Pearson, K. (1933). On a method of determining whether a sample of size n
- supposed to have been drawn from a parent population having a known probability integral has probably been drawn at random. Biometrika 25:379–410.
+Pearson, K. 1933. "On a method of determining whether a sample of size n
+ supposed to have been drawn from a parent population having a known probability integral has probably been drawn at random". \emph{Biometrika} 25:379–410.
 
-Fisher, R. (1932). Statistical Methods for Research Workers. Edinburgh: 
-Oliver and Boyd.
+Fisher, R. 1932. "Statistical Methods for Research Workers." Edinburgh: Oliver and Boyd.
 }

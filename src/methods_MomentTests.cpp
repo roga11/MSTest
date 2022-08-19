@@ -3,18 +3,16 @@
 //[[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 // ==============================================================================
-//' @title Calculate Dufour & Luger (2017) Moment-Based Test-Statistics 
+//' @title Moment-based test statistics 
 //'
-//' @description This function computes the four momment-based test-statistics (eq. 11 - 14 in paper) 
-//' for a given series. The series should be the residuals from an AR model. 
-//' 
+//' @description This function computes the four moment-based test statistics (eq. \code{11} - \code{14}) discussed in Dufour & Luger 2017.
 //'
-//' @param ehat vector containing series of residuals from model.
+//' @param \code{ehat} A (\code{T x 1}) vector of restricted model residuals.
 //' 
-//' @return The four test statistics (eq. 11 - 14 in paper)
+//' @return Vector containing the four test statistics.
 //' 
-//' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-//' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+//' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+//' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -44,24 +42,23 @@ arma::vec calc_DLmoments(arma::vec ehat){
   // output 
   return(stats);
 }
+
 // ==============================================================================
-//' @title Test-statistics from simulated data
+//' @title Simulated moment-based test statistics
 //'
-//' @description This function computes simulates residuals from a standard normal distribution
-//' and calculates the four momment-based test-statistics (eq. 11 - 14 in paper) under the 
-//' null hypothesis using this simulated data.
+//' @description This function computes the four moment-based test statistics (eq. \code{11} - \code{14}) discussed in Dufour & Luger 2017 for \code{N} different simulated series.
 //' 
-//' @param t length of sample size for simulation 
-//' @param number of simulated samples
+//' @param \code{Tsize} Length of sample size for simulation.
+//' @param \code{N} Number of simulated samples.
 //' 
-//' @return The four test statistics (eq. 11 - 14 in paper)
+//' @return A (\code{N x 4}) matrix with \code{N} different simulated moment-based test statistics.
 //' 
-//' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-//' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+//' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+//' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::mat sim_DLmoments(int Tsize,int N){
+arma::mat sim_DLmoments(int Tsize, int N){
   arma::mat stats(N, 4, arma::fill::zeros);
   // loop and perform simultion each time 
   for (int isim = 0; isim <N; isim++){
@@ -74,36 +71,27 @@ arma::mat sim_DLmoments(int Tsize,int N){
 // ==============================================================================
 //' @title Combine p-values 
 //'
-//' @description This function is used to combine the p-values as in eq 17 and 18 of Dufour & Luger (2017).
-//' The input parameter \emph{type} can be used to used to specify the method for combining 
-//' the pvalues. If set to "min" the min method of combining p-values is used as in Fisher (1932) 
-//' and Pearson (1933). If set to "prod" the product of p-values is used as in Tippett (1931) 
-//' and Wilkinson (1951).
+//' @description This function is used to combine the four moment-based p-values as in eq. \code{17} and \code{18} of Dufour & Luger 2017.
 //' 
-//' @param s0 test-statistic under the alternative
-//' @param sN test-statistics under the null
-//' @param param output from \emph{approxDist} which obtains the parameters needed in eq. 16 which is used for 
-//' combining p-values.
-//' @param N total number of test statistics (i.e. simulated + observed = N)
-//' @param type the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher (1932) 
-//' and Pearson (1933). If set to "prod" the product of p-values is used as in Tippett (1931) 
-//' and Wilkinson (1951).
+//' @param \code{s0} A (\code{4 x 1}) vector with four moment-based test statistic under from observed data.
+//' @param \code{sN} A (\code{N x 4}) matrix with \code{N} different simulated moment-based test statistics.
+//' @param \code{param} A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
+//' @param \code{type} String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
+//' is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
 //' 
-//' @return The four test statistics (eq. 11 - 14 in paper)
+//' @return A (\code{N+1 x 1}) vector with test statistics. The last element is the test statistc from observed data.
 //' 
-//' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-//' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
-//' @references Tippett, L. (1931). The Method of Statistics. London: Williams & Norgate.
-//' @references Wilkinson, B. (1951). A statistical consideration in psychological research. 
-//' Psychology Bulletin 48:156–158.
-//' @references Pearson, K. (1933). On a method of determining whether a sample of size n
-//'  supposed to have been drawn from a parent population having a known probability integral has probably been drawn at random. Biometrika 25:379–410.
-//' @references Fisher, R. (1932). Statistical Methods for Research Workers. Edinburgh: 
-//' Oliver and Boyd.
+//' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+//' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
+//' @references Tippett, L. 1931. "The Method of Statistics". London: Williams & Norgate.
+//' @references Wilkinson, B. 1951. "A statistical consideration in psychological research." \emph{Psychology Bulletin} 48:156–158.
+//' @references Pearson, K. 1933. "On a method of determining whether a sample of size n
+//'  supposed to have been drawn from a parent population having a known probability integral has probably been drawn at random". \emph{Biometrika} 25:379–410.
+//' @references Fisher, R. 1932. "Statistical Methods for Research Workers." Edinburgh: Oliver and Boyd.
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::vec combine_stat(arma::vec s0,arma::mat sN, arma::mat params, std::string type){
+arma::vec combine_stat(arma::vec s0, arma::mat sN, arma::mat params, std::string type){
   int N = sN.n_rows;
   int nc = sN.n_cols;
   arma::mat G0(1,nc,arma::fill::zeros);
@@ -131,20 +119,19 @@ arma::vec combine_stat(arma::vec s0,arma::mat sN, arma::mat params, std::string 
   Fx(N) = F0;
   return(Fx);
 }
+
 // ==============================================================================
-//' @title Calculate combined p-value test statistic 
+//' @title Calculate combined test statistic 
 //'
-//' @description This function computes test-statistics for observed and simulated samples. 
-//' It begins by calculating it for the obsted data, then generates test-statistics from 
-//' simulated data to approximate null distribution and then calculates the p-values and 
-//' combines them according to eq. 17 or 18 of Dufour & Luger (2017).
+//' @description This function computes the moment-based test-statistics and combines them for observed and simulated samples. 
 //' 
-//' @param ezt observed series
-//' @param N total number of test statistics (i.e. simulated + observed = N)
-//' @param param output from \emph{approxDist} which obtains the parameters needed in eq. 16 which is used for 
-//' combining p-values.
+//' @param \code{ezt} residuals from restricted model.
+//' @param \code{N} Number of Monte Carlo simulated test statistics.
+//' @param \code{param} A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
+//' @param \code{type} String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
+//' is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
 //' 
-//' @return The four test statistics (eq. 11 - 14 in paper)
+//' @return A (\code{N+1 x 1}) vector with test statistics. The last element is the test statistc from observed data.
 //' 
 //' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
 //' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
@@ -169,19 +156,18 @@ arma::vec calc_DLmcstat(arma::vec ezt, int N, arma::mat params, Rcpp::String typ
   }
   return(Fx);
 }
+
 // ==============================================================================
-//' @title Loop for \emph{approxDist}
+//' @title Loop for \code{\link{approxDist}}
 //'
-//' @description This function performs the loop in \emph{approxDist}. It is written in C++ for better 
-//' performance in terms of speed.
+//' @description This function performs the loop in required in \code{\link{approxDist}}. 
 //' 
-//' @param SN2 matrix of Tx4 test-statistics
+//' @param \code{SN2} A (\code{T x 4}) matrix of  test-statistics.
 //' 
-//' @return The four test statistics from smulated data in [0,1]. Used for NLS to get 
-//' params needed to combine p-values
+//' @return The test statistics from simulated data. Used for NLS to get \code{params} needed to combine p-values.
 //' 
-//' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-//' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+//' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+//' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 //' 
 //' @export    
 // [[Rcpp::export]]   
@@ -198,11 +184,12 @@ arma::mat approx_dist_loop(arma::mat SN2){
 }
 
 // ==============================================================================
-//' @title Dufour & Luger (2017) moment-based MMC test p-value function to be minimized
+//' @title Moment-based MMC test p-value 
 //'
+//' @return @return Maximized Monte Carlo p-value.
 //' 
-//' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-//' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+//' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+//' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -236,21 +223,22 @@ double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x, int N, int simdi
     // ----- Obtain p-value
     double F0 = Fx(N);
     arma::vec FN = Fx.subvec(0,N-1);
-    pval = -MCpval(F0, FN, "geq");
+    pval = MCpval(F0, FN, "geq");
   }
   return(pval);
 }
 
 // ==============================================================================
-//' @title Dufour & Luger (2017) moment-based MMC test p-value function to be maximized
+//' @title Moment-based MMC test (negative) p-value 
 //'
+//' @return Negative Maximized Monte Carlo p-value. 
 //' 
-//' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-//' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+//' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+//' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 //' 
 //' @export
 // [[Rcpp::export]]
-double DLMMCpval_fun_max(arma::vec theta, arma::vec y, arma::mat x, int N, int simdist_N, Rcpp::String pval_type, bool stationary_ind, double lambda){
+double DLMMCpval_fun_min(arma::vec theta, arma::vec y, arma::mat x, int N, int simdist_N, Rcpp::String pval_type, bool stationary_ind, double lambda){
   double pval = -DLMMCpval_fun(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda);
   return(pval);
 }

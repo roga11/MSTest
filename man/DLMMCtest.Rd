@@ -2,14 +2,14 @@
 % Please edit documentation in R/methods_MomentTest.R
 \name{DLMMCTest}
 \alias{DLMMCTest}
-\title{Maximized Monte Carlo Likelihood Ratio Test}
+\title{Maximized Monte Carlo moment-based test for Markov-switching model}
 \usage{
-DLMMCTest(Y, ar, pval_type = "min", control = list())
+DLMMCTest(Y, p, pval_type = "min", control = list())
 }
 \arguments{
 \item{Y}{Series to be tested}
 
-\item{ar}{Order of autoregressive components AR(p)}
+\item{p}{Number of autoregressive lags.}
 
 \item{pval_type}{Method to be used to combine p-values (see eq. (17) and (18) of Dufour & Luger (2017))}
 
@@ -20,4 +20,8 @@ DLMMCTest(Y, ar, pval_type = "min", control = list())
 }
 \description{
 Performs the Maximized Monte Carlo (MMC) moment-based test described in Dufour & Luger (2017).
+}
+\references{
+Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based tests for 
+Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 }

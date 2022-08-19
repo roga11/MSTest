@@ -2,26 +2,25 @@
 % Please edit documentation in R/RcppExports.R
 \name{calc_DLmcstat}
 \alias{calc_DLmcstat}
-\title{Calculate combined p-value test statistic}
+\title{Calculate combined test statistic}
 \usage{
 calc_DLmcstat(ezt, N, params, type = "min")
 }
 \arguments{
-\item{ezt}{observed series}
+\item{\code{ezt}}{residuals from restricted model.}
 
-\item{N}{total number of test statistics (i.e. simulated + observed = N)}
+\item{\code{N}}{Number of Monte Carlo simulated test statistics.}
 
-\item{param}{output from \emph{approxDist} which obtains the parameters needed in eq. 16 which is used for 
-combining p-values.}
+\item{\code{param}}{A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.}
+
+\item{\code{type}}{String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
+is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.}
 }
 \value{
-The four test statistics (eq. 11 - 14 in paper)
+A (\code{N+1 x 1}) vector with test statistics. The last element is the test statistc from observed data.
 }
 \description{
-This function computes test-statistics for observed and simulated samples. 
-It begins by calculating it for the obsted data, then generates test-statistics from 
-simulated data to approximate null distribution and then calculates the p-values and 
-combines them according to eq. 17 or 18 of Dufour & Luger (2017).
+This function computes the moment-based test-statistics and combines them for observed and simulated samples.
 }
 \references{
 Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 

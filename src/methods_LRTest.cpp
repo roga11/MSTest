@@ -3,7 +3,7 @@
 //[[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 
-// ==============================================================================f
+// ==============================================================================
 //' @title Likelihood Ratio Test Statistic Sample Distribution
 //' 
 //' 

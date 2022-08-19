@@ -2,25 +2,26 @@
 % Please edit documentation in R/RcppExports.R
 \name{bootCV}
 \alias{bootCV}
-\title{Bootstrap Critival Values CHP Test}
+\title{Bootstrap critical values for CHP 2014 parameter stability test}
 \usage{
-bootCV(mdl, rho_b, N, var_switch)
+bootCV(mdl, rho_b, N, msvar)
 }
 \arguments{
-\item{mdl}{List containing model information}
+\item{\code{mdl}}{List containing model attributes (see \code{\link{ARmdl}}).}
 
-\item{rho_b}{bound for rho (nuisance param space)}
+\item{\code{rho_b}}{Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).}
 
-\item{N}{number of simulations}
+\item{\code{N}}{Number of bootstrap simulations.}
 
-\item{var_switch}{variance switch indicator}
+\item{\code{msvar}}{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
 }
 \value{
 Bootstrap critical values
 }
 \description{
-This bootstrap procedure is described on page 771 of CHP (2014)
+This bootstrap procedure is described on pg. 771 of CHP 2014.
 }
 \references{
-Carrasco, M., L. Hu, and W. Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
+test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 }

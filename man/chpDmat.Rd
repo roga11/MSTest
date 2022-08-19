@@ -4,23 +4,19 @@
 \alias{chpDmat}
 \title{Derivative matrix}
 \usage{
-chpDmat(Mdl, var_switch)
+chpDmat(mdl, msvar)
 }
 \arguments{
-\item{Mdl}{is a list containing AR model components
-Specifically, it containg y, x, X (x plus constant), residuals, coefficients, stdev,
-logLike}
+\item{msvar}{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
 
-\item{var_switch}{is an indicator = 1 if there is a switch in both Mean and Variance 
-and = 0 if there is only a switch in the Mean. Less Second-Order dervatives are 
-calculated if only the Mean is subject to regime switch.}
+\item{Mdl}{List containing output from \code{\link{ARmdl}}.}
 }
 \value{
-List containing relevant first and second derivatves of log likelihood function.
+List containing relevant first and second derivatives of log-likelihood function.
 }
 \description{
-This function organizes the first and second derivatives of the log Likelihoood.
+This function organizes the first and second derivatives of the log-likelihoood.
 }
 \references{
-Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 }

@@ -1,28 +1,31 @@
 #include <RcppArmadillo.h>
 //[[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
-// ------------------------------------------------------------------------------------------
-//' @title Calc eq. 2.5 from CHP (2014) where both mean and variance can switch
+
+//  ==============================================================================
+//' @title Test statistic for switch in mean and variance
 //'
-//' @description When alternative has bith switching mean and variance, we take the second 
-//' derivative of the log likelihood function w.r.t mu, phi and sigma.
-//' 
-//' Output from this function is used as input in \emph{chpStat}
+//' @description This function computes part of the test statistic given by 
+//' eq. 2.5 of CHP 2014 when the alternative has switching mean and variance. 
+//' The output is used in \code{\link{chpStat}} which computes the full test
+//' statistics.
 //'
-//' @param mdl List containing model information
-//' @param rho_b bound for rho (nuisance param space)
-//' @param ltmt List conatining derivatives (i.e. is the output when using \emph{chpDmat})
+//' @param \code{mdl} List containing model attributes (see \code{\link{ARmdl}}).
+//' @param \code{rho_b} Number determining value of \code{rho}.
+//' @param \code{ltmt} List containing derivatives output from \code{\link{chpDmat}}.
+//' @param \code{hv} Number determining value of \code{h}.
 //' 
-//' @return mu_2t from eq. 2.5 and used in test-statistic caluclation
+//' @return Part of test statistic given \code{rho} and \code{hv} value. 
 //' 
-//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
+//' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 //' 
 //' @export
 // [[Rcpp::export]]
 arma::vec calc_mu2t_mv(List mdl, double rho, List ltmt, arma::vec hv){
   // calc mu2t (eq. 2.5) for test with switch in mean and variance 
   int nn              = mdl["n"];
-  int nar             = mdl["ar"];
+  int nar             = mdl["p"];
   double mu0          = mdl["mu"];
   arma::mat xtj       = mdl["x"];
   arma::mat ltmx      = ltmt["ltmx"];
@@ -62,21 +65,22 @@ arma::vec calc_mu2t_mv(List mdl, double rho, List ltmt, arma::vec hv){
   }
   return(mu2t);
 }
-// ------------------------------------------------------------------------------------------
-//' @title Calc eq. 2.5 from CHP (2014) where only mean can switch
+
+//  ==============================================================================
+//' @title Test statistic for switch in mean only 
 //'
-//' @description When alternative only has Switching mean (and not variance), we only take the second 
-//' derivative of the log likelihood function w.r.t mu and not phi or sigma.
-//' 
-//' Output from this function is used as input in \emph{chpStat}
+//' @description This function computes part of the test statistic given by 
+//' eq. 2.5 of CHP 2014 when the alternative has switching mean only. The output 
+//' is used in \code{\link{chpStat}} which computes the full test statistics.
 //'
-//' @param mdl List containing model information
-//' @param rho_b bound for rho (nuisance param space)
-//' @param ltmt List conatining derivatives (i.e. is the output when using \emph{chpDmat})
+//' @param \code{mdl} List containing model attributes (see \code{\link{ARmdl}}).
+//' @param \code{rho_b} Number determining value of \code{rho}.
+//' @param \code{ltmt} List containing derivatives output from \code{\link{chpDmat}}.
 //' 
-//' @return mu_2t from eq. 2.5 and used in test-statistic caluclation
+//' @return Part of test statistic given \code{rho} and \code{hv} value. 
 //' 
-//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
+//' test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -96,30 +100,33 @@ arma::vec calc_mu2t(List mdl, double rho, List ltmt){
   mu2t = (mtmu+pow(ltmu,2))/2+mu2t;
   return(mu2t);
 }
-// ------------------------------------------------------------------------------------------
-//' @title CHP Test Statistic
+
+//  ==============================================================================
+//' @title Test statistic for CHP 2014 parameter stability test
 //' 
-//' @description Calculate supTS and expTS test-statistics from CHP (2014).
+//' @description This function computes the supTS and expTS test-statistics 
+//' proposed in CHP 2014.
 //'
-//' @param mdl List containing model information
-//' @param rho_b bound for rho (nuisance param space)
-//' @param ltmt List containing  relevant first and second derivatives of log likelihood function.
-//' @param var_switch variance switch indicator
+//' @param \code{mdl} List containing model attributes (see \code{\link{ARmdl}}).
+//' @param \code{rho_b} Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).
+//' @param \code{ltmt} List containing derivatives output from \code{\link{chpDmat}}.
+//' @param \code{msvar} Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
 //' 
-//' @return Test Statistic
+//' @return A (\code{2 x 1}) vector with supTS test statistic as first element and expTS test-statistics as second element.
 //' 
-//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
+//' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::vec chpStat(List mdl, double rho_b, List ltmt,int var_switch){
+arma::vec chpStat(List mdl, double rho_b, List ltmt,int msvar){
   int nn              = mdl["n"];
-  int nar             = mdl["ar"];
+  int nar             = mdl["p"];
   int tt              = nn + nar;
   arma::mat ltmx      = ltmt["ltmx"];
   double seqlen       = (rho_b-(-rho_b))*100 + 1;
   arma::vec chps(2,arma::fill::zeros);
-  if (var_switch==0){
+  if (msvar==0){
     // If only Mean can Switch
     arma::vec cv(seqlen,1,arma::fill::zeros); // stores supTS critical values for each rho
     arma::vec cv2(seqlen,1,arma::fill::zeros); // stores expTS critical values for each rho
@@ -198,29 +205,31 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,int var_switch){
   return(chps);
 }
 
-// ------------------------------------------------------------------------------------------
-//' @title Bootstrap Critival Values CHP Test
+//  ==============================================================================
+//' @title Bootstrap critical values for CHP 2014 parameter stability test
 //'
-//' @description This bootstrap procedure is described on page 771 of CHP (2014)
+//' @description This bootstrap procedure is described on pg. 771 of CHP 2014.
 //'
-//' @param mdl List containing model information
-//' @param rho_b bound for rho (nuisance param space)
-//' @param N number of simulations
-//' @param var_switch variance switch indicator
+//'
+//' @param \code{mdl} List containing model attributes (see \code{\link{ARmdl}}).
+//' @param \code{rho_b} Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).
+//' @param \code{N} Number of bootstrap simulations.
+//' @param \code{msvar} Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
 //' 
 //' @return Bootstrap critical values
 //' 
-//' @references Carrasco, M., L. Hu, and W. Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
+//' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::mat bootCV(List mdl,double rho_b, int N, int var_switch){
+arma::mat bootCV(List mdl,double rho_b, int N, int msvar){
   // calling required R functions 
   Function simuAR("simuAR");
   Function ARmdl("ARmdl");
   Function chpDmat("chpDmat");
   // define vars from Model list
-  int ar =  mdl["ar"];
+  int ar =  mdl["p"];
   arma::vec supb(N,arma::fill::zeros);  // stores the bootstrapped supTS critical value
   arma::vec expb(N,arma::fill::zeros);  // stores the bootstrapped expTS critical value
   for (int itb=0; itb<N; itb++){
@@ -228,8 +237,8 @@ arma::mat bootCV(List mdl,double rho_b, int N, int var_switch){
     List y_out_tmp = simuAR(mdl);
     arma::vec y0 = y_out_tmp["y"];
     List  Mdl_tmp  = ARmdl(y0,ar);
-    List ltmtb  = chpDmat(Mdl_tmp,var_switch);
-    arma::vec cv4  = chpStat(Mdl_tmp, rho_b, ltmtb, var_switch);
+    List ltmtb  = chpDmat(Mdl_tmp,msvar);
+    arma::vec cv4  = chpStat(Mdl_tmp, rho_b, ltmtb, msvar);
     supb(itb)   = cv4(0);
     expb(itb)   = cv4(1);
   }

@@ -2,24 +2,22 @@
 % Please edit documentation in R/RcppExports.R
 \name{sim_DLmoments}
 \alias{sim_DLmoments}
-\title{Test-statistics from simulated data}
+\title{Simulated moment-based test statistics}
 \usage{
 sim_DLmoments(Tsize, N)
 }
 \arguments{
-\item{t}{length of sample size for simulation}
+\item{\code{Tsize}}{Length of sample size for simulation.}
 
-\item{number}{of simulated samples}
+\item{\code{N}}{Number of simulated samples.}
 }
 \value{
-The four test statistics (eq. 11 - 14 in paper)
+A (\code{N x 4}) matrix with \code{N} different simulated moment-based test statistics.
 }
 \description{
-This function computes simulates residuals from a standard normal distribution
-and calculates the four momment-based test-statistics (eq. 11 - 14 in paper) under the 
-null hypothesis using this simulated data.
+This function computes the four moment-based test statistics (eq. \code{11} - \code{14}) discussed in Dufour & Luger 2017 for \code{N} different simulated series.
 }
 \references{
-Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 }

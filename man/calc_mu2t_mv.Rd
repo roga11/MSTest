@@ -2,26 +2,29 @@
 % Please edit documentation in R/RcppExports.R
 \name{calc_mu2t_mv}
 \alias{calc_mu2t_mv}
-\title{Calc eq. 2.5 from CHP (2014) where both mean and variance can switch}
+\title{Test statistic for switch in mean and variance}
 \usage{
 calc_mu2t_mv(mdl, rho, ltmt, hv)
 }
 \arguments{
-\item{mdl}{List containing model information}
+\item{\code{mdl}}{List containing model attributes (see \code{\link{ARmdl}}).}
 
-\item{ltmt}{List conatining derivatives (i.e. is the output when using \emph{chpDmat})}
+\item{\code{rho_b}}{Number determining value of \code{rho}.}
 
-\item{rho_b}{bound for rho (nuisance param space)}
+\item{\code{ltmt}}{List containing derivatives output from \code{\link{chpDmat}}.}
+
+\item{\code{hv}}{Number determining value of \code{h}.}
 }
 \value{
-mu_2t from eq. 2.5 and used in test-statistic caluclation
+Part of test statistic given \code{rho} and \code{hv} value.
 }
 \description{
-When alternative has bith switching mean and variance, we take the second 
-derivative of the log likelihood function w.r.t mu, phi and sigma.
-
-Output from this function is used as input in \emph{chpStat}
+This function computes part of the test statistic given by 
+eq. 2.5 of CHP 2014 when the alternative has switching mean and variance. 
+The output is used in \code{\link{chpStat}} which computes the full test
+statistics.
 }
 \references{
-Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
+test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 }

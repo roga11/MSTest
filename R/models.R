@@ -88,8 +88,8 @@ Nmdl <- function(Y, control = list()){
 #' 
 #' @description This function estimates an autoregresive model with \code{p} lags. This can be used for the null hypothesis of a linear model against an alternative hypothesis of a Markov switching autoregressive model with \code{k} regimes. 
 #' 
-#' @param Y a \code{(T x 1)} matrix of observations.  
-#' @param p integer determining the number of autoregressive lags.
+#' @param Y A \code{(T x 1)} matrix of observations.  
+#' @param p Integer determining the number of autoregressive lags.
 #' @param control List with model options including: 
 #' \itemize{
 #'   \item{\code{const}: }{Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.}

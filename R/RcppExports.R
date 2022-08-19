@@ -682,80 +682,86 @@ MSVARmdl_em <- function(theta_0, mdl, k, optim_options) {
     .Call(`_MSTest_MSVARmdl_em`, theta_0, mdl, k, optim_options)
 }
 
-#' @title Calc eq. 2.5 from CHP (2014) where both mean and variance can switch
+#' @title Test statistic for switch in mean and variance
 #'
-#' @description When alternative has bith switching mean and variance, we take the second 
-#' derivative of the log likelihood function w.r.t mu, phi and sigma.
-#' 
-#' Output from this function is used as input in \emph{chpStat}
+#' @description This function computes part of the test statistic given by 
+#' eq. 2.5 of CHP 2014 when the alternative has switching mean and variance. 
+#' The output is used in \code{\link{chpStat}} which computes the full test
+#' statistics.
 #'
-#' @param mdl List containing model information
-#' @param rho_b bound for rho (nuisance param space)
-#' @param ltmt List conatining derivatives (i.e. is the output when using \emph{chpDmat})
+#' @param \code{mdl} List containing model attributes (see \code{\link{ARmdl}}).
+#' @param \code{rho_b} Number determining value of \code{rho}.
+#' @param \code{ltmt} List containing derivatives output from \code{\link{chpDmat}}.
+#' @param \code{hv} Number determining value of \code{h}.
 #' 
-#' @return mu_2t from eq. 2.5 and used in test-statistic caluclation
+#' @return Part of test statistic given \code{rho} and \code{hv} value. 
 #' 
-#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
+#' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
 #' @export
 calc_mu2t_mv <- function(mdl, rho, ltmt, hv) {
     .Call(`_MSTest_calc_mu2t_mv`, mdl, rho, ltmt, hv)
 }
 
-#' @title Calc eq. 2.5 from CHP (2014) where only mean can switch
+#' @title Test statistic for switch in mean only 
 #'
-#' @description When alternative only has Switching mean (and not variance), we only take the second 
-#' derivative of the log likelihood function w.r.t mu and not phi or sigma.
-#' 
-#' Output from this function is used as input in \emph{chpStat}
+#' @description This function computes part of the test statistic given by 
+#' eq. 2.5 of CHP 2014 when the alternative has switching mean only. The output 
+#' is used in \code{\link{chpStat}} which computes the full test statistics.
 #'
-#' @param mdl List containing model information
-#' @param rho_b bound for rho (nuisance param space)
-#' @param ltmt List conatining derivatives (i.e. is the output when using \emph{chpDmat})
+#' @param \code{mdl} List containing model attributes (see \code{\link{ARmdl}}).
+#' @param \code{rho_b} Number determining value of \code{rho}.
+#' @param \code{ltmt} List containing derivatives output from \code{\link{chpDmat}}.
 #' 
-#' @return mu_2t from eq. 2.5 and used in test-statistic caluclation
+#' @return Part of test statistic given \code{rho} and \code{hv} value. 
 #' 
-#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
+#' test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
 #' @export
 calc_mu2t <- function(mdl, rho, ltmt) {
     .Call(`_MSTest_calc_mu2t`, mdl, rho, ltmt)
 }
 
-#' @title CHP Test Statistic
+#' @title Test statistic for CHP 2014 parameter stability test
 #' 
-#' @description Calculate supTS and expTS test-statistics from CHP (2014).
+#' @description This function computes the supTS and expTS test-statistics 
+#' proposed in CHP 2014.
 #'
-#' @param mdl List containing model information
-#' @param rho_b bound for rho (nuisance param space)
-#' @param ltmt List containing  relevant first and second derivatives of log likelihood function.
-#' @param var_switch variance switch indicator
+#' @param \code{mdl} List containing model attributes (see \code{\link{ARmdl}}).
+#' @param \code{rho_b} Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).
+#' @param \code{ltmt} List containing derivatives output from \code{\link{chpDmat}}.
+#' @param \code{msvar} Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
 #' 
-#' @return Test Statistic
+#' @return A (\code{2 x 1}) vector with supTS test statistic as first element and expTS test-statistics as second element.
 #' 
-#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
+#' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
 #' @export
-chpStat <- function(mdl, rho_b, ltmt, var_switch) {
-    .Call(`_MSTest_chpStat`, mdl, rho_b, ltmt, var_switch)
+chpStat <- function(mdl, rho_b, ltmt, msvar) {
+    .Call(`_MSTest_chpStat`, mdl, rho_b, ltmt, msvar)
 }
 
-#' @title Bootstrap Critival Values CHP Test
+#' @title Bootstrap critical values for CHP 2014 parameter stability test
 #'
-#' @description This bootstrap procedure is described on page 771 of CHP (2014)
+#' @description This bootstrap procedure is described on pg. 771 of CHP 2014.
 #'
-#' @param mdl List containing model information
-#' @param rho_b bound for rho (nuisance param space)
-#' @param N number of simulations
-#' @param var_switch variance switch indicator
+#'
+#' @param \code{mdl} List containing model attributes (see \code{\link{ARmdl}}).
+#' @param \code{rho_b} Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).
+#' @param \code{N} Number of bootstrap simulations.
+#' @param \code{msvar} Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
 #' 
 #' @return Bootstrap critical values
 #' 
-#' @references Carrasco, M., L. Hu, and W. Ploberger. 2014. “Optimal test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
+#' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
 #' @export
-bootCV <- function(mdl, rho_b, N, var_switch) {
-    .Call(`_MSTest_bootCV`, mdl, rho_b, N, var_switch)
+bootCV <- function(mdl, rho_b, N, msvar) {
+    .Call(`_MSTest_bootCV`, mdl, rho_b, N, msvar)
 }
 
 #' @title Likelihood Ratio Test Statistic Sample Distribution
@@ -782,37 +788,33 @@ MMCLRpval_fun_max <- function(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, 
     .Call(`_MSTest_MMCLRpval_fun_max`, theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter, init_val_try_dist, workers)
 }
 
-#' @title Calculate Dufour & Luger (2017) Moment-Based Test-Statistics 
+#' @title Moment-based test statistics 
 #'
-#' @description This function computes the four momment-based test-statistics (eq. 11 - 14 in paper) 
-#' for a given series. The series should be the residuals from an AR model. 
-#' 
+#' @description This function computes the four moment-based test statistics (eq. \code{11} - \code{14}) discussed in Dufour & Luger 2017.
 #'
-#' @param ehat vector containing series of residuals from model.
+#' @param \code{ehat} A (\code{T x 1}) vector of restricted model residuals.
 #' 
-#' @return The four test statistics (eq. 11 - 14 in paper)
+#' @return Vector containing the four test statistics.
 #' 
-#' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-#' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+#' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+#' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
 #' @export
 calc_DLmoments <- function(ehat) {
     .Call(`_MSTest_calc_DLmoments`, ehat)
 }
 
-#' @title Test-statistics from simulated data
+#' @title Simulated moment-based test statistics
 #'
-#' @description This function computes simulates residuals from a standard normal distribution
-#' and calculates the four momment-based test-statistics (eq. 11 - 14 in paper) under the 
-#' null hypothesis using this simulated data.
+#' @description This function computes the four moment-based test statistics (eq. \code{11} - \code{14}) discussed in Dufour & Luger 2017 for \code{N} different simulated series.
 #' 
-#' @param t length of sample size for simulation 
-#' @param number of simulated samples
+#' @param \code{Tsize} Length of sample size for simulation.
+#' @param \code{N} Number of simulated samples.
 #' 
-#' @return The four test statistics (eq. 11 - 14 in paper)
+#' @return A (\code{N x 4}) matrix with \code{N} different simulated moment-based test statistics.
 #' 
-#' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-#' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+#' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+#' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
 #' @export
 sim_DLmoments <- function(Tsize, N) {
@@ -821,51 +823,40 @@ sim_DLmoments <- function(Tsize, N) {
 
 #' @title Combine p-values 
 #'
-#' @description This function is used to combine the p-values as in eq 17 and 18 of Dufour & Luger (2017).
-#' The input parameter \emph{type} can be used to used to specify the method for combining 
-#' the pvalues. If set to "min" the min method of combining p-values is used as in Fisher (1932) 
-#' and Pearson (1933). If set to "prod" the product of p-values is used as in Tippett (1931) 
-#' and Wilkinson (1951).
+#' @description This function is used to combine the four moment-based p-values as in eq. \code{17} and \code{18} of Dufour & Luger 2017.
 #' 
-#' @param s0 test-statistic under the alternative
-#' @param sN test-statistics under the null
-#' @param param output from \emph{approxDist} which obtains the parameters needed in eq. 16 which is used for 
-#' combining p-values.
-#' @param N total number of test statistics (i.e. simulated + observed = N)
-#' @param type the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher (1932) 
-#' and Pearson (1933). If set to "prod" the product of p-values is used as in Tippett (1931) 
-#' and Wilkinson (1951).
+#' @param \code{s0} A (\code{4 x 1}) vector with four moment-based test statistic under from observed data.
+#' @param \code{sN} A (\code{N x 4}) matrix with \code{N} different simulated moment-based test statistics.
+#' @param \code{param} A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
+#' @param \code{type} String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
+#' is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
 #' 
-#' @return The four test statistics (eq. 11 - 14 in paper)
+#' @return A (\code{N+1 x 1}) vector with test statistics. The last element is the test statistc from observed data.
 #' 
-#' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-#' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
-#' @references Tippett, L. (1931). The Method of Statistics. London: Williams & Norgate.
-#' @references Wilkinson, B. (1951). A statistical consideration in psychological research. 
-#' Psychology Bulletin 48:156–158.
-#' @references Pearson, K. (1933). On a method of determining whether a sample of size n
-#'  supposed to have been drawn from a parent population having a known probability integral has probably been drawn at random. Biometrika 25:379–410.
-#' @references Fisher, R. (1932). Statistical Methods for Research Workers. Edinburgh: 
-#' Oliver and Boyd.
+#' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+#' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
+#' @references Tippett, L. 1931. "The Method of Statistics". London: Williams & Norgate.
+#' @references Wilkinson, B. 1951. "A statistical consideration in psychological research." \emph{Psychology Bulletin} 48:156–158.
+#' @references Pearson, K. 1933. "On a method of determining whether a sample of size n
+#'  supposed to have been drawn from a parent population having a known probability integral has probably been drawn at random". \emph{Biometrika} 25:379–410.
+#' @references Fisher, R. 1932. "Statistical Methods for Research Workers." Edinburgh: Oliver and Boyd.
 #' 
 #' @export
 combine_stat <- function(s0, sN, params, type) {
     .Call(`_MSTest_combine_stat`, s0, sN, params, type)
 }
 
-#' @title Calculate combined p-value test statistic 
+#' @title Calculate combined test statistic 
 #'
-#' @description This function computes test-statistics for observed and simulated samples. 
-#' It begins by calculating it for the obsted data, then generates test-statistics from 
-#' simulated data to approximate null distribution and then calculates the p-values and 
-#' combines them according to eq. 17 or 18 of Dufour & Luger (2017).
+#' @description This function computes the moment-based test-statistics and combines them for observed and simulated samples. 
 #' 
-#' @param ezt observed series
-#' @param N total number of test statistics (i.e. simulated + observed = N)
-#' @param param output from \emph{approxDist} which obtains the parameters needed in eq. 16 which is used for 
-#' combining p-values.
+#' @param \code{ezt} residuals from restricted model.
+#' @param \code{N} Number of Monte Carlo simulated test statistics.
+#' @param \code{param} A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
+#' @param \code{type} String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
+#' is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
 #' 
-#' @return The four test statistics (eq. 11 - 14 in paper)
+#' @return A (\code{N+1 x 1}) vector with test statistics. The last element is the test statistc from observed data.
 #' 
 #' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
 #' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
@@ -875,43 +866,43 @@ calc_DLmcstat <- function(ezt, N, params, type = "min") {
     .Call(`_MSTest_calc_DLmcstat`, ezt, N, params, type)
 }
 
-#' @title Loop for \emph{approxDist}
+#' @title Loop for \code{\link{approxDist}}
 #'
-#' @description This function performs the loop in \emph{approxDist}. It is written in C++ for better 
-#' performance in terms of speed.
+#' @description This function performs the loop in required in \code{\link{approxDist}}. 
 #' 
-#' @param SN2 matrix of Tx4 test-statistics
+#' @param \code{SN2} A (\code{T x 4}) matrix of  test-statistics.
 #' 
-#' @return The four test statistics from smulated data in [0,1]. Used for NLS to get 
-#' params needed to combine p-values
+#' @return The test statistics from simulated data. Used for NLS to get \code{params} needed to combine p-values.
 #' 
-#' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-#' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+#' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+#' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
 #' @export    
 approx_dist_loop <- function(SN2) {
     .Call(`_MSTest_approx_dist_loop`, SN2)
 }
 
-#' @title Dufour & Luger (2017) moment-based MMC test p-value function to be minimized
+#' @title Moment-based MMC test p-value 
 #'
+#' @return @return Maximized Monte Carlo p-value.
 #' 
-#' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-#' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+#' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+#' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
 #' @export
 DLMMCpval_fun <- function(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda) {
     .Call(`_MSTest_DLMMCpval_fun`, theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda)
 }
 
-#' @title Dufour & Luger (2017) moment-based MMC test p-value function to be maximized
+#' @title Moment-based MMC test (negative) p-value 
 #'
+#' @return Negative Maximized Monte Carlo p-value. 
 #' 
-#' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-#' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
+#' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
+#' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
 #' @export
-DLMMCpval_fun_max <- function(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda) {
-    .Call(`_MSTest_DLMMCpval_fun_max`, theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda)
+DLMMCpval_fun_min <- function(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda) {
+    .Call(`_MSTest_DLMMCpval_fun_min`, theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda)
 }
 
