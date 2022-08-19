@@ -33,7 +33,7 @@ approxDistDL <- function(Tsize, simdist_N){
 
 
 # ==============================================================================
-#' @title  Monte-Carlo moment-based test for Markov-switching model
+#' @title  Monte Carlo moment-based test for Markov switching model
 #' 
 #' @description This function performs the Local Monte-Carlo moment-based test for
 #' Markov-switching autoregressive models proposed in Dufour & Luger (2017).
@@ -44,7 +44,7 @@ approxDistDL <- function(Tsize, simdist_N){
 #' \itemize{
 #'   \item{\code{N}: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
 #'   \item{\code{simdist_N}: }{Integer determining the number of simulations for CDF distribution approximation. Default is set to \code{10000}.}
-#'   \item{\code{getSE}: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated.}
+#'   \item{\code{getSE}: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated. Default is \code{TRUE}.}
 #' }
 #' 
 #' @return List of class \code{DLMCTest} (\code{S3} object) with model attributes including: 
@@ -115,7 +115,7 @@ DLMCTest <- function(Y, p, control = list()){
 
 
 # ==============================================================================
-#' @title Maximized Monte Carlo moment-based test for Markov-switching model
+#' @title Maximized Monte Carlo moment-based test for Markov switching model
 #' 
 #' @description Performs the Maximized Monte Carlo (MMC) moment-based test described in Dufour & Luger (2017). 
 #' 

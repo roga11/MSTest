@@ -11,7 +11,7 @@
 #'   \item{\code{N}: }{Integer determining the number of Bootstrap iterations. Default is set to \code{3000} as in paper.}
 #'   \item{\code{rho_b}: }{Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).}
 #'   \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
-#'   \item{\code{getSE}: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated.}
+#'   \item{\code{getSE}: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated. Default is \code{TRUE}.}
 #' }
 #' 
 #' @return List of class \code{CHPTest} (\code{S3} object) with model attributes including: 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/methods_MomentTest.R
 \name{DLMCTest}
 \alias{DLMCTest}
-\title{Monte-Carlo moment-based test for Markov-switching model}
+\title{Monte Carlo moment-based test for Markov switching model}
 \usage{
 DLMCTest(Y, p, control = list())
 }
@@ -15,7 +15,7 @@ DLMCTest(Y, p, control = list())
 \itemize{
   \item{\code{N}: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
   \item{\code{simdist_N}: }{Integer determining the number of simulations for CDF distribution approximation. Default is set to \code{10000}.}
-  \item{\code{getSE}: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated.}
+  \item{\code{getSE}: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated. Default is \code{TRUE}.}
 }}
 }
 \value{

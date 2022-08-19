@@ -2,7 +2,7 @@
 % Please edit documentation in R/methods_MomentTest.R
 \name{DLMMCTest}
 \alias{DLMMCTest}
-\title{Maximized Monte Carlo moment-based test for Markov-switching model}
+\title{Maximized Monte Carlo moment-based test for Markov switching model}
 \usage{
 DLMMCTest(Y, p, pval_type = "min", control = list())
 }
