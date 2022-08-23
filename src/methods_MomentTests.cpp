@@ -115,47 +115,6 @@ arma::vec combine_stat(arma::mat stats, arma::mat params, std::string type){
 }
 
 // ==============================================================================
-//' @title Calculate combined test statistic 
-//'
-//' @description This function computes the moment-based test-statistics and combines them for observed and simulated samples. 
-//' 
-//' @param \code{ezt} residuals from restricted model.
-//' @param \code{N} Number of Monte Carlo simulated test statistics.
-//' @param \code{param} A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
-//' @param \code{type} String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
-//' is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
-//' 
-//' @return A (\code{N+1 x 1}) vector with test statistics. The last element is the test statistc from observed data.
-//' 
-//' @references Dufour, J. M., & Luger, R. (2017). Identification-robust moment-based 
-//' tests for Markov switching in autoregressive models. Econometric Reviews, 36(6-9), 713-727.
-//' 
-//' @export
-// [[Rcpp::export]]
-arma::vec calc_DLmcstat(arma::vec ezt, int N, arma::mat params, Rcpp::String type = "min"){
-  // Get length of series 
-  int Tsize = ezt.n_elem;
-  // calulate moments of data 
-  arma::mat S0 = trans(calc_DLmoments(ezt));
-  // Simulated data 
-  arma::mat SN = sim_DLmoments(Tsize,N); // must leaves as N-1.
-  // Get individual moment p-values 
-  arma::vec F0;
-  arma::vec Fx;
-  if (type=="prod"){
-    F0 = combine_stat(S0, params, "prod");
-    Fx = combine_stat(SN, params, "prod");
-  }else if (type=="min"){
-    F0 = combine_stat(S0, params, "min");   
-    Fx = combine_stat(SN, params, "min");   
-  }else{
-    Rcerr << "type must be: 'min' or 'prod'.\n";
-  }
-  Fx = join_vert(Fx,F0);
-  return(Fx);
-}
-
-// ==============================================================================
 //' @title Loop for \code{\link{approxDist}}
 //'
 //' @description This function performs the loop in required in \code{\link{approxDist}}. 
@@ -184,7 +143,7 @@ arma::mat approx_dist_loop(arma::mat SN2){
 // ==============================================================================
 //' @title Moment-based MMC test p-value 
 //'
-//' @return @return Maximized Monte Carlo p-value.
+//' @return Maximized Monte Carlo p-value.
 //' 
 //' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 //' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.

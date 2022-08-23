@@ -508,7 +508,7 @@
     },
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
-        "file_last_write": 1661230295.0,
+        "file_last_write": 1661292407.0,
         "definitions": [
             {
                 "usr": "c:@F@calc_DLmoments#$@N@arma@S@Col>#d#",
@@ -541,22 +541,12 @@
                 "hidden": false
             },
             {
-                "usr": "c:@F@calc_DLmcstat#$@N@arma@S@Col>#d#I#$@N@arma@S@Mat>#d#$@N@Rcpp@S@String#",
-                "kind": 6,
-                "parent_name": "",
-                "name": "calc_DLmcstat(arma::vec, int, arma::mat, Rcpp::String)",
-                "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
-                "line": 135,
-                "column": 11,
-                "hidden": false
-            },
-            {
                 "usr": "c:@F@approx_dist_loop#$@N@arma@S@Mat>#d#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "approx_dist_loop(arma::mat)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
-                "line": 172,
+                "line": 131,
                 "column": 11,
                 "hidden": false
             },
@@ -566,7 +556,7 @@
                 "parent_name": "",
                 "name": "DLMMCpval_fun(arma::vec, arma::vec, arma::mat, int, int, arma::mat, arma::vec, Rcpp::String, bool, double)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
-                "line": 194,
+                "line": 153,
                 "column": 8,
                 "hidden": false
             },
@@ -576,7 +566,7 @@
                 "parent_name": "",
                 "name": "DLMMCpval_fun_min(arma::vec, arma::vec, arma::mat, int, arma::mat, arma::vec, int, Rcpp::String, bool, double)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
-                "line": 244,
+                "line": 203,
                 "column": 8,
                 "hidden": false
             }

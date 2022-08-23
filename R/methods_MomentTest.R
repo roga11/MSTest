@@ -35,8 +35,8 @@ approxDistDL <- function(Tsize, simdist_N){
 # ==============================================================================
 #' @title  Monte Carlo moment-based test for Markov switching model
 #' 
-#' @description This function performs the Local Monte-Carlo moment-based test for
-#' Markov-switching autoregressive models proposed in Dufour & Luger (2017).
+#' @description This function performs the Local Monte Carlo moment-based test for
+#' Markov switching autoregressive models proposed in Dufour & Luger (2017).
 #' 
 #' @param Y Series to be tested
 #' @param p Number of autoregressive lags.
@@ -50,14 +50,16 @@ approxDistDL <- function(Tsize, simdist_N){
 #' @return List of class \code{DLMCTest} (\code{S3} object) with model attributes including: 
 #' \itemize{
 #'   \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} if \code{p>0} or \code{Nmdl} otherwise (\code{S3} objects). See \code{\link{ARmdl}} or \code{\link{Nmdl}}.}    
-#'   \item{\code{Fmin}: }{test statistic value for min version of Local Monte Carlo moment-based test.}
-#'   \item{\code{Fprod}: }{test statistic value for prod version of Local Monte Carlo moment-based test.}
-#'   \item{\code{Fmin_N}: }{A (\code{N x 1}) vector with simulated test statistics for min version of Local Monte Carlo moment-based test under null hypothesis.}
-#'   \item{\code{Fprod_N}: }{A (\code{N x 1}) vector with simulated test statistics for prod version of Local Monte Carlo moment-based test under null hypothesis.}
+#'   \item{\code{theta}: }{Value of nuisance parameters. Specifically, these are the consistent estimates of nuisance parameters as discussed in Dufour & Luger (2017) LMC procedure.}
+#'   \item{\code{S0}: }{A (\code{1 x 4})) matrix containing the four moment-based test statistics defined in (\code{11}) - (\code{14}) in Dufour & Luger (2017).}
+#'   \item{\code{F0_min}: }{Test statistic value for min version of Local Monte Carlo moment-based test.}
+#'   \item{\code{F0_prod}: }{Test statistic value for prod version of Local Monte Carlo moment-based test.}
+#'   \item{\code{FN_min}: }{A (\code{N x 1}) vector with simulated test statistics for min version of Local Monte Carlo moment-based test under null hypothesis.}
+#'   \item{\code{FN_prod}: }{A (\code{N x 1}) vector with simulated test statistics for prod version of Local Monte Carlo moment-based test under null hypothesis.}
 #'   \item{\code{pval_min}: }{P-value for min version of Local Monte Carlo moment-based test.}
 #'   \item{\code{pval_prod}: }{P-value for prod version of Local Monte Carlo moment-based test.}
-#'   \item{\code{Fmin_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for min version of Local Monte Carlo moment-based test.}
-#'   \item{\code{Fprod_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for prod version of Local Monte Carlo moment-based test.}
+#'   \item{\code{FN_min_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for min version of Local Monte Carlo moment-based test.}
+#'   \item{\code{FN_prod_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for prod version of Local Monte Carlo moment-based test.}
 #'   \item{\code{control}: }{List with test procedure options used.}
 #' }
 #'
@@ -85,59 +87,96 @@ DLMCTest <- function(Y, p, control = list()){
   }else{
     mdl_h0 <- Nmdl(Y, null_control)
   }
-  # --------- Get parameters from approximated distribution ----------
-  params <- approxDistDL(Tsize-p, con$simdist_N)
-  # -------------------------- Get P-Values --------------------------
-  eps   <- mdl_h0$resid
-  Fmin  <- calc_DLmcstat(eps, con$N, params, "min")
-  Fprod <- calc_DLmcstat(eps, con$N, params, "prod")
-  # ----- Obtain p-value
-  Fmin0     <- Fmin[con$N+1]
-  Fprod0    <- Fprod[con$N+1]
-  FminSim   <- as.matrix(sort(Fmin[1:con$N]))
-  FprodSim  <- as.matrix(sort(Fprod[1:con$N]))
-  pval_min  <- MCpval(Fmin0, FminSim, "geq")
-  pval_prod <- MCpval(Fprod0, FprodSim, "geq")
-  Fmin_cv   <- FminSim[round(c(0.90,0.95,0.99)*nrow(FminSim)),]
-  Fprod_cv  <- FprodSim[round(c(0.90,0.95,0.99)*nrow(FprodSim)),]
-  names(Fmin_cv)  <- paste0(c("0.90","0.95","0.99"), "%")
-  names(Fprod_cv) <- paste0(c("0.90","0.95","0.99"), "%")
+  theta     <- as.matrix(mdl_h0$phi)
+  rownames(theta) <- paste0("phi_", seq(1:p))
+  # ----- Simulate distribution 
+  params    <- approxDistDL(Tsize-p, con$simdist_N)
+  sim_ms    <- sim_DLmoments(Tsize, con$N)
+  Fmin_sim  <- as.matrix(sort(combine_stat(sim_ms, params, "min")))
+  Fprd_sim  <- as.matrix(sort(combine_stat(sim_ms, params, "prod")))
+  # ----- Compute test stat
+  eps       <- mdl_h0$resid
+  S0        <- t(calc_DLmoments(eps))
+  colnames(S0) <- c("M(\U03B5)","V(\U03B5)","S(\U03B5)","K(\U03B5)")
+  # ----- get critical values
+  Fmin_sim_cv   <- Fmin_sim[round(c(0.90,0.95,0.99)*nrow(Fmin_sim)),]
+  Fprd_sim_cv   <- Fprd_sim[round(c(0.90,0.95,0.99)*nrow(Fprd_sim)),]
+  names(Fmin_sim_cv)  <- paste0(c("0.90","0.95","0.99"), "%")
+  names(Fprd_sim_cv)  <- paste0(c("0.90","0.95","0.99"), "%")
+  # combine moment stats
+  F0_min  <- combine_stat(S0, params, "min")
+  F0_prod <- combine_stat(S0, params, "prod")
+  colnames(F0_min) <- "F(\U03B5)"
+  colnames(F0_prod) <- "F(\U03B5)"
+  # ----- Get p-values
+  pval_min  <- MCpval(F0_min, Fmin_sim, "geq")
+  pval_prod <- MCpval(F0_prod, Fprd_sim, "geq")
   # ----- Organize output
-  DLMCTest_output <- list(mdl_h0 = mdl_h0, Fmin = Fmin0, Fprod = Fprod0, Fmin_N = FminSim, Fprod_N = FprodSim, 
-                          pval_min = pval_min, pval_prod = pval_prod, Fmin_cv = Fmin_cv, Fprod_cv = Fprod_cv, 
+  DLMCTest_output <- list(mdl_h0 = mdl_h0, S0 = S0, F0_min = F0_min, F0_prod = F0_prod, FN_min = Fmin_sim, FN_prod = Fprd_sim, 
+                          pval_min = pval_min, pval_prod = pval_prod, theta = theta, FN_min_cv = Fmin_sim_cv, FN_prod_cv = Fprd_sim_cv, 
                           control = con)
   class(DLMCTest_output) <- "DLMCTest"
   return(DLMCTest_output)
 }
 
 
-
-
-
 # ==============================================================================
 #' @title Maximized Monte Carlo moment-based test for Markov switching model
 #' 
-#' @description Performs the Maximized Monte Carlo (MMC) moment-based test described in Dufour & Luger (2017). 
+#' @description This function performs the maximized Monte Carlo moment-based test for
+#' Markov switching autoregressive models proposed in Dufour & Luger (2017).
 #' 
 #' @param Y Series to be tested
 #' @param p Number of autoregressive lags.
-#' @param pval_type Method to be used to combine p-values (see eq. (17) and (18) of Dufour & Luger (2017))
-#' @param control List of control parameters. See “Details”.
-#'
-#' @return 
+#' @param control List with test procedure options including: 
+#' \itemize{
+#'   \item{\code{N}: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
+#'   \item{\code{simdist_N}: }{Integer determining the number of simulations for CDF distribution approximation. Default is set to \code{10000}.}
+#'   \item{\code{getSE}: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated. Default is \code{TRUE}.}
+#'   \item{\code{eps}: }{Fixed positive constant that does not depend on \code{T} used to determine lower and upper bounds on consistent set considered for nuisance parameter space.}
+#'   \item{\code{CI_union}: }{Boolean indicator determining if union between \code{eps} and confidence interval is used to determine lower and upper bound on consistent set considered for nuisance parameter space. If \code{TRUE} union is used and if \code{FALSE} only \code{eps} is used. Note that if standard errors obtained are not finite then only \code{eps} is used. Default is \code{FALSE}.}       
+#'   \item{\code{lambda}: }{Numeric value for penalty on stationary constraint not being met. Default is \code{100}.}
+#'   \item{\code{stationary_ind}: }{Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.}
+#'   \item{\code{optim_type}: }{String determining type of numerical optimization algorithm to use. Available options are: "\code{\link{pso}}", ""\code{\link{GenSA}}", "\code{\link{GA}}". Default is "\code{\link{GenSA}}".}
+#'   \item{\code{silence}: }{Boolean indicator determining if optimization updates should be silenced if \code{TRUE} or not if \code{FALSE}. Default is \code{FALSE}.}
+#'   \item{\code{threshold_stop}: }{Numeric value determining the maximum possible p-value attainable. Default is \code{1}.}
+#'   \item{\code{type_control}: }{List containing other optimization options specific to the numerical optimization algorithm used. This includes maximum number of iterations which is \code{200} b y default. For other options see documentation of numerical algorithm chosen.}
+#' }
 #' 
+#' @return List of class \code{DLMCTest} (\code{S3} object) with model attributes including: 
+#' \itemize{
+#'   \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} if \code{p>0} or \code{Nmdl} otherwise (\code{S3} objects). See \code{\link{ARmdl}} or \code{\link{Nmdl}}.}    
+#'   \item{\code{theta_max_min}: }{Value of nuisance parameters when min version of p-value is maxmimized as discussed in Dufour & Luger (2017) MMC procedure.}
+#'   \item{\code{theta_max_prod}: }{Value of nuisance parameters when prod version of p-value is maxmimized as discussed in Dufour & Luger (2017) MMC procedure.}
+#'   \item{\code{theta_low}: }{Lower bound on nuisance parameter values used when searching for maximum p-value.}
+#'   \item{\code{theta_upp}: }{Upper bound on nuisance parameter values used when searching for maximum p-value.}
+#'   \item{\code{S0_min}: }{A (\code{1 x 4})) matrix containing the four moment-based test statistics defined in (\code{11}) - (\code{14}) in Dufour & Luger (2017) when \code{theta_min} is used.}
+#'   \item{\code{S0_prod}: }{A (\code{1 x 4})) matrix containing the four moment-based test statistics defined in (\code{11}) - (\code{14}) in Dufour & Luger (2017) when \code{theta_prod} is used.}
+#'   \item{\code{F0_min}: }{Test statistic value for min version of Maximized Monte Carlo moment-based test.}
+#'   \item{\code{F0_prod}: }{Test statistic value for prod version of Maximized Monte Carlo moment-based test.}
+#'   \item{\code{FN_min}: }{A (\code{N x 1}) vector with simulated test statistics for min version of Maximized Monte Carlo moment-based test under null hypothesis.}
+#'   \item{\code{FN_prod}: }{A (\code{N x 1}) vector with simulated test statistics for prod version of Maximized Monte Carlo moment-based test under null hypothesis.}
+#'   \item{\code{pval_min}: }{Maximum p-value for min version of Maximized Monte Carlo moment-based test.}
+#'   \item{\code{pval_prod}: }{Maximum p-value for prod version of Local Monte Carlo moment-based test.}
+#'   \item{\code{FN_min_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for min version of Local Monte Carlo moment-based test.}
+#'   \item{\code{FN_prod_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for prod version of Local Monte Carlo moment-based test.}
+#'   \item{\code{control}: }{List with test procedure options used.}
+#'   \item{\code{optim_min_output}: }{List with optimization output for min verion of Maximized Monte Carlo moment-based test.}
+#'   \item{\code{optim_prod_output}: }{List with optimization output for prod verion of Maximized Monte Carlo moment-based test.}
+#' }
+#'
 #' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based tests for 
 #' Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
+#' @example /examples/DLMMCTest_examples.R
 #' @export
 DLMMCTest <- function(Y, p, control = list()){
   # ----- Set control values
   con <- list(N = 99,
-              pval_type = "min",
               simdist_N = 10000,
               getSE = TRUE,
               eps = 0.1,
-              CI_union = TRUE,
+              CI_union = FALSE,
               lambda = 100,
               stationary_ind = TRUE,
               optim_type = "GenSA",
@@ -167,9 +206,10 @@ DLMMCTest <- function(Y, p, control = list()){
   }
   # ----- Get parameters from approximated distribution 
   params <- approxDistDL(Tsize-p, con$simdist_N)
-  # ----- Simulted process eta_i is fixed (see pg. 721 of Dufour & Luger 2017) and so simulated statistics are fixed 
-  sim_ms  <- sim_DLmoments(Tsize, con$N)
-  Fsim    <-  as.matrix(sort(combine_stat(sim_ms, params, con$pval_type)))
+  # ----- Simulated process eta_i is fixed (see pg. 721 of Dufour & Luger 2017) and so simulated statistics are fixed 
+  sim_ms    <- sim_DLmoments(Tsize, con$N)
+  Fmin_sim  <-  as.matrix(sort(combine_stat(sim_ms, params, "min")))
+  Fprd_sim  <-  as.matrix(sort(combine_stat(sim_ms, params, "prod")))
   # ----- Define lower & upper bounds for MMC search
   theta_low <- theta_0 - con$eps
   theta_upp <- theta_0 + con$eps
@@ -186,46 +226,81 @@ DLMMCTest <- function(Y, p, control = list()){
     con$type_control$trace <- as.numeric(con$silence==FALSE)
     con$type_control$abstol <- -con$threshold_stop
     # begin optimization
-    mmc_out <- pso::psoptim(par = theta_0, fn = DLMMCpval_fun_min, lower = theta_low, upper = theta_upp, 
-                            gr = NULL, control = con$type_control,
-                            y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fsim, 
-                            pval_type = con$pval_type, stationary_ind = con$stationary_ind, lambda = con$lambda)
-    theta <- mmc_out$par
-    pval <- -mmc_out$value
+    mmc_min_out <- pso::psoptim(par = theta_0, fn = DLMMCpval_fun_min, lower = theta_low, upper = theta_upp, 
+                                gr = NULL, control = con$type_control,
+                                y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fmin_sim, 
+                                pval_type = "min", stationary_ind = con$stationary_ind, lambda = con$lambda)
+    mmc_prd_out <- pso::psoptim(par = theta_0, fn = DLMMCpval_fun_min, lower = theta_low, upper = theta_upp, 
+                                gr = NULL, control = con$type_control,
+                                y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fprd_sim, 
+                                pval_type = "prod", stationary_ind = con$stationary_ind, lambda = con$lambda)
+    theta_min   <- as.matrix(mmc_min_out$par)
+    theta_prod  <- as.matrix(mmc_prd_out$par)
+    pval_min    <- -mmc_min_out$value
+    pval_prod   <- -mmc_prd_out$value
   }else if(con$optim_type=="GenSA"){
     # Set GenSA specific controls
     con$type_control$verbose <- con$silence==FALSE
     con$type_control$threshold.stop <- -con$threshold_stop
-    mmc_out <- GenSA::GenSA(par = theta_0, fn = DLMMCpval_fun_min, lower = theta_low, upper = theta_upp, 
-                            control = con$type_control,
-                            y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fsim, 
-                            pval_type = con$pval_type, stationary_ind = con$stationary_ind, lambda = con$lambda)
-    theta <- mmc_out$par
-    pval <- -mmc_out$value
+    mmc_min_out <- GenSA::GenSA(par = theta_0, fn = DLMMCpval_fun_min, lower = theta_low, upper = theta_upp, 
+                                control = con$type_control,
+                                y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fmin_sim, 
+                                pval_type = "min", stationary_ind = con$stationary_ind, lambda = con$lambda)
+    mmc_prd_out <- GenSA::GenSA(par = theta_0, fn = DLMMCpval_fun_min, lower = theta_low, upper = theta_upp, 
+                                control = con$type_control,
+                                y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fprd_sim, 
+                                pval_type = "prod", stationary_ind = con$stationary_ind, lambda = con$lambda)
+    theta_min   <- as.matrix(mmc_min_out$par)
+    theta_prod  <- as.matrix(mmc_prd_out$par)
+    pval_min    <- -mmc_min_out$value
+    pval_prod   <- -mmc_prd_out$value
   }else if(con$optim_type=="GA"){
-    mmc_out <- GA::ga(type = "real-valued", fitness = DLMMCpval_fun, 
-                      y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fsim, 
-                      pval_type = con$pval_type, stationary_ind = con$stationary_ind, lambda = con$lambda,
-                      lower = theta_low, upper = theta_upp, 
-                      maxiter = con$type_control$maxit, maxFitness = con$threshold_stop, 
-                      monitor = (con$silence==FALSE), suggestions = t(theta_0))
-    theta <- c(mmc_out@solution)
-    pval <- mmc_out@fitnessValue
+    mmc_min_out <- GA::ga(type = "real-valued", fitness = DLMMCpval_fun, 
+                          y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fmin_sim, 
+                          pval_type = "min", stationary_ind = con$stationary_ind, lambda = con$lambda,
+                          lower = theta_low, upper = theta_upp, 
+                          maxiter = con$type_control$maxit, maxFitness = con$threshold_stop, 
+                          monitor = (con$silence==FALSE), suggestions = t(theta_0))
+    mmc_prd_out <- GA::ga(type = "real-valued", fitness = DLMMCpval_fun, 
+                          y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fprd_sim, 
+                          pval_type = "prod", stationary_ind = con$stationary_ind, lambda = con$lambda,
+                          lower = theta_low, upper = theta_upp, 
+                          maxiter = con$type_control$maxit, maxFitness = con$threshold_stop, 
+                          monitor = (con$silence==FALSE), suggestions = t(theta_0))
+    theta_min <- as.matrix(mmc_min_out@solution[1,])  # keeps on the first set that gives optim output
+    theta_prod <- as.matrix(mmc_prd_out@solution[1,]) # keeps on the first set that gives optim output
+    pval_min <- mmc_min_out@fitnessValue
+    pval_prod <- mmc_prd_out@fitnessValue
+    
   }
   # ----- get test-stat using optimization output params
-  z = y - x%*%theta
+  z_min <- y - x%*%theta_min
+  z_prd <- y - x%*%theta_prod
+  rownames(theta_min) <- paste0("phi_", seq(1:p))
+  rownames(theta_prod) <- paste0("phi_", seq(1:p))
   # Compute test stats
-  eps = z - mean(z)
-  S0 = t(calc_DLmoments(eps))
+  eps_min <- z_min - mean(z_min)
+  eps_prd <- z_prd - mean(z_prd)
+  S0_min  <- t(calc_DLmoments(eps_min))
+  S0_prd  <- t(calc_DLmoments(eps_prd))
+  colnames(S0_min) <- c("M(\U03B5)","V(\U03B5)","S(\U03B5)","K(\U03B5)")
+  colnames(S0_prd) <- c("M(\U03B5)","V(\U03B5)","S(\U03B5)","K(\U03B5)")
   # ----- get critical values
-  Fsim_cv   <- Fsim[round(c(0.90,0.95,0.99)*nrow(Fsim)),]
-  names(Fsim_cv)  <- paste0(c("0.90","0.95","0.99"), "%")
+  Fmin_sim_cv   <- Fmin_sim[round(c(0.90,0.95,0.99)*nrow(Fmin_sim)),]
+  Fprd_sim_cv   <- Fprd_sim[round(c(0.90,0.95,0.99)*nrow(Fprd_sim)),]
+  names(Fmin_sim_cv)  <- paste0(c("0.90","0.95","0.99"), "%")
+  names(Fprd_sim_cv)  <- paste0(c("0.90","0.95","0.99"), "%")
   # combine moment stats
-  F0 = combine_stat(S0, params, con$pval_type)
+  F0_min  <- combine_stat(S0_min, params, "min")
+  F0_prod <- combine_stat(S0_prd, params, "prod")
+  colnames(F0_min) <- "F(\U03B5)"
+  colnames(F0_prod) <- "F(\U03B5)"
   # ----- organize remaining output
-  DLMMCTest_output <- list(mdl_h0 = mdl_h0, moment_test_stats = S0, combined_test_stat = F0, combined_sim_test_stats = Fsim, 
-                          pval = pval, theta_max = theta, theta_low = theta_low, theta_upp = theta_upp, sim_test_stats_cv = Fsim_cv, 
-                          control = con, optim_output = mmc_out)
+  DLMMCTest_output <- list(mdl_h0 = mdl_h0, S0_min = S0_min, S0_prod = S0_prd, F0_min = F0_min, F0_prod = F0_prod, 
+                           FN_min = Fmin_sim, FN_prod = Fprd_sim, pval_min = pval_min, pval_prod = pval_prod, 
+                           theta_max_min = theta_min, theta_max_prod = theta_prod, theta_low = theta_low, theta_upp = theta_upp, 
+                           FN_min_cv = Fmin_sim_cv,  FN_prod_cv = Fprd_sim_cv, control = con, 
+                           optim_min_output = mmc_min_out, optim_prod_output = mmc_prd_out)
   class(DLMMCTest_output) <- "DLMMCTest"
   return(DLMMCTest_output)
 }

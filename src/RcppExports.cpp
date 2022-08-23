@@ -696,20 +696,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// calc_DLmcstat
-arma::vec calc_DLmcstat(arma::vec ezt, int N, arma::mat params, Rcpp::String type);
-RcppExport SEXP _MSTest_calc_DLmcstat(SEXP eztSEXP, SEXP NSEXP, SEXP paramsSEXP, SEXP typeSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type ezt(eztSEXP);
-    Rcpp::traits::input_parameter< int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type params(paramsSEXP);
-    Rcpp::traits::input_parameter< Rcpp::String >::type type(typeSEXP);
-    rcpp_result_gen = Rcpp::wrap(calc_DLmcstat(ezt, N, params, type));
-    return rcpp_result_gen;
-END_RCPP
-}
 // approx_dist_loop
 arma::mat approx_dist_loop(arma::mat SN2);
 RcppExport SEXP _MSTest_approx_dist_loop(SEXP SN2SEXP) {
@@ -814,7 +800,6 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_calc_DLmoments", (DL_FUNC) &_MSTest_calc_DLmoments, 1},
     {"_MSTest_sim_DLmoments", (DL_FUNC) &_MSTest_sim_DLmoments, 2},
     {"_MSTest_combine_stat", (DL_FUNC) &_MSTest_combine_stat, 3},
-    {"_MSTest_calc_DLmcstat", (DL_FUNC) &_MSTest_calc_DLmcstat, 4},
     {"_MSTest_approx_dist_loop", (DL_FUNC) &_MSTest_approx_dist_loop, 1},
     {"_MSTest_DLMMCpval_fun", (DL_FUNC) &_MSTest_DLMMCpval_fun, 10},
     {"_MSTest_DLMMCpval_fun_min", (DL_FUNC) &_MSTest_DLMMCpval_fun_min, 10},

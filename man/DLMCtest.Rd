@@ -22,20 +22,22 @@ DLMCTest(Y, p, control = list())
 List of class \code{DLMCTest} (\code{S3} object) with model attributes including: 
 \itemize{
   \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} if \code{p>0} or \code{Nmdl} otherwise (\code{S3} objects). See \code{\link{ARmdl}} or \code{\link{Nmdl}}.}    
-  \item{\code{Fmin}: }{test statistic value for min version of Local Monte Carlo moment-based test.}
-  \item{\code{Fprod}: }{test statistic value for prod version of Local Monte Carlo moment-based test.}
-  \item{\code{Fmin_N}: }{A (\code{N x 1}) vector with simulated test statistics for min version of Local Monte Carlo moment-based test under null hypothesis.}
-  \item{\code{Fprod_N}: }{A (\code{N x 1}) vector with simulated test statistics for prod version of Local Monte Carlo moment-based test under null hypothesis.}
+  \item{\code{theta}: }{Value of nuisance parameters. Specifically, these are the consistent estimates of nuisance parameters as discussed in Dufour & Luger (2017) LMC procedure.}
+  \item{\code{S0}: }{A (\code{1 x 4})) matrix containing the four moment-based test statistics defined in (\code{11}) - (\code{14}) in Dufour & Luger (2017).}
+  \item{\code{F0_min}: }{Test statistic value for min version of Local Monte Carlo moment-based test.}
+  \item{\code{F0_prod}: }{Test statistic value for prod version of Local Monte Carlo moment-based test.}
+  \item{\code{FN_min}: }{A (\code{N x 1}) vector with simulated test statistics for min version of Local Monte Carlo moment-based test under null hypothesis.}
+  \item{\code{FN_prod}: }{A (\code{N x 1}) vector with simulated test statistics for prod version of Local Monte Carlo moment-based test under null hypothesis.}
   \item{\code{pval_min}: }{P-value for min version of Local Monte Carlo moment-based test.}
   \item{\code{pval_prod}: }{P-value for prod version of Local Monte Carlo moment-based test.}
-  \item{\code{Fmin_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for min version of Local Monte Carlo moment-based test.}
-  \item{\code{Fprod_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for prod version of Local Monte Carlo moment-based test.}
+  \item{\code{FN_min_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for min version of Local Monte Carlo moment-based test.}
+  \item{\code{FN_prod_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for prod version of Local Monte Carlo moment-based test.}
   \item{\code{control}: }{List with test procedure options used.}
 }
 }
 \description{
-This function performs the Local Monte-Carlo moment-based test for
-Markov-switching autoregressive models proposed in Dufour & Luger (2017).
+This function performs the Local Monte Carlo moment-based test for
+Markov switching autoregressive models proposed in Dufour & Luger (2017).
 }
 \examples{
 # load data used in Hamilton 1989 and extended data used in CHP 2014 
@@ -46,48 +48,14 @@ y10 <- as.matrix(carhuplo10GNP$GNP_logdiff)
 lmc_control = list(N = 99,
                    simdist_N = 10000,
                    getSE = TRUE)
-
-mmc_control <- list(N = 99,
-                    pval_type = "min",
-                    simdist_N = 10000,
-                    getSE = TRUE,
-                    eps = 0.0000001,
-                    CI_union = TRUE,
-                    lambda = 100,
-                    stationary_ind = TRUE,
-                    type = "GenSA",
-                    silence = FALSE,
-                    threshold_stop = 1,
-                    type_control = list(maxit = 200))
-
   
-# perform test with switch in mean only on Hamilton 1989 data
+# perform test on Hamilton 1989 data
 lmc_gnp84 <- DLMCTest(y84, p = 4, control = lmc_control)
 lmc_gnp84
 
-st <- Sys.time()
-mmc_gnp84 <- DLMMCTest(y84, p = 4, control = mmc_control)
-mmc_gnp84
-end <- Sys.time() - st
-end
-
-
-# perform test with switch in mean only on extended data used in CHP 2014
+# perform test on extended data used in CHP 2014
 lmc_gnp10 <- DLMCTest(y10, p = 4, control = lmc_control)
 lmc_gnp10
-
-
-
-
-st <- Sys.time()
-mmc_gnp10 <- DLMMCTest(y10, p = 4, control = mmc_control)
-mmc_gnp10
-end <- Sys.time() - st
-end
-
-
-
-
 }
 \references{
 Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based tests for 
