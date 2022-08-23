@@ -825,8 +825,7 @@ sim_DLmoments <- function(Tsize, N) {
 #'
 #' @description This function is used to combine the four moment-based p-values as in eq. \code{17} and \code{18} of Dufour & Luger 2017.
 #' 
-#' @param \code{s0} A (\code{4 x 1}) vector with four moment-based test statistic under from observed data.
-#' @param \code{sN} A (\code{N x 4}) matrix with \code{N} different simulated moment-based test statistics.
+#' @param \code{stats} A (\code{l x 4}) matrix where \code{l} is the number of moment-based test statistics.
 #' @param \code{param} A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
 #' @param \code{type} String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
 #' is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
@@ -842,8 +841,8 @@ sim_DLmoments <- function(Tsize, N) {
 #' @references Fisher, R. 1932. "Statistical Methods for Research Workers." Edinburgh: Oliver and Boyd.
 #' 
 #' @export
-combine_stat <- function(s0, sN, params, type) {
-    .Call(`_MSTest_combine_stat`, s0, sN, params, type)
+combine_stat <- function(stats, params, type) {
+    .Call(`_MSTest_combine_stat`, stats, params, type)
 }
 
 #' @title Calculate combined test statistic 
@@ -890,8 +889,8 @@ approx_dist_loop <- function(SN2) {
 #' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
 #' @export
-DLMMCpval_fun <- function(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda) {
-    .Call(`_MSTest_DLMMCpval_fun`, theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda)
+DLMMCpval_fun <- function(theta, y, x, N, simdist_N, params, sim_stats, pval_type, stationary_ind, lambda) {
+    .Call(`_MSTest_DLMMCpval_fun`, theta, y, x, N, simdist_N, params, sim_stats, pval_type, stationary_ind, lambda)
 }
 
 #' @title Moment-based MMC test (negative) p-value 
@@ -902,7 +901,7 @@ DLMMCpval_fun <- function(theta, y, x, N, simdist_N, pval_type, stationary_ind, 
 #' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
 #' @export
-DLMMCpval_fun_min <- function(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda) {
-    .Call(`_MSTest_DLMMCpval_fun_min`, theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda)
+DLMMCpval_fun_min <- function(theta, y, x, N, params, sim_stats, simdist_N, pval_type, stationary_ind, lambda) {
+    .Call(`_MSTest_DLMMCpval_fun_min`, theta, y, x, N, params, sim_stats, simdist_N, pval_type, stationary_ind, lambda)
 }
 

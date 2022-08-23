@@ -4,7 +4,18 @@
 \alias{DLMMCpval_fun_min}
 \title{Moment-based MMC test (negative) p-value}
 \usage{
-DLMMCpval_fun_min(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda)
+DLMMCpval_fun_min(
+  theta,
+  y,
+  x,
+  N,
+  params,
+  sim_stats,
+  simdist_N,
+  pval_type,
+  stationary_ind,
+  lambda
+)
 }
 \value{
 Negative Maximized Monte Carlo p-value.

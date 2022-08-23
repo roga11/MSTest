@@ -4,12 +4,10 @@
 \alias{combine_stat}
 \title{Combine p-values}
 \usage{
-combine_stat(s0, sN, params, type)
+combine_stat(stats, params, type)
 }
 \arguments{
-\item{\code{s0}}{A (\code{4 x 1}) vector with four moment-based test statistic under from observed data.}
-
-\item{\code{sN}}{A (\code{N x 4}) matrix with \code{N} different simulated moment-based test statistics.}
+\item{\code{stats}}{A (\code{l x 4}) matrix where \code{l} is the number of moment-based test statistics.}
 
 \item{\code{param}}{A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.}
 

@@ -4,7 +4,18 @@
 \alias{DLMMCpval_fun}
 \title{Moment-based MMC test p-value}
 \usage{
-DLMMCpval_fun(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda)
+DLMMCpval_fun(
+  theta,
+  y,
+  x,
+  N,
+  simdist_N,
+  params,
+  sim_stats,
+  pval_type,
+  stationary_ind,
+  lambda
+)
 }
 \value{
 @return Maximized Monte Carlo p-value.

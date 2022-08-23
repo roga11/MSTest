@@ -811,3 +811,32 @@ print.DLMCTest <- function(mdl, digits = getOption("digits")){
   invisible(mdl)
 }
 
+#' @title Print summary of a \code{DLMMCTest} object
+#'
+#' @inheritParams base::print
+#' 
+#' @export
+print.DLMMCTest <- function(mdl, digits = getOption("digits")){
+  cat("\nRestricted Model\n") 
+  frame_tmp <- data.frame(coef = mdl$mdl_h0$theta)
+  if (mdl$mdl_h0$control$getSE==TRUE){
+    frame_tmp["s.e."] <- mdl$mdl_h0$theta_se
+  }
+  rownames(frame_tmp) <- names(mdl$mdl_h0$theta)
+  print(format(signif(frame_tmp, max(1L, digits - 2L))))
+  cat(paste("\nlog-likelihood = "),mdl$mdl_h0$logLike)
+  cat(paste("\nAIC = "),mdl$mdl_h0$AIC)
+  cat(paste("\nBIC = "),mdl$mdl_h0$BIC)
+  cat("\n")
+  cat("\nDufour & Luger (2017) Moment-based Maximized Monte Carlo Test\n")
+  out <- data.frame(t(as.matrix(c(mdl$combined_test_stat, mdl$sim_test_stats_cv, mdl$pval))))
+  colnames(out) <- c("test-stat", names(mdl$sim_test_stats_cv), "p-value")
+  if (mdl$control$pval_type == "min"){
+    rownames(out) <- "MMC_min"
+  }else if (mdl$control$pval_type == "prod"){
+    rownames(out) <- "MMC_prod"
+  }
+  print(format(signif(out, max(1L, digits - 2L))))
+  invisible(mdl)
+}
+

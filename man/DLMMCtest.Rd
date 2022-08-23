@@ -4,16 +4,16 @@
 \alias{DLMMCTest}
 \title{Maximized Monte Carlo moment-based test for Markov switching model}
 \usage{
-DLMMCTest(Y, p, pval_type = "min", control = list())
+DLMMCTest(Y, p, control = list())
 }
 \arguments{
 \item{Y}{Series to be tested}
 
 \item{p}{Number of autoregressive lags.}
 
-\item{pval_type}{Method to be used to combine p-values (see eq. (17) and (18) of Dufour & Luger (2017))}
-
 \item{control}{List of control parameters. See “Details”.}
+
+\item{pval_type}{Method to be used to combine p-values (see eq. (17) and (18) of Dufour & Luger (2017))}
 }
 \value{
 

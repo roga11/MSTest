@@ -60,21 +60,21 @@ arma::vec calc_DLmoments(arma::vec ehat){
 // [[Rcpp::export]]
 arma::mat sim_DLmoments(int Tsize, int N){
   arma::mat stats(N, 4, arma::fill::zeros);
-  // loop and perform simultion each time 
+  arma::mat esim(Tsize, N, arma::fill::randn);
+  // loop and perform simulation each time 
   for (int isim = 0; isim <N; isim++){
-    arma::vec esim = arma::randn<arma::vec>(Tsize);
-    stats.row(isim) = trans(calc_DLmoments(esim - mean(esim)));
+    stats.row(isim) = trans(calc_DLmoments(esim.col(isim) - mean(esim.col(isim))));
   }
   return(stats);
 }
+
 
 // ==============================================================================
 //' @title Combine p-values 
 //'
 //' @description This function is used to combine the four moment-based p-values as in eq. \code{17} and \code{18} of Dufour & Luger 2017.
 //' 
-//' @param \code{s0} A (\code{4 x 1}) vector with four moment-based test statistic under from observed data.
-//' @param \code{sN} A (\code{N x 4}) matrix with \code{N} different simulated moment-based test statistics.
+//' @param \code{stats} A (\code{l x 4}) matrix where \code{l} is the number of moment-based test statistics.
 //' @param \code{param} A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
 //' @param \code{type} String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
 //' is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
@@ -91,32 +91,26 @@ arma::mat sim_DLmoments(int Tsize, int N){
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::vec combine_stat(arma::vec s0, arma::mat sN, arma::mat params, std::string type){
-  int N = sN.n_rows;
-  int nc = sN.n_cols;
-  arma::mat G0(1,nc,arma::fill::zeros);
-  arma::mat Gx(N,nc,arma::fill::zeros);
+arma::vec combine_stat(arma::mat stats, arma::mat params, std::string type){
+  int N = stats.n_rows;
+  int nc = stats.n_cols;
+  arma::mat Gx(N, nc, arma::fill::zeros);
   for (int im = 0; im<nc; im++){
-    G0(0,im) = 1 - (exp(params(0,im)+params(1,im)*s0(im))/(1+exp(params(0,im)+params(1,im)*s0(im))));
-    Gx.col(im) = 1 - (exp(params(0,im)+params(1,im)*sN.col(im))/(1+exp(params(0,im)+params(1,im)*sN.col(im))));
+    Gx.col(im) = 1 - (exp(params(0,im)+params(1,im)*stats.col(im))/(1+exp(params(0,im)+params(1,im)*stats.col(im))));
   }
-  arma::vec Fx(N+1,arma::fill::zeros);
-  double F0 = 0;
+  arma::vec Fx(N, arma::fill::zeros);
   if (type=="min"){
     // MC p-value using Tippett (1931) &  Wilkinson (1951) combination method. 
-    F0 = 1 - min(G0.row(0));
     for (int isim = 0; isim<N; isim++){
       Fx(isim) = 1 - min(Gx.row(isim));
     }
   }
   if (type=="prod"){
     // MC p-value using Fisher (1932) &  Pearson (1933) combination method. 
-    F0 = 1 - prod(G0.row(0));
     for (int isim = 0; isim<N; isim++){
       Fx(isim) = 1 - prod(Gx.row(isim));
     }
   }
-  Fx(N) = F0;
   return(Fx);
 }
 
@@ -142,18 +136,22 @@ arma::vec calc_DLmcstat(arma::vec ezt, int N, arma::mat params, Rcpp::String typ
   // Get length of series 
   int Tsize = ezt.n_elem;
   // calulate moments of data 
-  arma::vec S0 = calc_DLmoments(ezt);
+  arma::mat S0 = trans(calc_DLmoments(ezt));
   // Simulated data 
   arma::mat SN = sim_DLmoments(Tsize,N); // must leaves as N-1.
   // Get individual moment p-values 
-  arma::vec Fx(N+1, arma::fill::zeros);
+  arma::vec F0;
+  arma::vec Fx;
   if (type=="prod"){
-    Fx = combine_stat(S0, SN, params, "prod");
+    F0 = combine_stat(S0, params, "prod");
+    Fx = combine_stat(SN, params, "prod");
   }else if (type=="min"){
-    Fx  = combine_stat(S0, SN, params, "min");   
+    F0 = combine_stat(S0, params, "min");   
+    Fx = combine_stat(SN, params, "min");   
   }else{
     Rcerr << "type must be: 'min' or 'prod'.\n";
   }
+  Fx = join_vert(Fx,F0);
   return(Fx);
 }
 
@@ -193,10 +191,11 @@ arma::mat approx_dist_loop(arma::mat SN2){
 //' 
 //' @export
 // [[Rcpp::export]]
-double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x, int N, int simdist_N, Rcpp::String pval_type, bool stationary_ind, double lambda){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function approxDistDL = mstest["approxDistDL"];
+double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x, int N, int simdist_N, 
+                     arma::mat params, arma::vec sim_stats,
+                     Rcpp::String pval_type, bool stationary_ind, double lambda){
   bool stationary_constraint = FALSE;
+  double F0 = 0;
   double pval;
   // ----- Stationary constraint (i.e., only consider theta that result in stationary process) 
   if (stationary_ind==TRUE){
@@ -215,15 +214,19 @@ double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x, int N, int simdi
     // If stationary_ind == FALSE OR ineq_constraint == FALSE (i.e. non-stationary process), then pval = -pval
     // ----- Transform data
     arma::vec z = y - x*theta;
-    int Tsize = z.n_elem;
-    arma::mat params = as<arma::mat>(approxDistDL(Tsize, simdist_N));
     // ----- Compute test stats
     arma::vec eps = z - mean(z);
-    arma::vec Fx = calc_DLmcstat(eps, N, params, pval_type);
-    // ----- Obtain p-value
-    double F0 = Fx(N);
-    arma::vec FN = Fx.subvec(0,N-1);
-    pval = MCpval(F0, FN, "geq");
+    arma::mat S0 = trans(calc_DLmoments(eps));
+    // combine moment stats
+    if (pval_type=="prod"){
+      F0 = as_scalar(combine_stat(S0, params, "prod"));
+    }else if (pval_type=="min"){
+      F0 = as_scalar(combine_stat(S0, params, "min"));   
+    }else{
+      Rcerr << "type must be: 'min' or 'prod'.\n";
+    }
+    // ----- Get individual moment p-values 
+    pval = MCpval(F0, sim_stats, "geq");
   }
   return(pval);
 }
@@ -238,7 +241,9 @@ double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x, int N, int simdi
 //' 
 //' @export
 // [[Rcpp::export]]
-double DLMMCpval_fun_min(arma::vec theta, arma::vec y, arma::mat x, int N, int simdist_N, Rcpp::String pval_type, bool stationary_ind, double lambda){
-  double pval = -DLMMCpval_fun(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda);
+double DLMMCpval_fun_min(arma::vec theta, arma::vec y, arma::mat x, int N, 
+                         arma::mat params, arma::vec sim_stats,
+                         int simdist_N, Rcpp::String pval_type, bool stationary_ind, double lambda){
+  double pval = -DLMMCpval_fun(theta, y, x, N, simdist_N, params, sim_stats, pval_type, stationary_ind, lambda);
   return(pval);
 }

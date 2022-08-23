@@ -684,16 +684,15 @@ BEGIN_RCPP
 END_RCPP
 }
 // combine_stat
-arma::vec combine_stat(arma::vec s0, arma::mat sN, arma::mat params, std::string type);
-RcppExport SEXP _MSTest_combine_stat(SEXP s0SEXP, SEXP sNSEXP, SEXP paramsSEXP, SEXP typeSEXP) {
+arma::vec combine_stat(arma::mat stats, arma::mat params, std::string type);
+RcppExport SEXP _MSTest_combine_stat(SEXP statsSEXP, SEXP paramsSEXP, SEXP typeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::vec >::type s0(s0SEXP);
-    Rcpp::traits::input_parameter< arma::mat >::type sN(sNSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type stats(statsSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type params(paramsSEXP);
     Rcpp::traits::input_parameter< std::string >::type type(typeSEXP);
-    rcpp_result_gen = Rcpp::wrap(combine_stat(s0, sN, params, type));
+    rcpp_result_gen = Rcpp::wrap(combine_stat(stats, params, type));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -723,8 +722,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // DLMMCpval_fun
-double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x, int N, int simdist_N, Rcpp::String pval_type, bool stationary_ind, double lambda);
-RcppExport SEXP _MSTest_DLMMCpval_fun(SEXP thetaSEXP, SEXP ySEXP, SEXP xSEXP, SEXP NSEXP, SEXP simdist_NSEXP, SEXP pval_typeSEXP, SEXP stationary_indSEXP, SEXP lambdaSEXP) {
+double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x, int N, int simdist_N, arma::mat params, arma::vec sim_stats, Rcpp::String pval_type, bool stationary_ind, double lambda);
+RcppExport SEXP _MSTest_DLMMCpval_fun(SEXP thetaSEXP, SEXP ySEXP, SEXP xSEXP, SEXP NSEXP, SEXP simdist_NSEXP, SEXP paramsSEXP, SEXP sim_statsSEXP, SEXP pval_typeSEXP, SEXP stationary_indSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -733,16 +732,18 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type x(xSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< int >::type simdist_N(simdist_NSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type sim_stats(sim_statsSEXP);
     Rcpp::traits::input_parameter< Rcpp::String >::type pval_type(pval_typeSEXP);
     Rcpp::traits::input_parameter< bool >::type stationary_ind(stationary_indSEXP);
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(DLMMCpval_fun(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda));
+    rcpp_result_gen = Rcpp::wrap(DLMMCpval_fun(theta, y, x, N, simdist_N, params, sim_stats, pval_type, stationary_ind, lambda));
     return rcpp_result_gen;
 END_RCPP
 }
 // DLMMCpval_fun_min
-double DLMMCpval_fun_min(arma::vec theta, arma::vec y, arma::mat x, int N, int simdist_N, Rcpp::String pval_type, bool stationary_ind, double lambda);
-RcppExport SEXP _MSTest_DLMMCpval_fun_min(SEXP thetaSEXP, SEXP ySEXP, SEXP xSEXP, SEXP NSEXP, SEXP simdist_NSEXP, SEXP pval_typeSEXP, SEXP stationary_indSEXP, SEXP lambdaSEXP) {
+double DLMMCpval_fun_min(arma::vec theta, arma::vec y, arma::mat x, int N, arma::mat params, arma::vec sim_stats, int simdist_N, Rcpp::String pval_type, bool stationary_ind, double lambda);
+RcppExport SEXP _MSTest_DLMMCpval_fun_min(SEXP thetaSEXP, SEXP ySEXP, SEXP xSEXP, SEXP NSEXP, SEXP paramsSEXP, SEXP sim_statsSEXP, SEXP simdist_NSEXP, SEXP pval_typeSEXP, SEXP stationary_indSEXP, SEXP lambdaSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -750,11 +751,13 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::vec >::type y(ySEXP);
     Rcpp::traits::input_parameter< arma::mat >::type x(xSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type params(paramsSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type sim_stats(sim_statsSEXP);
     Rcpp::traits::input_parameter< int >::type simdist_N(simdist_NSEXP);
     Rcpp::traits::input_parameter< Rcpp::String >::type pval_type(pval_typeSEXP);
     Rcpp::traits::input_parameter< bool >::type stationary_ind(stationary_indSEXP);
     Rcpp::traits::input_parameter< double >::type lambda(lambdaSEXP);
-    rcpp_result_gen = Rcpp::wrap(DLMMCpval_fun_min(theta, y, x, N, simdist_N, pval_type, stationary_ind, lambda));
+    rcpp_result_gen = Rcpp::wrap(DLMMCpval_fun_min(theta, y, x, N, params, sim_stats, simdist_N, pval_type, stationary_ind, lambda));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -810,11 +813,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_MMCLRpval_fun_max", (DL_FUNC) &_MSTest_MMCLRpval_fun_max, 16},
     {"_MSTest_calc_DLmoments", (DL_FUNC) &_MSTest_calc_DLmoments, 1},
     {"_MSTest_sim_DLmoments", (DL_FUNC) &_MSTest_sim_DLmoments, 2},
-    {"_MSTest_combine_stat", (DL_FUNC) &_MSTest_combine_stat, 4},
+    {"_MSTest_combine_stat", (DL_FUNC) &_MSTest_combine_stat, 3},
     {"_MSTest_calc_DLmcstat", (DL_FUNC) &_MSTest_calc_DLmcstat, 4},
     {"_MSTest_approx_dist_loop", (DL_FUNC) &_MSTest_approx_dist_loop, 1},
-    {"_MSTest_DLMMCpval_fun", (DL_FUNC) &_MSTest_DLMMCpval_fun, 8},
-    {"_MSTest_DLMMCpval_fun_min", (DL_FUNC) &_MSTest_DLMMCpval_fun_min, 8},
+    {"_MSTest_DLMMCpval_fun", (DL_FUNC) &_MSTest_DLMMCpval_fun, 10},
+    {"_MSTest_DLMMCpval_fun_min", (DL_FUNC) &_MSTest_DLMMCpval_fun_min, 10},
     {NULL, NULL, 0}
 };
 

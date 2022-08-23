@@ -508,7 +508,7 @@
     },
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
-        "file_last_write": 1660883916.0,
+        "file_last_write": 1661230295.0,
         "definitions": [
             {
                 "usr": "c:@F@calc_DLmoments#$@N@arma@S@Col>#d#",
@@ -531,10 +531,10 @@
                 "hidden": false
             },
             {
-                "usr": "c:@F@combine_stat#$@N@arma@S@Col>#d#$@N@arma@S@Mat>#d#S1_#$@N@std@N@__1@S@basic_string>#C#$@N@std@N@__1@S@char_traits>#C#$@N@std@N@__1@S@allocator>#C#",
+                "usr": "c:@F@combine_stat#$@N@arma@S@Mat>#d#S0_#$@N@std@N@__1@S@basic_string>#C#$@N@std@N@__1@S@char_traits>#C#$@N@std@N@__1@S@allocator>#C#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "combine_stat(arma::vec, arma::mat, arma::mat, std::string)",
+                "name": "combine_stat(arma::mat, arma::mat, std::string)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
                 "line": 94,
                 "column": 11,
@@ -546,7 +546,7 @@
                 "parent_name": "",
                 "name": "calc_DLmcstat(arma::vec, int, arma::mat, Rcpp::String)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
-                "line": 141,
+                "line": 135,
                 "column": 11,
                 "hidden": false
             },
@@ -556,27 +556,27 @@
                 "parent_name": "",
                 "name": "approx_dist_loop(arma::mat)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
-                "line": 174,
+                "line": 172,
                 "column": 11,
                 "hidden": false
             },
             {
-                "usr": "c:@F@DLMMCpval_fun#$@N@arma@S@Col>#d#S0_#$@N@arma@S@Mat>#d#I#I#$@N@Rcpp@S@String#b#d#",
+                "usr": "c:@F@DLMMCpval_fun#$@N@arma@S@Col>#d#S0_#$@N@arma@S@Mat>#d#I#I#S1_#S0_#$@N@Rcpp@S@String#b#d#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "DLMMCpval_fun(arma::vec, arma::vec, arma::mat, int, int, Rcpp::String, bool, double)",
+                "name": "DLMMCpval_fun(arma::vec, arma::vec, arma::mat, int, int, arma::mat, arma::vec, Rcpp::String, bool, double)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
-                "line": 196,
+                "line": 194,
                 "column": 8,
                 "hidden": false
             },
             {
-                "usr": "c:@F@DLMMCpval_fun_min#$@N@arma@S@Col>#d#S0_#$@N@arma@S@Mat>#d#I#I#$@N@Rcpp@S@String#b#d#",
+                "usr": "c:@F@DLMMCpval_fun_min#$@N@arma@S@Col>#d#S0_#$@N@arma@S@Mat>#d#I#S1_#S0_#I#$@N@Rcpp@S@String#b#d#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "DLMMCpval_fun_min(arma::vec, arma::vec, arma::mat, int, int, Rcpp::String, bool, double)",
+                "name": "DLMMCpval_fun_min(arma::vec, arma::vec, arma::mat, int, arma::mat, arma::vec, int, Rcpp::String, bool, double)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
-                "line": 241,
+                "line": 244,
                 "column": 8,
                 "hidden": false
             }
