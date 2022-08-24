@@ -18,7 +18,7 @@ DLMMCpval_fun(
 )
 }
 \value{
-@return Maximized Monte Carlo p-value.
+Maximized Monte Carlo p-value.
 }
 \description{
 Moment-based MMC test p-value

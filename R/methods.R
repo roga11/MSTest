@@ -802,7 +802,7 @@ print.DLMCTest <- function(mdl, digits = getOption("digits")){
   cat(paste("\nAIC = "),mdl$mdl_h0$AIC)
   cat(paste("\nBIC = "),mdl$mdl_h0$BIC)
   cat("\n")
-  cat("\nDufour & Luger (2017) Moment-based Local Monte Carlo Test\n")
+  cat("\nDufour & Luger (2017) Moment-Based Local Monte Carlo Test\n")
   out <- data.frame(rbind(c(t(mdl$theta),mdl$S0, mdl$F0_min, mdl$FN_min_cv, mdl$pval_min),
                           c(t(mdl$theta),mdl$S0, mdl$F0_prod, mdl$FN_prod_cv, mdl$pval_prod)))
   colnames(out) <- c(rownames(mdl$theta), colnames(mdl$S0), colnames(mdl$F0_min), names(mdl$FN_min_cv), "p-value")
@@ -828,7 +828,7 @@ print.DLMMCTest <- function(mdl, digits = getOption("digits")){
   cat(paste("\nAIC = "),mdl$mdl_h0$AIC)
   cat(paste("\nBIC = "),mdl$mdl_h0$BIC)
   cat("\n")
-  cat("\nDufour & Luger (2017) Moment-based Maximized Monte Carlo Test\n")
+  cat("\nDufour & Luger (2017) Moment-Based Maximized Monte Carlo Test\n")
   out <- data.frame(rbind(c(t(mdl$theta_max_min),mdl$S0_min, mdl$F0_min, mdl$FN_min_cv, mdl$pval_min),
                           c(t(mdl$theta_max_prod),mdl$S0_prod, mdl$F0_prod, mdl$FN_prod_cv, mdl$pval_prod)))
   colnames(out) <- c(rownames(mdl$theta_max_min), colnames(mdl$S0_min), colnames(mdl$F0_min), names(mdl$FN_min_cv), "p-value")

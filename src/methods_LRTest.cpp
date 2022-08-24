@@ -4,6 +4,329 @@
 using namespace Rcpp;
 
 // ==============================================================================
+//' @title Estimate model for likelihood ratio test
+//' 
+//' @description 
+//' @param 
+//'
+//' @return 
+//' 
+//' @keywords internal
+//' 
+//' @export
+// [[Rcpp::export]]
+List estimMdl(arma::mat Y, int p, int q, int k, List control){
+  // =============================================================================
+  // ---------- Load R functions
+  // =============================================================================
+  Rcpp::Environment mstest("package:MSTest");
+  Rcpp::Function MSARmdl = mstest["MSARmdl"];
+  Rcpp::Function MSVARmdl = mstest["MSVARmdl"];
+  Rcpp::Function ARmdl = mstest["ARmdl"];
+  Rcpp::Function VARmdl = mstest["VARmdl"];
+  Rcpp::Function Nmdl = mstest["Nmdl"];
+  Rcpp::Function HMmdl = mstest["HMmdl"];
+  List mdl;
+  if ((k==1) & (p==0)){
+    // Normally distributed model
+    bool constant = TRUE;
+    control["const"] = constant; // forced to be TRUE for testing
+    mdl = Nmdl(Y, control);
+    mdl["p"] = 0;
+    mdl["converged"] = constant;
+  }else if ((k>1) & (p==0)){
+    // Hidden Markov model
+    mdl = HMmdl(Y, k, control);
+    mdl["p"] = 0;
+    List mdl_control = mdl["control"];
+    bool deltath = mdl["deltath"];
+    bool thtol = mdl_control["thtol"];
+    mdl["converged"] = (deltath <= thtol);
+  }else if ((k==1) & (q==1) & (p>0)){
+    // Autoregressive model
+    bool constant = TRUE;
+    control["const"] = constant; // forced to be TRUE for testing
+    mdl = ARmdl(Y, p, control);
+    mdl["converged"] = constant;
+  }else if ((k>1) & (q==1) & (p>0)){
+    // Markov switching model
+    mdl = MSARmdl(Y, p, k, control);
+    List mdl_control = mdl["control"];
+    bool deltath = mdl["deltath"];
+    bool thtol = mdl_control["thtol"];
+    mdl["converged"] = (deltath <= thtol);
+  }else if ((k==1) & (q>1) & (p>0)){
+    // Vector autoregressive model
+    bool constant = TRUE;
+    control["const"] = constant; // forced to be TRUE for testing
+    mdl = VARmdl(Y, k, control);
+    mdl["converged"] = constant;
+  }else if ((k>1) & (q>1) & (p>0)){
+    // Vector autoregressive Markov switching model
+    mdl = MSVARmdl(Y, p, k, control);
+    List mdl_control = mdl["control"];
+    bool deltath = mdl["deltath"];
+    bool thtol = mdl_control["thtol"];
+    mdl["converged"] = (deltath <= thtol);
+  }
+  return(mdl);
+}
+
+// ==============================================================================
+//' @title Likelihood Ratio Test Statistic Sample Distribution
+//' 
+//' 
+//' @keywords internal
+//' 
+//' @export
+// [[Rcpp::export]]
+List simuMdl(List mdl_h0, int p, int q, int k, int burnin){
+  // =============================================================================
+  // ---------- Load R functions
+  // =============================================================================
+  Rcpp::Environment mstest("package:MSTest");
+  Rcpp::Function MSARmdl = mstest["MSARmdl"];
+  Rcpp::Function MSVARmdl = mstest["MSVARmdl"];
+  Rcpp::Function ARmdl = mstest["ARmdl"];
+  Rcpp::Function VARmdl = mstest["VARmdl"];
+  Rcpp::Function Nmdl = mstest["Nmdl"];
+  Rcpp::Function HMmdl = mstest["HMmdl"];
+  List simu_mdl;
+  if ((k==1) & (p==0)){
+    simu_mdl = simuNorm(mdl_h0);
+  }else if ((k>1) & (p==0)){
+    // Hidden Markov model
+    simu_mdl = simuHMM(mdl_h0, burnin);
+  }else if ((k==1) & (q==1) & (p>0)){
+    // Autoregressive model
+    simu_mdl = simuAR(mdl_h0, burnin);
+  }else if ((k>1) & (q==1) & (p>0)){
+    // Markov switching model
+    simu_mdl = simuMSAR(mdl_h0, burnin);
+  }else if ((k==1) & (q>1) & (p>0)){
+    // Vector autoregressive model
+    simu_mdl = simuVAR(mdl_h0, burnin);
+  }else if ((k>1) & (q>1) & (p>0)){
+    // Vector autoregressive Markov switching model
+    simu_mdl = simuMSVAR(mdl_h0, burnin);
+  }
+  return(simu_mdl);
+}
+
+// ==============================================================================
+//' @title Likelihood Ratio Test Statistic Sample Distribution
+//' 
+//' 
+//' @export
+// [[Rcpp::export]]
+arma::vec LR_samp_dist2(List mdl_h0, int k1, int N, int burnin, 
+                       List mdl_h0_control, List mdl_h1_control){
+  // =============================================================================
+  // ---------- Load R functions
+  // =============================================================================
+  Rcpp::Environment mstest("package:MSTest");
+  Rcpp::Function MSARmdl = mstest["MSARmdl"];
+  Rcpp::Function MSVARmdl = mstest["MSVARmdl"];
+  Rcpp::Function ARmdl = mstest["ARmdl"];
+  Rcpp::Function VARmdl = mstest["VARmdl"];
+  Rcpp::Function Nmdl = mstest["Nmdl"];
+  Rcpp::Function HMmdl = mstest["HMmdl"];
+  // =============================================================================
+  // ---------- Define required parameters
+  // =============================================================================
+  int k0  = mdl_h0["k"];
+  int p   = mdl_h0["p"];
+  int q   = mdl_h0["q"];
+  // =============================================================================
+  // ---------- Simulate test statistic under null hypothesis
+  // =============================================================================
+  double LRT_i;
+  arma::vec LRT_N(N,arma::fill::zeros);
+  if ((k0==1) & (p==0)){
+    // Normally distributed model under null hypothesis
+    for (int xn = 0; xn<N; xn++){
+      bool LRT_finite   = FALSE;
+      while (LRT_finite==FALSE){
+        List simu_mdl   = simuNorm(mdl_h0);
+        arma::mat y0    = simu_mdl["y"];
+        List mdl_h0_tmp = Nmdl(y0, mdl_h0_control);
+        List mdl_h1_tmp = HMmdl(y0, k1, mdl_h1_control);
+        double l_0      = mdl_h0_tmp["logLike"];
+        double l_1      = mdl_h1_tmp["logLike"];
+        LRT_i = -2*(l_0 - l_1);
+        // verify test stat (i.e. not NaN nor <0)
+        LRT_finite = ((arma::is_finite(LRT_i)) and (LRT_i>=0));
+      }
+      LRT_N(xn) = LRT_i;
+    }
+  }else if ((k0>1) & (p==0)){
+    // Hidden Markov model under null hypothesis
+    for (int xn = 0; xn<N; xn++){
+      bool LRT_finite   = FALSE;
+      while (LRT_finite==FALSE){
+        List simu_mdl   = simuHMM(mdl_h0, burnin);
+        arma::mat y0    = simu_mdl["y"];
+        List mdl_h0_tmp = HMmdl(y0, k0, mdl_h0_control);
+        List mdl_h1_tmp = HMmdl(y0, k1, mdl_h1_control);
+        double l_0      = mdl_h0_tmp["logLike"];
+        double l_1      = mdl_h1_tmp["logLike"];
+        LRT_i = -2*(l_0 - l_1);
+        // verify test stat (i.e. not NaN nor <0)
+        LRT_finite = ((arma::is_finite(LRT_i)) and (LRT_i>=0));
+      }
+      LRT_N(xn) = LRT_i;
+    }
+  }else if ((k0==1) & (q==1) & (p>0)){
+    // Autoregressive model under null hypothesis
+    for (int xn = 0; xn<N; xn++){
+      bool LRT_finite   = FALSE;
+      while (LRT_finite==FALSE){
+        List simu_mdl   = simuAR(mdl_h0, burnin);
+        arma::mat y0    = simu_mdl["y"];
+        List mdl_h0_tmp = ARmdl(y0, p, mdl_h0_control);
+        List mdl_h1_tmp = MSARmdl(y0, p, k1, mdl_h1_control);
+        double l_0      = mdl_h0_tmp["logLike"];
+        double l_1      = mdl_h1_tmp["logLike"];
+        LRT_i = -2*(l_0 - l_1);
+        // verify test stat (i.e. not NaN nor <0)
+        LRT_finite = ((arma::is_finite(LRT_i)) and (LRT_i>=0));
+      }
+      LRT_N(xn) = LRT_i;
+    }
+  }else if ((k0>1) & (q==1) & (p>0)){
+    // Markov switching model under null hypothesis
+    for (int xn = 0; xn<N; xn++){
+      bool LRT_finite   = FALSE;
+      while (LRT_finite==FALSE){
+        List simu_mdl   = simuMSAR(mdl_h0, burnin);
+        arma::mat y0    = simu_mdl["y"];
+        List mdl_h0_tmp = MSARmdl(y0, p, k0, mdl_h0_control);
+        List mdl_h1_tmp = MSARmdl(y0, p, k1, mdl_h1_control);
+        double l_0      = mdl_h0_tmp["logLike"];
+        double l_1      = mdl_h1_tmp["logLike"];
+        LRT_i = -2*(l_0 - l_1);
+        // verify test stat (i.e. not NaN nor <0)
+        LRT_finite = ((arma::is_finite(LRT_i)) and (LRT_i>=0));
+      }
+      LRT_N(xn) = LRT_i;
+    }
+  }else if ((k0==1) & (q>1) & (p>0)){
+    // Vector autoregressive model under null hypothesis
+    for (int xn = 0; xn<N; xn++){
+      bool LRT_finite   = FALSE;
+      while (LRT_finite==FALSE){
+        List simu_mdl   = simuVAR(mdl_h0, burnin);
+        arma::mat y0    = simu_mdl["y"];
+        List mdl_h0_tmp = VARmdl(y0, p, mdl_h0_control);
+        List mdl_h1_tmp = MSVARmdl(y0, p, k1, mdl_h1_control);
+        double l_0      = mdl_h0_tmp["logLike"];
+        double l_1      = mdl_h1_tmp["logLike"];
+        LRT_i = -2*(l_0 - l_1);
+        // verify test stat (i.e. not NaN nor <0)
+        LRT_finite = ((arma::is_finite(LRT_i)) and (LRT_i>=0));
+      }
+      LRT_N(xn) = LRT_i;
+    }
+  }else if ((k0>1) & (q>1) & (p>0)){
+    // Vector autoregressive Markov switching model under null hypothesis
+    for (int xn = 0; xn<N; xn++){
+      bool LRT_finite   = FALSE;
+      while (LRT_finite==FALSE){
+        List simu_mdl   = simuMSVAR(mdl_h0, burnin);
+        arma::mat y0    = simu_mdl["y"];
+        List mdl_h0_tmp = MSVARmdl(y0, p, k0, mdl_h0_control);
+        List mdl_h1_tmp = MSVARmdl(y0, p, k1, mdl_h1_control);
+        double l_0      = mdl_h0_tmp["logLike"];
+        double l_1      = mdl_h1_tmp["logLike"];
+        LRT_i = -2*(l_0 - l_1);
+        // verify test stat (i.e. not NaN nor <0)
+        LRT_finite = ((arma::is_finite(LRT_i)) and (LRT_i>=0));
+      }
+      LRT_N(xn) = LRT_i;
+    }
+  }
+  return(LRT_N);
+}
+
+// ==============================================================================
+//' @title Likelihood Ratio Test Statistic Sample Distribution
+//' 
+//' 
+//' @export
+// [[Rcpp::export]]
+arma::vec LR_samp_dist3(List mdl_h0, int k1, int N, int burnin, 
+                        List mdl_h0_control, List mdl_h1_control){
+  // =============================================================================
+  // ---------- Load R functions
+  // =============================================================================
+  Rcpp::Environment mstest("package:MSTest");
+  Rcpp::Function estimMdl2 = mstest["estimMdl2"];
+  // =============================================================================
+  // ---------- Define required parameters
+  // =============================================================================
+  int k0  = mdl_h0["k"];
+  int p   = mdl_h0["p"];
+  int q   = mdl_h0["q"];
+  // =============================================================================
+  // ---------- Simulate test statistic under null hypothesis
+  // =============================================================================
+  double LRT_i;
+  arma::vec LRT_N(N,arma::fill::zeros);
+  for (int xn = 0; xn<N; xn++){
+    bool LRT_finite   = FALSE;
+    while (LRT_finite==FALSE){
+      List simu_mdl   = simuMdl(mdl_h0, p, q, k0, burnin);
+      arma::mat y0    = simu_mdl["y"];
+      List mdl_h0_tmp = estimMdl2(y0, p, q, k0, mdl_h0_control);
+      List mdl_h1_tmp = estimMdl2(y0, p, q, k1, mdl_h1_control);
+      double l_0      = mdl_h0_tmp["logLike"];
+      double l_1      = mdl_h1_tmp["logLike"];
+      LRT_i = -2*(l_0 - l_1);
+      // verify test stat (i.e. not NaN nor <0)
+      LRT_finite = ((arma::is_finite(LRT_i)) and (LRT_i>=0));
+    }
+    LRT_N(xn) = LRT_i;
+  }
+  return(LRT_N);
+}
+
+// ==============================================================================
+//' @title Likelihood Ratio Test Statistic Sample Distribution
+//' 
+//' 
+//' @export
+// [[Rcpp::export]]
+arma::vec LR_samp_dist4(List mdl_h0, int k1, int N, int burnin, 
+                        List mdl_h0_control, List mdl_h1_control){
+  // =============================================================================
+  // ---------- Define required parameters
+  // =============================================================================
+  int k0  = mdl_h0["k"];
+  int p   = mdl_h0["p"];
+  int q   = mdl_h0["q"];
+  // =============================================================================
+  // ---------- Simulate test statistic under null hypothesis
+  // =============================================================================
+  double LRT_i;
+  arma::vec LRT_N(N,arma::fill::zeros);
+  for (int xn = 0; xn<N; xn++){
+    bool LRT_finite   = FALSE;
+    while (LRT_finite==FALSE){
+      List simu_mdl   = simuMdl(mdl_h0, p, q, k0, burnin);
+      arma::mat y0    = simu_mdl["y"];
+      List mdl_h0_tmp = estimMdl(y0, p, q, k0, mdl_h0_control);
+      List mdl_h1_tmp = estimMdl(y0, p, q, k1, mdl_h1_control);
+      double l_0      = mdl_h0_tmp["logLike"];
+      double l_1      = mdl_h1_tmp["logLike"];
+      LRT_i = -2*(l_0 - l_1);
+      // verify test stat (i.e. not NaN nor <0)
+      LRT_finite = ((arma::is_finite(LRT_i)) and (LRT_i>=0));
+    }
+    LRT_N(xn) = LRT_i;
+  }
+  return(LRT_N);
+}
+// ==============================================================================
 //' @title Likelihood Ratio Test Statistic Sample Distribution
 //' 
 //' 
@@ -15,7 +338,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
   // ---------- Load R functions
   // =============================================================================
   Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function MSmdl = mstest["MSmdl"];
+  Rcpp::Function MSARmdl = mstest["MSARmdl"];
   Rcpp::Function MSVARmdl = mstest["MSVARmdl"];
   Rcpp::Function ARmdl = mstest["ARmdl"];
   Rcpp::Function VARmdl = mstest["VARmdl"];
@@ -23,7 +346,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
   // ---------- Define required parameters
   // =============================================================================
   int k0 = mdl_h0["k"];
-  int ar = mdl_h0["ar"];
+  int ar = mdl_h0["p"];
   int q = mdl_h0["q"];
   bool getSE = FALSE;
   // =============================================================================
@@ -35,8 +358,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
   control["maxit"] = maxit;
   control["thtol"] = thtol;
   control["getSE"] = getSE;
-  control["max_init"] = max_init;
-  control["max_init"] = max_init;
+  control["max_converge"] = max_init;
   control["use_diff_init"] = init_val_try_dist;
   // =============================================================================
   // ---------- Simulate test statistic under null hypothesis
@@ -54,9 +376,8 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
         while (LRT_finite==FALSE){
           List y0_out = simuAR(mdl_h0, burnin);
           arma::vec y0 = y0_out["y"];
-          //List mdl_h0_tmp = ARmdl_cpp(y0, ar, inter, getSE);
           List mdl_h0_tmp = ARmdl(y0, ar);
-          List mdl_h1_tmp = MSmdl(y0, ar, k1, control);
+          List mdl_h1_tmp = MSARmdl(y0, ar, k1, control);
           // test stat
           double l_0 = mdl_h0_tmp["logLike"];
           double l_1 = mdl_h1_tmp["logLike"];
@@ -95,8 +416,8 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
         while (LRT_finite==FALSE){
           List y0_out = simuMSAR(mdl_h0_c, burnin);
           arma::vec y0 = y0_out["y"];
-          List mdl_h0_tmp = MSmdl(y0, ar, k0, control);
-          List mdl_h1_tmp = MSmdl(y0, ar, k1, control);
+          List mdl_h0_tmp = MSARmdl(y0, ar, k0, control);
+          List mdl_h1_tmp = MSARmdl(y0, ar, k1, control);
           // test stat
           double l_0 = mdl_h0_tmp["logLike"];
           double l_1 = mdl_h1_tmp["logLike"];
@@ -200,7 +521,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int ma
 //' 
 //' @export
 // [[Rcpp::export]]
-double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit,
+double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int p, int N, int maxit,
                      double thtol, int burnin, bool stationary_ind, double lambda, int max_init, int dist_converge_iter, 
                      int init_val_try_dist, int workers){
   Rcpp::Environment mstest("package:MSTest");
@@ -225,17 +546,17 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
   arma::vec theta_h0 = theta.subvec(0,theta_h0_length-1);
   arma::vec theta_h1 = theta.subvec(theta_h0_length,theta_h0_length+theta_h1_length-1);
   // ----- Stationary constraint (i.e., only consider theta that result in stationary process) 
-  if ((stationary_ind==TRUE) and (ar>0) and (q==1)){
+  if ((stationary_ind==TRUE) and (p>0) and (q==1)){
     Rcpp::Function polyroot("polyroot");  
     Rcpp::Function Mod("Mod");  
-    arma::vec poly_fun_h0(ar+1, arma::fill::ones);
-    arma::vec poly_fun_h1(ar+1, arma::fill::ones);
-    poly_fun_h0.subvec(1,ar) = -theta_h0.subvec(2+msmu*(k0-1)+msvar*(k0-1), 2+msmu*(k0-1)+msvar*(k0-1)+ar-1);
-    poly_fun_h1.subvec(1,ar) = -theta_h1.subvec(2+msmu*(k1-1)+msvar*(k1-1), 2+msmu*(k1-1)+msvar*(k1-1)+ar-1);
+    arma::vec poly_fun_h0(p+1, arma::fill::ones);
+    arma::vec poly_fun_h1(p+1, arma::fill::ones);
+    poly_fun_h0.subvec(1,p) = -theta_h0.subvec(2+msmu*(k0-1)+msvar*(k0-1), 2+msmu*(k0-1)+msvar*(k0-1)+p-1);
+    poly_fun_h1.subvec(1,p) = -theta_h1.subvec(2+msmu*(k1-1)+msvar*(k1-1), 2+msmu*(k1-1)+msvar*(k1-1)+p-1);
     arma::vec roots_h0 = as<arma::vec>(Mod(wrap(as<ComplexVector>(polyroot(wrap(poly_fun_h0))))));
     arma::vec roots_h1 = as<arma::vec>(Mod(wrap(as<ComplexVector>(polyroot(wrap(poly_fun_h1))))));
     non_stationary_const = ((roots_h0.min()<=1) or (roots_h1.min()<=1));
-  }else if ((stationary_ind==TRUE) and (ar>0) and (q>1)){
+  }else if ((stationary_ind==TRUE) and (p>0) and (q>1)){
     Rcpp::Function Mod("Mod");  
     // phi indicators
     arma::vec theta_phi_ind_h0 = mdl_h0["theta_phi_ind"];
@@ -244,13 +565,13 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
     arma::vec phi_vec_h0 = theta_h0.elem(find(theta_phi_ind_h0));
     arma::vec phi_vec_h1 = theta_h1.elem(find(theta_phi_ind_h1)); 
     // phi matrices
-    arma::mat phi_h0 = reshape(phi_vec_h0, q*ar, q);
-    arma::mat phi_h1 = reshape(phi_vec_h1, q*ar, q);
+    arma::mat phi_h0 = reshape(phi_vec_h0, q*p, q);
+    arma::mat phi_h1 = reshape(phi_vec_h1, q*p, q);
     // companion matrices
     arma::mat F0_tmp = trans(phi_h0);
     arma::mat F1_tmp = trans(phi_h1);
-    arma::mat diagmat = arma::eye(q*(ar-1),q*(ar-1));
-    arma::mat diagzero(q*(ar-1), q, arma::fill::zeros);
+    arma::mat diagmat = arma::eye(q*(p-1),q*(p-1));
+    arma::mat diagzero(q*(p-1), q, arma::fill::zeros);
     arma::mat Mn = join_rows(diagmat,diagzero);
     arma::mat F0 = join_cols(F0_tmp,Mn);
     arma::mat F1 = join_cols(F1_tmp,Mn);
@@ -288,7 +609,7 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
     if (q==1){
       mdl_h0_tmp["mu"] = theta_mu_h0;
       mdl_h0_tmp["stdev"] = sqrt(theta_sig_h0);
-      if (ar>0){
+      if (p>0){
         arma::vec theta_phi_ind_h0 = mdl_h0["theta_phi_ind"];
         // phi vector
         arma::vec phi_new = theta_h0.elem(find(theta_phi_ind_h0));
@@ -308,12 +629,12 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
         }
         mdl_h0_tmp["sigma"] = sig_new;
       } 
-      if (ar>0){
+      if (p>0){
         arma::vec theta_phi_ind_h0 = mdl_h0["theta_phi_ind"];
         // phi vectors
         arma::vec phi_vec_h0 = theta_h0.elem(find(theta_phi_ind_h0));
         // phi matrices
-        arma::mat phi_h0 = reshape(phi_vec_h0, q*ar, q);
+        arma::mat phi_h0 = reshape(phi_vec_h0, q*p, q);
         mdl_h0_tmp["phi"] = phi_h0;
       } 
     }
@@ -343,9 +664,9 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
     // simulate under null hypothesis
     arma::vec LRN_tmp;
     if(workers>0){
-      LRN_tmp = as<arma::vec>(LR_samp_dist_par(mdl_h0_tmp, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist, workers));
+      //LRN_tmp = as<arma::vec>(LR_samp_dist_par(mdl_h0_tmp, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist, workers));
     }else{
-      LRN_tmp = LR_samp_dist(mdl_h0_tmp, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist);
+      //LRN_tmp = LR_samp_dist(mdl_h0_tmp, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist);
     }
     pval = -MCpval(LRT_0, LRN_tmp, "geq");
   }
@@ -359,10 +680,10 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool 
 //' 
 //' @export
 // [[Rcpp::export]]
-double MMCLRpval_fun_max(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int ar, int N, int maxit, 
+double MMCLRpval_fun_max(arma::vec theta, List mdl_h0, List mdl_h1, bool msmu, bool msvar, int p, int N, int maxit, 
                          double thtol, int burnin,  bool stationary_ind, double lambda, int max_init, int dist_converge_iter, 
                          int init_val_try_dist, int workers){
-  double pval = -MMCLRpval_fun(theta, mdl_h0, mdl_h1, msmu, msvar, ar, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter, init_val_try_dist, workers);
+  double pval = -MMCLRpval_fun(theta, mdl_h0, mdl_h1, msmu, msvar, p, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter, init_val_try_dist, workers);
   return(pval);
 }
 

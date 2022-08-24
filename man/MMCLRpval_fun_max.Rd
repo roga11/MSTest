@@ -10,7 +10,7 @@ MMCLRpval_fun_max(
   mdl_h1,
   msmu,
   msvar,
-  ar,
+  p,
   N,
   maxit,
   thtol,

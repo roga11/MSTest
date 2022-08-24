@@ -4,7 +4,15 @@
 \alias{LMCLRTest}
 \title{Monte Carlo Likelihood Ratio Test}
 \usage{
-LMCLRTest(Y, ar, k0, k1, control = list())
+LMCLRTest(
+  Y,
+  p,
+  k0,
+  k1,
+  control = list(),
+  mdl_h0_control = list(),
+  mdl_h1_control = list()
+)
 }
 \value{
 
