@@ -587,21 +587,6 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// estimMdl
-List estimMdl(arma::mat Y, int p, int q, int k, List control);
-RcppExport SEXP _MSTest_estimMdl(SEXP YSEXP, SEXP pSEXP, SEXP qSEXP, SEXP kSEXP, SEXP controlSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< arma::mat >::type Y(YSEXP);
-    Rcpp::traits::input_parameter< int >::type p(pSEXP);
-    Rcpp::traits::input_parameter< int >::type q(qSEXP);
-    Rcpp::traits::input_parameter< int >::type k(kSEXP);
-    Rcpp::traits::input_parameter< List >::type control(controlSEXP);
-    rcpp_result_gen = Rcpp::wrap(estimMdl(Y, p, q, k, control));
-    return rcpp_result_gen;
-END_RCPP
-}
 // simuMdl
 List simuMdl(List mdl_h0, int p, int q, int k, int burnin);
 RcppExport SEXP _MSTest_simuMdl(SEXP mdl_h0SEXP, SEXP pSEXP, SEXP qSEXP, SEXP kSEXP, SEXP burninSEXP) {
@@ -617,72 +602,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// LR_samp_dist2
-arma::vec LR_samp_dist2(List mdl_h0, int k1, int N, int burnin, List mdl_h0_control, List mdl_h1_control);
-RcppExport SEXP _MSTest_LR_samp_dist2(SEXP mdl_h0SEXP, SEXP k1SEXP, SEXP NSEXP, SEXP burninSEXP, SEXP mdl_h0_controlSEXP, SEXP mdl_h1_controlSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< List >::type mdl_h0(mdl_h0SEXP);
-    Rcpp::traits::input_parameter< int >::type k1(k1SEXP);
-    Rcpp::traits::input_parameter< int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    Rcpp::traits::input_parameter< List >::type mdl_h0_control(mdl_h0_controlSEXP);
-    Rcpp::traits::input_parameter< List >::type mdl_h1_control(mdl_h1_controlSEXP);
-    rcpp_result_gen = Rcpp::wrap(LR_samp_dist2(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control));
-    return rcpp_result_gen;
-END_RCPP
-}
-// LR_samp_dist3
-arma::vec LR_samp_dist3(List mdl_h0, int k1, int N, int burnin, List mdl_h0_control, List mdl_h1_control);
-RcppExport SEXP _MSTest_LR_samp_dist3(SEXP mdl_h0SEXP, SEXP k1SEXP, SEXP NSEXP, SEXP burninSEXP, SEXP mdl_h0_controlSEXP, SEXP mdl_h1_controlSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< List >::type mdl_h0(mdl_h0SEXP);
-    Rcpp::traits::input_parameter< int >::type k1(k1SEXP);
-    Rcpp::traits::input_parameter< int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    Rcpp::traits::input_parameter< List >::type mdl_h0_control(mdl_h0_controlSEXP);
-    Rcpp::traits::input_parameter< List >::type mdl_h1_control(mdl_h1_controlSEXP);
-    rcpp_result_gen = Rcpp::wrap(LR_samp_dist3(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control));
-    return rcpp_result_gen;
-END_RCPP
-}
-// LR_samp_dist4
-arma::vec LR_samp_dist4(List mdl_h0, int k1, int N, int burnin, List mdl_h0_control, List mdl_h1_control);
-RcppExport SEXP _MSTest_LR_samp_dist4(SEXP mdl_h0SEXP, SEXP k1SEXP, SEXP NSEXP, SEXP burninSEXP, SEXP mdl_h0_controlSEXP, SEXP mdl_h1_controlSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< List >::type mdl_h0(mdl_h0SEXP);
-    Rcpp::traits::input_parameter< int >::type k1(k1SEXP);
-    Rcpp::traits::input_parameter< int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    Rcpp::traits::input_parameter< List >::type mdl_h0_control(mdl_h0_controlSEXP);
-    Rcpp::traits::input_parameter< List >::type mdl_h1_control(mdl_h1_controlSEXP);
-    rcpp_result_gen = Rcpp::wrap(LR_samp_dist4(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control));
-    return rcpp_result_gen;
-END_RCPP
-}
 // LR_samp_dist
-arma::vec LR_samp_dist(List mdl_h0, int k1, bool msmu, bool msvar, int N, int maxit, double thtol, int burnin, int max_init, int dist_converge_iter, int init_val_try_dist);
-RcppExport SEXP _MSTest_LR_samp_dist(SEXP mdl_h0SEXP, SEXP k1SEXP, SEXP msmuSEXP, SEXP msvarSEXP, SEXP NSEXP, SEXP maxitSEXP, SEXP thtolSEXP, SEXP burninSEXP, SEXP max_initSEXP, SEXP dist_converge_iterSEXP, SEXP init_val_try_distSEXP) {
+arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin, List mdl_h0_control, List mdl_h1_control);
+RcppExport SEXP _MSTest_LR_samp_dist(SEXP mdl_h0SEXP, SEXP k1SEXP, SEXP NSEXP, SEXP burninSEXP, SEXP mdl_h0_controlSEXP, SEXP mdl_h1_controlSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< List >::type mdl_h0(mdl_h0SEXP);
     Rcpp::traits::input_parameter< int >::type k1(k1SEXP);
-    Rcpp::traits::input_parameter< bool >::type msmu(msmuSEXP);
-    Rcpp::traits::input_parameter< bool >::type msvar(msvarSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
-    Rcpp::traits::input_parameter< int >::type maxit(maxitSEXP);
-    Rcpp::traits::input_parameter< double >::type thtol(thtolSEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    Rcpp::traits::input_parameter< int >::type max_init(max_initSEXP);
-    Rcpp::traits::input_parameter< int >::type dist_converge_iter(dist_converge_iterSEXP);
-    Rcpp::traits::input_parameter< int >::type init_val_try_dist(init_val_try_distSEXP);
-    rcpp_result_gen = Rcpp::wrap(LR_samp_dist(mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist));
+    Rcpp::traits::input_parameter< List >::type mdl_h0_control(mdl_h0_controlSEXP);
+    Rcpp::traits::input_parameter< List >::type mdl_h1_control(mdl_h1_controlSEXP);
+    rcpp_result_gen = Rcpp::wrap(LR_samp_dist(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -872,12 +804,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_calc_mu2t", (DL_FUNC) &_MSTest_calc_mu2t, 3},
     {"_MSTest_chpStat", (DL_FUNC) &_MSTest_chpStat, 4},
     {"_MSTest_bootCV", (DL_FUNC) &_MSTest_bootCV, 4},
-    {"_MSTest_estimMdl", (DL_FUNC) &_MSTest_estimMdl, 5},
     {"_MSTest_simuMdl", (DL_FUNC) &_MSTest_simuMdl, 5},
-    {"_MSTest_LR_samp_dist2", (DL_FUNC) &_MSTest_LR_samp_dist2, 6},
-    {"_MSTest_LR_samp_dist3", (DL_FUNC) &_MSTest_LR_samp_dist3, 6},
-    {"_MSTest_LR_samp_dist4", (DL_FUNC) &_MSTest_LR_samp_dist4, 6},
-    {"_MSTest_LR_samp_dist", (DL_FUNC) &_MSTest_LR_samp_dist, 11},
+    {"_MSTest_LR_samp_dist", (DL_FUNC) &_MSTest_LR_samp_dist, 6},
     {"_MSTest_MMCLRpval_fun", (DL_FUNC) &_MSTest_MMCLRpval_fun, 16},
     {"_MSTest_MMCLRpval_fun_max", (DL_FUNC) &_MSTest_MMCLRpval_fun_max, 16},
     {"_MSTest_calc_DLmoments", (DL_FUNC) &_MSTest_calc_DLmoments, 1},

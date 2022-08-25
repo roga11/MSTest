@@ -4,19 +4,7 @@
 \alias{LR_samp_dist}
 \title{Likelihood Ratio Test Statistic Sample Distribution}
 \usage{
-LR_samp_dist(
-  mdl_h0,
-  k1,
-  msmu,
-  msvar,
-  N,
-  maxit,
-  thtol,
-  burnin,
-  max_init,
-  dist_converge_iter,
-  init_val_try_dist
-)
+LR_samp_dist(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control)
 }
 \description{
 Likelihood Ratio Test Statistic Sample Distribution

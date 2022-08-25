@@ -471,65 +471,25 @@
     },
     {
         "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
-        "file_last_write": 1661375889.0,
+        "file_last_write": 1661385620.0,
         "definitions": [
-            {
-                "usr": "c:@F@estimMdl#$@N@arma@S@Mat>#d#I#I#I#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
-                "kind": 6,
-                "parent_name": "",
-                "name": "estimMdl(arma::mat, int, int, int, Rcpp::List)",
-                "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
-                "line": 18,
-                "column": 6,
-                "hidden": false
-            },
             {
                 "usr": "c:@F@simuMdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#I#I#I#",
                 "kind": 6,
                 "parent_name": "",
                 "name": "simuMdl(Rcpp::List, int, int, int, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
-                "line": 83,
+                "line": 15,
                 "column": 6,
                 "hidden": false
             },
             {
-                "usr": "c:@F@LR_samp_dist2#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#I#I#S0_#S0_#",
+                "usr": "c:@F@LR_samp_dist#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#I#I#S0_#S0_#",
                 "kind": 6,
                 "parent_name": "",
-                "name": "LR_samp_dist2(Rcpp::List, int, int, int, Rcpp::List, Rcpp::List)",
+                "name": "LR_samp_dist(Rcpp::List, int, int, int, Rcpp::List, Rcpp::List)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
-                "line": 122,
-                "column": 11,
-                "hidden": false
-            },
-            {
-                "usr": "c:@F@LR_samp_dist3#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#I#I#S0_#S0_#",
-                "kind": 6,
-                "parent_name": "",
-                "name": "LR_samp_dist3(Rcpp::List, int, int, int, Rcpp::List, Rcpp::List)",
-                "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
-                "line": 257,
-                "column": 11,
-                "hidden": false
-            },
-            {
-                "usr": "c:@F@LR_samp_dist4#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#I#I#S0_#S0_#",
-                "kind": 6,
-                "parent_name": "",
-                "name": "LR_samp_dist4(Rcpp::List, int, int, int, Rcpp::List, Rcpp::List)",
-                "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
-                "line": 299,
-                "column": 11,
-                "hidden": false
-            },
-            {
-                "usr": "c:@F@LR_samp_dist#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#b#b#I#I#d#I#I#I#I#",
-                "kind": 6,
-                "parent_name": "",
-                "name": "LR_samp_dist(Rcpp::List, int, bool, bool, int, int, double, int, int, int, int)",
-                "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
-                "line": 335,
+                "line": 56,
                 "column": 11,
                 "hidden": false
             },
@@ -539,7 +499,7 @@
                 "parent_name": "",
                 "name": "MMCLRpval_fun(arma::vec, Rcpp::List, Rcpp::List, bool, bool, int, int, int, double, int, bool, double, int, int, int, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
-                "line": 524,
+                "line": 97,
                 "column": 8,
                 "hidden": false
             },
@@ -549,7 +509,7 @@
                 "parent_name": "",
                 "name": "MMCLRpval_fun_max(arma::vec, Rcpp::List, Rcpp::List, bool, bool, int, int, int, double, int, bool, double, int, int, int, int)",
                 "file": "/Users/grodriguezrondon/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
-                "line": 683,
+                "line": 256,
                 "column": 8,
                 "hidden": false
             }

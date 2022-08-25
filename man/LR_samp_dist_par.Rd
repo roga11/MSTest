@@ -7,15 +7,10 @@
 LR_samp_dist_par(
   mdl_h0,
   k1,
-  msmu,
-  msvar,
   N,
-  maxit,
-  thtol,
   burnin,
-  max_init,
-  dist_converge_iter,
-  init_val_try_dist,
+  mdl_h0_control,
+  mdl_h1_control,
   workers
 )
 }
@@ -23,5 +18,6 @@ LR_samp_dist_par(
 
 }
 \description{
-Monte Carlo Likelihood Ratio Test sample disttribution (parallel version)
+
 }
+\keyword{internal}

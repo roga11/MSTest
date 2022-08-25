@@ -2,22 +2,26 @@
 #' @title Monte Carlo Likelihood Ratio Test sample disttribution (parallel version)
 #' 
 #' @description 
+#' 
 #' @param 
 #'
 #' @return 
 #' 
-#' 
-LR_samp_dist_par <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist, workers){ 
+#' @keywords internal
+#'
+#' @export
+LR_samp_dist_par <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control, workers){ 
   # ----- Set number of simulations per worker
-  N_worker_i <- matrix(rep(floor(N/workers),workers),workers,1)
+  N_i_f <- floor(N/workers)
+  N_worker_i <- matrix(rep(N_i_f, workers), workers, 1)
   if (sum(N_worker_i)<N){
-    N_worker_i[1:(N-floor(N/workers)*(workers))] <- N_worker_i[1:(N-floor(N/workers)*(workers))] + 1  
+    N_worker_i[1:(N-(N_i_f*workers))] <- N_worker_i[1:(N-(N_i_f*workers))] + 1  
   }
   # ----- Begin parallel simulations
   LRN_all <- matrix(0,N,1)
   `%dopar%` <- foreach::`%dopar%`
   LRN_all <- foreach::foreach(wi=1:workers, .inorder = FALSE, .packages = "MSTest") %dopar% {
-    LRN <- LR_samp_dist(mdl_h0, k1, msmu, msvar, N_worker_i[wi], maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist)
+    LRN <- LR_samp_dist(mdl_h0, k1, N_worker_i[wi], burnin, mdl_h0_control, mdl_h1_control) 
     LRN
   }
   return(unlist(LRN_all))
@@ -35,7 +39,7 @@ LR_samp_dist_par <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin, m
 #' @keywords internal
 #' 
 #' @export
-estimMdl2 <- function(Y, p, q, k, control = list()){
+estimMdl <- function(Y, p, q, k, control = list()){
   if ((k==1) & (p==0)){
     # Normally distributed model
     control$const <- TRUE # forced to be TRUE for testing
@@ -76,7 +80,9 @@ estimMdl2 <- function(Y, p, q, k, control = list()){
 #' @param 
 #'
 #' @return 
-#' 
+#'
+#' @example /examples/DLMCTest_examples.R
+#'
 #' @export
 LMCLRTest <- function(Y, p, k0, k1, control = list(), mdl_h0_control = list(), mdl_h1_control = list()){
   # ----- Set control values
@@ -127,24 +133,25 @@ LMCLRTest <- function(Y, p, k0, k1, control = list(), mdl_h0_control = list(), m
   if (LRT_0<0){
     stop("LRT_0 is negative. Run again to use different initial values")
   }
+  names(LRT_0) <- c("LRT_0")
   # ----- Simulate sample null distribution
   if (con$workers>0){
-    #LRN <- LR_samp_dist_par(mdl_h0, k1, con$msmu, con$msvar, 
-    #                        con$N, con$maxit, con$thtol, 
-    #                        con$burnin, con$finite_max_init, 
-    #                        con$dist_converge_iter, con$init_val_try_dist, con$workers)
+    LRN <- LR_samp_dist_par(mdl_h0, k1, con$N, con$burnin, mdl_h0_control, mdl_h1_control, con$workers)
   }else{
-    LRN <- LR_samp_dist(mdl_h0, k1, con$N, con$burnin, con$dist_converge_iter, mdl_h0_control, mdl_h1_control) 
+    LRN <- LR_samp_dist(mdl_h0, k1, con$N, con$burnin, mdl_h0_control, mdl_h1_control) 
   }
+  
+  # ----- get critical values
+  LRN     <- as.matrix(sort(LRN))
+  LRN_cv  <- LRN[round(c(0.90,0.95,0.99)*nrow(LRN)),]
+  names(LRN_cv)  <- paste0(c("0.90","0.95","0.99"), "%")
   # ----- Compute p-value
   pval <- MCpval(LRT_0, LRN, "geq")
   # ----- Organize output
-  MCLRTest_output <- list()
-  MCLRTest_output$mdl_h0 <- mdl_h0
-  MCLRTest_output$mdl_h1 <- mdl_h1
-  MCLRTest_output$LRT_0 <- LRT_0
-  MCLRTest_output$LRN <- LRN
-  MCLRTest_output$pval <- pval
+  MCLRTest_output <- list(mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, LRT_0 = LRT_0, LRN = LRN,
+                          pval = pval, LRN_cv = LRN_cv, control = con, 
+                          mdl_h0_control = mdl_h0_control, mdl_h1_control = mdl_h1_control)
+  class(MCLRTest_output) <- "LMCLRTest"
   return(MCLRTest_output)
 }
 

@@ -764,20 +764,6 @@ bootCV <- function(mdl, rho_b, N, msvar) {
     .Call(`_MSTest_bootCV`, mdl, rho_b, N, msvar)
 }
 
-#' @title Estimate model for likelihood ratio test
-#' 
-#' @description 
-#' @param 
-#'
-#' @return 
-#' 
-#' @keywords internal
-#' 
-#' @export
-estimMdl <- function(Y, p, q, k, control) {
-    .Call(`_MSTest_estimMdl`, Y, p, q, k, control)
-}
-
 #' @title Likelihood Ratio Test Statistic Sample Distribution
 #' 
 #' 
@@ -792,32 +778,8 @@ simuMdl <- function(mdl_h0, p, q, k, burnin) {
 #' 
 #' 
 #' @export
-LR_samp_dist2 <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control) {
-    .Call(`_MSTest_LR_samp_dist2`, mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control)
-}
-
-#' @title Likelihood Ratio Test Statistic Sample Distribution
-#' 
-#' 
-#' @export
-LR_samp_dist3 <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control) {
-    .Call(`_MSTest_LR_samp_dist3`, mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control)
-}
-
-#' @title Likelihood Ratio Test Statistic Sample Distribution
-#' 
-#' 
-#' @export
-LR_samp_dist4 <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control) {
-    .Call(`_MSTest_LR_samp_dist4`, mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control)
-}
-
-#' @title Likelihood Ratio Test Statistic Sample Distribution
-#' 
-#' 
-#' @export
-LR_samp_dist <- function(mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist) {
-    .Call(`_MSTest_LR_samp_dist`, mdl_h0, k1, msmu, msvar, N, maxit, thtol, burnin, max_init, dist_converge_iter, init_val_try_dist)
+LR_samp_dist <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control) {
+    .Call(`_MSTest_LR_samp_dist`, mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control)
 }
 
 #' @title Monte Carlo Likelihood Ratio Test P-value Function 

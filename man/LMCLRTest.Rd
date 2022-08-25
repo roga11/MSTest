@@ -20,3 +20,22 @@ LMCLRTest(
 \description{
 Monte Carlo Likelihood Ratio Test
 }
+\examples{
+set.seed(1234)
+# load data used in Hamilton 1989 and extended data used in CHP 2014 
+y84 <- as.matrix(hamilton84GNP$GNP_logdiff)
+y10 <- as.matrix(carhuplo10GNP$GNP_logdiff)
+
+# Set test procedure options
+lmc_control = list(N = 99,
+                   simdist_N = 10000,
+                   getSE = TRUE)
+
+# perform test on Hamilton 1989 data
+lmc_gnp84 <- DLMCTest(y84, p = 4, control = lmc_control)
+lmc_gnp84
+
+# perform test on extended data used in CHP 2014
+lmc_gnp10 <- DLMCTest(y10, p = 4, control = lmc_control)
+lmc_gnp10
+}
