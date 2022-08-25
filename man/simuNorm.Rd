@@ -12,6 +12,8 @@ simuNorm(mdl_h0)
   \item{\code{n}: }{Length of series.}
   \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
   \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
+  \item{\code{q}: }{Number of series.}
+  \item{\code{eps}: }{An optional (\code{T x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 }}
 }
 \value{
@@ -24,7 +26,8 @@ This function simulates a normally distributed process.
 set.seed(1234)
 # Define DGP 
 mdl_norm <- list(n     = 1000, 
-                 mu    = c(5,-2),
+                 q     = 2,
+                 mu    = c(5, -2),
                  sigma = rbind(c(5.0, 1.5),
                                c(1.5, 1.0)))
 

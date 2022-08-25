@@ -15,15 +15,15 @@ lmc_control = list(N = 99,
                    workers = 11)
 
 mdl_h0_control <- list(const  = TRUE, 
-                       getSE  = FALSE)
+                       getSE  = TRUE)
 
 
 mdl_h1_control <- list(msmu   = TRUE, 
                        msvar  = FALSE,
-                       getSE  = FALSE,
+                       getSE  = TRUE,
                        method = "MLE",
                        maxit  = 500,
-                       use_diff_init = 3)
+                       use_diff_init = 1)
 
 
 cl <- makeCluster(11)

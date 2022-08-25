@@ -12,3 +12,4 @@ MMC_bounds(theta_0, mdl_h0, mdl_h1, con)
 \description{
 MMC nuisance parameter bounds for univariate models
 }
+\keyword{internal}

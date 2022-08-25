@@ -54,6 +54,7 @@ List simuMdl(List mdl_h0, int p, int q, int k, int burnin){
 //' @export
 // [[Rcpp::export]]
 arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin, List mdl_h0_control, List mdl_h1_control){
+  // Add List with N matrices of errors as input. Each N loop will go into  
   // =============================================================================
   // ---------- Load R functions
   // =============================================================================
@@ -66,12 +67,18 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin, List mdl_h0_contr
   int p   = mdl_h0["p"];
   int q   = mdl_h0["q"];
   // =============================================================================
+  // ---------- re-define options not needed
+  // =============================================================================
+  bool getSE = FALSE;
+  mdl_h0_control["getSE"] = getSE;
+  mdl_h1_control["getSE"] = getSE;
+  // =============================================================================
   // ---------- Simulate test statistic under null hypothesis
   // =============================================================================
   double LRT_i;
   arma::vec LRT_N(N,arma::fill::zeros);
   for (int xn = 0; xn<N; xn++){
-    bool LRT_finite   = FALSE;
+    bool LRT_finite   = FALSE; // fixing errors may make this while loop unnecessary unless it is coming from  init vals used in estimation. At very least <0 LRT shoud be allowed or loop may never end.        
     while (LRT_finite==FALSE){
       List simu_mdl   = simuMdl(mdl_h0, p, q, k0, burnin);
       arma::mat y0    = simu_mdl["y"];

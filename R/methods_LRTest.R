@@ -160,9 +160,12 @@ LMCLRTest <- function(Y, p, k0, k1, control = list(), mdl_h0_control = list(), m
 #' @title MMC nuisance parameter bounds for univariate models 
 #' 
 #' @description 
+#' 
 #' @param 
 #'
 #' @return 
+#' 
+#' @keywords internal
 #' 
 #' @export
 MMC_bounds_univariate <- function(theta_0, mdl_h0, mdl_h1, con, msmu, msvar){
@@ -206,6 +209,8 @@ MMC_bounds_univariate <- function(theta_0, mdl_h0, mdl_h1, con, msmu, msvar){
 #' @param 
 #'
 #' @return 
+#' 
+#' @keywords internal
 #' 
 #' @export
 MMC_bounds <- function(theta_0, mdl_h0, mdl_h1, con){

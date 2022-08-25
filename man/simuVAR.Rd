@@ -14,6 +14,8 @@ simuVAR(mdl_h0, burnin = 100L)
   \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
   \item{\code{phi}: }{ A (\code{q x qp}) matrix of autoregressive coefficients.}
   \item{\code{p}: }{Number of autoregressive lags.}
+  \item{\code{q}: }{Number of series.}
+  \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 }}
 
 \item{\code{burnin}}{Number of simulated observations to remove from beginning. Default is \code{100}.}
@@ -29,7 +31,8 @@ set.seed(1234)
 # Define DGP of VAR process
 mdl_3var2 <- list(n     = 1000, 
                   p     = 2,
-                  mu    = c(5,-2,1),
+                  q     = 3,
+                  mu    = c(5, -2, 1),
                   sigma = rbind(c(5.0, 1.5, 2.5),
                                 c(1.5, 1.0, 1.5),
                                 c(2.5, 1.5, 4.2)),

@@ -185,6 +185,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// randSN
+arma::mat randSN(int Tsize, int q);
+RcppExport SEXP _MSTest_randSN(SEXP TsizeSEXP, SEXP qSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< int >::type Tsize(TsizeSEXP);
+    Rcpp::traits::input_parameter< int >::type q(qSEXP);
+    rcpp_result_gen = Rcpp::wrap(randSN(Tsize, q));
+    return rcpp_result_gen;
+END_RCPP
+}
 // simuAR
 List simuAR(List mdl_h0, int burnin);
 RcppExport SEXP _MSTest_simuAR(SEXP mdl_h0SEXP, SEXP burninSEXP) {
@@ -773,6 +785,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_initVals_MSARmdl", (DL_FUNC) &_MSTest_initVals_MSARmdl, 2},
     {"_MSTest_initVals_MSVARmdl", (DL_FUNC) &_MSTest_initVals_MSVARmdl, 2},
     {"_MSTest_MCpval", (DL_FUNC) &_MSTest_MCpval, 3},
+    {"_MSTest_randSN", (DL_FUNC) &_MSTest_randSN, 2},
     {"_MSTest_simuAR", (DL_FUNC) &_MSTest_simuAR, 2},
     {"_MSTest_simuMSAR", (DL_FUNC) &_MSTest_simuMSAR, 2},
     {"_MSTest_simuVAR", (DL_FUNC) &_MSTest_simuVAR, 2},

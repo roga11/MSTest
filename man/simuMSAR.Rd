@@ -15,6 +15,7 @@ simuMSAR(mdl_h0, burnin = 100L)
   \item{\code{sigma}: }{A (\code{k x 1}) vector with standard deviation of process in each regime.}
   \item{\code{phi}: }{Vector of autoregressive coefficients.}
   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+  \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 }}
 
 \item{\code{burnin}}{Number of simulated observations to remove from beginning. Default is \code{100}.}
@@ -31,7 +32,7 @@ set.seed(1234)
 mdl_ms2 <- list(n     = 500, 
                 mu    = c(5,10),
                 sigma = c(1,2),
-                phi   = c(0.5,0.2),
+                phi   = c(0.5, 0.2),
                 k     = 2,
                 P     = rbind(c(0.90, 0.10),
                               c(0.10, 0.90)))

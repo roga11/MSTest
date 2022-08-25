@@ -562,6 +562,26 @@ double MCpval(double test_stat, arma::vec null_vec, Rcpp::String type = "geq"){
 }
 
 // ==============================================================================
+//' @title Standard normal errors using box Muller 
+//' 
+//' @description This function generates uncorrelated standard normal processes using box Muller method.
+//' 
+//' @param 
+//' 
+//' @return A (\code{T x q}) matrix of standard normal distributed errors
+//' 
+//' @export
+// [[Rcpp::export]]
+arma::mat randSN(int Tsize, int q){
+  double pi = arma::datum::pi;
+  arma::mat U1(Tsize, q, arma::fill::randu);
+  arma::mat U2(Tsize, q, arma::fill::randu);
+  arma::mat eps = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
+  return(eps);
+}
+
+
+// ==============================================================================
 //' @title Simulate autoregressive process
 //' 
 //' @description This function simulates an autoregresive process.
@@ -572,6 +592,7 @@ double MCpval(double test_stat, arma::vec null_vec, Rcpp::String type = "geq"){
 //'   \item{\code{mu}: }{Mmean of process.}
 //'   \item{\code{sigma}: }{Standard deviation of process.}
 //'   \item{\code{phi}: }{Vector of autoregressive coefficients.}
+//'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 //' }
 //' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
 //' 
@@ -586,17 +607,19 @@ List simuAR(List mdl_h0, int burnin = 100){
   int Tsize = mdl_h0["n"];
   double mu = mdl_h0["mu"];
   double sigma = mdl_h0["sigma"];
-  double stdev = sqrt(sigma);
   int p = phi.n_elem; 
+  arma::mat eps;
+  if(mdl_h0.containsElementNamed("eps") ){
+    eps = as<arma::mat>(mdl_h0["eps"]);
+  } else {
+    eps = randSN(Tsize+burnin, 1); 
+  }
+  double stdev = sqrt(sigma);
   double intercept = mu*(1-sum(phi));
   // ----- Start simulation
   // pre-define variables
   arma::vec Y(Tsize+burnin, arma::fill::zeros);
-  // simulate errors using box-Muller method
-  double pi = arma::datum::pi;
-  arma::mat U1(Tsize+burnin, 1, arma::fill::randu);
-  arma::mat U2(Tsize+burnin, 1, arma::fill::randu);
-  arma::vec eps = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
+
   arma::vec eps_corr = eps*stdev;
   // simulate process
   Y.subvec(0, p-1) = mu + eps_corr.subvec(0, p-1);
@@ -627,6 +650,7 @@ List simuAR(List mdl_h0, int burnin = 100){
 //'   \item{\code{sigma}: }{A (\code{k x 1}) vector with standard deviation of process in each regime.}
 //'   \item{\code{phi}: }{Vector of autoregressive coefficients.}
 //'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+//'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 //' }
 //' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
 //' 
@@ -646,6 +670,12 @@ List simuMSAR(List mdl_h0, int burnin = 100){
   int Tsize = mdl_h0["n"];
   int k = mdl_h0["k"];
   int p = phi.n_elem; 
+  arma::mat eps;
+  if(mdl_h0.containsElementNamed("eps") ){
+    eps = as<arma::mat>(mdl_h0["eps"]);
+  } else {
+    eps = randSN(Tsize+burnin, 1); 
+  }
   // ----- Perform checks on DGP
   arma::vec check_Pcolsum = trans(arma::sum(P,0));
   if (max(abs(check_Pcolsum-1))>1e-8){
@@ -661,13 +691,9 @@ List simuMSAR(List mdl_h0, int burnin = 100){
   arma::vec repar(p,arma::fill::ones);
   // simulate errors using box-Muller method
   List epsLs(k);
-  double pi = arma::datum::pi;
   for (int xk = 0; xk<k; xk++){
     double stdev_k = stdev(xk);
-    arma::mat U1(Tsize+burnin, 1, arma::fill::randu);
-    arma::mat U2(Tsize+burnin, 1, arma::fill::randu);
-    arma::vec eps_k = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
-    arma::vec eps_corr = eps_k*stdev_k;
+    arma::vec eps_corr = eps*stdev_k;
     epsLs[xk] = eps_corr;
   }
   // initialize assuming series begins in state 1 (use burnin to reduce dependence on this assumption)
@@ -723,6 +749,8 @@ List simuMSAR(List mdl_h0, int burnin = 100){
 //'   \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
 //'   \item{\code{phi}: }{ A (\code{q x qp}) matrix of autoregressive coefficients.}
 //'   \item{\code{p}: }{Number of autoregressive lags.}
+//'   \item{\code{q}: }{Number of series.}
+//'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 //' }
 //' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
 //' 
@@ -738,36 +766,37 @@ List simuVAR(List mdl_h0, int burnin = 100){
   arma::mat phimat = mdl_h0["phi"];
   int Tsize = mdl_h0["n"];
   int p = mdl_h0["p"];
-  int N = mu.n_elem;
+  int q = mdl_h0["q"];
+  arma::mat eps;
+  if(mdl_h0.containsElementNamed("eps") ){
+    eps = as<arma::mat>(mdl_h0["eps"]);
+  } else {
+    eps = randSN(Tsize+burnin, q); 
+  }
   // companion matrix
-  arma::mat diagmat = arma::eye(N*(p-1),N*(p-1));
-  arma::mat diagzero(N*(p-1),N,arma::fill::zeros);
+  arma::mat diagmat = arma::eye(q*(p-1),q*(p-1));
+  arma::mat diagzero(q*(p-1),q,arma::fill::zeros);
   arma::mat Mn = join_rows(diagmat,diagzero);
   arma::mat F = join_cols(phimat,Mn);
   // constant vec
   arma::vec repmu(p,arma::fill::ones);
   arma::vec mu_tmp = vectorise(trans(repmu*trans(mu)));
-  arma::vec nu_tmp = (arma::eye(N*p,N*p) - F)*mu_tmp;
-  arma::vec nu = nu_tmp.subvec(0,N-1);
+  arma::vec nu_tmp = (arma::eye(q*p,q*p) - F)*mu_tmp;
+  arma::vec nu = nu_tmp.subvec(0,q-1);
   // ----- Simulate VAR process
-  // simulate errors using box-Muller method
-  double pi = arma::datum::pi;
-  arma::mat U1(Tsize+burnin, N, arma::fill::randu);
-  arma::mat U2(Tsize+burnin, N, arma::fill::randu);
-  arma::mat eps = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
-  // add correlations
+  // add standard devs & correlations
   arma::mat C = chol(cov_mat, "lower");
   arma::mat eps_corr = trans(C*trans(eps));
   // simulate process
-  arma::mat Y(Tsize+burnin, N, arma::fill::zeros);
+  arma::mat Y(Tsize+burnin, q, arma::fill::zeros);
   Y.rows(0,p-1) = repmu*trans(nu) + eps_corr.rows(0,p-1);
   for (int xt = p; xt<(Tsize+burnin); xt++){
     arma::mat Ytmp = flipud(Y.rows((xt-p),(xt-1)));
     Y.row(xt) = trans(nu) + trans(vectorise(trans(Ytmp)))*trans(phimat) + eps_corr.row(xt);
   }
   // ----- Output
-  arma::mat Y_out = Y.submat(burnin,0,Tsize+burnin-1,N-1);
-  arma::mat eps_corr_out = eps_corr.submat(burnin,0,Tsize+burnin-1,N-1);
+  arma::mat Y_out = Y.submat(burnin,0,Tsize+burnin-1,q-1);
+  arma::mat eps_corr_out = eps_corr.submat(burnin,0,Tsize+burnin-1,q-1);
   List simuVAR_out = clone(mdl_h0);
   simuVAR_out["y"] = Y_out;
   simuVAR_out["resid"] = eps_corr_out;
@@ -789,7 +818,9 @@ List simuVAR(List mdl_h0, int burnin = 100){
 //'   \item{\code{sigma}: }{List with \code{k} (\code{q x q}) covariance matrices.}
 //'   \item{\code{phi}: }{A (\code{q x qp}) matrix of autoregressive coefficients.}
 //'   \item{\code{p}: }{Number of autoregressive lags.}
+//'   \item{\code{q}: }{Number of series.}
 //'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+//'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 //' }
 //' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
 //' 
@@ -808,10 +839,16 @@ List simuMSVAR(List mdl_h0, int burnin = 100){
   int Tsize = mdl_h0["n"];
   int p = mdl_h0["p"];
   int k = mdl_h0["k"];
-  int N = mu.n_cols;
+  int q = mdl_h0["q"];
+  arma::mat eps;
+  if(mdl_h0.containsElementNamed("eps") ){
+    eps = as<arma::mat>(mdl_h0["eps"]);
+  } else {
+    eps = randSN(Tsize+burnin, q); 
+  }
   // companion form matrix
-  arma::mat diagmat = arma::eye(N*(p-1), N*(p-1));
-  arma::mat diagzero(N*(p-1),N,arma::fill::zeros);
+  arma::mat diagmat = arma::eye(q*(p-1), q*(p-1));
+  arma::mat diagzero(q*(p-1), q, arma::fill::zeros);
   arma::mat Mn = join_rows(diagmat,diagzero);
   arma::mat F = join_cols(phimat,Mn);
   // ----- Perform checks on DGP
@@ -821,23 +858,19 @@ List simuMSVAR(List mdl_h0, int burnin = 100){
   }
   // ----- Start Simulation
   // pre-define variables
-  arma::mat mu_t(Tsize+burnin, N, arma::fill::zeros);
+  arma::mat mu_t(Tsize+burnin, q, arma::fill::zeros);
   List sigma_t(Tsize+burnin);
-  arma::mat Y(Tsize+burnin, N, arma::fill::zeros);
-  arma::mat resid(Tsize+burnin, N, arma::fill::zeros);
+  arma::mat Y(Tsize+burnin, q, arma::fill::zeros);
+  arma::mat resid(Tsize+burnin, q, arma::fill::zeros);
   arma::vec state_series(Tsize+burnin,arma::fill::zeros);
   arma::vec repar(p,arma::fill::ones);
   // simulate errors using box-Muller method
   List epsLs(k);
-  double pi = arma::datum::pi;
   for (int xk = 0; xk<k; xk++){
-    arma::mat U1(Tsize+burnin, N, arma::fill::randu);
-    arma::mat U2(Tsize+burnin, N, arma::fill::randu);
-    arma::mat eps_k = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
     // add correlations
     arma::mat cov_mat_k = cov_matLs[xk];
     arma::mat C = chol(cov_mat_k, "lower");
-    arma::mat eps_corr = trans(C*trans(eps_k));
+    arma::mat eps_corr = trans(C*trans(eps));
     epsLs[xk] = eps_corr;
   }
   // initialize assuming series begins in state 1 (use burnin to reduce dependence on this assumption)
@@ -866,8 +899,8 @@ List simuMSVAR(List mdl_h0, int burnin = 100){
     sigma_t[xt] = cov_matLs[state];
   }
   // ----- Output
-  arma::mat Y_out = Y.submat(burnin,0,Tsize+burnin-1,N-1);
-  arma::mat resid_out = resid.submat(burnin,0,Tsize+burnin-1,N-1);
+  arma::mat Y_out = Y.submat(burnin,0,Tsize+burnin-1,q-1);
+  arma::mat resid_out = resid.submat(burnin,0,Tsize+burnin-1,q-1);
   arma::vec state_series_out = state_series.subvec(burnin,Tsize+burnin-1);
   arma::mat mu_t_out = mu_t.rows(burnin,Tsize+burnin-1);
   List sigma_t_out(Tsize);
@@ -896,6 +929,8 @@ List simuMSVAR(List mdl_h0, int burnin = 100){
 //'   \item{\code{n}: }{Length of series.}
 //'   \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
 //'   \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
+//'   \item{\code{q}: }{Number of series.}
+//'   \item{\code{eps}: }{An optional (\code{T x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 //' }
 //' 
 //' @return List with simulated series and its DGP parameters.
@@ -907,31 +942,23 @@ List simuNorm(List mdl_h0){
   // ----- DGP parameter
   arma::vec mu = mdl_h0["mu"];
   int Tsize = mdl_h0["n"];
-  int N = mu.n_elem;
+  int q = mdl_h0["q"];
+  arma::mat eps;
+  if(mdl_h0.containsElementNamed("eps") ){
+    eps = as<arma::mat>(mdl_h0["eps"]);
+  } else {
+    eps = randSN(Tsize, q); 
+  }
   // ----- Start simulation
   // pre-define variables
   arma::mat Y; 
-  arma::mat eps_corr;
   arma::vec repT(Tsize, arma::fill::ones);
-  // simulate errors using box-Muller method
-  double pi = arma::datum::pi;
-  arma::mat U1(Tsize, N, arma::fill::randu);
-  arma::mat U2(Tsize, N, arma::fill::randu);
-  arma::mat eps = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
-  if (N>1){
-    arma::mat cov_mat = mdl_h0["sigma"];
-    // add correlations
-    arma::mat C = chol(cov_mat, "lower");
-    eps_corr = trans(C*trans(eps));
-    // simulate process
-    Y  =  repT*trans(mu) + eps_corr;  
-  }else if (N==1){
-    double stdev = mdl_h0["sigma"];
-    // add variance
-    eps_corr = eps*stdev;
-    // simulate process
-    Y = repT*mu + eps_corr;
-  }
+  // add standard dev & correlations
+  arma::mat cov_mat = mdl_h0["sigma"];
+  arma::mat C = chol(cov_mat, "lower");
+  arma::mat eps_corr = trans(C*trans(eps));
+  // simulate process
+  Y  =  repT*trans(mu) + eps_corr;  
   // ----- Output
   List simuNorm_out = clone(mdl_h0);
   simuNorm_out["y"] = Y;
@@ -951,7 +978,9 @@ List simuNorm(List mdl_h0){
 //'   \item{\code{k}: }{Number of regimes.}
 //'   \item{\code{mu}: }{A (\code{k x q}) vector of means.}
 //'   \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
+//'   \item{\code{q}: }{Number of series.}
 //'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+//'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 //' }
 //' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
 //' 
@@ -968,7 +997,13 @@ List simuHMM(List mdl_h0, int burnin = 100){
   arma::vec  pinf = limP(P);
   int Tsize = mdl_h0["n"];
   int k = mdl_h0["k"];
-  int N = mu.n_cols;
+  int q = mdl_h0["q"];
+  arma::mat eps;
+  if(mdl_h0.containsElementNamed("eps") ){
+    eps = as<arma::mat>(mdl_h0["eps"]);
+  } else {
+    eps = randSN(Tsize+burnin, q); 
+  }
   // ----- Perform checks on DGP
   arma::vec check_Pcolsum = trans(arma::sum(P,0));
   if (max(abs(check_Pcolsum-1))>1e-8){
@@ -976,22 +1011,18 @@ List simuHMM(List mdl_h0, int burnin = 100){
   }
   // ----- Start Simulation
   // pre-define variables
-  arma::mat mu_t(Tsize+burnin, N, arma::fill::zeros);
+  arma::mat mu_t(Tsize+burnin, q, arma::fill::zeros);
   List sigma_t(Tsize+burnin);
-  arma::mat Y(Tsize+burnin, N, arma::fill::zeros);
-  arma::mat resid(Tsize+burnin, N, arma::fill::zeros);
+  arma::mat Y(Tsize+burnin, q, arma::fill::zeros);
+  arma::mat resid(Tsize+burnin, q, arma::fill::zeros);
   arma::vec state_series(Tsize+burnin, arma::fill::zeros);
   // simulate errors using box-Muller method
   List epsLs(k);
-  double pi = arma::datum::pi;
   for (int xk = 0; xk<k; xk++){
-    arma::mat U1(Tsize+burnin, N, arma::fill::randu);
-    arma::mat U2(Tsize+burnin, N, arma::fill::randu);
-    arma::mat eps_k = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
     // add correlations
     arma::mat cov_mat_k = cov_matLs[xk];
     arma::mat C = chol(cov_mat_k, "lower");
-    arma::mat eps_corr = trans(C*trans(eps_k));
+    arma::mat eps_corr = trans(C*trans(eps));
     epsLs[xk] = eps_corr;
   }
   // initialize assuming series begins in state 1 (use burnin to reduce dependence on this assumption)
@@ -1011,8 +1042,8 @@ List simuHMM(List mdl_h0, int burnin = 100){
     mu_t.row(xt) = mu.row(state);
     sigma_t[xt] = cov_matLs[state];
   }
-  arma::mat Y_out = Y.submat(burnin,0,Tsize+burnin-1,N-1);
-  arma::mat resid_out = resid.submat(burnin,0,Tsize+burnin-1,N-1);
+  arma::mat Y_out = Y.submat(burnin,0,Tsize+burnin-1,q-1);
+  arma::mat resid_out = resid.submat(burnin,0,Tsize+burnin-1,q-1);
   arma::vec state_series_out = state_series.subvec(burnin,Tsize+burnin-1);
   arma::mat mu_t_out = mu_t.rows(burnin,Tsize+burnin-1);
   List sigma_t_out(Tsize);

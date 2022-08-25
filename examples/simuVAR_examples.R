@@ -2,7 +2,8 @@ set.seed(1234)
 # Define DGP of VAR process
 mdl_3var2 <- list(n     = 1000, 
                   p     = 2,
-                  mu    = c(5,-2,1),
+                  q     = 3,
+                  mu    = c(5, -2, 1),
                   sigma = rbind(c(5.0, 1.5, 2.5),
                                 c(1.5, 1.0, 1.5),
                                 c(2.5, 1.5, 4.2)),

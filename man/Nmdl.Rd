@@ -59,4 +59,5 @@ y_norm_mdl <- Nmdl(y_norm_simu$y)
 
 y_norm_mdl
 
+
 }

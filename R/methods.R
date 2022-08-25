@@ -642,7 +642,7 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 #' 
 #' @export
 print.Nmdl <- function(mdl, digits = getOption("digits")){
-  cat("\nNormally distributed model\n")
+  cat("\nNormally Distributed Model\n")
   frame_tmp <- data.frame(coef = mdl$theta)
   if (mdl$control$getSE==TRUE){
     frame_tmp["s.e."] <- mdl$theta_se
@@ -662,7 +662,7 @@ print.Nmdl <- function(mdl, digits = getOption("digits")){
 #' 
 #' @export
 print.ARmdl <- function(mdl, digits = getOption("digits")){
-  cat("\nAutoregressive model\n")
+  cat("\nAutoregressive Model\n")
   frame_tmp <- data.frame(coef = mdl$theta)
   if (mdl$control$getSE==TRUE){
     frame_tmp["s.e."] <- mdl$theta_se
@@ -681,7 +681,7 @@ print.ARmdl <- function(mdl, digits = getOption("digits")){
 #' @inheritParams base::print
 #' @export
 print.VARmdl <- function(mdl, digits = getOption("digits")){
-  cat("\nVector autoregressive model\n")
+  cat("\nVector Autoregressive Model\n")
   frame_tmp <- data.frame(coef = mdl$theta)
   if (mdl$control$getSE==TRUE){
     frame_tmp["s.e."] <- mdl$theta_se
@@ -721,7 +721,7 @@ print.HMmdl <- function(mdl, digits = getOption("digits")){
 #' 
 #' @export
 print.MSARmdl <- function(mdl, digits = getOption("digits")){
-  cat("\nMarkov-switching autoregressive model\n")
+  cat("\nMarkov Switching Autoregressive Model\n")
   frame_tmp <- data.frame(coef = mdl$theta)
   if (mdl$control$getSE==TRUE){
     frame_tmp["s.e."] <- mdl$theta_se
@@ -741,7 +741,7 @@ print.MSARmdl <- function(mdl, digits = getOption("digits")){
 #' 
 #' @export
 print.MSVARmdl <- function(mdl, digits = getOption("digits")){
-  cat("\nMarkov-switching vector autoregressive model\n")
+  cat("\nMarkov Switching Vector Autoregressive Model\n")
   frame_tmp <- data.frame(coef = mdl$theta)
   if (mdl$control$getSE==TRUE){
     frame_tmp["s.e."] <- mdl$theta_se
