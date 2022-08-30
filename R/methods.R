@@ -361,7 +361,7 @@ thetaSE <- function(mdl){
   info_mat <- solve(-Hess)
   nearPD_used <- FALSE
   if ((all(is.na(Hess)==FALSE)) & (any(diag(info_mat)<0))){
-    info_mat <- nearPD(info_mat)
+    info_mat <- lmf::nearPD(info_mat)
     nearPD_used <- TRUE
   }
   mdl$Hess <- Hess
@@ -869,6 +869,44 @@ print.LMCLRTest <- function(mdl, digits = getOption("digits")){
   out <- data.frame(t(as.matrix(c(mdl$LRT_0, mdl$LRN_cv, mdl$pval))))
   colnames(out) <- c(names(mdl$LRT_0), names(mdl$LRN_cv), "p-value")
   rownames(out) <- "LMC_LRT"
+  print(format(signif(out, max(1L, digits - 2L))))
+  invisible(mdl)
+}
+
+
+
+#' @title Print summary of a \code{MMCLRTest} object
+#'
+#' @inheritParams base::print
+#' 
+#' @export
+print.MMCLRTest <- function(mdl, digits = getOption("digits")){
+  cat("\nRestricted Model\n") 
+  frame_h0_tmp <- data.frame(coef = mdl$mdl_h0$theta)
+  if (mdl$mdl_h0$control$getSE==TRUE){
+    frame_h0_tmp["s.e."] <- mdl$mdl_h0$theta_se
+  }
+  rownames(frame_h0_tmp) <- names(mdl$mdl_h0$theta)
+  print(format(signif(frame_h0_tmp, max(1L, digits - 2L))))
+  cat(paste("\nlog-likelihood = "),mdl$mdl_h0$logLike)
+  cat(paste("\nAIC = "),mdl$mdl_h0$AIC)
+  cat(paste("\nBIC = "),mdl$mdl_h0$BIC)
+  cat("\n")
+  cat("\nUnrestricted Model\n") 
+  frame_h1_tmp <- data.frame(coef = mdl$mdl_h1$theta)
+  if (mdl$mdl_h1$control$getSE==TRUE){
+    frame_h1_tmp["s.e."] <- mdl$mdl_h1$theta_se
+  }
+  rownames(frame_h1_tmp) <- names(mdl$mdl_h1$theta)
+  print(format(signif(frame_h1_tmp, max(1L, digits - 2L))))
+  cat(paste("\nlog-likelihood = "),mdl$mdl_h1$logLike)
+  cat(paste("\nAIC = "),mdl$mdl_h1$AIC)
+  cat(paste("\nBIC = "),mdl$mdl_h1$BIC)
+  cat("\n")
+  cat("\nRodriguez Rondon & Dufour (2022) Maximized Monte Carlo Likelihood Ratio Test\n")
+  out <- data.frame(t(as.matrix(c(mdl$LRT_0, mdl$pval))))
+  colnames(out) <- c(names(mdl$LRT_0), "p-value")
+  rownames(out) <- "MMC_LRT"
   print(format(signif(out, max(1L, digits - 2L))))
   invisible(mdl)
 }

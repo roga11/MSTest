@@ -13,6 +13,8 @@ using namespace Rcpp;
 //' 
 //' @return A (\code{n x n}) correlation matrix.
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 arma::mat cov2corr(arma::mat cov_mat){
@@ -28,6 +30,8 @@ arma::mat cov2corr(arma::mat cov_mat){
 //' @param \code{mat} A (\code{n x n}) covariance matrix.
 //' 
 //' @return A \code{(n+1)*n/2} column vector.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -55,6 +59,8 @@ arma::vec covar_vech(arma::mat mat){
 //' 
 //' @return A (\code{n x n}) covariance matrix.
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 arma::mat covar_unvech(arma::vec sig, int n){
@@ -80,6 +86,8 @@ arma::mat covar_unvech(arma::vec sig, int n){
 //' 
 //' @return Transition matrix with randomly generated entries.
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 arma::mat randP(int k){
@@ -99,6 +107,8 @@ arma::mat randP(int k){
 //' @param \code{P} Matrix with transition probabilities.
 //' 
 //' @return A (\code{k x 1}) vector of limiting probabilities.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -130,6 +140,8 @@ arma::vec limP(arma::mat P){
 //' 
 //' @return List with vector \code{y} (vector of lagged \code{Y}) and matrix \code{X} of lagged observations.
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 List ts_lagged(arma::mat Y, int p){
@@ -159,6 +171,8 @@ List ts_lagged(arma::mat Y, int p){
 //' @param \code{msvar}Boolean indicating if the variance switches with regime. 
 //' 
 //' @return List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -213,6 +227,8 @@ List paramList_MSARmdl(arma::vec theta, int p, int k, bool msmu, bool msvar){
 //' @param \code{msvar} Boolean indicating if the variance switches with regime. 
 //' 
 //' @return List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -288,6 +304,8 @@ List paramList_MSVARmdl(arma::vec theta, int q, int p, int k, bool msmu, bool ms
 //' @param \code{k} number of regimes. Must be greater than or equal to \code{2}. 
 //' 
 //' @return A (\code{TxM}) matrix of residuals in each regime \code{M} where \code{M=k^(ar+1)}.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -371,6 +389,8 @@ List calcResid_MSVARmdl(List mdl, List mu, int k){
 //' 
 //' @return Vector of initial parameter values.
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 arma::vec initVals_HMmdl(List mdl, int k){
@@ -432,6 +452,8 @@ arma::vec initVals_HMmdl(List mdl, int k){
 //' 
 //' @return Vector of initial parameter values.
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 arma::vec initVals_MSARmdl(List mdl, int k){
@@ -478,6 +500,8 @@ arma::vec initVals_MSARmdl(List mdl, int k){
 //' @param \code{k} Number of regimes.
 //' 
 //' @return Vector of initial parameter values.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -566,16 +590,19 @@ double MCpval(double test_stat, arma::vec null_vec, Rcpp::String type = "geq"){
 //' 
 //' @description This function generates uncorrelated standard normal processes using box Muller method.
 //' 
-//' @param 
+//' @param \code{T} Integer determining the length of the process to be simulated
+//' @param \code{q}  Integer determining the number of processes to be simulated
 //' 
 //' @return A (\code{T x q}) matrix of standard normal distributed errors
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
-arma::mat randSN(int Tsize, int q){
+arma::mat randSN(int T, int q){
   double pi = arma::datum::pi;
-  arma::mat U1(Tsize, q, arma::fill::randu);
-  arma::mat U2(Tsize, q, arma::fill::randu);
+  arma::mat U1(T, q, arma::fill::randu);
+  arma::mat U2(T, q, arma::fill::randu);
   arma::mat eps = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
   return(eps);
 }
@@ -598,7 +625,7 @@ arma::mat randSN(int Tsize, int q){
 //' 
 //' @return List with simulated autoregressive series and its DGP parameters.
 //' 
-//' @example /examples/simuAR_examples.R
+//' @example /inst/examples/simuAR_examples.R
 //' @export
 // [[Rcpp::export]]
 List simuAR(List mdl_h0, int burnin = 100){
@@ -656,7 +683,7 @@ List simuAR(List mdl_h0, int burnin = 100){
 //' 
 //' @return List with simulated Markov-switching autoregressive process and its DGP properties.
 //' 
-//' @example /examples/simuMSAR_examples.R
+//' @example /inst/examples/simuMSAR_examples.R
 //' @export
 // [[Rcpp::export]]
 List simuMSAR(List mdl_h0, int burnin = 100){
@@ -756,7 +783,7 @@ List simuMSAR(List mdl_h0, int burnin = 100){
 //' 
 //' @return List with simulated vector autoregressive series and its DGP parameters.
 //' 
-//' @example /examples/simuVAR_examples.R
+//' @example /inst/examples/simuVAR_examples.R
 //' @export
 // [[Rcpp::export]]
 List simuVAR(List mdl_h0, int burnin = 100){
@@ -826,7 +853,7 @@ List simuVAR(List mdl_h0, int burnin = 100){
 //' 
 //' @return List with simulated vector autoregressive series and its DGP parameters.
 //' 
-//' @example /examples/simuMSVAR_examples.R
+//' @example /inst/examples/simuMSVAR_examples.R
 //' @export
 // [[Rcpp::export]]
 List simuMSVAR(List mdl_h0, int burnin = 100){
@@ -930,15 +957,16 @@ List simuMSVAR(List mdl_h0, int burnin = 100){
 //'   \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
 //'   \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
 //'   \item{\code{q}: }{Number of series.}
-//'   \item{\code{eps}: }{An optional (\code{T x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+//'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 //' }
+//' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
 //' 
 //' @return List with simulated series and its DGP parameters.
 //' 
-//' @example /examples/simuNorm_examples.R
+//' @example /inst/examples/simuNorm_examples.R
 //' @export
 // [[Rcpp::export]]
-List simuNorm(List mdl_h0){
+List simuNorm(List mdl_h0, int burnin = 0){
   // ----- DGP parameter
   arma::vec mu = mdl_h0["mu"];
   int Tsize = mdl_h0["n"];
@@ -947,22 +975,23 @@ List simuNorm(List mdl_h0){
   if(mdl_h0.containsElementNamed("eps") ){
     eps = as<arma::mat>(mdl_h0["eps"]);
   } else {
-    eps = randSN(Tsize, q); 
+    eps = randSN(Tsize+burnin, q); 
   }
   // ----- Start simulation
   // pre-define variables
-  arma::mat Y; 
-  arma::vec repT(Tsize, arma::fill::ones);
+  arma::vec repT(Tsize+burnin, arma::fill::ones);
   // add standard dev & correlations
   arma::mat cov_mat = mdl_h0["sigma"];
   arma::mat C = chol(cov_mat, "lower");
   arma::mat eps_corr = trans(C*trans(eps));
   // simulate process
-  Y  =  repT*trans(mu) + eps_corr;  
+  arma::mat Y  =  repT*trans(mu) + eps_corr;  
+  arma::mat Y_out = Y.submat(burnin,0,Tsize+burnin-1,q-1);
+  arma::mat resid_out = eps_corr.submat(burnin,0,Tsize+burnin-1,q-1);
   // ----- Output
   List simuNorm_out = clone(mdl_h0);
-  simuNorm_out["y"] = Y;
-  simuNorm_out["resid"] = eps_corr;
+  simuNorm_out["y"] = Y_out;
+  simuNorm_out["resid"] = resid_out;
   return(simuNorm_out);
 }
 
@@ -986,7 +1015,7 @@ List simuNorm(List mdl_h0){
 //' 
 //' @return List with simulated series and its DGP parameters.
 //' 
-//' @example /examples/simuHMM_examples.R
+//' @example /inst/examples/simuHMM_examples.R
 //' @export
 // [[Rcpp::export]]
 List simuHMM(List mdl_h0, int burnin = 100){
@@ -1106,6 +1135,8 @@ double logLike_Nmdl(arma::vec theta, List mdl){
 //' 
 //' @return Log-likelihood value.
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 double logLike_ARmdl(arma::vec theta, List mdl){
@@ -1132,6 +1163,8 @@ double logLike_ARmdl(arma::vec theta, List mdl){
 //' @param \code{mdl} List with model attributes.
 //' 
 //' @return Log-likelihood value.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -1179,6 +1212,8 @@ double logLike_VARmdl(arma::vec theta, List mdl){
 //' @param \code{k} Integer determining the number of regimes.
 //'  
 //' @return Log-likelihood value.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -1265,6 +1300,8 @@ double logLike_HMmdl(arma::vec theta, List mdl, int k){
 //' 
 //' @return Negative log-likelihood value.
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 double logLike_HMmdl_min(arma::vec theta, List mdl, int k){
@@ -1282,6 +1319,8 @@ double logLike_HMmdl_min(arma::vec theta, List mdl, int k){
 //' @param \code{k} Integer determining the number of regimes.
 //' 
 //' @return Log-likelihood value.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -1362,6 +1401,8 @@ double logLike_MSARmdl(arma::vec theta, List mdl, int k){
 //' 
 //' @return Negative log-likelihood value.
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 double logLike_MSARmdl_min(arma::vec theta, List mdl, int k){
@@ -1380,6 +1421,8 @@ double logLike_MSARmdl_min(arma::vec theta, List mdl, int k){
 //' @param \code{k} Integer determining the number of regimes.
 //' 
 //' @return Log-likelihood value.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -1502,6 +1545,8 @@ double logLike_MSVARmdl(arma::vec theta, List mdl, int k){
 //' 
 //' @return Negative log-likelihood value.
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 double logLike_MSVARmdl_min(arma::vec theta, List mdl, int k){
@@ -1520,6 +1565,8 @@ double logLike_MSVARmdl_min(arma::vec theta, List mdl, int k){
 //' @param \code{k} Integer determining the number of regimes.
 //'  
 //' @return List which includes log-likelihood value and smoothed probabilities of each regime.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -1638,6 +1685,8 @@ List ExpectationM_HMmdl(arma::vec theta, List mdl, int k){
 //'  
 //' @return List which includes log-likelihood and smoothed probabilities of each regime.
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 List ExpectationM_MSARmdl(arma::vec theta, List mdl, int k){
@@ -1746,6 +1795,8 @@ List ExpectationM_MSARmdl(arma::vec theta, List mdl, int k){
 //' @param \code{k} Integer determining the number of regimes.
 //'  
 //' @return List which includes log-likelihood and smoothed probabilities of each regime.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -1863,6 +1914,8 @@ List ExpectationM_MSVARmdl(arma::vec theta, List mdl, int k){
 //' @param \code{k} Integer determining the number of regimes.
 //'  
 //' @return List with new maximized parameters.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -1985,6 +2038,8 @@ List EMaximization_HMmdl(arma::vec theta, List mdl, List MSloglik_output, int k)
 //' @param \code{k} Integer determining the number of regimes.
 //' 
 //' @return List with new maximized parameters.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -2122,6 +2177,8 @@ List EMaximization_MSARmdl(arma::vec theta, List mdl, List MSloglik_output, int 
 //' @param \code{k} Integer determining the number of regimes.
 //'  
 //' @return List with new maximized parameters.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -2305,6 +2362,9 @@ List EMaximization_MSVARmdl(arma::vec theta, List mdl, List MSloglik_output, int
 //' @param \code{k} Integer determining the number of regimes.
 //' 
 //' @return List with attributes from new iteration.
+//' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 List EMiter_HMmdl(List mdl, List EMest_output, int k){
@@ -2350,6 +2410,8 @@ List EMiter_HMmdl(List mdl, List EMest_output, int k){
 //' @param \code{k} Integer determining the number of regimes.
 //' 
 //' @return List with attributes from new iteration.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -2398,6 +2460,8 @@ List EMiter_MSARmdl(List mdl, List EMest_output, int k){
 //' @param \code{k} Integer determining the number of regimes.
 //' 
 //' @return List with attributes from new iteration.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -2450,6 +2514,8 @@ List EMiter_MSVARmdl(List mdl, List EMest_output, int k){
 //' 
 //' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38.
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 List HMmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
@@ -2487,6 +2553,8 @@ List HMmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
 //' @param \code{optim_options} List with optimization options.
 //' 
 //' @return List with model results.
+//' 
+//' @keywords internal
 //' 
 //' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38.
 //' @references Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” \emph{Journal of econometrics}, 45 (1-2): 39–70.
@@ -2527,6 +2595,8 @@ List MSARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
 //' @param \code{optim_options} List with optimization options.
 //' 
 //' @return List with model results.
+//' 
+//' @keywords internal
 //' 
 //' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38.
 //' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.”. Springer.

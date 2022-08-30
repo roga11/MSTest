@@ -47,7 +47,8 @@ This function estimates a univariate or multivariate normally distributed model.
 set.seed(1234)
 # Define DGP 
 mdl_norm <- list(n     = 1000, 
-                 mu    = c(5,-2),
+                 q     = 2,
+                 mu    = c(5, -2),
                  sigma = rbind(c(5.0, 1.5),
                                c(1.5, 1.0)))
 

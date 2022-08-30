@@ -24,3 +24,4 @@ Vector of initial parameter values.
 \description{
 This function generates a random parameter vector to be used as initial values for a Markov-switching autoregressive model.
 }
+\keyword{internal}

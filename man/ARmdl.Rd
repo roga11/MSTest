@@ -32,8 +32,8 @@ List of class \code{ARmdl} (\code{S3} object) with model attributes including:
   \item{\code{sigma}: }{estimated variance of the process.}
   \item{\code{theta}: }{vector containing: \code{mu}, \code{sigma}, and \code{phi}.}
   \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
-  \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
-  \item{\code{theta_var_ind}: }{vector indicating location of variances with \code{1} and \code{0} otherwise. This is the same as \code{theta_sig_ind} in \code{ARmdl}.}
+  \item{\code{theta_sig_ind}: }{vector indicating location of variance with \code{1} and \code{0} otherwise.}
+  \item{\code{theta_var_ind}: }{vector indicating location of variance with \code{1} and \code{0} otherwise. This is the same as \code{theta_sig_ind} in \code{ARmdl}.}
   \item{\code{theta_phi_ind}: }{vector indicating location of autoregressive coefficients with \code{1} and \code{0} otherwise.}
   \item{\code{stationary}: }{Boolean indicating if process is stationary if \code{TRUE} or non-stationary if \code{FALSE}.}
   \item{\code{n}: }{number of observations after lag transformation (i.e., \code{n = T-p}).}

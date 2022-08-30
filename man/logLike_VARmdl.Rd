@@ -17,3 +17,4 @@ Log-likelihood value.
 \description{
 This function computes the log-likelihood for a vector autoregressive model.
 }
+\keyword{internal}

@@ -1,11 +1,6 @@
 
 #' @title Monte Carlo Likelihood Ratio Test sample disttribution (parallel version)
 #' 
-#' @description 
-#' 
-#' @param 
-#'
-#' @return 
 #' 
 #' @keywords internal
 #'
@@ -31,10 +26,6 @@ LR_samp_dist_par <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_contr
 
 #' @title Estimate model for likelihood ratio test
 #' 
-#' @description 
-#' @param 
-#'
-#' @return 
 #' 
 #' @keywords internal
 #' 
@@ -63,7 +54,7 @@ estimMdl <- function(Y, p, q, k, control = list()){
   }else if ((k==1) & (q>1) & (p>0)){
     # Vector autoregressive model
     control$const <- TRUE # forced to be TRUE for testing
-    mdl <- VARmdl(Y, k, control)
+    mdl <- VARmdl(Y, p, control)
     mdl$converged = TRUE
   }else if ((k>1) & (q>1) & (p>0)){
     # Vector autoregressive Markov switching model
@@ -76,21 +67,44 @@ estimMdl <- function(Y, p, q, k, control = list()){
 
 #' @title Monte Carlo Likelihood Ratio Test
 #' 
-#' @description 
-#' @param 
+#' @description This function performs the Local Monte Carlo likelihood ratio 
+#' test (LMC-LRT) proposed in Rodriguez Rondon & Dufour (2022).
+#' 
+#' @param Y  Series to be tested. Must be a (\code{T x q}) matrix.
+#' @param p  Number of autoregressive lags. Must be greater than or equal to 0. 
+#' @param k0 Number of regimes under null hypothesis. Must be greater than or equal to 1.
+#' @param k1 Number of regimes under alternative hypothesis. Must be greater than \code{k0}.
+#' @param control List with test procedure options including: 
+#' \itemize{
+#'   \item{\code{N}: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
+#'   \item{\code{burnin}: }{Number of simulated observations to remove from beginning. Default is \code{100}.}
+#'   \item{\code{converge_check}: }{String of NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.}
+#'   \item{\code{workers}: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. See \code{\link{doParallel}}. Default is \code{0}.}
+#'   \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+#'   \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+#' }
 #'
-#' @return 
+#' @return List of class \code{LMCLRTest} (\code{S3} object) with attributes including: 
+#' \itemize{
+#'   \item{\code{mdl_h0}: }{List with restricted model attributes. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.}
+#'   \item{\code{mdl_h0}: }{List with unrestricted model attributes. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.}
+#'   \item{\code{LRT_0}: }{Value of test statistic from observed data.}
+#'   \item{\code{LRN}: }{A (\code{N x 1}) vector of test statistics from data simulated under the null hypothesis.}
+#'   \item{\code{pval}: }{P-value of Local Monte Carlo Likelihood Ratio Test.}
+#'   \item{\code{LRN_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values (from vector \code{LRN}).}
+#'   \item{\code{control}: }{List with test procedure options used.}
+#' }
 #'
-#' @example /examples/DLMCTest_examples.R
-#'
+#' @example /inst/examples/LMCLRTest_examples.R
 #' @export
-LMCLRTest <- function(Y, p, k0, k1, control = list(), mdl_h0_control = list(), mdl_h1_control = list()){
+LMCLRTest <- function(Y, p, k0, k1, control = list()){
   # ----- Set control values
   con <- list(N = 99,
               burnin = 100,
-              converge_check = "both",
-              dist_converge_iter = 1,
-              workers = 0)
+              converge_check = NULL,
+              workers = 0,
+              mdl_h0_control = list(),
+              mdl_h1_control = list())
   # ----- Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
@@ -104,10 +118,10 @@ LMCLRTest <- function(Y, p, k0, k1, control = list(), mdl_h0_control = list(), m
     stop("Observations Y must be a (T x q) matrix.") 
   }
   # ----- Estimate models using observed data
-  mdl_h0 <- estimMdl(Y, p, q, k0, mdl_h0_control)
-  mdl_h1 <- estimMdl(Y, p, q, k1, mdl_h1_control)
-  mdl_h0_control <- mdl_h0$control
-  mdl_h1_control <- mdl_h1$control
+  mdl_h0 <- estimMdl(Y, p, q, k0, con$mdl_h0_control)
+  mdl_h1 <- estimMdl(Y, p, q, k1, con$mdl_h1_control)
+  con$mdl_h0_control <- mdl_h0$control
+  con$mdl_h1_control <- mdl_h1$control
   # ----- Optional model convergence checks
   if (is.null(con$converge_check)==FALSE){
     if ((con$converge_check=="null") & (mdl_h0$converged==FALSE)){
@@ -136,11 +150,10 @@ LMCLRTest <- function(Y, p, k0, k1, control = list(), mdl_h0_control = list(), m
   names(LRT_0) <- c("LRT_0")
   # ----- Simulate sample null distribution
   if (con$workers>0){
-    LRN <- LR_samp_dist_par(mdl_h0, k1, con$N, con$burnin, mdl_h0_control, mdl_h1_control, con$workers)
+    LRN <- LR_samp_dist_par(mdl_h0, k1, con$N, con$burnin, con$mdl_h0_control, con$mdl_h1_control, con$workers)
   }else{
-    LRN <- LR_samp_dist(mdl_h0, k1, con$N, con$burnin, mdl_h0_control, mdl_h1_control) 
+    LRN <- LR_samp_dist(mdl_h0, k1, con$N, con$burnin, con$mdl_h0_control, con$mdl_h1_control) 
   }
-  
   # ----- get critical values
   LRN     <- as.matrix(sort(LRN))
   LRN_cv  <- LRN[round(c(0.90,0.95,0.99)*nrow(LRN)),]
@@ -149,66 +162,14 @@ LMCLRTest <- function(Y, p, k0, k1, control = list(), mdl_h0_control = list(), m
   pval <- MCpval(LRT_0, LRN, "geq")
   # ----- Organize output
   MCLRTest_output <- list(mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, LRT_0 = LRT_0, LRN = LRN,
-                          pval = pval, LRN_cv = LRN_cv, control = con, 
-                          mdl_h0_control = mdl_h0_control, mdl_h1_control = mdl_h1_control)
+                          pval = pval, LRN_cv = LRN_cv, control = con)
   class(MCLRTest_output) <- "LMCLRTest"
   return(MCLRTest_output)
 }
 
 
-
 #' @title MMC nuisance parameter bounds for univariate models 
 #' 
-#' @description 
-#' 
-#' @param 
-#'
-#' @return 
-#' 
-#' @keywords internal
-#' 
-#' @export
-MMC_bounds_univariate <- function(theta_0, mdl_h0, mdl_h1, con, msmu, msvar){
-  k0 <- mdl_h0$k
-  k1 <- mdl_h1$k
-  # ----- Define lower & upper bounds for search
-  theta_low = theta_0 - con$eps
-  theta_upp = theta_0 + con$eps
-  # create ball around union of eps and 2*standard error (if set to true and SE are finite)
-  if ((con$CI_union==TRUE) & all(is.finite(mdl_h0$theta_stderr)) & all(is.finite(mdl_h1$theta_stderr))){
-    theta_low <- apply(cbind(as.matrix(theta_0 - 2*c(mdl_h0$theta_stderr,mdl_h1$theta_stderr)),as.matrix(theta_low)), 1, FUN = min)
-    theta_upp <- apply(cbind(as.matrix(theta_0 + 2*c(mdl_h0$theta_stderr,mdl_h1$theta_stderr)),as.matrix(theta_upp)), 1, FUN = max)
-  }
-  # check that bounds respect admissible regions
-  sigma_h0_ind <- rep(FALSE, length(mdl_h0$theta))
-  P_h0_ind <- rep(FALSE, length(mdl_h0$theta))
-  sigma_h1_ind <- rep(FALSE, length(mdl_h1$theta))
-  P_h1_ind <- rep(FALSE, length(mdl_h1$theta))
-  sigma_h0_ind[(2+msmu*(k0-1)):(2+msmu*(k0-1)+msvar*(k0-1))] <- TRUE
-  sigma_h1_ind[(2+msmu*(k1-1)):(2+msmu*(k1-1)+msvar*(k1-1))] <- TRUE
-  P_h1_ind[(length(mdl_h1$theta)-k1*k1+1):length(mdl_h1$theta)] <- TRUE
-  if (k0>1){
-    P_h0_ind[(length(mdl_h0$theta)-k0*k0+1):length(mdl_h0$theta)] <- TRUE
-  }
-  sigma_ind <- c(sigma_h0_ind,sigma_h1_ind)
-  P_ind <- c(P_h0_ind,P_h1_ind)
-  # correct variances to be in admissible region
-  theta_low[sigma_ind][theta_low[sigma_ind]<=0]=con$variance_lower_bound
-  # correct transition probs to be in admissible region
-  theta_low[P_ind][theta_low[P_ind]<0] <- 0
-  theta_upp[P_ind][theta_upp[P_ind]>1] <- 1
-  mmc_bounds <- list()
-  mmc_bounds$theta_low <- theta_low
-  mmc_bounds$theta_upp <- theta_upp
-  return(mmc_bounds)
-}
-
-#' @title MMC nuisance parameter bounds for univariate models 
-#' 
-#' @description 
-#' @param 
-#'
-#' @return 
 #' 
 #' @keywords internal
 #' 
@@ -220,26 +181,27 @@ MMC_bounds <- function(theta_0, mdl_h0, mdl_h1, con){
   theta_low = theta_0 - con$eps
   theta_upp = theta_0 + con$eps
   # create ball around union of eps and 2*standard error (if set to true and SE are finite)
-  if ((con$CI_union==TRUE) & all(is.finite(mdl_h0$theta_stderr)) & all(is.finite(mdl_h1$theta_stderr))){
-    theta_low <- apply(cbind(as.matrix(theta_0 - 2*c(mdl_h0$theta_stderr,mdl_h1$theta_stderr)),as.matrix(theta_low)), 1, FUN = min)
-    theta_upp <- apply(cbind(as.matrix(theta_0 + 2*c(mdl_h0$theta_stderr,mdl_h1$theta_stderr)),as.matrix(theta_upp)), 1, FUN = max)
+  if ((con$CI_union==TRUE) & all(is.finite(mdl_h0$theta_se)) & all(is.finite(mdl_h1$theta_se))){
+    theta_low <- apply(cbind(as.matrix(theta_0 - 2*c(mdl_h0$theta_se,mdl_h1$theta_se)),as.matrix(theta_low)), 1, FUN = min)
+    theta_upp <- apply(cbind(as.matrix(theta_0 + 2*c(mdl_h0$theta_se,mdl_h1$theta_se)),as.matrix(theta_upp)), 1, FUN = max)
   }
   # ----- Check that bounds respect admissible regions
+  # correct lower bound of variances to be in admissible region
   sigma_ind <- c(mdl_h0$theta_var_ind,mdl_h1$theta_var_ind)
+  if (any(theta_low[sigma_ind==1]<=0)==TRUE){
+    theta_low[sigma_ind==1][theta_low[sigma_ind==1]<=0]=theta_0[sigma_ind==1][neg_loc]*con$variance_constraint  
+  }
+  # correct transition probability bounds to be in admissible region
   if (k0==1){
     P_h0_ind <- rep(0,length(mdl_h0$theta))
   }else if (k0>1){
     P_h0_ind <- mdl_h0$theta_P_ind
   }
-  P_ind <- c(P_h0_ind,mdl_h1$theta_P_ind)
-  # correct variances to be in admissible region
-  theta_low[sigma_ind==1][theta_low[sigma_ind==1]<=0]=con$variance_lower_bound
-  # correct transition probs to be in admissible region
+  P_ind <- c(P_h0_ind, mdl_h1$theta_P_ind)
   theta_low[P_ind==1][theta_low[P_ind==1]<0] <- 0
   theta_upp[P_ind==1][theta_upp[P_ind==1]>1] <- 1
-  mmc_bounds <- list()
-  mmc_bounds$theta_low <- theta_low
-  mmc_bounds$theta_upp <- theta_upp
+  # ----- output
+  mmc_bounds <- list(theta_low = theta_low, theta_upp = theta_upp)
   return(mmc_bounds)
 }
 
@@ -247,36 +209,26 @@ MMC_bounds <- function(theta_0, mdl_h0, mdl_h1, con){
 
 
 #' @title Maximized Monte Carlo Likelihood Ratio Test
-#' 
-#' @description 
-#' @param 
 #'
-#' @return 
 #' 
 #' 
+#' @export
 MMCLRTest <- function(Y, p, k0, k1, control = list()){
   # ----- Set control values
-  con <- list(msmu = TRUE,
-              msvar = TRUE,
-              N = 99,
-              maxit = 500,
-              thtol = 1e-6,
-              burnin = 200, 
-              getSE = TRUE,
+  con <- list(N = 99,
+              burnin = 100,
+              converge_check = NULL,
+              workers = 0,
+              type = "pso",
               eps = 0.1,
               CI_union = TRUE,
               lambda = 100,
-              variance_lower_bound = 0.1,
-              stationary_ind = TRUE,
-              type = "GenSA",
+              stationary_constraint = TRUE,
+              variance_constraint = 0.01,
               silence = FALSE,
               threshold_stop = 1,
-              converge_check = "both",
-              init_val_try = 1,
-              init_val_try_dist = 1,
-              finite_max_init = 100, 
-              dist_converge_iter = 100,
-              workers =0,
+              mdl_h0_control = list(getSE = TRUE),
+              mdl_h1_control = list(getSE = TRUE),
               type_control = list(maxit = 200))
   # ----- Perform some checks for controls
   nmsC <- names(con)
@@ -288,38 +240,28 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
   if (is.matrix(Y)){
     q <- ncol(Y)
   }else{
-    stop("Observations Y must be passed as a (Txq) matrix.") 
+    stop("Observations Y must be a (T x q) matrix.") 
+  }
+  if ((con$CI_union==TRUE) & ((con$mdl_h0_control$getSE==FALSE) | (con$mdl_h1_control$getSE==FALSE))){
+    con$mdl_h0_control$getSE <- TRUE
+    con$mdl_h1_control$getSE <- TRUE
+    warning("getSE was changed to be 'TRUE' because CI_union is 'TRUE'.")
   }
   # ----- Estimate models using observed data
-  if ((k0==1) & (q==1)){
-    # MS model & linear model under null hypothesis
-    mdl_h0 <- ARmdl(Y, p = p, intercept = TRUE, getSE = con$getSE)
-    mdl_h0$iterations <- 1
-    mdl_h1 <- MSmdl_EM(Y, p = p, k = k1, control = con)
-  }else if ((k0>1) & (q==1)){
-    # MS models
-    mdl_h0 <- MSmdl_EM(Y, p = p, k = k0, control = con)
-    mdl_h1 <- MSmdl_EM(Y, p = p, k = k1, control = con)
-  }else if ((k0==1) & (q>1)){
-    # MSVAR model & linear model under null hypothesis
-    mdl_h0 <- VARmdl(Y, p = p, intercept = TRUE, getSE = con$getSE)
-    mdl_h0$iterations <- 1
-    mdl_h1 <- MSVARmdl_EM(Y, p = p, k = k1, control = con)
-  }else if ((k0>1) & (q>1)){
-    # MSVAR models
-    mdl_h0 <- MSVARmdl_EM(Y, p = p, k = k0, control = con)
-    mdl_h1 <- MSVARmdl_EM(Y, p = p, k = k1, control = con)
-  }
-  # Optional model convergence checks (model under null is only checked if k0>1 since EM is only used then)
+  mdl_h0 <- estimMdl(Y, p, q, k0, con$mdl_h0_control)
+  mdl_h1 <- estimMdl(Y, p, q, k1, con$mdl_h1_control)
+  con$mdl_h0_control <- mdl_h0$control
+  con$mdl_h1_control <- mdl_h1$control
+  # ----- Optional model convergence checks
   if (is.null(con$converge_check)==FALSE){
-    if ((con$converge_check=="null") & (mdl_h0$iterations==con$maxit)){
-      stop("Model under null hypothesis did not converge. Run again to use different initial values and/or increase 'maxit'")
+    if ((con$converge_check=="null") & (mdl_h0$converged==FALSE)){
+      stop("Model under null hypothesis did not converge. Run again to use different initial values and/or increase 'maxit' for restricted model.")
     }
-    if((con$converge_check=="alt") & (mdl_h1$iterations==con$maxit)){
-      stop("Model under alternative hypothesis did not converge. Run again to use different initial values and/or increase 'maxit'")
+    if ((con$converge_check=="alt") & (mdl_h1$converged==FALSE)){
+      stop("Model under alternative hypothesis did not converge. Run again to use different initial values and/or increase 'maxit' for unrestricted model.")
     }
-    if ((con$converge_check=="both") & ((mdl_h0$iterations==con$maxit) | (mdl_h1$iterations==con$maxit))){
-      stop("Model did not converge. Run again to use different initial values and/or increase 'maxit'")
+    if ((con$converge_check=="both") & ((mdl_h0$converged==FALSE) | (mdl_h1$converged==FALSE))){
+      stop("Model did not converge. Run again to use different initial values and/or increase 'maxit' for each models.")
     }
   }
   theta_0 <- c(mdl_h0$theta, mdl_h1$theta)
@@ -328,58 +270,87 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
   theta_low <- mmc_bounds$theta_low
   theta_upp <- mmc_bounds$theta_upp
   # ----- Search for Max p-value within bounds
-  MMCLRTest_output <- list()
   if (con$type=="pso"){
     # Set PSO specific controls
     con$type_control$trace.stats <- TRUE
     con$type_control$trace <- as.numeric(con$silence==FALSE)
     con$type_control$abstol <- -con$threshold_stop
     # begin optimization
-    mmc_out <- pso::psoptim(par = theta_0, fn = MMCLRpval_fun, lower = theta_low, upper = theta_upp, 
-                            gr = NULL, control = con$type_control,
-                            mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, msmu = con$msmu, msvar = con$msvar, p = p, 
-                            N = con$N, maxit = con$maxit, thtol = con$thtol, burnin = con$burnin,
-                            stationary_ind = con$stationary_ind, lambda = con$lambda, max_init = con$finite_max_init, 
-                            dist_converge_iter = con$dist_converge_iter, init_val_try_dist = con$init_val_try_dist,
-                            workers = con$workers)
-    MMCLRTest_output$theta <- mmc_out$par
-    MMCLRTest_output$pval <- -mmc_out$value
+    mmc_out   <- pso::psoptim(par = theta_0, fn = MMCLRpval_fun_min, lower = theta_low, upper = theta_upp, 
+                              gr = NULL, control = con$type_control,
+                              mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, N = con$N, burnin = con$burnin, workers = con$workers,
+                              lambda = con$lambda, stationary_constraint = con$stationary_constraint, 
+                              thtol = mdl_h1$control$thtol, mdl_h0_control = con$mdl_h0_control, 
+                              mdl_h1_control = con$mdl_h1_control)
+    theta     <- mmc_out$par
+    pval      <- -mmc_out$value
   }else if(con$type=="GenSA"){
     # Set GenSA specific controls
     con$type_control$trace.mat <- TRUE
     con$type_control$verbose <- con$silence==FALSE
     con$type_control$threshold.stop <- -con$threshold_stop
     # begin optimization
-    mmc_out <- GenSA::GenSA(par = theta_0, fn = MMCLRpval_fun, lower = theta_low, upper = theta_upp, 
-                            control = con$type_control,
-                            mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, msmu = con$msmu, msvar = con$msvar, p = p, 
-                            N = con$N, maxit = con$maxit, thtol = con$thtol, burnin = con$burnin, 
-                            stationary_ind = con$stationary_ind, lambda = con$lambda, max_init = con$finite_max_init, 
-                            dist_converge_iter = con$dist_converge_iter, init_val_try_dist = con$init_val_try_dist,
-                            workers = con$workers)
-    MMCLRTest_output$theta <- mmc_out$par
-    MMCLRTest_output$pval <- -mmc_out$value
+    mmc_out   <- GenSA::GenSA(par = theta_0, fn = MMCLRpval_fun_min, lower = theta_low, upper = theta_upp, 
+                              control = con$type_control,
+                              mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, N = con$N, burnin = con$burnin, workers = con$workers,
+                              lambda = con$lambda, stationary_constraint = con$stationary_constraint, 
+                              thtol = mdl_h1$control$thtol, mdl_h0_control = con$mdl_h0_control, 
+                              mdl_h1_control = con$mdl_h1_control)
+    theta     <- mmc_out$par
+    pval      <- -mmc_out$value
   }else if(con$type=="GA"){
     # begin optimization
-    mmc_out <- GA::ga(type = "real-valued", fitness = MMCLRpval_fun_max, 
-                      mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, msmu = con$msmu, msvar = con$msvar, p = p, 
-                      N = con$N, maxit = con$maxit, thtol = con$thtol, burnin = con$burnin,
-                      stationary_ind = con$stationary_ind, lambda = con$lambda, max_init = con$finite_max_init, 
-                      dist_converge_iter = con$dist_converge_iter, init_val_try_dist = con$init_val_try_dist, workers = con$workers,
+    mmc_out   <- GA::ga(type = "real-valued", fitness = MMCLRpval_fun, 
+                      mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, N = con$N, burnin = con$burnin, workers = con$workers,
+                      lambda = con$lambda, stationary_constraint = con$stationary_constraint, 
+                      thtol = mdl_h1$control$thtol, mdl_h0_control = con$mdl_h0_control, 
+                      mdl_h1_control = con$mdl_h1_control,
                       lower = theta_low, upper = theta_upp, 
                       maxiter = con$type_control$maxit, maxFitness = con$threshold_stop, 
                       monitor = (con$silence==FALSE), suggestions = t(theta_0))
-    MMCLRTest_output$theta <- c(mmc_out@solution)
-    MMCLRTest_output$pval <- mmc_out@fitnessValue
+    theta     <- as.matrix(mmc_out@solution[1,])
+    pval      <- mmc_out@fitnessValue
   }else if(con$type=="gridSearch"){
     # Grid Search: not ready
   }
-  MMCLRTest_output$mdl_h0 <- mdl_h0
-  MMCLRTest_output$mdl_h1 <- mdl_h1
-  MMCLRTest_output$theta_0 <- theta_0
-  MMCLRTest_output$theta_low <- theta_low
-  MMCLRTest_output$theta_upp <- theta_upp
-  MMCLRTest_output$opt_output <- mmc_out
+  # ----- get test output using optimization output params
+  theta_h0 <- theta[1:length(mdl_h0[["theta"]])]
+  theta_h1 <- theta[(length(mdl_h0[["theta"]])+1):length(theta)]
+  names(theta_h0) <- names(mdl_h0$theta)
+  names(theta_h1) <- names(mdl_h1$theta)
+  mdl_h0_mmc <- mdledit(mdl_h0, theta_h0, p, q, k0)
+  mdl_h0_mmc$logLike <- logLikelihood(mdl_h0_mmc)
+  mdl_h0_mmc$AIC <- aic(mdl_h0_mmc$logLike, length(theta_h0))
+  mdl_h0_mmc$BIC <- bic(mdl_h0_mmc$logLike, mdl_h0_mmc$n, length(theta_h0))
+  mdl_h1_mmc <- mdledit(mdl_h0, theta_h0, p, q, k0)
+  mdl_h1_mmc$logLike <- logLikelihood(mdl_h1_mmc)
+  mdl_h1_mmc$AIC <- aic(mdl_h1_mmc$logLike, length(theta_h1))
+  mdl_h1_mmc$BIC <- bic(mdl_h1_mmc$logLike, mdl_h1_mmc$n, length(theta_h1))
+  if (mdl_h0$control$getSE==TRUE){
+    mdl_h0_mmc <- thetaSE(mdl_h0_mmc)
+  }
+  if (mdl_h1$control$getSE==TRUE){
+    mdl_h1_mmc <- thetaSE(mdl_h1_mmc)
+  }
+  # Compute test stats
+  LRT_0 = compu_tstat(theta_h0, theta_h1, mdl_h0, mdl_h1, p, q, k0, k1)
+  names(LRT_0) <- c("LRT_0")
+  #  get critical values
+  # NEED TO USE SAME ERRORS IN NEXT PART BELOW TO OBTAIN SAME LRN AND SAME CV
+  #if(workers>0){
+  #  LRN = as<arma::vec>(LR_samp_dist_par(mdl_h0_tmp, k1, N, burnin, mdl_h0_control, mdl_h1_control, workers));
+  #}else{
+  #  LRN = LR_samp_dist(mdl_h0_tmp, k1, N, burnin, mdl_h0_control, mdl_h1_control);
+  #}
+  #LRN     <- as.matrix(sort(LRN))
+  #LRN_cv  <- LRN[round(c(0.90,0.95,0.99)*nrow(LRN)),]
+  #names(LRN_cv)  <- paste0(c("0.90","0.95","0.99"), "%")
+  # ----- organize test output
+  MMCLRTest_output <- list(mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, mdl_h0_mmc = mdl_h0_mmc, mdl_h1_mmc = mdl_h1_mmc, 
+                           LRT_0 = LRT_0, #LRN = LRN, 
+                           pval = pval, #LRN_cv = LRN_cv, 
+                           theta_h0 = theta_h0, theta_h1 = theta_h1, control = con)
+  class(MMCLRTest_output) <- "MMCLRTest"
   return(MMCLRTest_output)
 }
 
@@ -387,10 +358,6 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
 
 #' @title Bootstrap Likelihood Ratio Test
 #' 
-#' @description 
-#' @param 
-#'
-#' @return 
 #' 
 #' @export
 BootLRTest <- function(Y, ar, k0, k1, control = list()){

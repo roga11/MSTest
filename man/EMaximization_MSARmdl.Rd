@@ -21,3 +21,4 @@ List with new maximized parameters.
 \description{
 This function performs the maximization step of the Expectation Maximization algorithm for Markov-switching autoregressive model.
 }
+\keyword{internal}

@@ -19,3 +19,4 @@ A (\code{TxM}) matrix of residuals in each regime \code{M} where \code{M=k^(ar+1
 \description{
 This function computes residuals of a Markov-switching autoregressive model.
 }
+\keyword{internal}

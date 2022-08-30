@@ -27,7 +27,7 @@ DLMMCTest(Y, p, control = list())
 }}
 }
 \value{
-List of class \code{DLMCTest} (\code{S3} object) with model attributes including: 
+List of class \code{DLMCTest} (\code{S3} object) with attributes including: 
 \itemize{
   \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} if \code{p>0} or \code{Nmdl} otherwise (\code{S3} objects). See \code{\link{ARmdl}} or \code{\link{Nmdl}}.}    
   \item{\code{theta_max_min}: }{Value of nuisance parameters when min version of p-value is maxmimized as discussed in Dufour & Luger (2017) MMC procedure.}
@@ -63,7 +63,7 @@ y10 <- as.matrix(carhuplo10GNP$GNP_logdiff)
 mmc_control <- list(N = 99,
                     simdist_N = 10000,
                     getSE = TRUE,
-                    eps = 0.0000001, # since this is small and CI_union is 'TRUE' we will be searching over CI 
+                    eps = 0.0000001, 
                     CI_union = TRUE,
                     lambda = 100,
                     stationary_ind = TRUE,

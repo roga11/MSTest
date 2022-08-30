@@ -15,3 +15,4 @@ Transition matrix with randomly generated entries.
 \description{
 This function creates a random transition matrix.
 }
+\keyword{internal}

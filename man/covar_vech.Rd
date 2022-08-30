@@ -15,3 +15,4 @@ A \code{(n+1)*n/2} column vector.
 \description{
 This function returns the half-vectorization of an input matrix as a column vector.
 }
+\keyword{internal}

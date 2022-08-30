@@ -17,3 +17,4 @@ List with vector \code{y} (vector of lagged \code{Y}) and matrix \code{X} of lag
 \description{
 This function takes a (\code{T x 1}) vector \code{Y} and returns the (\code{T-p x 1}) vector \code{y} and the (\code{T-p x p}) matrix of lagged observations.
 }
+\keyword{internal}

@@ -9,6 +9,8 @@
 #' 
 #' @return A (\code{n x n}) correlation matrix.
 #' 
+#' @keywords internal
+#' 
 #' @export
 cov2corr <- function(cov_mat) {
     .Call(`_MSTest_cov2corr`, cov_mat)
@@ -21,6 +23,8 @@ cov2corr <- function(cov_mat) {
 #' @param \code{mat} A (\code{n x n}) covariance matrix.
 #' 
 #' @return A \code{(n+1)*n/2} column vector.
+#' 
+#' @keywords internal
 #' 
 #' @export
 covar_vech <- function(mat) {
@@ -36,6 +40,8 @@ covar_vech <- function(mat) {
 #' 
 #' @return A (\code{n x n}) covariance matrix.
 #' 
+#' @keywords internal
+#' 
 #' @export
 covar_unvech <- function(sig, n) {
     .Call(`_MSTest_covar_unvech`, sig, n)
@@ -48,6 +54,8 @@ covar_unvech <- function(sig, n) {
 #' @param \code{k} Number of regimes. Must be greater than or equal to \code{2}. 
 #' 
 #' @return Transition matrix with randomly generated entries.
+#' 
+#' @keywords internal
 #' 
 #' @export
 randP <- function(k) {
@@ -62,6 +70,8 @@ randP <- function(k) {
 #' 
 #' @return A (\code{k x 1}) vector of limiting probabilities.
 #' 
+#' @keywords internal
+#' 
 #' @export
 limP <- function(P) {
     .Call(`_MSTest_limP`, P)
@@ -75,6 +85,8 @@ limP <- function(P) {
 #' @param \code{p} integer for the number of lags to use in estimation. Must be greater than or equal to \code{1}.
 #' 
 #' @return List with vector \code{y} (vector of lagged \code{Y}) and matrix \code{X} of lagged observations.
+#' 
+#' @keywords internal
 #' 
 #' @export
 ts_lagged <- function(Y, p) {
@@ -92,6 +104,8 @@ ts_lagged <- function(Y, p) {
 #' @param \code{msvar}Boolean indicating if the variance switches with regime. 
 #' 
 #' @return List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators.
+#' 
+#' @keywords internal
 #' 
 #' @export
 paramList_MSARmdl <- function(theta, p, k, msmu, msvar) {
@@ -111,6 +125,8 @@ paramList_MSARmdl <- function(theta, p, k, msmu, msvar) {
 #' 
 #' @return List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators.
 #' 
+#' @keywords internal
+#' 
 #' @export
 paramList_MSVARmdl <- function(theta, q, p, k, msmu, msvar) {
     .Call(`_MSTest_paramList_MSVARmdl`, theta, q, p, k, msmu, msvar)
@@ -125,6 +141,8 @@ paramList_MSVARmdl <- function(theta, q, p, k, msmu, msvar) {
 #' @param \code{k} number of regimes. Must be greater than or equal to \code{2}. 
 #' 
 #' @return A (\code{TxM}) matrix of residuals in each regime \code{M} where \code{M=k^(ar+1)}.
+#' 
+#' @keywords internal
 #' 
 #' @export
 calcResid_MSARmdl <- function(mdl, mu, k) {
@@ -161,6 +179,8 @@ calcResid_MSVARmdl <- function(mdl, mu, k) {
 #' 
 #' @return Vector of initial parameter values.
 #' 
+#' @keywords internal
+#' 
 #' @export
 initVals_HMmdl <- function(mdl, k) {
     .Call(`_MSTest_initVals_HMmdl`, mdl, k)
@@ -182,6 +202,8 @@ initVals_HMmdl <- function(mdl, k) {
 #' 
 #' @return Vector of initial parameter values.
 #' 
+#' @keywords internal
+#' 
 #' @export
 initVals_MSARmdl <- function(mdl, k) {
     .Call(`_MSTest_initVals_MSARmdl`, mdl, k)
@@ -202,6 +224,8 @@ initVals_MSARmdl <- function(mdl, k) {
 #' @param \code{k} Number of regimes.
 #' 
 #' @return Vector of initial parameter values.
+#' 
+#' @keywords internal
 #' 
 #' @export
 initVals_MSVARmdl <- function(mdl, k) {
@@ -230,13 +254,16 @@ MCpval <- function(test_stat, null_vec, type = "geq") {
 #' 
 #' @description This function generates uncorrelated standard normal processes using box Muller method.
 #' 
-#' @param 
+#' @param \code{T} Integer determining the length of the process to be simulated
+#' @param \code{q}  Integer determining the number of processes to be simulated
 #' 
 #' @return A (\code{T x q}) matrix of standard normal distributed errors
 #' 
+#' @keywords internal
+#' 
 #' @export
-randSN <- function(Tsize, q) {
-    .Call(`_MSTest_randSN`, Tsize, q)
+randSN <- function(T, q) {
+    .Call(`_MSTest_randSN`, T, q)
 }
 
 #' @title Simulate autoregressive process
@@ -255,7 +282,7 @@ randSN <- function(Tsize, q) {
 #' 
 #' @return List with simulated autoregressive series and its DGP parameters.
 #' 
-#' @example /examples/simuAR_examples.R
+#' @example /inst/examples/simuAR_examples.R
 #' @export
 simuAR <- function(mdl_h0, burnin = 100L) {
     .Call(`_MSTest_simuAR`, mdl_h0, burnin)
@@ -279,7 +306,7 @@ simuAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @return List with simulated Markov-switching autoregressive process and its DGP properties.
 #' 
-#' @example /examples/simuMSAR_examples.R
+#' @example /inst/examples/simuMSAR_examples.R
 #' @export
 simuMSAR <- function(mdl_h0, burnin = 100L) {
     .Call(`_MSTest_simuMSAR`, mdl_h0, burnin)
@@ -303,7 +330,7 @@ simuMSAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @return List with simulated vector autoregressive series and its DGP parameters.
 #' 
-#' @example /examples/simuVAR_examples.R
+#' @example /inst/examples/simuVAR_examples.R
 #' @export
 simuVAR <- function(mdl_h0, burnin = 100L) {
     .Call(`_MSTest_simuVAR`, mdl_h0, burnin)
@@ -329,7 +356,7 @@ simuVAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @return List with simulated vector autoregressive series and its DGP parameters.
 #' 
-#' @example /examples/simuMSVAR_examples.R
+#' @example /inst/examples/simuMSVAR_examples.R
 #' @export
 simuMSVAR <- function(mdl_h0, burnin = 100L) {
     .Call(`_MSTest_simuMSVAR`, mdl_h0, burnin)
@@ -345,15 +372,16 @@ simuMSVAR <- function(mdl_h0, burnin = 100L) {
 #'   \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
 #'   \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
 #'   \item{\code{q}: }{Number of series.}
-#'   \item{\code{eps}: }{An optional (\code{T x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+#'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 #' }
+#' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
 #' @return List with simulated series and its DGP parameters.
 #' 
-#' @example /examples/simuNorm_examples.R
+#' @example /inst/examples/simuNorm_examples.R
 #' @export
-simuNorm <- function(mdl_h0) {
-    .Call(`_MSTest_simuNorm`, mdl_h0)
+simuNorm <- function(mdl_h0, burnin = 0L) {
+    .Call(`_MSTest_simuNorm`, mdl_h0, burnin)
 }
 
 #' @title Simulate Hidden Markov model with normally distributed errors
@@ -374,7 +402,7 @@ simuNorm <- function(mdl_h0) {
 #' 
 #' @return List with simulated series and its DGP parameters.
 #' 
-#' @example /examples/simuHMM_examples.R
+#' @example /inst/examples/simuHMM_examples.R
 #' @export
 simuHMM <- function(mdl_h0, burnin = 100L) {
     .Call(`_MSTest_simuHMM`, mdl_h0, burnin)
@@ -403,6 +431,8 @@ logLike_Nmdl <- function(theta, mdl) {
 #' 
 #' @return Log-likelihood value.
 #' 
+#' @keywords internal
+#' 
 #' @export
 logLike_ARmdl <- function(theta, mdl) {
     .Call(`_MSTest_logLike_ARmdl`, theta, mdl)
@@ -416,6 +446,8 @@ logLike_ARmdl <- function(theta, mdl) {
 #' @param \code{mdl} List with model attributes.
 #' 
 #' @return Log-likelihood value.
+#' 
+#' @keywords internal
 #' 
 #' @export
 logLike_VARmdl <- function(theta, mdl) {
@@ -432,6 +464,8 @@ logLike_VARmdl <- function(theta, mdl) {
 #'  
 #' @return Log-likelihood value.
 #' 
+#' @keywords internal
+#' 
 #' @export
 logLike_HMmdl <- function(theta, mdl, k) {
     .Call(`_MSTest_logLike_HMmdl`, theta, mdl, k)
@@ -446,6 +480,8 @@ logLike_HMmdl <- function(theta, mdl, k) {
 #' @param \code{k} integer determining the number of regimes.
 #' 
 #' @return Negative log-likelihood value.
+#' 
+#' @keywords internal
 #' 
 #' @export
 logLike_HMmdl_min <- function(theta, mdl, k) {
@@ -462,6 +498,8 @@ logLike_HMmdl_min <- function(theta, mdl, k) {
 #' 
 #' @return Log-likelihood value.
 #' 
+#' @keywords internal
+#' 
 #' @export
 logLike_MSARmdl <- function(theta, mdl, k) {
     .Call(`_MSTest_logLike_MSARmdl`, theta, mdl, k)
@@ -476,6 +514,8 @@ logLike_MSARmdl <- function(theta, mdl, k) {
 #' @param \code{k} integer determining the number of regimes.
 #' 
 #' @return Negative log-likelihood value.
+#' 
+#' @keywords internal
 #' 
 #' @export
 logLike_MSARmdl_min <- function(theta, mdl, k) {
@@ -492,6 +532,8 @@ logLike_MSARmdl_min <- function(theta, mdl, k) {
 #' 
 #' @return Log-likelihood value.
 #' 
+#' @keywords internal
+#' 
 #' @export
 logLike_MSVARmdl <- function(theta, mdl, k) {
     .Call(`_MSTest_logLike_MSVARmdl`, theta, mdl, k)
@@ -506,6 +548,8 @@ logLike_MSVARmdl <- function(theta, mdl, k) {
 #' @param \code{k} Integer determining the number of regimes.
 #' 
 #' @return Negative log-likelihood value.
+#' 
+#' @keywords internal
 #' 
 #' @export
 logLike_MSVARmdl_min <- function(theta, mdl, k) {
@@ -522,6 +566,8 @@ logLike_MSVARmdl_min <- function(theta, mdl, k) {
 #'  
 #' @return List which includes log-likelihood value and smoothed probabilities of each regime.
 #' 
+#' @keywords internal
+#' 
 #' @export
 ExpectationM_HMmdl <- function(theta, mdl, k) {
     .Call(`_MSTest_ExpectationM_HMmdl`, theta, mdl, k)
@@ -537,6 +583,8 @@ ExpectationM_HMmdl <- function(theta, mdl, k) {
 #'  
 #' @return List which includes log-likelihood and smoothed probabilities of each regime.
 #' 
+#' @keywords internal
+#' 
 #' @export
 ExpectationM_MSARmdl <- function(theta, mdl, k) {
     .Call(`_MSTest_ExpectationM_MSARmdl`, theta, mdl, k)
@@ -551,6 +599,8 @@ ExpectationM_MSARmdl <- function(theta, mdl, k) {
 #' @param \code{k} Integer determining the number of regimes.
 #'  
 #' @return List which includes log-likelihood and smoothed probabilities of each regime.
+#' 
+#' @keywords internal
 #' 
 #' @export
 ExpectationM_MSVARmdl <- function(theta, mdl, k) {
@@ -568,6 +618,8 @@ ExpectationM_MSVARmdl <- function(theta, mdl, k) {
 #'  
 #' @return List with new maximized parameters.
 #' 
+#' @keywords internal
+#' 
 #' @export
 EMaximization_HMmdl <- function(theta, mdl, MSloglik_output, k) {
     .Call(`_MSTest_EMaximization_HMmdl`, theta, mdl, MSloglik_output, k)
@@ -583,6 +635,8 @@ EMaximization_HMmdl <- function(theta, mdl, MSloglik_output, k) {
 #' @param \code{k} Integer determining the number of regimes.
 #' 
 #' @return List with new maximized parameters.
+#' 
+#' @keywords internal
 #' 
 #' @export
 EMaximization_MSARmdl <- function(theta, mdl, MSloglik_output, k) {
@@ -600,6 +654,8 @@ EMaximization_MSARmdl <- function(theta, mdl, MSloglik_output, k) {
 #'  
 #' @return List with new maximized parameters.
 #' 
+#' @keywords internal
+#' 
 #' @export
 EMaximization_MSVARmdl <- function(theta, mdl, MSloglik_output, k) {
     .Call(`_MSTest_EMaximization_MSVARmdl`, theta, mdl, MSloglik_output, k)
@@ -614,6 +670,9 @@ EMaximization_MSVARmdl <- function(theta, mdl, MSloglik_output, k) {
 #' @param \code{k} Integer determining the number of regimes.
 #' 
 #' @return List with attributes from new iteration.
+#' 
+#' @keywords internal
+#' 
 #' @export
 EMiter_HMmdl <- function(mdl, EMest_output, k) {
     .Call(`_MSTest_EMiter_HMmdl`, mdl, EMest_output, k)
@@ -629,6 +688,8 @@ EMiter_HMmdl <- function(mdl, EMest_output, k) {
 #' 
 #' @return List with attributes from new iteration.
 #' 
+#' @keywords internal
+#' 
 #' @export
 EMiter_MSARmdl <- function(mdl, EMest_output, k) {
     .Call(`_MSTest_EMiter_MSARmdl`, mdl, EMest_output, k)
@@ -643,6 +704,8 @@ EMiter_MSARmdl <- function(mdl, EMest_output, k) {
 #' @param \code{k} Integer determining the number of regimes.
 #' 
 #' @return List with attributes from new iteration.
+#' 
+#' @keywords internal
 #' 
 #' @export
 EMiter_MSVARmdl <- function(mdl, EMest_output, k) {
@@ -662,6 +725,8 @@ EMiter_MSVARmdl <- function(mdl, EMest_output, k) {
 #' 
 #' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38.
 #' 
+#' @keywords internal
+#' 
 #' @export
 HMmdl_em <- function(theta_0, mdl, k, optim_options) {
     .Call(`_MSTest_HMmdl_em`, theta_0, mdl, k, optim_options)
@@ -677,6 +742,8 @@ HMmdl_em <- function(theta_0, mdl, k, optim_options) {
 #' @param \code{optim_options} List with optimization options.
 #' 
 #' @return List with model results.
+#' 
+#' @keywords internal
 #' 
 #' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38.
 #' @references Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” \emph{Journal of econometrics}, 45 (1-2): 39–70.
@@ -696,6 +763,8 @@ MSARmdl_em <- function(theta_0, mdl, k, optim_options) {
 #' @param \code{optim_options} List with optimization options.
 #' 
 #' @return List with model results.
+#' 
+#' @keywords internal
 #' 
 #' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38.
 #' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.”. Springer.
@@ -797,6 +866,26 @@ simuMdl <- function(mdl_h0, p, q, k, burnin) {
     .Call(`_MSTest_simuMdl`, mdl_h0, p, q, k, burnin)
 }
 
+#' @title Change model List with new parameters
+#' 
+#' 
+#' @keywords internal
+#' 
+#' @export
+mdledit <- function(mdl_h0, theta_h0, p, q, k0) {
+    .Call(`_MSTest_mdledit`, mdl_h0, theta_h0, p, q, k0)
+}
+
+#' @title Computes test stat using new parameter vectors
+#' 
+#' 
+#' @keywords internal
+#' 
+#' @export
+compu_tstat <- function(theta_h0, theta_h1, mdl_h0, mdl_h1, p, q, k0, k1) {
+    .Call(`_MSTest_compu_tstat`, theta_h0, theta_h1, mdl_h0, mdl_h1, p, q, k0, k1)
+}
+
 #' @title Likelihood Ratio Test Statistic Sample Distribution
 #' 
 #' 
@@ -809,16 +898,16 @@ LR_samp_dist <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control) 
 #' 
 #' 
 #' @export
-MMCLRpval_fun <- function(theta, mdl_h0, mdl_h1, msmu, msvar, p, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter, init_val_try_dist, workers) {
-    .Call(`_MSTest_MMCLRpval_fun`, theta, mdl_h0, mdl_h1, msmu, msvar, p, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter, init_val_try_dist, workers)
+MMCLRpval_fun <- function(theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control) {
+    .Call(`_MSTest_MMCLRpval_fun`, theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control)
 }
 
 #' @title Monte Carlo Likelihood Ratio Test P-value Function 
 #' 
 #' 
 #' @export
-MMCLRpval_fun_max <- function(theta, mdl_h0, mdl_h1, msmu, msvar, p, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter, init_val_try_dist, workers) {
-    .Call(`_MSTest_MMCLRpval_fun_max`, theta, mdl_h0, mdl_h1, msmu, msvar, p, N, maxit, thtol, burnin, stationary_ind, lambda, max_init, dist_converge_iter, init_val_try_dist, workers)
+MMCLRpval_fun_min <- function(theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control) {
+    .Call(`_MSTest_MMCLRpval_fun_min`, theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control)
 }
 
 #' @title Moment-based test statistics 

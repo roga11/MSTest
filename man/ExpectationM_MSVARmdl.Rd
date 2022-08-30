@@ -19,3 +19,4 @@ List which includes log-likelihood and smoothed probabilities of each regime.
 \description{
 This function computes the log-likelihood for a markov-switching vector autoregressive model and uses the Hamilton smoother to obtain smoothed probabilities of each state. This is also the expectation step in the Expectation Maximization algorithm for a Markov-switching autoregressive model.
 }
+\keyword{internal}

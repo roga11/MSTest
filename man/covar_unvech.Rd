@@ -17,3 +17,4 @@ A (\code{n x n}) covariance matrix.
 \description{
 This function undoes the half-vectorization of a covariance matrix.
 }
+\keyword{internal}

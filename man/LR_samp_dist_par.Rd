@@ -14,10 +14,7 @@ LR_samp_dist_par(
   workers
 )
 }
-\value{
-
-}
 \description{
-
+Monte Carlo Likelihood Ratio Test sample disttribution (parallel version)
 }
 \keyword{internal}

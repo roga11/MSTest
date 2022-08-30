@@ -32,6 +32,8 @@ arma::vec initVals_MSVARmdl(List mdl, int k);
 
 double MCpval(double test_stat, arma::vec null_vec, Rcpp::String type = "geq");
 
+arma::mat randSN(int T, int q);
+
 List simuAR(List mdl_h0, int burnin = 100);
 
 List simuMSAR(List mdl_h0, int burnin = 100);
@@ -40,9 +42,11 @@ List simuVAR(List mdl_h0, int burnin = 100);
 
 List simuMSVAR(List mdl_h0, int burnin = 100);
 
-List simuNorm(List mdl_h0);
+List simuNorm(List mdl_h0, int burnin = 0);
 
 List simuHMM(List mdl_h0, int burnin = 100);
+
+double logLike_Nmdl(arma::vec theta, List mdl);
 
 double logLike_ARmdl(arma::vec theta, List mdl);
 

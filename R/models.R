@@ -33,7 +33,7 @@
 #'   \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
 #' }
 #' 
-#' @example /examples/Nmdl_examples.R
+#' @example /inst/examples/Nmdl_examples.R
 #' @export
 Nmdl <- function(Y, control = list()){
   # ----- Set control values
@@ -110,8 +110,8 @@ Nmdl <- function(Y, control = list()){
 #'   \item{\code{sigma}: }{estimated variance of the process.}
 #'   \item{\code{theta}: }{vector containing: \code{mu}, \code{sigma}, and \code{phi}.}
 #'   \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
-#'   \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
-#'   \item{\code{theta_var_ind}: }{vector indicating location of variances with \code{1} and \code{0} otherwise. This is the same as \code{theta_sig_ind} in \code{ARmdl}.}
+#'   \item{\code{theta_sig_ind}: }{vector indicating location of variance with \code{1} and \code{0} otherwise.}
+#'   \item{\code{theta_var_ind}: }{vector indicating location of variance with \code{1} and \code{0} otherwise. This is the same as \code{theta_sig_ind} in \code{ARmdl}.}
 #'   \item{\code{theta_phi_ind}: }{vector indicating location of autoregressive coefficients with \code{1} and \code{0} otherwise.}
 #'   \item{\code{stationary}: }{Boolean indicating if process is stationary if \code{TRUE} or non-stationary if \code{FALSE}.}
 #'   \item{\code{n}: }{number of observations after lag transformation (i.e., \code{n = T-p}).}
@@ -129,7 +129,7 @@ Nmdl <- function(Y, control = list()){
 #' }
 #' 
 #' @seealso \code{\link{MSARmdl}}
-#' @example /examples/ARmdl_examples.R
+#' @example /inst/examples/ARmdl_examples.R
 #' @export
 ARmdl <- function(Y, p, control = list()){
   # ----- Set control values
@@ -243,7 +243,7 @@ ARmdl <- function(Y, p, control = list()){
 #' }
 #' 
 #' @seealso \code{\link{MSVARmdl}}
-#' @example /examples/VARmdl_examples.R
+#' @example /inst/examples/VARmdl_examples.R
 #' @export
 VARmdl <- function(Y, p, control = list()){
   # ----- Set control values
@@ -373,7 +373,7 @@ VARmdl <- function(Y, p, control = list()){
 #' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.”. Springer.
 #' 
 #' @seealso \code{\link{Nmdl}}
-#' @example /examples/HMmdl_examples.R
+#' @example /inst/examples/HMmdl_examples.R
 #' @export
 HMmdl <- function(Y, k, control = list()){
   # ----- Set control values
@@ -537,14 +537,14 @@ HMmdl <- function(Y, k, control = list()){
 #'  \item{\code{getSE}: }{Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.}
 #'  \item{\code{msmu}: }{Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.}
 #'  \item{\code{msvar}: }{Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.}
-#'  \item{\code{init_value}: }{vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.}
+#'  \item{\code{init_theta}: }{vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.}
 #'  \item{\code{method}: }{string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.}
 #'  \item{\code{maxit}: }{integer determining the maximum number of EM iterations.}
 #'  \item{\code{thtol}: }{double determining the convergence criterion for the absolute difference in parameter estimates \code{theta} between iterations. Default is \code{1e-6}.}
 #'  \item{\code{maxit_converge}: }{integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{500}.}
 #'  \item{\code{use_diff_init}: }{integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.}
 #'  \item{\code{mle_stationary_constraint}: }{Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.}
-#'  \item{\code{mle_variance_constraint}: }{double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is \code{1e-3}.}
+#'  \item{\code{mle_variance_constraint}: }{Double used to determine the lower bound for variance in each regime. Value should be between \code{0} and \code{1} as it is multiplied by single regime variance. Default is \code{0.01} (i.e., \code{1\%} of single regime variance.}
 #' }
 #' 
 #' @return List of class \code{MSARmdl} (\code{S3} object) with model attributes including:
@@ -559,8 +559,8 @@ HMmdl <- function(Y, k, control = list()){
 #'   \item{\code{sigma}: }{a \code{(k x 1)} estimated covariance matrix.}
 #'   \item{\code{theta}: }{vector containing: \code{mu} and \code{vech(sigma)}.}
 #'   \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
-#'   \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
-#'   \item{\code{theta_var_ind}: }{vector indicating location of variances with \code{1} and \code{0} otherwise.}
+#'   \item{\code{theta_sig_ind}: }{vector indicating location of variances with \code{1} and \code{0} otherwise.}
+#'   \item{\code{theta_var_ind}: }{vector indicating location of variances with \code{1} and \code{0} otherwise. This is the same as \code{theta_sig_ind} in \code{MSARmdl}}
 #'   \item{\code{theta_P_ind}: }{vector indicating location of transition matrix elements with \code{1} and \code{0} otherwise.}
 #'   \item{\code{stationary}: }{Boolean indicating if process is stationary if \code{TRUE} or non-stationary if \code{FALSE}.}
 #'   \item{\code{n}: }{number of observations (same as \code{T}).}
@@ -591,7 +591,7 @@ HMmdl <- function(Y, k, control = list()){
 #' @references Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” \emph{Journal of econometrics}, 45 (1-2): 39–70.
 #' 
 #' @seealso \code{\link{ARmdl}}
-#' @example /examples/MSARmdl_examples.R
+#' @example /inst/examples/MSARmdl_examples.R
 #' @export
 MSARmdl <- function(Y, p, k, control = list()){
   # ----- Set control values
@@ -706,12 +706,13 @@ MSARmdl <- function(Y, p, k, control = list()){
   # ----- Obtain variables of interest
   theta_mu_ind <- c(rep(1, 1 + (k-1)*con$msmu), rep(0, 1 + (k-1)*con$msvar + p + k*k))
   theta_sig_ind <- c(rep(0, 1 + (k-1)*con$msmu), rep(1, 1 + (k-1)*con$msvar), rep(0, p + k*k))
+  theta_var_ind <- theta_sig_ind
   theta_phi_ind <- c(rep(0, 2 + (k-1)*con$msmu + (k-1)*con$msvar), rep(1, p), rep(0, k*k))
   theta_P_ind <- c(rep(0, 2 + (k-1)*con$msmu + (k-1)*con$msvar + p), rep(1, k*k))
   # ----- Output
   out <- list(y = init_mdl$y, X = init_mdl$X, x = init_mdl$x, resid = output$resid, mu = output$mu, 
               phi = output$phi, stdev = sqrt(output$sigma), sigma = output$sigma, 
-              theta = output$theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, 
+              theta = output$theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, 
               theta_phi_ind = theta_phi_ind, theta_P_ind = theta_P_ind, stationary = roots, 
               n = init_mdl$n, p = p, q = 1, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, 
               St = output$St, deltath = output$deltath, iterations = output$iterations, theta_0 = output$theta_0, 
@@ -748,7 +749,7 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'  \item{\code{getSE}: }{Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.}
 #'  \item{\code{msmu}: }{Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.}
 #'  \item{\code{msvar}: }{Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.}
-#'  \item{\code{init_value}: }{vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix. This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.}
+#'  \item{\code{init_theta}: }{vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix. This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.}
 #'  \item{\code{method}: }{string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.}
 #'  \item{\code{maxit}: }{integer determining the maximum number of EM iterations.}
 #'  \item{\code{thtol}: }{double determining the convergence criterion for the absolute difference in parameter estimates \code{theta} between iterations. Default is \code{1e-6}.}
@@ -804,14 +805,14 @@ MSARmdl <- function(Y, p, k, control = list()){
 #' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.”. Springer.
 #'  
 #' @seealso \code{\link{VARmdl}}
-#' @example /examples/MSVARmdl_examples.R
+#' @example /inst/examples/MSVARmdl_examples.R
 #' @export
 MSVARmdl <- function(Y, p, k, control = list()){
   # ----- Set control values
   con <- list(getSE = TRUE,
               msmu = TRUE, 
               msvar = TRUE,
-              init_value = NULL,
+              init_theta = NULL,
               method = "EM",
               maxit = 10000,
               thtol = 1.e-6, 

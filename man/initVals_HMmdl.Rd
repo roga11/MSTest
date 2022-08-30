@@ -23,3 +23,4 @@ Vector of initial parameter values.
 \description{
 This function generates a random parameter vector to be used as initial values for a Hidden Markov model.
 }
+\keyword{internal}

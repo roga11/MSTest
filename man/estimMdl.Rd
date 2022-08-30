@@ -6,9 +6,6 @@
 \usage{
 estimMdl(Y, p, q, k, control = list())
 }
-\value{
-
-}
 \description{
 Estimate model for likelihood ratio test
 }

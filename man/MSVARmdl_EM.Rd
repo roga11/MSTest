@@ -26,3 +26,4 @@ Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from 
 
 Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.”. Springer.
 }
+\keyword{internal}

@@ -30,7 +30,7 @@
 #' 
 #' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
-#' @example /examples/CHPTest_examples.R
+#' @example /inst/examples/CHPTest_examples.R
 #' @export
 CHPTest <- function(Y, p, control = list()){
   # ----- Set control values

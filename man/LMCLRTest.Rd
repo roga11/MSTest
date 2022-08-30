@@ -4,21 +4,42 @@
 \alias{LMCLRTest}
 \title{Monte Carlo Likelihood Ratio Test}
 \usage{
-LMCLRTest(
-  Y,
-  p,
-  k0,
-  k1,
-  control = list(),
-  mdl_h0_control = list(),
-  mdl_h1_control = list()
-)
+LMCLRTest(Y, p, k0, k1, control = list())
+}
+\arguments{
+\item{Y}{Series to be tested. Must be a (\code{T x q}) matrix.}
+
+\item{p}{Number of autoregressive lags. Must be greater than or equal to 0.}
+
+\item{k0}{Number of regimes under null hypothesis. Must be greater than or equal to 1.}
+
+\item{k1}{Number of regimes under alternative hypothesis. Must be greater than \code{k0}.}
+
+\item{control}{List with test procedure options including: 
+\itemize{
+  \item{\code{N}: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
+  \item{\code{burnin}: }{Number of simulated observations to remove from beginning. Default is \code{100}.}
+  \item{\code{converge_check}: }{String of NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.}
+  \item{\code{workers}: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. See \code{\link{doParallel}}. Default is \code{0}.}
+  \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+  \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+}}
 }
 \value{
-
+List of class \code{LMCLRTest} (\code{S3} object) with attributes including: 
+\itemize{
+  \item{\code{mdl_h0}: }{List with restricted model attributes. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.}
+  \item{\code{mdl_h0}: }{List with unrestricted model attributes. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.}
+  \item{\code{LRT_0}: }{Value of test statistic from observed data.}
+  \item{\code{LRN}: }{A (\code{N x 1}) vector of test statistics from data simulated under the null hypothesis.}
+  \item{\code{pval}: }{P-value of Local Monte Carlo Likelihood Ratio Test.}
+  \item{\code{LRN_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values (from vector \code{LRN}).}
+  \item{\code{control}: }{List with test procedure options used.}
+}
 }
 \description{
-Monte Carlo Likelihood Ratio Test
+This function performs the Local Monte Carlo likelihood ratio 
+test (LMC-LRT) proposed in Rodriguez Rondon & Dufour (2022).
 }
 \examples{
 set.seed(1234)
@@ -26,16 +47,29 @@ set.seed(1234)
 y84 <- as.matrix(hamilton84GNP$GNP_logdiff)
 y10 <- as.matrix(carhuplo10GNP$GNP_logdiff)
 
+
+
+
 # Set test procedure options
 lmc_control = list(N = 99,
-                   simdist_N = 10000,
-                   getSE = TRUE)
+                   burnin = 100,
+                   converge_check = NULL,
+                   mdl_h0_control <- list(const  = TRUE, 
+                                          getSE  = TRUE),
+                   mdl_h1_control <- list(msmu   = TRUE, 
+                                          msvar  = FALSE,
+                                          getSE  = TRUE,
+                                          method = "EM",
+                                          maxit  = 500,
+                                          use_diff_init = 1))
 
-# perform test on Hamilton 1989 data
-lmc_gnp84 <- DLMCTest(y84, p = 4, control = lmc_control)
-lmc_gnp84
 
-# perform test on extended data used in CHP 2014
-lmc_gnp10 <- DLMCTest(y10, p = 4, control = lmc_control)
-lmc_gnp10
+
+
+st <- Sys.time()
+mdl <- LMCLRTest(y84, p = 4 , k0 = 1 , k1 = 2, lmc_control)
+end <- Sys.time() - st
+mdl
+end
+
 }

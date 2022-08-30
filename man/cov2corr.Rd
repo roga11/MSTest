@@ -15,3 +15,4 @@ A (\code{n x n}) correlation matrix.
 \description{
 This function takes an (\code{n x n}) covariance matrix and returns the associated (\code{n x n}) correlation matrix.
 }
+\keyword{internal}

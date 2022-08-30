@@ -18,7 +18,7 @@ MSVARmdl(Y, p, k, control = list())
  \item{\code{getSE}: }{Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.}
  \item{\code{msmu}: }{Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.}
  \item{\code{msvar}: }{Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.}
- \item{\code{init_value}: }{vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix. This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.}
+ \item{\code{init_theta}: }{vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix. This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.}
  \item{\code{method}: }{string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.}
  \item{\code{maxit}: }{integer determining the maximum number of EM iterations.}
  \item{\code{thtol}: }{double determining the convergence criterion for the absolute difference in parameter estimates \code{theta} between iterations. Default is \code{1e-6}.}
@@ -79,8 +79,9 @@ set.seed(1234)
 # Define DGP of MS VAR process
 mdl_msvar2 <- list(n     = 1000, 
                    p     = 1,
-                   mu    = rbind(c(5,-2),
-                                 c(10,2)),
+                   q     = 2,
+                   mu    = rbind(c(5, -2),
+                                 c(10, 2)),
                    sigma = list(rbind(c(5.0, 1.5),
                                       c(1.5, 1.0)),
                                 rbind(c(7.0, 3.0),

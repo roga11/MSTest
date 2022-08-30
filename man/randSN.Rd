@@ -4,7 +4,12 @@
 \alias{randSN}
 \title{Standard normal errors using box Muller}
 \usage{
-randSN(Tsize, q)
+randSN(T, q)
+}
+\arguments{
+\item{\code{T}}{Integer determining the length of the process to be simulated}
+
+\item{\code{q}}{Integer determining the number of processes to be simulated}
 }
 \value{
 A (\code{T x q}) matrix of standard normal distributed errors
@@ -12,3 +17,4 @@ A (\code{T x q}) matrix of standard normal distributed errors
 \description{
 This function generates uncorrelated standard normal processes using box Muller method.
 }
+\keyword{internal}

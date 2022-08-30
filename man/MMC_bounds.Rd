@@ -6,9 +6,6 @@
 \usage{
 MMC_bounds(theta_0, mdl_h0, mdl_h1, con)
 }
-\value{
-
-}
 \description{
 MMC nuisance parameter bounds for univariate models
 }

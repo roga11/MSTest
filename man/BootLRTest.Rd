@@ -6,9 +6,6 @@
 \usage{
 BootLRTest(Y, ar, k0, k1, control = list())
 }
-\value{
-
-}
 \description{
 Bootstrap Likelihood Ratio Test
 }

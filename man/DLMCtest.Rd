@@ -19,7 +19,7 @@ DLMCTest(Y, p, control = list())
 }}
 }
 \value{
-List of class \code{DLMCTest} (\code{S3} object) with model attributes including: 
+List of class \code{DLMCTest} (\code{S3} object) with attributes including: 
 \itemize{
   \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} if \code{p>0} or \code{Nmdl} otherwise (\code{S3} objects). See \code{\link{ARmdl}} or \code{\link{Nmdl}}.}    
   \item{\code{theta}: }{Value of nuisance parameters. Specifically, these are the consistent estimates of nuisance parameters as discussed in Dufour & Luger (2017) LMC procedure.}

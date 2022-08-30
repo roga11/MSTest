@@ -7,7 +7,7 @@ y10 <- as.matrix(carhuplo10GNP$GNP_logdiff)
 mmc_control <- list(N = 99,
                     simdist_N = 10000,
                     getSE = TRUE,
-                    eps = 0.0000001, # since this is small and CI_union is 'TRUE' we will be searching over CI 
+                    eps = 0.0000001, 
                     CI_union = TRUE,
                     lambda = 100,
                     stationary_ind = TRUE,

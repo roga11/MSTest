@@ -19,3 +19,4 @@ List with attributes from new iteration.
 \description{
 This function performs the one iteration (E-step and M-step) of the Expectation Maximization algorithm for a Hidden Markov model.
 }
+\keyword{internal}

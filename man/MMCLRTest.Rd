@@ -6,9 +6,6 @@
 \usage{
 MMCLRTest(Y, p, k0, k1, control = list())
 }
-\value{
-
-}
 \description{
 Maximized Monte Carlo Likelihood Ratio Test
 }

@@ -8,19 +8,14 @@ MMCLRpval_fun(
   theta,
   mdl_h0,
   mdl_h1,
-  msmu,
-  msvar,
-  p,
   N,
-  maxit,
-  thtol,
   burnin,
-  stationary_ind,
+  workers,
   lambda,
-  max_init,
-  dist_converge_iter,
-  init_val_try_dist,
-  workers
+  stationary_constraint,
+  thtol,
+  mdl_h0_control,
+  mdl_h1_control
 )
 }
 \description{

@@ -25,3 +25,4 @@ List with the mean, variance, transition matrix, limiting probabilities, and a v
 \description{
 This function takes the parameter vector of interest and converts it to a list with specific parameter vectors needed for multivariate Markov-switching functions.
 }
+\keyword{internal}

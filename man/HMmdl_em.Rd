@@ -24,3 +24,4 @@ Estimate Hidden Markov model by EM algorithm. This function is used by \code{\li
 \references{
 Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38.
 }
+\keyword{internal}

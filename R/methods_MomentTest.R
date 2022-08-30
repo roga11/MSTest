@@ -32,7 +32,6 @@ approxDistDL <- function(Tsize, simdist_N){
 }
 
 
-# ==============================================================================
 #' @title  Monte Carlo moment-based test for Markov switching model
 #' 
 #' @description This function performs the Local Monte Carlo moment-based test for
@@ -47,7 +46,7 @@ approxDistDL <- function(Tsize, simdist_N){
 #'   \item{\code{getSE}: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated. Default is \code{TRUE}.}
 #' }
 #' 
-#' @return List of class \code{DLMCTest} (\code{S3} object) with model attributes including: 
+#' @return List of class \code{DLMCTest} (\code{S3} object) with attributes including: 
 #' \itemize{
 #'   \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} if \code{p>0} or \code{Nmdl} otherwise (\code{S3} objects). See \code{\link{ARmdl}} or \code{\link{Nmdl}}.}    
 #'   \item{\code{theta}: }{Value of nuisance parameters. Specifically, these are the consistent estimates of nuisance parameters as discussed in Dufour & Luger (2017) LMC procedure.}
@@ -66,7 +65,7 @@ approxDistDL <- function(Tsize, simdist_N){
 #' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based tests for 
 #' Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
-#' @example /examples/DLMCTest_examples.R
+#' @example /inst/examples/DLMCTest_examples.R
 #' @export
 DLMCTest <- function(Y, p, control = list()){
   # ----- Set control values
@@ -120,7 +119,6 @@ DLMCTest <- function(Y, p, control = list()){
 }
 
 
-# ==============================================================================
 #' @title Maximized Monte Carlo moment-based test for Markov switching model
 #' 
 #' @description This function performs the maximized Monte Carlo moment-based test for
@@ -143,7 +141,7 @@ DLMCTest <- function(Y, p, control = list()){
 #'   \item{\code{type_control}: }{List containing other optimization options specific to the numerical optimization algorithm used. This includes maximum number of iterations which is \code{200} b y default. For other options see documentation of numerical algorithm chosen.}
 #' }
 #' 
-#' @return List of class \code{DLMCTest} (\code{S3} object) with model attributes including: 
+#' @return List of class \code{DLMCTest} (\code{S3} object) with attributes including: 
 #' \itemize{
 #'   \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} if \code{p>0} or \code{Nmdl} otherwise (\code{S3} objects). See \code{\link{ARmdl}} or \code{\link{Nmdl}}.}    
 #'   \item{\code{theta_max_min}: }{Value of nuisance parameters when min version of p-value is maxmimized as discussed in Dufour & Luger (2017) MMC procedure.}
@@ -168,7 +166,7 @@ DLMCTest <- function(Y, p, control = list()){
 #' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based tests for 
 #' Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
-#' @example /examples/DLMMCTest_examples.R
+#' @example /inst/examples/DLMMCTest_examples.R
 #' @export
 DLMMCTest <- function(Y, p, control = list()){
   # ----- Set control values
@@ -273,7 +271,7 @@ DLMMCTest <- function(Y, p, control = list()){
     pval_prod <- mmc_prd_out@fitnessValue
     
   }
-  # ----- get test-stat using optimization output params
+  # ----- get test output using optimization output params
   z_min <- y - x%*%theta_min
   z_prd <- y - x%*%theta_prod
   rownames(theta_min) <- paste0("phi_", seq(1:p))
@@ -285,7 +283,7 @@ DLMMCTest <- function(Y, p, control = list()){
   S0_prd  <- t(calc_DLmoments(eps_prd))
   colnames(S0_min) <- c("M(\U03B5)","V(\U03B5)","S(\U03B5)","K(\U03B5)")
   colnames(S0_prd) <- c("M(\U03B5)","V(\U03B5)","S(\U03B5)","K(\U03B5)")
-  # ----- get critical values
+  # get critical values
   Fmin_sim_cv   <- Fmin_sim[round(c(0.90,0.95,0.99)*nrow(Fmin_sim)),]
   Fprd_sim_cv   <- Fprd_sim[round(c(0.90,0.95,0.99)*nrow(Fprd_sim)),]
   names(Fmin_sim_cv)  <- paste0(c("0.90","0.95","0.99"), "%")
@@ -295,7 +293,7 @@ DLMMCTest <- function(Y, p, control = list()){
   F0_prod <- combine_stat(S0_prd, params, "prod")
   colnames(F0_min) <- "F(\U03B5)"
   colnames(F0_prod) <- "F(\U03B5)"
-  # ----- organize remaining output
+  # ----- organize test output
   DLMMCTest_output <- list(mdl_h0 = mdl_h0, S0_min = S0_min, S0_prod = S0_prd, F0_min = F0_min, F0_prod = F0_prod, 
                            FN_min = Fmin_sim, FN_prod = Fprd_sim, pval_min = pval_min, pval_prod = pval_prod, 
                            theta_max_min = theta_min, theta_max_prod = theta_prod, theta_low = theta_low, theta_upp = theta_upp, 

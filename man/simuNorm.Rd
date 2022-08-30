@@ -4,7 +4,7 @@
 \alias{simuNorm}
 \title{Simulate normally distributed process}
 \usage{
-simuNorm(mdl_h0)
+simuNorm(mdl_h0, burnin = 0L)
 }
 \arguments{
 \item{\code{mdl_h0}}{List containing the following DGP parameters
@@ -13,8 +13,10 @@ simuNorm(mdl_h0)
   \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
   \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
   \item{\code{q}: }{Number of series.}
-  \item{\code{eps}: }{An optional (\code{T x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+  \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 }}
+
+\item{\code{burnin}}{Number of simulated observations to remove from beginning. Default is \code{100}.}
 }
 \value{
 List with simulated series and its DGP parameters.

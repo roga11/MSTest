@@ -19,3 +19,4 @@ Negative log-likelihood value.
 \description{
 This function computes the (negative) log-likelihood for a markov-switching vector autoregressive model
 }
+\keyword{internal}

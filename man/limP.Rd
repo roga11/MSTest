@@ -15,3 +15,4 @@ A (\code{k x 1}) vector of limiting probabilities.
 \description{
 Takes a transition matrix and returns the limiting probabilities.
 }
+\keyword{internal}
