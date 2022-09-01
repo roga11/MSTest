@@ -189,7 +189,6 @@ MMC_bounds <- function(theta_0, mdl_h0, mdl_h1, con){
   # correct lower bound of variances to be in admissible region
   sigma_ind <- c(mdl_h0$theta_var_ind,mdl_h1$theta_var_ind)
   if (any(theta_low[sigma_ind==1]<=0)==TRUE){
-    neg_loc <- 
     theta_low[sigma_ind==1][theta_low[sigma_ind==1]<=0] = theta_0[sigma_ind==1][theta_low[sigma_ind==1]<=0]*con$variance_constraint  
   }
   # correct transition probability bounds to be in admissible region
