@@ -121,7 +121,8 @@ arma::vec limP(arma::mat P){
     ep(0,nr) = 1;
     arma::mat Atmp = join_cols(arma::eye(nr,nr)-P,onevec);
     //arma::vec pinf = inv(trans(Atmp)*Atmp)*trans(Atmp)*trans(ep);
-    arma::vec pinf = solve(trans(Atmp)*Atmp,trans(Atmp))*trans(ep);
+    //arma::vec pinf = solve(trans(Atmp)*Atmp,trans(Atmp))*trans(ep);
+    arma::vec pinf = solve(trans(Atmp)*Atmp,trans(Atmp), arma::solve_opts::allow_ugly)*trans(ep);
     return (pinf);
   }else{
     stop("Input must be a square matrix");
@@ -1785,6 +1786,7 @@ List ExpectationM_MSARmdl(arma::vec theta, List mdl, int k){
   return(MSloglik_output);
 }
 
+
 // ==============================================================================
 //' @title Markov-switching vector autoregressive log-likelihood function
 //' 
@@ -2122,6 +2124,7 @@ List EMaximization_MSARmdl(arma::vec theta, List mdl, List MSloglik_output, int 
     num = num + (trans(x_tmp)*diagmat(xi_t_T_AR.col(xm)/sigAR(xm))*y_tmp);
   }
   arma::vec phi_new = inv(denom)*num;
+  //arma::vec phi_new = inv(denom, arma::inv_opts::allow_approx)*num;
   // ----- Update estimates for variance
   // ----- Compute new residuals
   List mdl_tmp = clone(mdl);
@@ -2531,12 +2534,12 @@ List HMmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   int it = 1;
   double deltath = EMest_output["deltath"];
   // iterate to unitl convergence criterion is met or max number of iterations (maxit) 
-  while ((it<maxit) & (deltath>thtol)){
+  while ((it<=maxit) & (deltath>thtol)){
     EMest_output = EMiter_HMmdl(mdl, EMest_output, k);
     deltath = EMest_output["deltath"];
     it = it + 1;
   }
-  EMest_output["iterations"] = it; 
+  EMest_output["iterations"] = it-1; 
   return(EMest_output);
 }
 
@@ -2574,12 +2577,12 @@ List MSARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   int it = 1;
   double deltath = EMest_output["deltath"];
   // iterate to unitl convergence criterion is met or max number of iterations (maxit) 
-  while ((it<maxit) & (deltath>thtol)){
+  while ((it<=maxit) & (deltath>thtol)){
     EMest_output = EMiter_MSARmdl(mdl, EMest_output, k);
     deltath = EMest_output["deltath"];
     it = it + 1;
   }
-  EMest_output["iterations"] = it; 
+  EMest_output["iterations"] = it-1; 
   return(EMest_output);
 }
 
@@ -2616,12 +2619,12 @@ List MSVARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   int it = 1;
   double deltath = EMest_output["deltath"];
   // iterate to unitl convergence criterion is met or max number of iterations (maxit) 
-  while ((it<maxit) & (deltath>thtol)){
+  while ((it<=maxit) & (deltath>thtol)){
     EMest_output = EMiter_MSVARmdl(mdl, EMest_output, k);
     deltath = EMest_output["deltath"];
     it = it + 1;
   }
-  EMest_output["iterations"] = it; 
+  EMest_output["iterations"] = it-1; 
   return(EMest_output);
 }
 
