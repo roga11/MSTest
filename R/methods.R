@@ -677,7 +677,6 @@ print.ARmdl <- function(mdl, digits = getOption("digits")){
 
 #' @title Print summary of an \code{VARmdl} object
 #'
-#'
 #' @inheritParams base::print
 #' @export
 print.VARmdl <- function(mdl, digits = getOption("digits")){

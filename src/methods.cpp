@@ -1275,7 +1275,7 @@ double logLike_HMmdl(arma::vec theta, List mdl, int k){
       arma::mat eps_k = eps[xk];
       arma::mat sigma_k = sigma[xk];
       //eta(xt,xk) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*inv(sigma_k)*trans(eps_k.row(xt)))));
-      eta(xt,xk) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*solve(sigma_k,trans(eps_k.row(xt))))));
+      eta(xt,xk) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*solve(sigma_k,trans(eps_k.row(xt)), arma::solve_opts::allow_ugly))));
     }
     arma::vec xi_eta = xi_t_tm1%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
@@ -1514,7 +1514,7 @@ double logLike_MSVARmdl(arma::vec theta, List mdl, int k){
       arma::mat eps_m = eps[xm];
       arma::mat sigma_m = sigAR[xm];
       //eta(xt,xm) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*inv(sigma_m)*trans(eps_m.row(xt)))));
-      eta(xt,xm) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt))))));
+      eta(xt,xm) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt)), arma::solve_opts::allow_ugly))));
     }
     arma::vec xi_eta = xi_t_tm1_AR%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
@@ -1628,7 +1628,7 @@ List ExpectationM_HMmdl(arma::vec theta, List mdl, int k){
       arma::mat eps_k = eps[xk];
       arma::mat sigma_k = sigma[xk];
       //eta(xt,xk) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*inv(sigma_k)*trans(eps_k.row(xt)))));
-      eta(xt,xk) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*solve(sigma_k,trans(eps_k.row(xt))))));
+      eta(xt,xk) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*solve(sigma_k,trans(eps_k.row(xt)), arma::solve_opts::allow_ugly))));
     }
     arma::vec xi_eta = xi_t_tm1%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
@@ -1841,7 +1841,7 @@ List ExpectationM_MSVARmdl(arma::vec theta, List mdl, int k){
       arma::mat eps_m = eps[xm];
       arma::mat sigma_m = sigAR[xm];
       //eta(xt,xm) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*inv(sigma_m)*trans(eps_m.row(xt)))));
-      eta(xt,xm) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt))))));
+      eta(xt,xm) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt)), arma::solve_opts::allow_ugly))));
     }
     arma::vec xi_eta = xi_t_tm1_AR%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);

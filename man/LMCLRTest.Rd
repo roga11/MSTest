@@ -43,12 +43,6 @@ test (LMC-LRT) proposed in Rodriguez Rondon & Dufour (2022).
 }
 \examples{
 set.seed(1234)
-# load data used in Hamilton 1989 and extended data used in CHP 2014 
-y84 <- as.matrix(hamilton84GNP$GNP_logdiff)
-y10 <- as.matrix(carhuplo10GNP$GNP_logdiff)
-
-
-
 
 # Set test procedure options
 lmc_control = list(N = 99,
@@ -63,13 +57,41 @@ lmc_control = list(N = 99,
                                           maxit  = 500,
                                           use_diff_init = 1))
 
+# ------ MS-AR example ----- #
+# load data used in Hamilton 1989 and extended data used in CHP 2014 
+y84 <- as.matrix(hamilton84GNP$GNP_logdiff)
 
+
+mdl <- LMCLRTest(y84, p = 4 , k0 = 1 , k1 = 2, lmc_control)
+mdl
+
+
+# ------ MS-VAR example ----- #
+
+set.seed(1234)
+# Define DGP of MS VAR process
+mdl_msvar2 <- list(n     = 1000, 
+                   p     = 1,
+                   q     = 2,
+                   mu    = rbind(c(5, -2),
+                                 c(10, 2)),
+                   sigma = list(rbind(c(5.0, 1.5),
+                                      c(1.5, 1.0)),
+                                rbind(c(7.0, 3.0),
+                                      c(3.0, 2.0))),
+                   phi   = rbind(c(0.50, 0.30),
+                                 c(0.20, 0.70)),
+                   k     = 2,
+                   P     = rbind(c(0.90, 0.10),
+                                 c(0.10, 0.90)))
+
+# Simulate process using simuMSVAR() function
+y_msvar_simu <- simuMSVAR(mdl_msvar2)
 
 
 st <- Sys.time()
-mdl <- LMCLRTest(y84, p = 4 , k0 = 1 , k1 = 2, lmc_control)
+mdl <- LMCLRTest(y_msvar_simu$y, p = 1 , k0 = 1 , k1 = 2, lmc_control)
 end <- Sys.time() - st
 mdl
 end
-
 }

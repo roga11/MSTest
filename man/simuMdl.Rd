@@ -2,11 +2,11 @@
 % Please edit documentation in R/RcppExports.R
 \name{simuMdl}
 \alias{simuMdl}
-\title{Likelihood Ratio Test Statistic Sample Distribution}
+\title{Likelihood ratio test statistic sample distribution}
 \usage{
 simuMdl(mdl_h0, p, q, k, burnin)
 }
 \description{
-Likelihood Ratio Test Statistic Sample Distribution
+Likelihood ratio test statistic sample distribution
 }
 \keyword{internal}

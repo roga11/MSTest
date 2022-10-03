@@ -856,8 +856,7 @@ bootCV <- function(mdl, rho_b, N, msvar) {
     .Call(`_MSTest_bootCV`, mdl, rho_b, N, msvar)
 }
 
-#' @title Likelihood Ratio Test Statistic Sample Distribution
-#' 
+#' @title Likelihood ratio test statistic sample distribution
 #' 
 #' @keywords internal
 #' 
@@ -868,7 +867,6 @@ simuMdl <- function(mdl_h0, p, q, k, burnin) {
 
 #' @title Change model List with new parameters
 #' 
-#' 
 #' @keywords internal
 #' 
 #' @export
@@ -877,7 +875,6 @@ mdledit <- function(mdl_h0, theta_h0, p, q, k0) {
 }
 
 #' @title Computes test stat using new parameter vectors
-#' 
 #' 
 #' @keywords internal
 #' 
@@ -888,7 +885,6 @@ compu_tstat <- function(theta_h0, theta_h1, mdl_h0, mdl_h1, p, q, k0, k1) {
 
 #' @title Likelihood Ratio Test Statistic Sample Distribution
 #' 
-#' 
 #' @export
 LR_samp_dist <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control) {
     .Call(`_MSTest_LR_samp_dist`, mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control)
@@ -896,14 +892,12 @@ LR_samp_dist <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control) 
 
 #' @title Monte Carlo Likelihood Ratio Test P-value Function 
 #' 
-#' 
 #' @export
 MMCLRpval_fun <- function(theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control) {
     .Call(`_MSTest_MMCLRpval_fun`, theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control)
 }
 
 #' @title Monte Carlo Likelihood Ratio Test P-value Function 
-#' 
 #' 
 #' @export
 MMCLRpval_fun_min <- function(theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control) {

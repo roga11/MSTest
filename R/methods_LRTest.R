@@ -1,7 +1,6 @@
 
 #' @title Monte Carlo Likelihood Ratio Test sample disttribution (parallel version)
 #' 
-#' 
 #' @keywords internal
 #'
 #' @export
@@ -25,7 +24,6 @@ LR_samp_dist_par <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_contr
 
 
 #' @title Estimate model for likelihood ratio test
-#' 
 #' 
 #' @keywords internal
 #' 
@@ -170,7 +168,6 @@ LMCLRTest <- function(Y, p, k0, k1, control = list()){
 
 #' @title MMC nuisance parameter bounds for univariate models 
 #' 
-#' 
 #' @keywords internal
 #' 
 #' @export
@@ -210,8 +207,6 @@ MMC_bounds <- function(theta_0, mdl_h0, mdl_h1, con){
 
 #' @title Maximized Monte Carlo Likelihood Ratio Test
 #'
-#' 
-#' 
 #' @export
 MMCLRTest <- function(Y, p, k0, k1, control = list()){
   # ----- Set control values
@@ -357,7 +352,6 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
 
 
 #' @title Bootstrap Likelihood Ratio Test
-#' 
 #' 
 #' @export
 BootLRTest <- function(Y, ar, k0, k1, control = list()){

@@ -1,6 +1,4 @@
 #' @title Kasaharra 2018 US GDP data
-#'
-#'  
 #' 
 #' @format 
 #' \describe{ This data is used in Kasahara & Shimotsu (2018) working paper. The series ranges from 
@@ -14,8 +12,6 @@
 "kasshi14GDP"
 # -----------------------------------------------------------------------------
 #' @title Carasco 2010 GNP
-#'
-#' 
 #' 
 #' @format 
 #' \describe{This dataset is the extension of the GNP series used in CHP (2014). Specifically, 
@@ -36,7 +32,6 @@
 # -----------------------------------------------------------------------------
 #' @title Hamilton 1984 GNP
 #' 
-#'
 #' @format 
 #' \describe{This data set is used in Hansen (1992) to test the US GNP model proposed by 
 #' Hamilton (1989). Secifically, the series \emph{GNP_logdiff}. This series ranges from 
