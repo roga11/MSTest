@@ -21,7 +21,7 @@ HLRTest <- function(Y, p = 1, control = list()){
               gn = 20, 
               pn = 12,
               pn_step_size = 0.075,
-              nwband = 4, 
+              nwband = 0, 
               reps = 1000)
   # Perform some checks for controls
   nmsC <- names(con)
