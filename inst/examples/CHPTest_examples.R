@@ -1,6 +1,6 @@
 # load data used in Hamilton 1989 and extended data used in CHP 2014 
 y84 <- as.matrix(hamilton84GNP$GNP_logdiff)
-y10 <- as.matrix(carhuplo10GNP$GNP_logdiff)
+y10 <- as.matrix(chp10GNP$GNP_logdiff)
 
 # Set test procedure options
 control = list(N = 3000, 

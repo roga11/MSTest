@@ -83,7 +83,7 @@ y_gnp_gw_84 <- hamilton84GNP$GNP_logdiff
 control <- list(msmu   = TRUE, 
                 msvar  = FALSE, 
                 method = "MLE",
-                use_diff_init = 10)
+                use_diff_init = 5)
 
 # Estimate model with p=4 and switch in mean only as in Hamilton (1989)
 hamilton89_mdl <- MSARmdl(as.matrix(y_gnp_gw_84), p = 4, k = 2, control)

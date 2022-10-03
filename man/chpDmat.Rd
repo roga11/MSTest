@@ -20,3 +20,4 @@ This function organizes the first and second derivatives of the log-likelihoood.
 \references{
 Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 }
+\keyword{internal}

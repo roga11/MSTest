@@ -57,7 +57,7 @@ Markov switching autoregressive models proposed in Dufour & Luger (2017).
 set.seed(1234)
 # load data used in Hamilton 1989 and extended data used in CHP 2014 
 y84 <- as.matrix(hamilton84GNP$GNP_logdiff)
-y10 <- as.matrix(carhuplo10GNP$GNP_logdiff)
+y10 <- as.matrix(chp10GNP$GNP_logdiff)
 
 # Set test procedure options
 mmc_control <- list(N = 99,

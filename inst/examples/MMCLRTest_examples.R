@@ -67,9 +67,6 @@ mdl_msvar2 <- list(n     = 1000,
 y_msvar_simu <- simuMSVAR(mdl_msvar2)
 
 
-st <- Sys.time()
 mdl <- MMCLRTest(y_msvar_simu$y, p = 1 , k0 = 1 , k1 = 2, mmc_control)
-end <- Sys.time() - st
 mdl
-end
 

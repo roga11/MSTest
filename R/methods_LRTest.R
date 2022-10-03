@@ -93,6 +93,8 @@ estimMdl <- function(Y, p, q, k, control = list()){
 #'   \item{\code{control}: }{List with test procedure options used.}
 #' }
 #'
+#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#'
 #' @example /inst/examples/LMCLRTest_examples.R
 #' @export
 LMCLRTest <- function(Y, p, k0, k1, control = list()){
@@ -170,6 +172,8 @@ LMCLRTest <- function(Y, p, k0, k1, control = list()){
 #' 
 #' @keywords internal
 #' 
+#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#' 
 #' @export
 MMC_bounds <- function(theta_0, mdl_h0, mdl_h1, con){
   k0 <- mdl_h0$k
@@ -207,6 +211,46 @@ MMC_bounds <- function(theta_0, mdl_h0, mdl_h1, con){
 
 #' @title Maximized Monte Carlo Likelihood Ratio Test
 #'
+#' @description This function performs the Maximized Monte Carlo likelihood ratio 
+#' test (MMC-LRT) proposed in Rodriguez Rondon & Dufour (2022).
+#' 
+#' @param Y  Series to be tested. Must be a (\code{T x q}) matrix.
+#' @param p  Number of autoregressive lags. Must be greater than or equal to 0. 
+#' @param k0 Number of regimes under null hypothesis. Must be greater than or equal to 1.
+#' @param k1 Number of regimes under alternative hypothesis. Must be greater than \code{k0}.
+#' @param control List with test procedure options including: 
+#' \itemize{
+#'   \item{\code{N}: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
+#'   \item{\code{burnin}: }{Number of simulated observations to remove from beginning. Default is \code{100}.}
+#'   \item{\code{converge_check}: }{String of NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.}
+#'   \item{\code{workers}: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. See \code{\link{doParallel}}. Default is \code{0}.}
+#'   \item{\code{type}: }{String that determines the type of optimization algorithm used. Arguments allowed are: \code{"pso"}, \code{"GenSA"}, and \code{"GA"}. Default is \code{"pso"}.}
+#'   \item{\code{eps}: }{Double determining the constant value that defines a consistent set for search. Default is \code{0.1}.}
+#'   \item{\code{CI_union}: }{Boolean determining if union of set determined by \code{eps} and confidence set should be used to define consistent set for search. Default is \code{TRUE}.}
+#'   \item{\code{lambda}: }{Double determining penalty on nonlinear constraint. Default is \code{100}.}
+#'   \item{\code{stationary_constraint}: }{Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.}
+#'   \item{\code{variance_constraint}: }{Double used to determine the lower bound for variance in parameter set for search. Value should be between \code{0} and \code{1} as it is multiplied by consistent point estimates of variances. Default is \code{0.01} (i.e., \code{1\%} of consistent point estimates.}
+#'   \item{\code{silence}: }{Boolean determining if optimization steps should be silenced (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{FALSE}.}
+#'   \item{\code{threshold_stop}: }{Default is \code{1}.}
+#'   \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+#'   \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+#'   \item{\code{type_control}: }{List with optimization algorithm options. See \code{\link{pso}}, \code{\link{GenSa}}, \code{\link{GA}}. Default is to set \code{list(maxit = 200)} so that maximum number of iterations is \code{200}.}
+#' }
+#'
+#' @return List of class \code{LMCLRTest} (\code{S3} object) with attributes including: 
+#' \itemize{
+#'   \item{\code{mdl_h0}: }{List with restricted model attributes. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.}
+#'   \item{\code{mdl_h0}: }{List with unrestricted model attributes. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.}
+#'   \item{\code{LRT_0}: }{Value of test statistic from observed data.}
+#'   \item{\code{LRN}: }{A (\code{N x 1}) vector of test statistics from data simulated under the null hypothesis.}
+#'   \item{\code{pval}: }{P-value of Local Monte Carlo Likelihood Ratio Test.}
+#'   \item{\code{LRN_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values (from vector \code{LRN}).}
+#'   \item{\code{control}: }{List with test procedure options used.}
+#' }
+#'
+#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#'
+#' @example /inst/examples/MMCLRTest_examples.R
 #' @export
 MMCLRTest <- function(Y, p, k0, k1, control = list()){
   # ----- Set control values
@@ -330,20 +374,10 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
   # Compute test stats
   LRT_0 = compu_tstat(theta_h0, theta_h1, mdl_h0, mdl_h1, p, q, k0, k1)
   names(LRT_0) <- c("LRT_0")
-  #  get critical values
-  # NEED TO USE SAME ERRORS IN NEXT PART BELOW TO OBTAIN SAME LRN AND SAME CV
-  #if(workers>0){
-  #  LRN = as<arma::vec>(LR_samp_dist_par(mdl_h0_tmp, k1, N, burnin, mdl_h0_control, mdl_h1_control, workers));
-  #}else{
-  #  LRN = LR_samp_dist(mdl_h0_tmp, k1, N, burnin, mdl_h0_control, mdl_h1_control);
-  #}
-  #LRN     <- as.matrix(sort(LRN))
-  #LRN_cv  <- LRN[round(c(0.90,0.95,0.99)*nrow(LRN)),]
-  #names(LRN_cv)  <- paste0(c("0.90","0.95","0.99"), "%")
   # ----- organize test output
   MMCLRTest_output <- list(mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, mdl_h0_mmc = mdl_h0_mmc, mdl_h1_mmc = mdl_h1_mmc, 
-                           LRT_0 = LRT_0, #LRN = LRN, 
-                           pval = pval, #LRN_cv = LRN_cv, 
+                           LRT_0 = LRT_0, 
+                           pval = pval,
                            theta_h0 = theta_h0, theta_h1 = theta_h1, control = con)
   class(MMCLRTest_output) <- "MMCLRTest"
   return(MMCLRTest_output)
@@ -353,64 +387,74 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
 
 #' @title Bootstrap Likelihood Ratio Test
 #' 
+#' @description This function performs the bootstrap likelihood ratio 
+#' test discussed in Qu & Zhuo (2021) and Kasahara & Shimotsu (2018).
+#' 
+#' @param Y  Series to be tested. Must be a (\code{T x q}) matrix.
+#' @param p  Number of autoregressive lags. Must be greater than or equal to 0. 
+#' @param k0 Number of regimes under null hypothesis. Must be greater than or equal to 1.
+#' @param k1 Number of regimes under alternative hypothesis. Must be greater than \code{k0}.
+#' @param control List with test procedure options including: 
+#' \itemize{
+#'   \item{\code{B}: }{Integer determining the number of bootstrap simulations. Default is set to \code{999}.}
+#'   \item{\code{burnin}: }{Number of simulated observations to remove from beginning. Default is \code{100}.}
+#'   \item{\code{converge_check}: }{String of NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.}
+#'   \item{\code{workers}: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. See \code{\link{doParallel}}. Default is \code{0}.}
+#'   \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+#'   \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+#' }
+#'
+#' @return List of class \code{LMCLRTest} (\code{S3} object) with attributes including: 
+#' \itemize{
+#'   \item{\code{mdl_h0}: }{List with restricted model attributes. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.}
+#'   \item{\code{mdl_h0}: }{List with unrestricted model attributes. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.}
+#'   \item{\code{LRT_0}: }{Value of test statistic from observed data.}
+#'   \item{\code{LRN}: }{A (\code{N x 1}) vector of test statistics from data simulated under the null hypothesis.}
+#'   \item{\code{pval}: }{P-value of Local Monte Carlo Likelihood Ratio Test.}
+#'   \item{\code{LRN_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values (from vector \code{LRN}).}
+#'   \item{\code{control}: }{List with test procedure options used.}
+#' }
+#' 
+#' @references Qu, Zhongjun, and Fan Zhuo. 2021. “Likelihood Ratio-Based Tests for Markov Regime Switching.” \emph{The Review of Economic Studies} 88 (2): 937–968.
+#' @references Kasahara, Hiroyuk, and Katsum Shimotsu. 2018. “Testing the number of regimes in Markov regime switching models.” \emph{arXiv preprint arXiv:1801.06862}.
+#' 
+#' @example /inst/examples/BootLRTest_examples.R
 #' @export
-BootLRTest <- function(Y, ar, k0, k1, control = list()){
+BootLRTest <- function(Y, p, k0, k1, control = list()){
   # ----- Set control values
-  con <- list(msmu = TRUE, 
-              msvar = TRUE,
-              B = 1000,
-              maxit = 500,
-              thtol = 1e-6,
-              burnin = 200,
-              getSE = FALSE,
-              converge_check = "both",
-              init_val_try = 1,
-              init_val_try_dist = 1,
-              finite_max_init = 100,
-              dist_converge_iter = 1,
-              workers=0)
+  con <- list(B = 999,
+              burnin = 100,
+              converge_check = NULL,
+              workers = 0,
+              mdl_h0_control = list(),
+              mdl_h1_control = list())
   # ----- Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
-  if(length(noNms <- namc[!namc %in% nmsC])){
+  if (length(noNms <- namc[!namc %in% nmsC])){
     warning("unknown names in control: ", paste(noNms,collapse=", ")) 
   }
   # ----- Perform other checks
   if (is.matrix(Y)){
     q <- ncol(Y)
   }else{
-    stop("Observations Y must be passed as a (Txq) matrix.") 
+    stop("Observations Y must be a (T x q) matrix.") 
   }
   # ----- Estimate models using observed data
-  if ((k0==1) & (q==1)){
-    # MS model & linear model under null hypothesis
-    mdl_h0 <- ARmdl(Y, ar = ar, intercept = TRUE, getSE = con$getSE)
-    mdl_h0$iterations <- 1
-    mdl_h1 <- MSmdl_EM(Y, ar = ar, k = k1, control = con)
-  }else if ((k0>1) & (q==1)){
-    # MS models
-    mdl_h0 <- MSmdl_EM(Y, ar = ar, k = k0, control = con)
-    mdl_h1 <- MSmdl_EM(Y, ar = ar, k = k1, control = con)
-  }else if ((k0==1) & (q>1)){
-    # MSVAR model & linear model under null hypothesis
-    mdl_h0 <- VARmdl(Y, ar = ar, intercept = TRUE, getSE = con$getSE)
-    mdl_h0$iterations <- 1
-    mdl_h1 <- MSVARmdl_EM(Y, ar = ar, k = k1, control = con)
-  }else if ((k0>1) & (q>1)){
-    # MSVAR models
-    mdl_h0 <- MSVARmdl_EM(Y, ar = ar, k = k0, control = con)
-    mdl_h1 <- MSVARmdl_EM(Y, ar = ar, k = k1, control = con)
-  }
-  # Optional model convergence checks (model under null is only checked if k0>1 since EM is only used then)
+  mdl_h0 <- estimMdl(Y, p, q, k0, con$mdl_h0_control)
+  mdl_h1 <- estimMdl(Y, p, q, k1, con$mdl_h1_control)
+  con$mdl_h0_control <- mdl_h0$control
+  con$mdl_h1_control <- mdl_h1$control
+  # ----- Optional model convergence checks
   if (is.null(con$converge_check)==FALSE){
-    if ((con$converge_check=="null") & (mdl_h0$iterations==con$maxit)){
-      stop("Model under null hypothesis did not converge. Run again to use different initial values and/or increase 'maxit'")
+    if ((con$converge_check=="null") & (mdl_h0$converged==FALSE)){
+      stop("Model under null hypothesis did not converge. Run again to use different initial values and/or increase 'maxit' for restricted model.")
     }
-    if((con$converge_check=="alt") & (mdl_h1$iterations==con$maxit)){
-      stop("Model under alternative hypothesis did not converge. Run again to use different initial values and/or increase 'maxit'")
+    if ((con$converge_check=="alt") & (mdl_h1$converged==FALSE)){
+      stop("Model under alternative hypothesis did not converge. Run again to use different initial values and/or increase 'maxit' for unrestricted model.")
     }
-    if ((con$converge_check=="both") & ((mdl_h0$iterations==con$maxit) | (mdl_h1$iterations==con$maxit))){
-      stop("Model did not converge. Run again to use different initial values and/or increase 'maxit'")
+    if ((con$converge_check=="both") & ((mdl_h0$converged==FALSE) | (mdl_h1$converged==FALSE))){
+      stop("Model did not converge. Run again to use different initial values and/or increase 'maxit' for each models.")
     }
   }
   # ----- Compute test statistic (LRT_0)
@@ -421,32 +465,28 @@ BootLRTest <- function(Y, ar, k0, k1, control = list()){
   LRT_0 <- -2*(logL0-logL1)
   # ----- Perform check of test stat and model parameters
   if ((is.finite(LRT_0)==FALSE) | (any(is.finite(theta_h0)==FALSE)) | (any(is.finite(theta_h1)==FALSE))){
-    stop("LRT_0 or model parameters are not finite. Please check series")
+    stop("LRT_0 or model parameters are not finite. Run again to use different initial values") 
   }
   if (LRT_0<0){
     stop("LRT_0 is negative. Run again to use different initial values")
   }
+  names(LRT_0) <- c("LRT_0")
   # ----- Simulate sample null distribution
-  if(con$workers>0){
-    LRN <- LR_samp_dist_par(mdl_h0, k1, con$msmu, con$msvar, 
-                            con$B, con$maxit, con$thtol, 
-                            con$burnin, con$finite_max_init, 
-                            con$dist_converge_iter, con$init_val_try_dist, con$workers)
+  if (con$workers>0){
+    LRN <- LR_samp_dist_par(mdl_h0, k1, con$B, con$burnin, con$mdl_h0_control, con$mdl_h1_control, con$workers)
   }else{
-    LRN <- LR_samp_dist(mdl_h0, k1, con$msmu, con$msvar, 
-                        con$B, con$maxit, con$thtol, 
-                        con$burnin, con$finite_max_init, 
-                        con$dist_converge_iter, con$init_val_try_dist) 
+    LRN <- LR_samp_dist(mdl_h0, k1, con$B, con$burnin, con$mdl_h0_control, con$mdl_h1_control) 
   }
   # ----- Compute p-value
   pval <- sum(LRN>LRT_0)/con$B # [eq. 4.62] (Davidson & MacKinnon, 2004)
+  # ----- get critical values
+  LRN     <- as.matrix(sort(LRN))
+  LRN_cv  <- LRN[round(c(0.90,0.95,0.99)*nrow(LRN)),]
+  names(LRN_cv)  <- paste0(c("0.90","0.95","0.99"), "%")
   # ----- Organize output
-  BootLRTest_output<-list()
-  BootLRTest_output$mdl_h0 <- mdl_h0
-  BootLRTest_output$mdl_h1 <- mdl_h1
-  BootLRTest_output$LRT_0 <- LRT_0
-  BootLRTest_output$LRN <- LRN
-  BootLRTest_output$pval <- pval
+  BootLRTest_output <- list(mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, LRT_0 = LRT_0, LRN = LRN,
+                            pval = pval, LRN_cv = LRN_cv, control = con)
+  class(BootLRTest_output) <- "BootLRTest"
   return(BootLRTest_output)
 }
 

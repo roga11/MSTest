@@ -42,22 +42,21 @@ This function performs the Local Monte Carlo likelihood ratio
 test (LMC-LRT) proposed in Rodriguez Rondon & Dufour (2022).
 }
 \examples{
-set.seed(1234)
-
+# ------ MS-AR example ----- #
 # Set test procedure options
 lmc_control = list(N = 99,
                    burnin = 100,
                    converge_check = NULL,
-                   mdl_h0_control <- list(const  = TRUE, 
-                                          getSE  = TRUE),
-                   mdl_h1_control <- list(msmu   = TRUE, 
-                                          msvar  = FALSE,
-                                          getSE  = TRUE,
-                                          method = "EM",
-                                          maxit  = 500,
-                                          use_diff_init = 1))
+                   mdl_h0_control = list(const  = TRUE, 
+                                         getSE  = TRUE),
+                   mdl_h1_control = list(msmu   = TRUE, 
+                                         msvar  = FALSE,
+                                         getSE  = TRUE,
+                                         method = "EM",
+                                         maxit  = 500,
+                                         use_diff_init = 1))
 
-# ------ MS-AR example ----- #
+set.seed(1234)
 # load data used in Hamilton 1989 and extended data used in CHP 2014 
 y84 <- as.matrix(hamilton84GNP$GNP_logdiff)
 
@@ -67,6 +66,20 @@ mdl
 
 
 # ------ MS-VAR example ----- #
+
+# Set test procedure options
+lmc_control = list(N = 19,
+                   burnin = 100,
+                   converge_check = NULL,
+                   mdl_h0_control = list(const  = TRUE, 
+                                         getSE  = TRUE),
+                   mdl_h1_control = list(msmu   = TRUE, 
+                                         msvar  = TRUE,
+                                         getSE  = TRUE,
+                                         method = "EM",
+                                         maxit  = 500,
+                                         use_diff_init = 1))
+
 
 set.seed(1234)
 # Define DGP of MS VAR process
@@ -89,9 +102,9 @@ mdl_msvar2 <- list(n     = 1000,
 y_msvar_simu <- simuMSVAR(mdl_msvar2)
 
 
-st <- Sys.time()
 mdl <- LMCLRTest(y_msvar_simu$y, p = 1 , k0 = 1 , k1 = 2, lmc_control)
-end <- Sys.time() - st
 mdl
-end
+}
+\references{
+Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 }

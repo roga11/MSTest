@@ -4,8 +4,79 @@
 \alias{BootLRTest}
 \title{Bootstrap Likelihood Ratio Test}
 \usage{
-BootLRTest(Y, ar, k0, k1, control = list())
+BootLRTest(Y, p, k0, k1, control = list())
+}
+\arguments{
+\item{Y}{Series to be tested. Must be a (\code{T x q}) matrix.}
+
+\item{p}{Number of autoregressive lags. Must be greater than or equal to 0.}
+
+\item{k0}{Number of regimes under null hypothesis. Must be greater than or equal to 1.}
+
+\item{k1}{Number of regimes under alternative hypothesis. Must be greater than \code{k0}.}
+
+\item{control}{List with test procedure options including: 
+\itemize{
+  \item{\code{B}: }{Integer determining the number of bootstrap simulations. Default is set to \code{999}.}
+  \item{\code{burnin}: }{Number of simulated observations to remove from beginning. Default is \code{100}.}
+  \item{\code{converge_check}: }{String of NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.}
+  \item{\code{workers}: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. See \code{\link{doParallel}}. Default is \code{0}.}
+  \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+  \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+}}
+}
+\value{
+List of class \code{LMCLRTest} (\code{S3} object) with attributes including: 
+\itemize{
+  \item{\code{mdl_h0}: }{List with restricted model attributes. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.}
+  \item{\code{mdl_h0}: }{List with unrestricted model attributes. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.}
+  \item{\code{LRT_0}: }{Value of test statistic from observed data.}
+  \item{\code{LRN}: }{A (\code{N x 1}) vector of test statistics from data simulated under the null hypothesis.}
+  \item{\code{pval}: }{P-value of Local Monte Carlo Likelihood Ratio Test.}
+  \item{\code{LRN_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values (from vector \code{LRN}).}
+  \item{\code{control}: }{List with test procedure options used.}
+}
 }
 \description{
-Bootstrap Likelihood Ratio Test
+This function performs the bootstrap likelihood ratio 
+test discussed in Qu & Zhuo (2021) and Kasahara & Shimotsu (2018).
+}
+\examples{
+# ------ MS-AR example ----- #
+# Set test procedure options
+bootlrt_control = list(B = 99,
+                       burnin = 100,
+                       converge_check = NULL,
+                       mdl_h0_control = list(const  = TRUE, 
+                                             getSE  = TRUE),
+                        mdl_h1_control = list(msmu   = TRUE, 
+                                              msvar  = FALSE,
+                                              getSE  = TRUE,
+                                              method = "EM",
+                                              maxit  = 500,
+                                              use_diff_init = 1))
+
+set.seed(1234)
+# Define DGP of MS AR process
+mdl_ms2 <- list(n     = 100, 
+                mu    = c(5,10),
+                sigma = c(1,2),
+                phi   = 0.5,
+                k     = 2,
+                P     = rbind(c(0.90, 0.10),
+                              c(0.10, 0.90)))
+
+# Simulate process using simuMSAR() function
+y_ms_simu <- simuMSAR(mdl_ms2)
+
+st <- Sys.time()
+mdl <- BootLRTest(y_ms_simu$y, p = 1, k0 = 1, k1 = 2, bootlrt_control)
+end <- Sys.time() - st
+end
+mdl
+}
+\references{
+Qu, Zhongjun, and Fan Zhuo. 2021. “Likelihood Ratio-Based Tests for Markov Regime Switching.” \emph{The Review of Economic Studies} 88 (2): 937–968.
+
+Kasahara, Hiroyuk, and Katsum Shimotsu. 2018. “Testing the number of regimes in Markov regime switching models.” \emph{arXiv preprint arXiv:1801.06862}.
 }

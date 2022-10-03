@@ -3,14 +3,13 @@
 \docType{data}
 \name{hamilton84GNP}
 \alias{hamilton84GNP}
-\title{Hamilton 1984 GNP}
+\title{Hamilton 1984 & Hansen 1992 GNP data}
 \format{
 \describe{This data set is used in Hansen (1992) to test the US GNP model proposed by 
-Hamilton (1989). Secifically, the series \emph{GNP_logdiff}. This series ranges from 
-1951Q2 to 1984Q4. 
+Hamilton (1989). This series ranges from 1951Q2 to 1984Q4. 
   \item{DATE}{Vector of dates}
-  \item{GNP}{US GNP seies}
   \item{GNP_logdiff}{US GNP log difference}
+  \item{GNP}{US GNP seies}
 }
 }
 \source{
@@ -20,15 +19,11 @@ Hamilton (1989). Secifically, the series \emph{GNP_logdiff}. This series ranges 
 hamilton84GNP
 }
 \description{
-Hamilton 1984 GNP
+Hamilton 1984 & Hansen 1992 GNP data
 }
 \references{
-Hansen, B. E. (1992). The likelihood ratio test under nonstandard 
-conditions: testing the Markov switching model of GNP. Journal of applied Econometrics, 
-7(S1), S61-S82.
+Hansen, Bruce E. 1992. “The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP.” \emph{Journal of applied Econometrics} 7 (S1): S61–S82.
 
-Hamilton, J. D. (1989). A new approach to the economic analysis of 
-nonstationary time series and the business cycle. Econometrica: Journal of the 
-Econometric Society, 357-384.
+Hamilton, James D. 1989. “A new approach to the economic analysis of nonstationary time series and the business cycle.” \emph{Econometrica} 57 (2): 357–384.
 }
 \keyword{datasets}

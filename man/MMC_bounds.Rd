@@ -9,4 +9,7 @@ MMC_bounds(theta_0, mdl_h0, mdl_h1, con)
 \description{
 MMC nuisance parameter bounds for univariate models
 }
+\references{
+Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+}
 \keyword{internal}

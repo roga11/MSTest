@@ -6,6 +6,124 @@
 \usage{
 MMCLRTest(Y, p, k0, k1, control = list())
 }
+\arguments{
+\item{Y}{Series to be tested. Must be a (\code{T x q}) matrix.}
+
+\item{p}{Number of autoregressive lags. Must be greater than or equal to 0.}
+
+\item{k0}{Number of regimes under null hypothesis. Must be greater than or equal to 1.}
+
+\item{k1}{Number of regimes under alternative hypothesis. Must be greater than \code{k0}.}
+
+\item{control}{List with test procedure options including: 
+\itemize{
+  \item{\code{N}: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
+  \item{\code{burnin}: }{Number of simulated observations to remove from beginning. Default is \code{100}.}
+  \item{\code{converge_check}: }{String of NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.}
+  \item{\code{workers}: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. See \code{\link{doParallel}}. Default is \code{0}.}
+  \item{\code{type}: }{String that determines the type of optimization algorithm used. Arguments allowed are: \code{"pso"}, \code{"GenSA"}, and \code{"GA"}. Default is \code{"pso"}.}
+  \item{\code{eps}: }{Double determining the constant value that defines a consistent set for search. Default is \code{0.1}.}
+  \item{\code{CI_union}: }{Boolean determining if union of set determined by \code{eps} and confidence set should be used to define consistent set for search. Default is \code{TRUE}.}
+  \item{\code{lambda}: }{Double determining penalty on nonlinear constraint. Default is \code{100}.}
+  \item{\code{stationary_constraint}: }{Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.}
+  \item{\code{variance_constraint}: }{Double used to determine the lower bound for variance in parameter set for search. Value should be between \code{0} and \code{1} as it is multiplied by consistent point estimates of variances. Default is \code{0.01} (i.e., \code{1\%} of consistent point estimates.}
+  \item{\code{silence}: }{Boolean determining if optimization steps should be silenced (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{FALSE}.}
+  \item{\code{threshold_stop}: }{Default is \code{1}.}
+  \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+  \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+  \item{\code{type_control}: }{List with optimization algorithm options. See \code{\link{pso}}, \code{\link{GenSa}}, \code{\link{GA}}. Default is to set \code{list(maxit = 200)} so that maximum number of iterations is \code{200}.}
+}}
+}
+\value{
+List of class \code{LMCLRTest} (\code{S3} object) with attributes including: 
+\itemize{
+  \item{\code{mdl_h0}: }{List with restricted model attributes. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.}
+  \item{\code{mdl_h0}: }{List with unrestricted model attributes. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.}
+  \item{\code{LRT_0}: }{Value of test statistic from observed data.}
+  \item{\code{LRN}: }{A (\code{N x 1}) vector of test statistics from data simulated under the null hypothesis.}
+  \item{\code{pval}: }{P-value of Local Monte Carlo Likelihood Ratio Test.}
+  \item{\code{LRN_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values (from vector \code{LRN}).}
+  \item{\code{control}: }{List with test procedure options used.}
+}
+}
 \description{
-Maximized Monte Carlo Likelihood Ratio Test
+This function performs the Maximized Monte Carlo likelihood ratio 
+test (MMC-LRT) proposed in Rodriguez Rondon & Dufour (2022).
+}
+\examples{
+# ------ MS-AR example ----- #
+# Set test procedure options
+mmc_control = list(N = 19,
+                   burnin = 100,
+                   converge_check = NULL,
+                   eps = 0.000000001,
+                   CI_union = TRUE,
+                   silence = FALSE,
+                   threshold_stop = 1,
+                   mdl_h0_control = list(const  = TRUE, 
+                                         getSE  = TRUE),
+                   mdl_h1_control = list(msmu   = TRUE, 
+                                         msvar  = FALSE,
+                                         getSE  = TRUE,
+                                         method = "EM",
+                                         maxit  = 500,
+                                         use_diff_init = 1),
+                   type_control = list(maxit = 50))
+
+set.seed(1234)
+# load data used in Hamilton 1989 and extended data used in CHP 2014 
+y84 <- as.matrix(hamilton84GNP$GNP_logdiff)
+
+mdl <- MMCLRTest(y84, p = 4 , k0 = 1 , k1 = 2, mmc_control)
+mdl
+
+
+# ------ MS-VAR example ----- #
+
+# Set test procedure options
+mmc_control = list(N = 19,
+                   burnin = 100,
+                   converge_check = NULL,
+                   eps = 0.000000001,
+                   CI_union = TRUE,
+                   silence = FALSE,
+                   threshold_stop = 1,
+                   mdl_h0_control = list(const  = TRUE, 
+                                         getSE  = TRUE),
+                   mdl_h1_control = list(msmu   = TRUE, 
+                                         msvar  = TRUE,
+                                         getSE  = TRUE,
+                                         method = "EM",
+                                         maxit  = 500,
+                                         use_diff_init = 1),
+                   type_control = list(maxit = 50))
+
+
+set.seed(1234)
+# Define DGP of MS VAR process
+mdl_msvar2 <- list(n     = 1000, 
+                   p     = 1,
+                   q     = 2,
+                   mu    = rbind(c(5, -2),
+                                 c(10, 2)),
+                   sigma = list(rbind(c(5.0, 1.5),
+                                      c(1.5, 1.0)),
+                                rbind(c(7.0, 3.0),
+                                      c(3.0, 2.0))),
+                   phi   = rbind(c(0.50, 0.30),
+                                 c(0.20, 0.70)),
+                   k     = 2,
+                   P     = rbind(c(0.90, 0.10),
+                                 c(0.10, 0.90)))
+
+# Simulate process using simuMSVAR() function
+y_msvar_simu <- simuMSVAR(mdl_msvar2)
+
+
+mdl <- MMCLRTest(y_msvar_simu$y, p = 1 , k0 = 1 , k1 = 2, mmc_control)
+mdl
+
+}
+\references{
+Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 }

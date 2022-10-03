@@ -1,4 +1,3 @@
-# ------------------------------------------------------------------------------------------
 #' @title CHP parameter stability test
 #'
 #' @description This function performs the CHP parameter stability test as outline in Carrasco, M., Hu, L. and Ploberger, W. (2014).
@@ -71,7 +70,7 @@ CHPTest <- function(Y, p, control = list()){
   class(CHPTest_output) <- "CHPTest"
   return(CHPTest_output)
 } 
-# ------------------------------------------------------------------------------------------
+
 #' @title Derivative matrix
 #'
 #' @description This function organizes the first and second derivatives of the log-likelihoood. 
@@ -82,6 +81,8 @@ CHPTest <- function(Y, p, control = list()){
 #' @return List containing relevant first and second derivatives of log-likelihood function.
 #' 
 #' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
+#' 
+#' @keywords internal
 #' 
 #' @export
 chpDmat <-function(mdl, msvar){
