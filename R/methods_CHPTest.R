@@ -1,6 +1,6 @@
-#' @title CHP parameter stability test
+#' @title Carrasco, Hu, and Ploberger (2014) parameter stability test
 #'
-#' @description This function performs the CHP parameter stability test as outline in Carrasco, M., Hu, L. and Ploberger, W. (2014).
+#' @description This function performs the CHP (2014) parameter stability test as outline in Carrasco, M., Hu, L. and Ploberger, W. (2014).
 #' Original source code can be found \href{https://www.econometricsociety.org/content/supplement-optimal-test-markov-switching-parameters}{here}.
 #'
 #' @param Y A (\code{T x 1}) matrix of observations.  

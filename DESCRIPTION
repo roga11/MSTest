@@ -1,33 +1,37 @@
 Package: MSTest
 Type: Package
 Title: Hypothesis Testing For Markov Switching Models
-Date: 2022-08-03
-Version: 0.1.2
-Authors@R: c(
-  person("Gabriel", "Rodriguez Rondon", email = "gabriel.rodriguezrondon@mail.mcgill.ca",role = c("aut", "cre")), 
-  person("Jean-Marie", "Dufour", email = "jean-marie.dufour@mcgill.ca",role = c("aut")))
-Maintainer: Gabriel Rodriguez  <gabriel.rodriguezrondon@mail.mcgill.ca>
+Date: 2022-10-11
+Version: 0.1.0
+Authors@R:
+  c(person(given = "Gabriel", 
+           family = "Rodriguez Rondon", 
+           role = c("cre","aut"), 
+           email = "gabriel.rodriguezrondon@mail.mcgill.ca"),
+    person(given = "Jean-Marie", 
+           family = "Dufour", 
+           role = c("aut"),
+           email = "jean-marie.dufour@mcgill.ca"))
+Maintainer: Gabriel Rodriguez Rondon <gabriel.rodriguezrondon@mail.mcgill.ca>
 Description: This package implements hypothesis testing procedures that can be used to identify the number of regimes in a Markov-Switching model.
 License: GPL(>= 3)
-LazyData: true
+LazyData: TRUE
 RoxygenNote: 7.2.1
 Encoding: UTF-8
 URL: https://github.com/roga11/MSTest
 Imports: 
+  stats,
+  rlang,
+  nloptr,
   Rcpp (>= 1.0.1), 
-  RcppArmadillo, 
   numDeriv, 
   lmf, 
+  foreach,
   GenSA, 
   pso, 
   GA
 LinkingTo: 
   Rcpp, 
-  RcppArmadillo, 
-  numDeriv, 
-  lmf, 
-  GenSA, 
-  pso, 
-  GA
+  RcppArmadillo
 Depends: 
-  R (>= 2.10)
+  R (>= 4.0.0)

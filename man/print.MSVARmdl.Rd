@@ -4,12 +4,20 @@
 \alias{print.MSVARmdl}
 \title{Print summary of a \code{MSVARmdl} object}
 \usage{
-\method{print}{MSVARmdl}(mdl, digits = getOption("digits"))
+\method{print}{MSVARmdl}(x, digits = getOption("digits"), ...)
 }
 \arguments{
+\item{x}{an object used to select a method.}
+
 \item{digits}{minimal number of \emph{significant} digits, see
     \code{\link[base]{print.default}}.}
+
+\item{...}{further arguments passed to or from other methods.}
+}
+\value{
+The \code{MSVARmdl} object is returned invisibly.
 }
 \description{
-Print summary of a \code{MSVARmdl} object
+This is a method for the function \code{print()} for objects of the class \code{MSVARmdl}.
 }
+\keyword{internal}

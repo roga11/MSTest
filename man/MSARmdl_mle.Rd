@@ -25,3 +25,4 @@ List with model attributes
 \description{
 This function computes estimate a Markov-switching autoregressive model using MLE.
 }
+\keyword{internal}

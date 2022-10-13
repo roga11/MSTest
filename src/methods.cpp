@@ -344,6 +344,8 @@ arma::mat calcResid_MSARmdl(List mdl, arma::mat mu, int k){
 //' 
 //' @return List with \code{M} (\code{Txq}) matrices of residuals in each regime \code{M} where \code{M=k^(ar+1)}.
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 List calcResid_MSVARmdl(List mdl, List mu, int k){
@@ -555,9 +557,9 @@ arma::vec initVals_MSVARmdl(List mdl, int k){
 //' 
 //' @description This function computes the Monte Carlo P-value.
 //' 
-//' @param \code{test_stat} Test statistic under the alternative (e.g. \code{S_0}).
-//' @param \code{null_vec} A (\code{N x 1}) vector with test statistic under the null hypothesis.
-//' @param \code{type} String determining type of test. options are: "geq" for right-tail test, "leq" for left-tail test, "abs" for absolute value test and "two-tail" for two-tail test.
+//' @param test_stat Test statistic under the alternative (e.g. \code{S_0}).
+//' @param null_vec A (\code{N x 1}) vector with test statistic under the null hypothesis.
+//' @param type String determining type of test. options are: "geq" for right-tail test, "leq" for left-tail test, "abs" for absolute value test and "two-tail" for two-tail test.
 //' 
 //' @return MC p-value of test
 //' 
@@ -614,7 +616,7 @@ arma::mat randSN(int T, int q){
 //' 
 //' @description This function simulates an autoregresive process.
 //' 
-//' @param \code{mdl_h0} List containing the following DGP parameters
+//' @param mdl_h0 List containing the following DGP parameters
 //' \itemize{
 //'   \item{\code{n}: }{Length of series.}
 //'   \item{\code{mu}: }{Mmean of process.}
@@ -622,7 +624,7 @@ arma::mat randSN(int T, int q){
 //'   \item{\code{phi}: }{Vector of autoregressive coefficients.}
 //'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 //' }
-//' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
+//' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 //' 
 //' @return List with simulated autoregressive series and its DGP parameters.
 //' 
@@ -670,7 +672,7 @@ List simuAR(List mdl_h0, int burnin = 100){
 //' 
 //' @description This function simulates a Markov-switching autoregressive process.
 //' 
-//' @param \code{mdl_h0} List containing the following DGP parameters
+//' @param mdl_h0 List containing the following DGP parameters
 //' \itemize{
 //'   \item{\code{n}: }{Length of series.}
 //'   \item{\code{k}: }{Number of regimes.}
@@ -680,7 +682,7 @@ List simuAR(List mdl_h0, int burnin = 100){
 //'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
 //'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 //' }
-//' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
+//' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 //' 
 //' @return List with simulated Markov-switching autoregressive process and its DGP properties.
 //' 
@@ -770,7 +772,7 @@ List simuMSAR(List mdl_h0, int burnin = 100){
 //' 
 //' @description This function simulates a vector autoregresive process.
 //' 
-//' @param \code{mdl_h0} List containing the following DGP parameters
+//' @param mdl_h0 List containing the following DGP parameters
 //' \itemize{
 //'   \item{\code{n}: }{Length of series.}
 //'   \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
@@ -780,7 +782,7 @@ List simuMSAR(List mdl_h0, int burnin = 100){
 //'   \item{\code{q}: }{Number of series.}
 //'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 //' }
-//' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
+//' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 //' 
 //' @return List with simulated vector autoregressive series and its DGP parameters.
 //' 
@@ -838,7 +840,7 @@ List simuVAR(List mdl_h0, int burnin = 100){
 //' 
 //' @description This function simulates a Markov-switching vector autoregressive process.
 //' 
-//' @param \code{mdl_h0} List containing the following DGP parameters
+//' @param mdl_h0 List containing the following DGP parameters
 //' \itemize{
 //'   \item{\code{n}: }{Length of series.}
 //'   \item{\code{k}: }{Number of regimes.}
@@ -850,7 +852,7 @@ List simuVAR(List mdl_h0, int burnin = 100){
 //'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
 //'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 //' }
-//' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
+//' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 //' 
 //' @return List with simulated vector autoregressive series and its DGP parameters.
 //' 
@@ -952,7 +954,7 @@ List simuMSVAR(List mdl_h0, int burnin = 100){
 //' 
 //' @description This function simulates a normally distributed process.
 //' 
-//' @param \code{mdl_h0} List containing the following DGP parameters
+//' @param mdl_h0 List containing the following DGP parameters
 //' \itemize{
 //'   \item{\code{n}: }{Length of series.}
 //'   \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
@@ -960,7 +962,7 @@ List simuMSVAR(List mdl_h0, int burnin = 100){
 //'   \item{\code{q}: }{Number of series.}
 //'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 //' }
-//' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
+//' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 //' 
 //' @return List with simulated series and its DGP parameters.
 //' 
@@ -1002,7 +1004,7 @@ List simuNorm(List mdl_h0, int burnin = 0){
 //' 
 //' @description This function simulates a Hidden Markov Model process.
 //' 
-//' @param \code{mdl_h0} List containing the following DGP parameters
+//' @param mdl_h0 List containing the following DGP parameters
 //' \itemize{
 //'   \item{\code{n}: }{Length of series.}
 //'   \item{\code{k}: }{Number of regimes.}
@@ -1012,7 +1014,7 @@ List simuNorm(List mdl_h0, int burnin = 0){
 //'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
 //'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 //' }
-//' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
+//' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 //' 
 //' @return List with simulated series and its DGP parameters.
 //' 
@@ -1100,6 +1102,8 @@ List simuHMM(List mdl_h0, int burnin = 100){
 //' @param \code{mdl} List with model attributes.
 //' 
 //' @return Log-likelihood value.
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]

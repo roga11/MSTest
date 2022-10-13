@@ -159,6 +159,8 @@ calcResid_MSARmdl <- function(mdl, mu, k) {
 #' 
 #' @return List with \code{M} (\code{Txq}) matrices of residuals in each regime \code{M} where \code{M=k^(ar+1)}.
 #' 
+#' @keywords internal
+#' 
 #' @export
 calcResid_MSVARmdl <- function(mdl, mu, k) {
     .Call(`_MSTest_calcResid_MSVARmdl`, mdl, mu, k)
@@ -236,9 +238,9 @@ initVals_MSVARmdl <- function(mdl, k) {
 #' 
 #' @description This function computes the Monte Carlo P-value.
 #' 
-#' @param \code{test_stat} Test statistic under the alternative (e.g. \code{S_0}).
-#' @param \code{null_vec} A (\code{N x 1}) vector with test statistic under the null hypothesis.
-#' @param \code{type} String determining type of test. options are: "geq" for right-tail test, "leq" for left-tail test, "abs" for absolute value test and "two-tail" for two-tail test.
+#' @param test_stat Test statistic under the alternative (e.g. \code{S_0}).
+#' @param null_vec A (\code{N x 1}) vector with test statistic under the null hypothesis.
+#' @param type String determining type of test. options are: "geq" for right-tail test, "leq" for left-tail test, "abs" for absolute value test and "two-tail" for two-tail test.
 #' 
 #' @return MC p-value of test
 #' 
@@ -270,7 +272,7 @@ randSN <- function(T, q) {
 #' 
 #' @description This function simulates an autoregresive process.
 #' 
-#' @param \code{mdl_h0} List containing the following DGP parameters
+#' @param mdl_h0 List containing the following DGP parameters
 #' \itemize{
 #'   \item{\code{n}: }{Length of series.}
 #'   \item{\code{mu}: }{Mmean of process.}
@@ -278,7 +280,7 @@ randSN <- function(T, q) {
 #'   \item{\code{phi}: }{Vector of autoregressive coefficients.}
 #'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 #' }
-#' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
+#' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
 #' @return List with simulated autoregressive series and its DGP parameters.
 #' 
@@ -292,7 +294,7 @@ simuAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @description This function simulates a Markov-switching autoregressive process.
 #' 
-#' @param \code{mdl_h0} List containing the following DGP parameters
+#' @param mdl_h0 List containing the following DGP parameters
 #' \itemize{
 #'   \item{\code{n}: }{Length of series.}
 #'   \item{\code{k}: }{Number of regimes.}
@@ -302,7 +304,7 @@ simuAR <- function(mdl_h0, burnin = 100L) {
 #'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
 #'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 #' }
-#' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
+#' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
 #' @return List with simulated Markov-switching autoregressive process and its DGP properties.
 #' 
@@ -316,7 +318,7 @@ simuMSAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @description This function simulates a vector autoregresive process.
 #' 
-#' @param \code{mdl_h0} List containing the following DGP parameters
+#' @param mdl_h0 List containing the following DGP parameters
 #' \itemize{
 #'   \item{\code{n}: }{Length of series.}
 #'   \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
@@ -326,7 +328,7 @@ simuMSAR <- function(mdl_h0, burnin = 100L) {
 #'   \item{\code{q}: }{Number of series.}
 #'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 #' }
-#' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
+#' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
 #' @return List with simulated vector autoregressive series and its DGP parameters.
 #' 
@@ -340,7 +342,7 @@ simuVAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @description This function simulates a Markov-switching vector autoregressive process.
 #' 
-#' @param \code{mdl_h0} List containing the following DGP parameters
+#' @param mdl_h0 List containing the following DGP parameters
 #' \itemize{
 #'   \item{\code{n}: }{Length of series.}
 #'   \item{\code{k}: }{Number of regimes.}
@@ -352,7 +354,7 @@ simuVAR <- function(mdl_h0, burnin = 100L) {
 #'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
 #'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 #' }
-#' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
+#' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
 #' @return List with simulated vector autoregressive series and its DGP parameters.
 #' 
@@ -366,7 +368,7 @@ simuMSVAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @description This function simulates a normally distributed process.
 #' 
-#' @param \code{mdl_h0} List containing the following DGP parameters
+#' @param mdl_h0 List containing the following DGP parameters
 #' \itemize{
 #'   \item{\code{n}: }{Length of series.}
 #'   \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
@@ -374,7 +376,7 @@ simuMSVAR <- function(mdl_h0, burnin = 100L) {
 #'   \item{\code{q}: }{Number of series.}
 #'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 #' }
-#' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
+#' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
 #' @return List with simulated series and its DGP parameters.
 #' 
@@ -388,7 +390,7 @@ simuNorm <- function(mdl_h0, burnin = 0L) {
 #' 
 #' @description This function simulates a Hidden Markov Model process.
 #' 
-#' @param \code{mdl_h0} List containing the following DGP parameters
+#' @param mdl_h0 List containing the following DGP parameters
 #' \itemize{
 #'   \item{\code{n}: }{Length of series.}
 #'   \item{\code{k}: }{Number of regimes.}
@@ -398,7 +400,7 @@ simuNorm <- function(mdl_h0, burnin = 0L) {
 #'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
 #'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 #' }
-#' @param \code{burnin} Number of simulated observations to remove from beginning. Default is \code{100}.
+#' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
 #' @return List with simulated series and its DGP parameters.
 #' 
@@ -416,6 +418,8 @@ simuHMM <- function(mdl_h0, burnin = 100L) {
 #' @param \code{mdl} List with model attributes.
 #' 
 #' @return Log-likelihood value.
+#' 
+#' @keywords internal
 #' 
 #' @export
 logLike_Nmdl <- function(theta, mdl) {
@@ -788,6 +792,8 @@ MSVARmdl_em <- function(theta_0, mdl, k, optim_options) {
 #' 
 #' @return Part of test statistic given \code{rho} and \code{hv} value. 
 #' 
+#' @keywords internal
+#' 
 #' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
 #' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
@@ -807,6 +813,8 @@ calc_mu2t_mv <- function(mdl, rho, ltmt, hv) {
 #' @param \code{ltmt} List containing derivatives output from \code{\link{chpDmat}}.
 #' 
 #' @return Part of test statistic given \code{rho} and \code{hv} value. 
+#' 
+#' @keywords internal
 #' 
 #' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
 #' test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
@@ -828,6 +836,8 @@ calc_mu2t <- function(mdl, rho, ltmt) {
 #' 
 #' @return A (\code{2 x 1}) vector with supTS test statistic as first element and expTS test-statistics as second element.
 #' 
+#' @keywords internal
+#' 
 #' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
 #' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
@@ -847,6 +857,8 @@ chpStat <- function(mdl, rho_b, ltmt, msvar) {
 #' @param \code{msvar} Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
 #' 
 #' @return Bootstrap critical values
+#' 
+#' @keywords internal
 #' 
 #' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
 #' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
@@ -885,6 +897,8 @@ compu_tstat <- function(theta_h0, theta_h1, mdl_h0, mdl_h1, p, q, k0, k1) {
 
 #' @title Likelihood Ratio Test Statistic Sample Distribution
 #' 
+#' @keywords internal
+#' 
 #' @export
 LR_samp_dist <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control) {
     .Call(`_MSTest_LR_samp_dist`, mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control)
@@ -892,12 +906,16 @@ LR_samp_dist <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control) 
 
 #' @title Monte Carlo Likelihood Ratio Test P-value Function 
 #' 
+#' @keywords internal
+#' 
 #' @export
 MMCLRpval_fun <- function(theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control) {
     .Call(`_MSTest_MMCLRpval_fun`, theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control)
 }
 
 #' @title Monte Carlo Likelihood Ratio Test P-value Function 
+#' 
+#' @keywords internal
 #' 
 #' @export
 MMCLRpval_fun_min <- function(theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control) {
@@ -911,6 +929,8 @@ MMCLRpval_fun_min <- function(theta, mdl_h0, mdl_h1, N, burnin, workers, lambda,
 #' @param \code{ehat} A (\code{T x 1}) vector of restricted model residuals.
 #' 
 #' @return Vector containing the four test statistics.
+#' 
+#' @keywords internal
 #' 
 #' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 #' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
@@ -929,6 +949,8 @@ calc_DLmoments <- function(ehat) {
 #' 
 #' @return A (\code{N x 4}) matrix with \code{N} different simulated moment-based test statistics.
 #' 
+#' @keywords internal
+#' 
 #' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 #' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
@@ -946,7 +968,9 @@ sim_DLmoments <- function(Tsize, N) {
 #' @param \code{type} String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
 #' is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
 #' 
-#' @return A (\code{N+1 x 1}) vector with test statistics. The last element is the test statistc from observed data.
+#' @return A (\code{N x 1}) vector with test statistics. The last element is the test statistc from observed data.
+#' 
+#' @keywords internal
 #' 
 #' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 #' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
@@ -961,13 +985,15 @@ combine_stat <- function(stats, params, type) {
     .Call(`_MSTest_combine_stat`, stats, params, type)
 }
 
-#' @title Loop for \code{\link{approxDist}}
+#' @title Loop for \code{\link{approxDistDL}}
 #'
-#' @description This function performs the loop in required in \code{\link{approxDist}}. 
+#' @description This function performs the loop in required in \code{\link{approxDistDL}}. 
 #' 
 #' @param \code{SN2} A (\code{T x 4}) matrix of  test-statistics.
 #' 
 #' @return The test statistics from simulated data. Used for NLS to get \code{params} needed to combine p-values.
+#' 
+#' @keywords internal
 #' 
 #' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 #' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
@@ -979,25 +1005,51 @@ approx_dist_loop <- function(SN2) {
 
 #' @title Moment-based MMC test p-value 
 #'
+#' @description This functions is used by numerical optimization algorithms for find maximum p-value given parameter vector \code{theta}.
+#'
+#' @param theta Value of nuisance parameters. Specifically, these are the consistent estimates of nuisance parameters as discussed in Dufour & Luger (2017) LMC procedure.
+#' @param y series being tested.
+#' @param x lagged values of series.
+#' @param params A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
+#' @param sim_stats A (\code{N x 1}) vector with test statistics. The last element is the test statistc from observed data.
+#' @param pval_type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
+#' @param stationary_ind Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.
+#' @param lambda Numeric value for penalty on stationary constraint not being met. Default is \code{100}.
+#' 
 #' @return Maximized Monte Carlo p-value.
+#' 
+#' @keywords internal
 #' 
 #' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 #' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
 #' @export
-DLMMCpval_fun <- function(theta, y, x, N, simdist_N, params, sim_stats, pval_type, stationary_ind, lambda) {
-    .Call(`_MSTest_DLMMCpval_fun`, theta, y, x, N, simdist_N, params, sim_stats, pval_type, stationary_ind, lambda)
+DLMMCpval_fun <- function(theta, y, x, params, sim_stats, pval_type, stationary_ind, lambda) {
+    .Call(`_MSTest_DLMMCpval_fun`, theta, y, x, params, sim_stats, pval_type, stationary_ind, lambda)
 }
 
 #' @title Moment-based MMC test (negative) p-value 
 #'
+#' @description This functions is used by numerical optimization algorithms for find negative of maximum p-value given parameter vector \code{theta}.
+#'
+#' @param theta Value of nuisance parameters. Specifically, these are the consistent estimates of nuisance parameters as discussed in Dufour & Luger (2017) LMC procedure.
+#' @param y series being tested.
+#' @param x lagged values of series.
+#' @param params A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
+#' @param sim_stats A (\code{N x 1}) vector with test statistics. The last element is the test statistc from observed data.
+#' @param pval_type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
+#' @param stationary_ind Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.
+#' @param lambda Numeric value for penalty on stationary constraint not being met. Default is \code{100}.
+#'
 #' @return Negative Maximized Monte Carlo p-value. 
+#' 
+#' @keywords internal
 #' 
 #' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 #' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
 #' @export
-DLMMCpval_fun_min <- function(theta, y, x, N, params, sim_stats, simdist_N, pval_type, stationary_ind, lambda) {
-    .Call(`_MSTest_DLMMCpval_fun_min`, theta, y, x, N, params, sim_stats, simdist_N, pval_type, stationary_ind, lambda)
+DLMMCpval_fun_min <- function(theta, y, x, params, sim_stats, pval_type, stationary_ind, lambda) {
+    .Call(`_MSTest_DLMMCpval_fun_min`, theta, y, x, params, sim_stats, pval_type, stationary_ind, lambda)
 }
 

@@ -7,6 +7,6 @@
 dmclike(th, HLR_opt_ls)
 }
 \description{
-dmclike
+Gradient optimization function i.e markov likelihood function.
 }
 \keyword{internal}

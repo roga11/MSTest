@@ -2,29 +2,45 @@
 % Please edit documentation in R/methods_HLRTest.R
 \name{HLRTest}
 \alias{HLRTest}
-\title{HLR Test}
+\title{Hansen (1992) likelihood ratio test}
 \usage{
-HLRTest(Y, p = 1, control = list())
+HLRTest(Y, p, control = list())
 }
 \arguments{
-\item{p:}{Number of AR(p) (default is 1).}
+\item{Y}{A (\code{T x 1}) matrix of observations.}
 
-\item{ix:}{List of Markov Switching parameters. 1 = just mean c(1,2) = mean and first param, (default: 1). • iv: Idicates if Variance is also Markov Switching. 1 for true (default: 0).}
+\item{p}{Integer determining the number of autoregressive lags.}
 
-\item{iq:}{Indicator that bounds q by 1-p (default: 0).}
-
-\item{gn:}{grid size for switching parameters (default: 20)}
-
-\item{pn:}{grid size for p (and q) (default is: 12)}
-
-\item{pn_step_size}{grid step size 0.075}
-
-\item{nwband}{default is 4}
-
-\item{rep:}{(default: 1000)}
+\item{control}{List with test procedure options including: 
+\itemize{
+  \item{\code{ix}: }{List of Markov Switching parameters. 1 = just mean c(1,2) = mean and first param, (default: 1). • iv: Idicates if Variance is also Markov Switching. 1 for true (default: 0).}
+  \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
+  \item{\code{qbound}: }{Indicator that bounds q by 1-p (default: 0).}
+  \item{\code{gridsize}: }{}
+  \item{\code{p_gridsize}: }{}
+  \item{\code{p_stepsize}: }{}
+  \item{\code{mugrid_from}: }{}
+  \item{\code{mugrid_by}: }{}
+  \item{\code{siggrid_from}: }{}
+  \item{\code{siggrid_by}: }{}
+  \item{\code{N}: }{}
+  \item{\code{sig_min}: }{}
+}}
+}
+\value{
+List of class \code{HLRTest} (\code{S3} object) with model attributes including: 
+\itemize{
+  \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} (\code{S3} object). See \code{\link{ARmdl}}.}
+  \item{\code{supTS}: }{supTS test statistic value.}
+  \item{\code{supTS_N}: }{A (\code{N x 1}) vector with simulated supTS test statistics under null hypothesis.}
+  \item{\code{pval_supTS}: }{P-value for supTS version of parameter stability test.}
+  \item{\code{supTS_cv}: }{Vector with 90\%, 95\%, and 99\% bootstrap critical values for supTS version of parameter stability test.}
+  \item{\code{control}: }{List with test procedure options used.}
+}
 }
 \description{
-HLR Test
+This function performs Hansen's likelihood ratio test as described in Hansen (1992).
+Original source code can be found \href{https://www.ssc.wisc.edu/~bhansen/progs/jae_92.html}{here}.
 }
 \examples{
 
@@ -36,20 +52,16 @@ Y <- y84
 
 
 hlrt_control  <- list(ix = 1, 
-                      iv = 0, 
-                      iq = 0,
-                      gn = 20, 
-                      pn = 17,
-                      pn_step_size = 0.05,
-                      nwband = 4, 
-                      reps = 1000)
+                      p_gridsize = 17,
+                      p_stepsize = 0.05)
 
-st <- Sys.time()
+
 hlrt <- HLRTest(Y, p = 4, control = hlrt_control)
-end <- Sys.time() - st
+hlrt
 
-end
-hlrt$`Test-Stat`
-hlrt$params
-hlrt$`p-value`
+
+
+}
+\references{
+Hansen, Bruce E. 1992. “The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP.” \emph{Journal of applied Econometrics} 7 (S1): S61–S82.
 }

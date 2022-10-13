@@ -19,3 +19,4 @@ List with \code{M} (\code{Txq}) matrices of residuals in each regime \code{M} wh
 \description{
 This function computes residuals of a Markov-switching vector autoregressive model.
 }
+\keyword{internal}

@@ -2,7 +2,7 @@
 % Please edit documentation in R/methods_LRTest.R
 \name{LR_samp_dist_par}
 \alias{LR_samp_dist_par}
-\title{Monte Carlo Likelihood Ratio Test sample disttribution (parallel version)}
+\title{Monte Carlo Likelihood Ratio Test sample distribution (parallel version)}
 \usage{
 LR_samp_dist_par(
   mdl_h0,
@@ -15,6 +15,6 @@ LR_samp_dist_par(
 )
 }
 \description{
-Monte Carlo Likelihood Ratio Test sample disttribution (parallel version)
+Monte Carlo Likelihood Ratio Test sample distribution (parallel version)
 }
 \keyword{internal}

@@ -15,3 +15,4 @@ Hessian matrix.
 \description{
 This function is used to obtain a numerical approximation of a Hessian matrix for a Markov-switching vector autoregressive model.
 }
+\keyword{internal}

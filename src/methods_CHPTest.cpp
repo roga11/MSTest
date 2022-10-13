@@ -17,6 +17,8 @@ using namespace Rcpp;
 //' 
 //' @return Part of test statistic given \code{rho} and \code{hv} value. 
 //' 
+//' @keywords internal
+//' 
 //' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
 //' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 //' 
@@ -79,6 +81,8 @@ arma::vec calc_mu2t_mv(List mdl, double rho, List ltmt, arma::vec hv){
 //' 
 //' @return Part of test statistic given \code{rho} and \code{hv} value. 
 //' 
+//' @keywords internal
+//' 
 //' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
 //' test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 //' 
@@ -113,6 +117,8 @@ arma::vec calc_mu2t(List mdl, double rho, List ltmt){
 //' @param \code{msvar} Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
 //' 
 //' @return A (\code{2 x 1}) vector with supTS test statistic as first element and expTS test-statistics as second element.
+//' 
+//' @keywords internal
 //' 
 //' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
 //' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
@@ -217,6 +223,8 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,int msvar){
 //' @param \code{msvar} Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
 //' 
 //' @return Bootstrap critical values
+//' 
+//' @keywords internal
 //' 
 //' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
 //' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.

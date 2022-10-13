@@ -2,7 +2,7 @@
 % Please edit documentation in R/methods_CHPTest.R
 \name{CHPTest}
 \alias{CHPTest}
-\title{CHP parameter stability test}
+\title{Carrasco, Hu, and Ploberger (2014) parameter stability test}
 \usage{
 CHPTest(Y, p, control = list())
 }
@@ -35,7 +35,7 @@ List of class \code{CHPTest} (\code{S3} object) with model attributes including:
 }
 }
 \description{
-This function performs the CHP parameter stability test as outline in Carrasco, M., Hu, L. and Ploberger, W. (2014).
+This function performs the CHP (2014) parameter stability test as outline in Carrasco, M., Hu, L. and Ploberger, W. (2014).
 Original source code can be found \href{https://www.econometricsociety.org/content/supplement-optimal-test-markov-switching-parameters}{here}.
 }
 \examples{

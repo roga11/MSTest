@@ -7,11 +7,11 @@
 MCpval(test_stat, null_vec, type = "geq")
 }
 \arguments{
-\item{\code{test_stat}}{Test statistic under the alternative (e.g. \code{S_0}).}
+\item{test_stat}{Test statistic under the alternative (e.g. \code{S_0}).}
 
-\item{\code{null_vec}}{A (\code{N x 1}) vector with test statistic under the null hypothesis.}
+\item{null_vec}{A (\code{N x 1}) vector with test statistic under the null hypothesis.}
 
-\item{\code{type}}{String determining type of test. options are: "geq" for right-tail test, "leq" for left-tail test, "abs" for absolute value test and "two-tail" for two-tail test.}
+\item{type}{String determining type of test. options are: "geq" for right-tail test, "leq" for left-tail test, "abs" for absolute value test and "two-tail" for two-tail test.}
 }
 \value{
 MC p-value of test

@@ -11,6 +11,8 @@ using namespace Rcpp;
 //' 
 //' @return Vector containing the four test statistics.
 //' 
+//' @keywords internal
+//' 
 //' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 //' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 //' 
@@ -53,6 +55,8 @@ arma::vec calc_DLmoments(arma::vec ehat){
 //' 
 //' @return A (\code{N x 4}) matrix with \code{N} different simulated moment-based test statistics.
 //' 
+//' @keywords internal
+//' 
 //' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 //' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 //' 
@@ -79,7 +83,9 @@ arma::mat sim_DLmoments(int Tsize, int N){
 //' @param \code{type} String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
 //' is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
 //' 
-//' @return A (\code{N+1 x 1}) vector with test statistics. The last element is the test statistc from observed data.
+//' @return A (\code{N x 1}) vector with test statistics. The last element is the test statistc from observed data.
+//' 
+//' @keywords internal
 //' 
 //' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 //' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
@@ -115,13 +121,15 @@ arma::vec combine_stat(arma::mat stats, arma::mat params, std::string type){
 }
 
 // ==============================================================================
-//' @title Loop for \code{\link{approxDist}}
+//' @title Loop for \code{\link{approxDistDL}}
 //'
-//' @description This function performs the loop in required in \code{\link{approxDist}}. 
+//' @description This function performs the loop in required in \code{\link{approxDistDL}}. 
 //' 
 //' @param \code{SN2} A (\code{T x 4}) matrix of  test-statistics.
 //' 
 //' @return The test statistics from simulated data. Used for NLS to get \code{params} needed to combine p-values.
+//' 
+//' @keywords internal
 //' 
 //' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 //' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
@@ -143,14 +151,27 @@ arma::mat approx_dist_loop(arma::mat SN2){
 // ==============================================================================
 //' @title Moment-based MMC test p-value 
 //'
+//' @description This functions is used by numerical optimization algorithms for find maximum p-value given parameter vector \code{theta}.
+//'
+//' @param theta Value of nuisance parameters. Specifically, these are the consistent estimates of nuisance parameters as discussed in Dufour & Luger (2017) LMC procedure.
+//' @param y series being tested.
+//' @param x lagged values of series.
+//' @param params A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
+//' @param sim_stats A (\code{N x 1}) vector with test statistics. The last element is the test statistc from observed data.
+//' @param pval_type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
+//' @param stationary_ind Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.
+//' @param lambda Numeric value for penalty on stationary constraint not being met. Default is \code{100}.
+//' 
 //' @return Maximized Monte Carlo p-value.
+//' 
+//' @keywords internal
 //' 
 //' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 //' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 //' 
 //' @export
 // [[Rcpp::export]]
-double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x, int N, int simdist_N, 
+double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x,
                      arma::mat params, arma::vec sim_stats,
                      Rcpp::String pval_type, bool stationary_ind, double lambda){
   bool stationary_constraint = FALSE;
@@ -193,16 +214,29 @@ double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x, int N, int simdi
 // ==============================================================================
 //' @title Moment-based MMC test (negative) p-value 
 //'
+//' @description This functions is used by numerical optimization algorithms for find negative of maximum p-value given parameter vector \code{theta}.
+//'
+//' @param theta Value of nuisance parameters. Specifically, these are the consistent estimates of nuisance parameters as discussed in Dufour & Luger (2017) LMC procedure.
+//' @param y series being tested.
+//' @param x lagged values of series.
+//' @param params A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
+//' @param sim_stats A (\code{N x 1}) vector with test statistics. The last element is the test statistc from observed data.
+//' @param pval_type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
+//' @param stationary_ind Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.
+//' @param lambda Numeric value for penalty on stationary constraint not being met. Default is \code{100}.
+//'
 //' @return Negative Maximized Monte Carlo p-value. 
+//' 
+//' @keywords internal
 //' 
 //' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 //' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 //' 
 //' @export
 // [[Rcpp::export]]
-double DLMMCpval_fun_min(arma::vec theta, arma::vec y, arma::mat x, int N, 
+double DLMMCpval_fun_min(arma::vec theta, arma::vec y, arma::mat x, 
                          arma::mat params, arma::vec sim_stats,
-                         int simdist_N, Rcpp::String pval_type, bool stationary_ind, double lambda){
-  double pval = -DLMMCpval_fun(theta, y, x, N, simdist_N, params, sim_stats, pval_type, stationary_ind, lambda);
+                         Rcpp::String pval_type, bool stationary_ind, double lambda){
+  double pval = -DLMMCpval_fun(theta, y, x, params, sim_stats, pval_type, stationary_ind, lambda);
   return(pval);
 }

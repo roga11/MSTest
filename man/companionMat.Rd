@@ -19,3 +19,4 @@ matrix of dimension (\code{qp x qp}) of companion form.
 \description{
 This function converts the (\code{q x 1})  vector of constants and (\code{q x qp}) matrix of autoregressive coefficients into (\code{qp x qp}) matrix belonging to the companion form
 }
+\keyword{internal}

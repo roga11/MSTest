@@ -140,6 +140,8 @@ double compu_tstat(arma::vec theta_h0, arma::vec theta_h1,
 
 //' @title Likelihood Ratio Test Statistic Sample Distribution
 //' 
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
 arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin, List mdl_h0_control, List mdl_h1_control){
@@ -178,6 +180,8 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin, List mdl_h0_contr
 }
 
 //' @title Monte Carlo Likelihood Ratio Test P-value Function 
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
@@ -276,6 +280,8 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, int N, int burni
 
 
 //' @title Monte Carlo Likelihood Ratio Test P-value Function 
+//' 
+//' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]

@@ -17,3 +17,4 @@ AIC value.
 \description{
 This function computes the AIC when given the log-likelihood and number of parameters.
 }
+\keyword{internal}

@@ -21,3 +21,4 @@ MMCLRpval_fun(
 \description{
 Monte Carlo Likelihood Ratio Test P-value Function
 }
+\keyword{internal}

@@ -4,12 +4,20 @@
 \alias{print.HMmdl}
 \title{Print summary of a \code{HMmdl} object}
 \usage{
-\method{print}{HMmdl}(mdl, digits = getOption("digits"))
+\method{print}{HMmdl}(x, digits = getOption("digits"), ...)
 }
 \arguments{
+\item{x}{an object used to select a method.}
+
 \item{digits}{minimal number of \emph{significant} digits, see
     \code{\link[base]{print.default}}.}
+
+\item{...}{further arguments passed to or from other methods.}
+}
+\value{
+The \code{HMmdl} object is returned invisibly.
 }
 \description{
-Print summary of a \code{HMmdl} object
+This is a method for the function \code{print()} for objects of the class \code{HMmdl}.
 }
+\keyword{internal}

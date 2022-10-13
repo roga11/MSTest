@@ -25,3 +25,4 @@ List with model attributes
 \description{
 This function computes estimate a Hidden Markov model using MLE.
 }
+\keyword{internal}

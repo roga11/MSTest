@@ -25,3 +25,4 @@ This bootstrap procedure is described on pg. 771 of CHP 2014.
 Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
 test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 }
+\keyword{internal}

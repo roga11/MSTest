@@ -4,12 +4,20 @@
 \alias{print.ARmdl}
 \title{Print summary of an \code{ARmdl} object}
 \usage{
-\method{print}{ARmdl}(mdl, digits = getOption("digits"))
+\method{print}{ARmdl}(x, digits = getOption("digits"), ...)
 }
 \arguments{
+\item{x}{an object used to select a method.}
+
 \item{digits}{minimal number of \emph{significant} digits, see
     \code{\link[base]{print.default}}.}
+
+\item{...}{further arguments passed to or from other methods.}
+}
+\value{
+The \code{ARmdl} object is returned invisibly.
 }
 \description{
-Print summary of an \code{ARmdl} object
+This is a method for the function \code{print()} for objects of the class \code{ARmdl}.
 }
+\keyword{internal}

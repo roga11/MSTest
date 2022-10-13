@@ -25,3 +25,4 @@ List with (\code{M x ar+1}) matrix of means for each regime \code{M} (where \cod
 \description{
 This function creates a grid of mean and variance consistent with a Markov-switching autoregressive model.
 }
+\keyword{internal}

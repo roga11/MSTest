@@ -1,5 +1,5 @@
 
-#' @title Monte Carlo Likelihood Ratio Test sample disttribution (parallel version)
+#' @title Monte Carlo Likelihood Ratio Test sample distribution (parallel version)
 #' 
 #' @keywords internal
 #'
@@ -14,7 +14,8 @@ LR_samp_dist_par <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_contr
   # ----- Begin parallel simulations
   LRN_all <- matrix(0,N,1)
   `%dopar%` <- foreach::`%dopar%`
-  LRN_all <- foreach::foreach(wi=1:workers, .inorder = FALSE, .packages = "MSTest") %dopar% {
+  wi <- NULL # needed to pass CMD check
+  LRN_all <- foreach::foreach(wi = 1:workers, .inorder = FALSE, .packages = "MSTest") %dopar% {
     LRN <- LR_samp_dist(mdl_h0, k1, N_worker_i[wi], burnin, mdl_h0_control, mdl_h1_control) 
     LRN
   }
@@ -77,7 +78,7 @@ estimMdl <- function(Y, p, q, k, control = list()){
 #'   \item{\code{N}: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
 #'   \item{\code{burnin}: }{Number of simulated observations to remove from beginning. Default is \code{100}.}
 #'   \item{\code{converge_check}: }{String of NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.}
-#'   \item{\code{workers}: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. See \code{\link{doParallel}}. Default is \code{0}.}
+#'   \item{\code{workers}: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. Default is \code{0}.}
 #'   \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
 #'   \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
 #' }
@@ -223,7 +224,7 @@ MMC_bounds <- function(theta_0, mdl_h0, mdl_h1, con){
 #'   \item{\code{N}: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
 #'   \item{\code{burnin}: }{Number of simulated observations to remove from beginning. Default is \code{100}.}
 #'   \item{\code{converge_check}: }{String of NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.}
-#'   \item{\code{workers}: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. See \code{\link{doParallel}}. Default is \code{0}.}
+#'   \item{\code{workers}: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. Default is \code{0}.}
 #'   \item{\code{type}: }{String that determines the type of optimization algorithm used. Arguments allowed are: \code{"pso"}, \code{"GenSA"}, and \code{"GA"}. Default is \code{"pso"}.}
 #'   \item{\code{eps}: }{Double determining the constant value that defines a consistent set for search. Default is \code{0.1}.}
 #'   \item{\code{CI_union}: }{Boolean determining if union of set determined by \code{eps} and confidence set should be used to define consistent set for search. Default is \code{TRUE}.}
@@ -234,7 +235,7 @@ MMC_bounds <- function(theta_0, mdl_h0, mdl_h1, con){
 #'   \item{\code{threshold_stop}: }{Default is \code{1}.}
 #'   \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
 #'   \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
-#'   \item{\code{type_control}: }{List with optimization algorithm options. See \code{\link{pso}}, \code{\link{GenSa}}, \code{\link{GA}}. Default is to set \code{list(maxit = 200)} so that maximum number of iterations is \code{200}.}
+#'   \item{\code{type_control}: }{List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is to set \code{list(maxit = 200)} so that maximum number of iterations is \code{200}.}
 #' }
 #'
 #' @return List of class \code{LMCLRTest} (\code{S3} object) with attributes including: 
@@ -399,7 +400,7 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
 #'   \item{\code{B}: }{Integer determining the number of bootstrap simulations. Default is set to \code{999}.}
 #'   \item{\code{burnin}: }{Number of simulated observations to remove from beginning. Default is \code{100}.}
 #'   \item{\code{converge_check}: }{String of NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.}
-#'   \item{\code{workers}: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. See \code{\link{doParallel}}. Default is \code{0}.}
+#'   \item{\code{workers}: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. Default is \code{0}.}
 #'   \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
 #'   \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
 #' }

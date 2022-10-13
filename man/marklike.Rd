@@ -7,6 +7,6 @@
 marklike(ths, HLR_opt_ls)
 }
 \description{
-marklike
+Markov likelihood
 }
 \keyword{internal}

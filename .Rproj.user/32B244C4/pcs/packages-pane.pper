@@ -1,7 +1,7 @@
 {
     "installOptions": {
         "installFromRepository": true,
-        "libraryPath": "/Library/Frameworks/R.framework/Versions/4.0/Resources/library",
+        "libraryPath": "/Users/grodriguezrondon/Library/R/x86_64/4.2/library",
         "installDependencies": true
     }
 }

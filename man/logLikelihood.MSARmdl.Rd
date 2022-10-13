@@ -15,3 +15,4 @@ Log-likelihood value.
 \description{
 This function is used to compute the log-likelihood for a Markov-switching autoregressive model.
 }
+\keyword{internal}

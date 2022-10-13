@@ -25,3 +25,4 @@ is used in \code{\link{chpStat}} which computes the full test statistics.
 Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
 test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
 }
+\keyword{internal}

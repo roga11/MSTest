@@ -28,7 +28,7 @@
 #'   \item{\code{AIC}: }{Akaike information criterion.}
 #'   \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
 #'   \item{\code{Hess}: }{Hessian matrix. Approximated using \code{\link[numDeriv]{hessian}} and only returned if \code{getSE=TRUE}.}
-#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lfm]{nearPD}}. Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lmf]{nearPD}}. Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
 #' }
@@ -64,7 +64,7 @@ Nmdl <- function(Y, control = list()){
   theta_sig_ind <- c(rep(0, q), rep(1,q*(q+1)/2))
   theta_var_ind <- c(rep(0, q), t(covar_vech(diag(q))))
   # ----- Output
-  out     <- list(y = Y, resid = resid, mu = mu, stdev = stdev, sigma = sigma, theta = theta, 
+  out     <- list(y = Y, X = matrix(1, n, 1), resid = resid, mu = mu, stdev = stdev, sigma = sigma, theta = theta, 
                   theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind,
                   n = n, q = q, k = 1, control = con)
   # Define class
@@ -123,7 +123,7 @@ Nmdl <- function(Y, control = list()){
 #'   \item{\code{AIC}: }{Akaike information criterion.}
 #'   \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
 #'   \item{\code{Hess}: }{Hessian matrix. Approximated using \code{\link[numDeriv]{hessian}} and only returned if \code{getSE=TRUE}.}
-#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lfm]{nearPD}}. Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lmf]{nearPD}}. Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
 #' }
@@ -237,7 +237,7 @@ ARmdl <- function(Y, p, control = list()){
 #'   \item{\code{AIC}: }{Akaike information criterion.}
 #'   \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
 #'   \item{\code{Hess}: }{Hessian matrix. Approximated using \code{\link[numDeriv]{hessian}} and only returned if \code{getSE=TRUE}.}
-#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lfm]{nearPD}}. Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lmf]{nearPD}}. Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
 #' }
@@ -362,7 +362,7 @@ VARmdl <- function(Y, p, control = list()){
 #'   \item{\code{AIC}: }{Akaike information criterion.}
 #'   \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
 #'   \item{\code{Hess}: }{Hessian matrix. Approximated using \code{\link[numDeriv]{hessian}} and only returned if \code{getSE=TRUE}.}
-#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lfm]{nearPD}}. Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lmf]{nearPD}}. Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{trace}: }{List with Lists of estimation output for each initial value used due to \code{use_diff_init > 1}.}
@@ -581,7 +581,7 @@ HMmdl <- function(Y, k, control = list()){
 #'   \item{\code{AIC}: }{Akaike information criterion.}
 #'   \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
 #'   \item{\code{Hess}: }{Hessian matrix. Approximated using \code{\link[numDeriv]{hessian}} and only returned if \code{getSE=TRUE}.}
-#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lfm]{nearPD}}. Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lmf]{nearPD}}. Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{trace}: }{List with Lists of estimation output for each initial value used due to \code{use_diff_init > 1}.}
@@ -793,7 +793,7 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'   \item{\code{AIC}: }{Akaike information criterion.}
 #'   \item{\code{BIC}: }{Bayesian (Schwarz) information criterion.}
 #'   \item{\code{Hess}: }{Hessian matrix. Approximated using \code{\link[numDeriv]{hessian}} and only returned if \code{getSE=TRUE}.}
-#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lfm]{nearPD}}. Only returned if \code{getSE=TRUE}.}
+#'   \item{\code{info_mat}: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[lmf]{nearPD}}. Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{nearPD_used}: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{theta_se}: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
 #'   \item{\code{trace}: }{List with Lists of estimation output for each initial value used due to \code{use_diff_init > 1}.}

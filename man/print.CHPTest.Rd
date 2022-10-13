@@ -4,12 +4,20 @@
 \alias{print.CHPTest}
 \title{Print summary of a \code{CHPTest} object}
 \usage{
-\method{print}{CHPTest}(mdl, digits = getOption("digits"))
+\method{print}{CHPTest}(x, digits = getOption("digits"), ...)
 }
 \arguments{
+\item{x}{an object used to select a method.}
+
 \item{digits}{minimal number of \emph{significant} digits, see
     \code{\link[base]{print.default}}.}
+
+\item{...}{further arguments passed to or from other methods.}
+}
+\value{
+The \code{CHPTest} object is returned invisibly.
 }
 \description{
-Print summary of a \code{CHPTest} object
+This is a method for the function \code{print()} for objects of the class \code{CHPTest}.
 }
+\keyword{internal}

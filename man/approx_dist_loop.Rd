@@ -2,7 +2,7 @@
 % Please edit documentation in R/RcppExports.R
 \name{approx_dist_loop}
 \alias{approx_dist_loop}
-\title{Loop for \code{\link{approxDist}}}
+\title{Loop for \code{\link{approxDistDL}}}
 \usage{
 approx_dist_loop(SN2)
 }
@@ -13,9 +13,10 @@ approx_dist_loop(SN2)
 The test statistics from simulated data. Used for NLS to get \code{params} needed to combine p-values.
 }
 \description{
-This function performs the loop in required in \code{\link{approxDist}}.
+This function performs the loop in required in \code{\link{approxDistDL}}.
 }
 \references{
 Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 }
+\keyword{internal}

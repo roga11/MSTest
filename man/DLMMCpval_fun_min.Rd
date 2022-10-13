@@ -8,22 +8,38 @@ DLMMCpval_fun_min(
   theta,
   y,
   x,
-  N,
   params,
   sim_stats,
-  simdist_N,
   pval_type,
   stationary_ind,
   lambda
 )
 }
+\arguments{
+\item{theta}{Value of nuisance parameters. Specifically, these are the consistent estimates of nuisance parameters as discussed in Dufour & Luger (2017) LMC procedure.}
+
+\item{y}{series being tested.}
+
+\item{x}{lagged values of series.}
+
+\item{params}{A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.}
+
+\item{sim_stats}{A (\code{N x 1}) vector with test statistics. The last element is the test statistc from observed data.}
+
+\item{pval_type}{String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.}
+
+\item{stationary_ind}{Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.}
+
+\item{lambda}{Numeric value for penalty on stationary constraint not being met. Default is \code{100}.}
+}
 \value{
 Negative Maximized Monte Carlo p-value.
 }
 \description{
-Moment-based MMC test (negative) p-value
+This functions is used by numerical optimization algorithms for find negative of maximum p-value given parameter vector \code{theta}.
 }
 \references{
 Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 }
+\keyword{internal}

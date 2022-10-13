@@ -19,3 +19,4 @@ BIC value.
 \description{
 This function computes the BIC when given the log-likelihood, number of observations, and number of parameters.
 }
+\keyword{internal}

@@ -7,6 +7,8 @@
 #' 
 #' @return A (\code{2 x 4}) matrix with parameters of CDF distributions. The first row contains \eqn{\gamma_0} for each moment and the second row contains \eqn{\gamma_1} for each moment.
 #' 
+#' @keywords internal
+#' 
 #' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 #' tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 #' 
@@ -22,9 +24,9 @@ approxDistDL <- function(Tsize, simdist_N){
   b<-matrix(nrow=1,ncol=0)
   # estimate params of ecdf for each moment statistic
   for (i in 1:4){
-    mdl<-nls(Fx[,i]~exp(alpha+beta*x[,i])/(1+exp(alpha+beta*x[,i])),
-             start=list(alpha=a_start,beta=b_start))
-    params<-coef(mdl)
+    mdl <- stats::nls(Fx[,i]~exp(alpha+beta*x[,i])/(1+exp(alpha+beta*x[,i])),
+                      start=list(alpha=a_start,beta=b_start))
+    params <- stats::coef(mdl)
     a<-cbind(a,params[1])
     b<-cbind(b,params[2])
   }
@@ -226,11 +228,11 @@ DLMMCTest <- function(Y, p, control = list()){
     # begin optimization
     mmc_min_out <- pso::psoptim(par = theta_0, fn = DLMMCpval_fun_min, lower = theta_low, upper = theta_upp, 
                                 gr = NULL, control = con$type_control,
-                                y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fmin_sim, 
+                                y = y, x = x, params = params, sim_stats = Fmin_sim, 
                                 pval_type = "min", stationary_ind = con$stationary_ind, lambda = con$lambda)
     mmc_prd_out <- pso::psoptim(par = theta_0, fn = DLMMCpval_fun_min, lower = theta_low, upper = theta_upp, 
                                 gr = NULL, control = con$type_control,
-                                y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fprd_sim, 
+                                y = y, x = x, params = params, sim_stats = Fprd_sim, 
                                 pval_type = "prod", stationary_ind = con$stationary_ind, lambda = con$lambda)
     theta_min   <- as.matrix(mmc_min_out$par)
     theta_prod  <- as.matrix(mmc_prd_out$par)
@@ -242,11 +244,11 @@ DLMMCTest <- function(Y, p, control = list()){
     con$type_control$threshold.stop <- -con$threshold_stop
     mmc_min_out <- GenSA::GenSA(par = theta_0, fn = DLMMCpval_fun_min, lower = theta_low, upper = theta_upp, 
                                 control = con$type_control,
-                                y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fmin_sim, 
+                                y = y, x = x, params = params, sim_stats = Fmin_sim, 
                                 pval_type = "min", stationary_ind = con$stationary_ind, lambda = con$lambda)
     mmc_prd_out <- GenSA::GenSA(par = theta_0, fn = DLMMCpval_fun_min, lower = theta_low, upper = theta_upp, 
                                 control = con$type_control,
-                                y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fprd_sim, 
+                                y = y, x = x, params = params, sim_stats = Fprd_sim, 
                                 pval_type = "prod", stationary_ind = con$stationary_ind, lambda = con$lambda)
     theta_min   <- as.matrix(mmc_min_out$par)
     theta_prod  <- as.matrix(mmc_prd_out$par)
@@ -254,13 +256,13 @@ DLMMCTest <- function(Y, p, control = list()){
     pval_prod   <- -mmc_prd_out$value
   }else if(con$optim_type=="GA"){
     mmc_min_out <- GA::ga(type = "real-valued", fitness = DLMMCpval_fun, 
-                          y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fmin_sim, 
+                          y = y, x = x, params = params, sim_stats = Fmin_sim, 
                           pval_type = "min", stationary_ind = con$stationary_ind, lambda = con$lambda,
                           lower = theta_low, upper = theta_upp, 
                           maxiter = con$type_control$maxit, maxFitness = con$threshold_stop, 
                           monitor = (con$silence==FALSE), suggestions = t(theta_0))
     mmc_prd_out <- GA::ga(type = "real-valued", fitness = DLMMCpval_fun, 
-                          y = y, x = x, N = con$N, simdist_N = con$simdist_N, params = params, sim_stats = Fprd_sim, 
+                          y = y, x = x, params = params, sim_stats = Fprd_sim, 
                           pval_type = "prod", stationary_ind = con$stationary_ind, lambda = con$lambda,
                           lower = theta_low, upper = theta_upp, 
                           maxiter = con$type_control$maxit, maxFitness = con$threshold_stop, 

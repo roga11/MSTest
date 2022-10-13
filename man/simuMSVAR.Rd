@@ -7,7 +7,7 @@
 simuMSVAR(mdl_h0, burnin = 100L)
 }
 \arguments{
-\item{\code{mdl_h0}}{List containing the following DGP parameters
+\item{mdl_h0}{List containing the following DGP parameters
 \itemize{
   \item{\code{n}: }{Length of series.}
   \item{\code{k}: }{Number of regimes.}
@@ -20,7 +20,7 @@ simuMSVAR(mdl_h0, burnin = 100L)
   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 }}
 
-\item{\code{burnin}}{Number of simulated observations to remove from beginning. Default is \code{100}.}
+\item{burnin}{Number of simulated observations to remove from beginning. Default is \code{100}.}
 }
 \value{
 List with simulated vector autoregressive series and its DGP parameters.

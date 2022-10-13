@@ -9,10 +9,11 @@
 1947Q2 to 2022Q2.
   \item{DATE}{Vector of dates}
   \item{GNP_logdiff}{log difference of US GDP series}
+  \item{GNP}{US GNP seies}
 }
 }
 \source{
-\url{https://arxiv.org/abs/1801.06862}
+\url{https://fred.stlouisfed.org/graph/?g=UKDQ}
 }
 \usage{
 USGNP

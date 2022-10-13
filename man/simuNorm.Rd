@@ -7,7 +7,7 @@
 simuNorm(mdl_h0, burnin = 0L)
 }
 \arguments{
-\item{\code{mdl_h0}}{List containing the following DGP parameters
+\item{mdl_h0}{List containing the following DGP parameters
 \itemize{
   \item{\code{n}: }{Length of series.}
   \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
@@ -16,7 +16,7 @@ simuNorm(mdl_h0, burnin = 0L)
   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 }}
 
-\item{\code{burnin}}{Number of simulated observations to remove from beginning. Default is \code{100}.}
+\item{burnin}{Number of simulated observations to remove from beginning. Default is \code{100}.}
 }
 \value{
 List with simulated series and its DGP parameters.

@@ -8,6 +8,8 @@
 #'
 #' @return matrix of dimension (\code{qp x qp}) of companion form.
 #' 
+#' @keywords internal
+#' 
 #' @export
 companionMat <- function(phi, p, q){
   interzero   <- matrix(0,q*(p-1), 1)
@@ -28,6 +30,8 @@ companionMat <- function(phi, p, q){
 #'
 #' @return AIC value. 
 #' 
+#' @keywords internal
+#' 
 #' @export
 aic <- function(logLike, param_len){
   aic_val <- -2*(logLike) + 2*param_len
@@ -44,6 +48,8 @@ aic <- function(logLike, param_len){
 #'
 #' @return BIC value.
 #' 
+#' @keywords internal
+#' 
 #' @export
 bic <- function(logLike, n, param_len){
   bic_val <- -param_len*log(n) -2*(logLike) 
@@ -59,6 +65,8 @@ bic <- function(logLike, n, param_len){
 #' @param ar number of autoregressive lags.
 #'
 #' @return transformed transition matrix.
+#' 
+#' @keywords internal
 #' 
 #' @export
 arP <- function(P, k, ar){
@@ -89,6 +97,8 @@ arP <- function(P, k, ar){
 #' @param msvar Boolean indicator. If \code{TRUE} variance is subject to change. If \code{FALSE} variance is constant across regimes.
 #'
 #' @return List with (\code{M x ar+1}) matrix of means for each regime \code{M} (where \code{M = k^(ar+1)}) and each time \code{t,... t-ar}, vector with variance for each regime \code{M}, and vector indicating the corresponded \code{1,..., k} regime. 
+#' 
+#' @keywords internal
 #'
 #' @export
 argrid_MSARmdl <- function(mu, sig, k, ar, msmu, msvar){
@@ -123,13 +133,15 @@ argrid_MSARmdl <- function(mu, sig, k, ar, msmu, msvar){
 #' @description Creates grid of means and covariance matrices consistent with a Markov-switching vector autoregressive model.
 #'
 #' @param mu a (\code{k x q}) matrix of means in each regime (for \code{k} regimes and \code{q} time series).
-#' @param sig list with \code{k} regime specific (\code{q x q}) covariance matrices.
+#' @param sigma list with \code{k} regime specific (\code{q x q}) covariance matrices.
 #' @param k integer determining the number of regimes.
 #' @param ar number of autoregressive lags.
 #' @param msmu Boolean indicator. If \code{TRUE} mean is subject to change. If \code{FALSE} mean is constant across regimes.
 #' @param msvar Boolean indicator. If \code{TRUE} variance is subject to change. If \code{FALSE} variance is constant across regimes.
 #'
 #' @return List with M regime specific (\code{q x k}) matrices of means, List with \code{M} regime specific covariance matrices, and vector indicating the corresponded \code{1,..., k} regime. 
+#' 
+#' @keywords internal
 #' 
 #' @export
 argrid_MSVARmdl <- function(mu, sigma, k, ar, msmu, msvar){
@@ -160,6 +172,8 @@ argrid_MSVARmdl <- function(mu, sigma, k, ar, msmu, msvar){
 #'
 #' @return Log-likelihood value.
 #' 
+#' @keywords internal
+#' 
 #' @export
 logLikelihood <- function(mdl){
   UseMethod("logLikelihood", mdl)
@@ -172,6 +186,8 @@ logLikelihood <- function(mdl){
 #' @param mdl List with model properties.
 #'
 #' @return Log-likelihood value.
+#' 
+#' @keywords internal
 #' 
 #' @export
 logLikelihood.Nmdl <- function(mdl){
@@ -187,6 +203,8 @@ logLikelihood.Nmdl <- function(mdl){
 #'
 #' @return Log-likelihood value.
 #' 
+#' @keywords internal
+#' 
 #' @export
 logLikelihood.ARmdl <- function(mdl){
   logLike <- logLike_ARmdl(mdl$theta, mdl)
@@ -200,6 +218,8 @@ logLikelihood.ARmdl <- function(mdl){
 #' @param mdl List with model properties.
 #'
 #' @return Log-likelihood value.
+#' 
+#' @keywords internal
 #' 
 #' @export
 logLikelihood.VARmdl <- function(mdl){
@@ -215,6 +235,8 @@ logLikelihood.VARmdl <- function(mdl){
 #'
 #' @return Log-likelihood value. 
 #' 
+#' @keywords internal
+#' 
 #' @export
 logLikelihood.HMmdl <- function(mdl){
   logLike <- logLike_HMmdl(mdl$theta, mdl, mdl$k)
@@ -228,6 +250,8 @@ logLikelihood.HMmdl <- function(mdl){
 #' @param mdl List with model properties.
 #'
 #' @return Log-likelihood value.
+#' 
+#' @keywords internal
 #' 
 #' @export
 logLikelihood.MSARmdl <- function(mdl){
@@ -243,6 +267,8 @@ logLikelihood.MSARmdl <- function(mdl){
 #'
 #' @return Log-likelihood value.
 #' 
+#' @keywords internal
+#' 
 #' @export
 logLikelihood.MSVARmdl <- function(mdl){
   logLike <- logLike_MSVARmdl(mdl$theta, mdl, mdl$k)
@@ -257,6 +283,8 @@ logLikelihood.MSVARmdl <- function(mdl){
 #'
 #' @return Hessian matrix.
 #' 
+#' @keywords internal
+#' 
 #' @export
 getHessian <- function(mdl){
   UseMethod("getHessian", mdl)
@@ -269,6 +297,8 @@ getHessian <- function(mdl){
 #' @param mdl List with model properties.
 #'
 #' @return Hessian matrix.
+#' 
+#' @keywords internal
 #' 
 #' @export
 getHessian.Nmdl <- function(mdl){
@@ -284,6 +314,8 @@ getHessian.Nmdl <- function(mdl){
 #'
 #' @return Hessian matrix.
 #' 
+#' @keywords internal
+#' 
 #' @export
 getHessian.ARmdl <- function(mdl){
   hess <- numDeriv::hessian(logLike_ARmdl, mdl$theta, method = "Richardson", mdl = mdl) 
@@ -297,6 +329,8 @@ getHessian.ARmdl <- function(mdl){
 #' @param mdl List with model properties.
 #'
 #' @return Hessian matrix.
+#' 
+#' @keywords internal
 #' 
 #' @export
 getHessian.VARmdl <- function(mdl){
@@ -312,6 +346,8 @@ getHessian.VARmdl <- function(mdl){
 #'
 #' @return Hessian matrix.
 #' 
+#' @keywords internal
+#' 
 #' @export
 getHessian.HMmdl <- function(mdl){
   hess <- numDeriv::hessian(logLike_HMmdl, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
@@ -325,6 +361,8 @@ getHessian.HMmdl <- function(mdl){
 #' @param mdl List with model properties.
 #'
 #' @return Hessian matrix.
+#' 
+#' @keywords internal
 #' 
 #' @export
 getHessian.MSARmdl <- function(mdl){
@@ -340,6 +378,8 @@ getHessian.MSARmdl <- function(mdl){
 #'
 #' @return Hessian matrix.
 #' 
+#' @keywords internal
+#' 
 #' @export
 getHessian.MSVARmdl <- function(mdl){
   hess <- numDeriv::hessian(logLike_MSVARmdl, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
@@ -354,6 +394,8 @@ getHessian.MSVARmdl <- function(mdl){
 #' @param mdl List with model properties
 #'
 #' @return List provided as input with additional attributes \code{HESS},\code{theta_se}, \code{info_mat}, and \code{nearPD_used}.
+#' 
+#' @keywords internal
 #' 
 #' @export
 thetaSE <- function(mdl){
@@ -385,6 +427,8 @@ thetaSE <- function(mdl){
 #'}
 #'
 #' @return List with model attributes
+#' 
+#' @keywords internal
 #' 
 #' @export
 HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
@@ -473,6 +517,8 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 #'
 #' @return List with model attributes
 #' 
+#' @keywords internal
+#' 
 #' @export
 MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   # ----- Define function environment
@@ -556,6 +602,8 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 #'
 #' @return List with model attributes
 #' 
+#' @keywords internal
+#' 
 #' @export
 MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   # ---------- Define function environment
@@ -638,311 +686,417 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 
 #' @title Print summary of a \code{Nmdl} object
 #'
+#' @description This is a method for the function \code{print()} for objects of the class \code{Nmdl}.
+#' 
 #' @inheritParams base::print
+#'
+#' @return The \code{Nmdl} object is returned invisibly.
+#' 
+#' @keywords internal
 #' 
 #' @export
-print.Nmdl <- function(mdl, digits = getOption("digits")){
+print.Nmdl <- function(x, digits = getOption("digits"), ...){
   cat("\nNormally Distributed Model\n")
-  frame_tmp <- data.frame(coef = mdl$theta)
-  if (mdl$control$getSE==TRUE){
-    frame_tmp["s.e."] <- mdl$theta_se
+  frame_tmp <- data.frame(coef = x$theta)
+  if (x$control$getSE==TRUE){
+    frame_tmp["s.e."] <- x$theta_se
   }
-  rownames(frame_tmp) <- names(mdl$theta)
+  rownames(frame_tmp) <- names(x$theta)
   print(format(signif(frame_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$logLike)
-  cat(paste("\nAIC = "),mdl$AIC)
-  cat(paste("\nBIC = "),mdl$BIC)
-  invisible(mdl)
+  cat(paste("\nlog-likelihood = "),x$logLike)
+  cat(paste("\nAIC = "),x$AIC)
+  cat(paste("\nBIC = "),x$BIC)
+  invisible(x)
 }
 
 
 #' @title Print summary of an \code{ARmdl} object
 #'
+#' @description This is a method for the function \code{print()} for objects of the class \code{ARmdl}.
+#' 
 #' @inheritParams base::print
+#'
+#' @return The \code{ARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
 #' 
 #' @export
-print.ARmdl <- function(mdl, digits = getOption("digits")){
+print.ARmdl <- function(x, digits = getOption("digits"), ...){
   cat("\nAutoregressive Model\n")
-  frame_tmp <- data.frame(coef = mdl$theta)
-  if (mdl$control$getSE==TRUE){
-    frame_tmp["s.e."] <- mdl$theta_se
+  frame_tmp <- data.frame(coef = x$theta)
+  if (x$control$getSE==TRUE){
+    frame_tmp["s.e."] <- x$theta_se
   }
-  rownames(frame_tmp) <- names(mdl$theta)
+  rownames(frame_tmp) <- names(x$theta)
   print(format(signif(frame_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$logLike)
-  cat(paste("\nAIC = "),mdl$AIC)
-  cat(paste("\nBIC = "),mdl$BIC)
-  invisible(mdl)
+  cat(paste("\nlog-likelihood = "),x$logLike)
+  cat(paste("\nAIC = "),x$AIC)
+  cat(paste("\nBIC = "),x$BIC)
+  invisible(x)
 }
 
 #' @title Print summary of an \code{VARmdl} object
 #'
+#' @description This is a method for the function \code{print()} for objects of the class \code{VARmdl}.
+#' 
 #' @inheritParams base::print
+#'
+#' @return The \code{VARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
 #' @export
-print.VARmdl <- function(mdl, digits = getOption("digits")){
+print.VARmdl <- function(x, digits = getOption("digits"), ...){
   cat("\nVector Autoregressive Model\n")
-  frame_tmp <- data.frame(coef = mdl$theta)
-  if (mdl$control$getSE==TRUE){
-    frame_tmp["s.e."] <- mdl$theta_se
+  frame_tmp <- data.frame(coef = x$theta)
+  if (x$control$getSE==TRUE){
+    frame_tmp["s.e."] <- x$theta_se
   }
-  rownames(frame_tmp) <- names(mdl$theta)
+  rownames(frame_tmp) <- names(x$theta)
   print(format(signif(frame_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$logLike)
-  cat(paste("\nAIC = "),mdl$AIC)
-  cat(paste("\nBIC = "),mdl$BIC)
-  invisible(mdl)
+  cat(paste("\nlog-likelihood = "),x$logLike)
+  cat(paste("\nAIC = "),x$AIC)
+  cat(paste("\nBIC = "),x$BIC)
+  invisible(x)
 }
 
 #' @title Print summary of a \code{HMmdl} object
 #'
+#' @description This is a method for the function \code{print()} for objects of the class \code{HMmdl}.
+#' 
 #' @inheritParams base::print
+#'
+#' @return The \code{HMmdl} object is returned invisibly.
+#' 
+#' @keywords internal
 #' 
 #' @export
-print.HMmdl <- function(mdl, digits = getOption("digits")){
+print.HMmdl <- function(x, digits = getOption("digits"), ...){
   cat("\nHidden Markov Model\n")
-  frame_tmp <- data.frame(coef = mdl$theta)
-  if (mdl$control$getSE==TRUE){
-    frame_tmp["s.e."] <- mdl$theta_se
+  frame_tmp <- data.frame(coef = x$theta)
+  if (x$control$getSE==TRUE){
+    frame_tmp["s.e."] <- x$theta_se
   }
-  rownames(frame_tmp) <- names(mdl$theta)
+  rownames(frame_tmp) <- names(x$theta)
   print(format(signif(frame_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$logLike)
-  cat(paste("\nAIC = "),mdl$AIC)
-  cat(paste("\nBIC = "),mdl$BIC)
-  invisible(mdl)
+  cat(paste("\nlog-likelihood = "),x$logLike)
+  cat(paste("\nAIC = "),x$AIC)
+  cat(paste("\nBIC = "),x$BIC)
+  invisible(x)
 }
 
 
 
 #' @title Print summary of a \code{MSARmdl} object
 #'
+#' @description This is a method for the function \code{print()} for objects of the class \code{MSARmdl}.
+#' 
 #' @inheritParams base::print
+#'
+#' @return The \code{MSARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
 #' 
 #' @export
-print.MSARmdl <- function(mdl, digits = getOption("digits")){
+print.MSARmdl <- function(x, digits = getOption("digits"), ...){
   cat("\nMarkov Switching Autoregressive Model\n")
-  frame_tmp <- data.frame(coef = mdl$theta)
-  if (mdl$control$getSE==TRUE){
-    frame_tmp["s.e."] <- mdl$theta_se
+  frame_tmp <- data.frame(coef = x$theta)
+  if (x$control$getSE==TRUE){
+    frame_tmp["s.e."] <- x$theta_se
   }
-  rownames(frame_tmp) <- names(mdl$theta)
+  rownames(frame_tmp) <- names(x$theta)
   print(format(signif(frame_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$logLike)
-  cat(paste("\nAIC = "),mdl$AIC)
-  cat(paste("\nBIC = "),mdl$BIC)
-  invisible(mdl)
+  cat(paste("\nlog-likelihood = "),x$logLike)
+  cat(paste("\nAIC = "),x$AIC)
+  cat(paste("\nBIC = "),x$BIC)
+  invisible(x)
 }
 
 
 #' @title Print summary of a \code{MSVARmdl} object
 #'
+#' @description This is a method for the function \code{print()} for objects of the class \code{MSVARmdl}.
+#' 
 #' @inheritParams base::print
+#'
+#' @return The \code{MSVARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
 #' 
 #' @export
-print.MSVARmdl <- function(mdl, digits = getOption("digits")){
+print.MSVARmdl <- function(x, digits = getOption("digits"), ...){
   cat("\nMarkov Switching Vector Autoregressive Model\n")
-  frame_tmp <- data.frame(coef = mdl$theta)
-  if (mdl$control$getSE==TRUE){
-    frame_tmp["s.e."] <- mdl$theta_se
+  frame_tmp <- data.frame(coef = x$theta)
+  if (x$control$getSE==TRUE){
+    frame_tmp["s.e."] <- x$theta_se
   }
-  rownames(frame_tmp) <- names(mdl$theta)
+  rownames(frame_tmp) <- names(x$theta)
   print(format(signif(frame_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$logLike)
-  cat(paste("\nAIC = "),mdl$AIC)
-  cat(paste("\nBIC = "),mdl$BIC)
-  invisible(mdl)
+  cat(paste("\nlog-likelihood = "),x$logLike)
+  cat(paste("\nAIC = "),x$AIC)
+  cat(paste("\nBIC = "),x$BIC)
+  invisible(x)
 }
-
 
 #' @title Print summary of a \code{CHPTest} object
 #'
+#' @description This is a method for the function \code{print()} for objects of the class \code{CHPTest}.
+#' 
 #' @inheritParams base::print
+#'
+#' @return The \code{CHPTest} object is returned invisibly.
+#' 
+#' @keywords internal
 #' 
 #' @export
-print.CHPTest <- function(mdl, digits = getOption("digits")){
+print.HLRTest <- function(x, digits = getOption("digits"), ...){
   cat("\nRestricted Model\n")
-  frame_tmp <- data.frame(coef = mdl$mdl_h0$theta)
-  if (mdl$mdl_h0$control$getSE==TRUE){
-    frame_tmp["s.e."] <- mdl$mdl_h0$theta_se
+  frame_tmp <- data.frame(coef = x$mdl_h0$theta)
+  if (x$mdl_h0$control$getSE==TRUE){
+    frame_tmp["s.e."] <- x$mdl_h0$theta_se
   }
-  rownames(frame_tmp) <- names(mdl$mdl_h0$theta)
+  rownames(frame_tmp) <- names(x$mdl_h0$theta)
   print(format(signif(frame_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$mdl_h0$logLike)
-  cat(paste("\nAIC = "),mdl$mdl_h0$AIC)
-  cat(paste("\nBIC = "),mdl$mdl_h0$BIC)
+  cat(paste("\nlog-likelihood = "),x$mdl_h0$logLike)
+  cat(paste("\nAIC = "),x$mdl_h0$AIC)
+  cat(paste("\nBIC = "),x$mdl_h0$BIC)
   cat("\n")
-  if (mdl$control$msvar){
+  if (x$control$msvar){
+    cat("\nHansen (1992) Likelihood Ratio Bound Test -  Switch in Mean and Variance\n")
+  }else{
+    cat("\nHansen (1992) Likelihood Ratio Bound Test -  Switch in Mean only\n") 
+  }
+  out <- data.frame(cbind(x$LR0, x$LR_cv, x$pval))
+  colnames(out) <- c("test-stat", colnames(x$LR_cv), "p-value")
+  print(format(signif(out, max(1L, digits - 2L))))
+  invisible(x)
+}
+
+#' @title Print summary of a \code{CHPTest} object
+#'
+#' @description This is a method for the function \code{print()} for objects of the class \code{CHPTest}.
+#' 
+#' @inheritParams base::print
+#'
+#' @return The \code{CHPTest} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+print.CHPTest <- function(x, digits = getOption("digits"), ...){
+  cat("\nRestricted Model\n")
+  frame_tmp <- data.frame(coef = x$mdl_h0$theta)
+  if (x$mdl_h0$control$getSE==TRUE){
+    frame_tmp["s.e."] <- x$mdl_h0$theta_se
+  }
+  rownames(frame_tmp) <- names(x$mdl_h0$theta)
+  print(format(signif(frame_tmp, max(1L, digits - 2L))))
+  cat(paste("\nlog-likelihood = "),x$mdl_h0$logLike)
+  cat(paste("\nAIC = "),x$mdl_h0$AIC)
+  cat(paste("\nBIC = "),x$mdl_h0$BIC)
+  cat("\n")
+  if (x$control$msvar){
     cat("\nCarrasco, Hu, & Ploberger (2014) Parameter Stability Test -  Switch in Mean and Variance\n")
   }else{
     cat("\nCarrasco, Hu, & Ploberger (2014) Parameter Stability Test -  Switch in Mean only\n") 
   }
-  out <- data.frame(rbind(c(mdl$supTS, mdl$supTS_cv, mdl$pval_supTS),
-                          c(mdl$expTS, mdl$expTS_cv, mdl$pval_expTS)))
-  colnames(out) <- c("test-stat", names(mdl$supTS_cv), "p-value")
+  out <- data.frame(rbind(c(x$supTS, x$supTS_cv, x$pval_supTS),
+                          c(x$expTS, x$expTS_cv, x$pval_expTS)))
+  colnames(out) <- c("test-stat", names(x$supTS_cv), "p-value")
   rownames(out) <- c("supTS", "expTS")
   print(format(signif(out, max(1L, digits - 2L))))
-  invisible(mdl)
+  invisible(x)
 }
 
 #' @title Print summary of a \code{DLMCTest} object
 #'
+#' @description This is a method for the function \code{print()} for objects of the class \code{DLMCTest}.
+#' 
 #' @inheritParams base::print
+#'
+#' @return The \code{DLMCTest} object is returned invisibly.
+#' 
+#' @keywords internal
 #' 
 #' @export
-print.DLMCTest <- function(mdl, digits = getOption("digits")){
+print.DLMCTest <- function(x, digits = getOption("digits"), ...){
   cat("\nRestricted Model\n") 
-  frame_tmp <- data.frame(coef = mdl$mdl_h0$theta)
-  if (mdl$mdl_h0$control$getSE==TRUE){
-    frame_tmp["s.e."] <- mdl$mdl_h0$theta_se
+  frame_tmp <- data.frame(coef = x$mdl_h0$theta)
+  if (x$mdl_h0$control$getSE==TRUE){
+    frame_tmp["s.e."] <- x$mdl_h0$theta_se
   }
-  rownames(frame_tmp) <- names(mdl$mdl_h0$theta)
+  rownames(frame_tmp) <- names(x$mdl_h0$theta)
   print(format(signif(frame_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$mdl_h0$logLike)
-  cat(paste("\nAIC = "),mdl$mdl_h0$AIC)
-  cat(paste("\nBIC = "),mdl$mdl_h0$BIC)
+  cat(paste("\nlog-likelihood = "),x$mdl_h0$logLike)
+  cat(paste("\nAIC = "),x$mdl_h0$AIC)
+  cat(paste("\nBIC = "),x$mdl_h0$BIC)
   cat("\n")
   cat("\nDufour & Luger (2017) Moment-Based Local Monte Carlo Test\n")
-  out <- data.frame(rbind(c(t(mdl$theta),mdl$S0, mdl$F0_min, mdl$FN_min_cv, mdl$pval_min),
-                          c(t(mdl$theta),mdl$S0, mdl$F0_prod, mdl$FN_prod_cv, mdl$pval_prod)))
-  colnames(out) <- c(rownames(mdl$theta), colnames(mdl$S0), colnames(mdl$F0_min), names(mdl$FN_min_cv), "p-value")
+  out <- data.frame(rbind(c(t(x$theta),x$S0, x$F0_min, x$FN_min_cv, x$pval_min),
+                          c(t(x$theta),x$S0, x$F0_prod, x$FN_prod_cv, x$pval_prod)))
+  colnames(out) <- c(rownames(x$theta), colnames(x$S0), colnames(x$F0_min), names(x$FN_min_cv), "p-value")
   rownames(out) <- c("LMC_min", "LMC_prod")
   print(format(signif(out, max(1L, digits - 2L))))
-  invisible(mdl)
+  invisible(x)
 }
 
 #' @title Print summary of a \code{DLMMCTest} object
 #'
+#' @description This is a method for the function \code{print()} for objects of the class \code{DLMMCTest}.
+#' 
 #' @inheritParams base::print
+#'
+#' @return The \code{DLMMCTest} object is returned invisibly.
+#' 
+#' @keywords internal
 #' 
 #' @export
-print.DLMMCTest <- function(mdl, digits = getOption("digits")){
+print.DLMMCTest <- function(x, digits = getOption("digits"), ...){
   cat("\nRestricted Model\n") 
-  frame_tmp <- data.frame(coef = mdl$mdl_h0$theta)
-  if (mdl$mdl_h0$control$getSE==TRUE){
-    frame_tmp["s.e."] <- mdl$mdl_h0$theta_se
+  frame_tmp <- data.frame(coef = x$mdl_h0$theta)
+  if (x$mdl_h0$control$getSE==TRUE){
+    frame_tmp["s.e."] <- x$mdl_h0$theta_se
   }
-  rownames(frame_tmp) <- names(mdl$mdl_h0$theta)
+  rownames(frame_tmp) <- names(x$mdl_h0$theta)
   print(format(signif(frame_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$mdl_h0$logLike)
-  cat(paste("\nAIC = "),mdl$mdl_h0$AIC)
-  cat(paste("\nBIC = "),mdl$mdl_h0$BIC)
+  cat(paste("\nlog-likelihood = "),x$mdl_h0$logLike)
+  cat(paste("\nAIC = "),x$mdl_h0$AIC)
+  cat(paste("\nBIC = "),x$mdl_h0$BIC)
   cat("\n")
   cat("\nDufour & Luger (2017) Moment-Based Maximized Monte Carlo Test\n")
-  out <- data.frame(rbind(c(t(mdl$theta_max_min),mdl$S0_min, mdl$F0_min, mdl$FN_min_cv, mdl$pval_min),
-                          c(t(mdl$theta_max_prod),mdl$S0_prod, mdl$F0_prod, mdl$FN_prod_cv, mdl$pval_prod)))
-  colnames(out) <- c(rownames(mdl$theta_max_min), colnames(mdl$S0_min), colnames(mdl$F0_min), names(mdl$FN_min_cv), "p-value")
+  out <- data.frame(rbind(c(t(x$theta_max_min),x$S0_min, x$F0_min, x$FN_min_cv, x$pval_min),
+                          c(t(x$theta_max_prod),x$S0_prod, x$F0_prod, x$FN_prod_cv, x$pval_prod)))
+  colnames(out) <- c(rownames(x$theta_max_min), colnames(x$S0_min), colnames(x$F0_min), names(x$FN_min_cv), "p-value")
   rownames(out) <- c("MMC_min","MMC_prod")
   print(format(signif(out, max(1L, digits - 2L))))
-  invisible(mdl)
+  invisible(x)
 }
 
 #' @title Print summary of a \code{LMCLRTest} object
 #'
+#' @description This is a method for the function \code{print()} for objects of the class \code{LMCLRTest}.
+#' 
 #' @inheritParams base::print
+#'
+#' @return The \code{LMCLRTest} object is returned invisibly.
+#' 
+#' @keywords internal
 #' 
 #' @export
-print.LMCLRTest <- function(mdl, digits = getOption("digits")){
+print.LMCLRTest <- function(x, digits = getOption("digits"), ...){
   cat("\nRestricted Model\n") 
-  frame_h0_tmp <- data.frame(coef = mdl$mdl_h0$theta)
-  if (mdl$mdl_h0$control$getSE==TRUE){
-    frame_h0_tmp["s.e."] <- mdl$mdl_h0$theta_se
+  frame_h0_tmp <- data.frame(coef = x$mdl_h0$theta)
+  if (x$mdl_h0$control$getSE==TRUE){
+    frame_h0_tmp["s.e."] <- x$mdl_h0$theta_se
   }
-  rownames(frame_h0_tmp) <- names(mdl$mdl_h0$theta)
+  rownames(frame_h0_tmp) <- names(x$mdl_h0$theta)
   print(format(signif(frame_h0_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$mdl_h0$logLike)
-  cat(paste("\nAIC = "),mdl$mdl_h0$AIC)
-  cat(paste("\nBIC = "),mdl$mdl_h0$BIC)
+  cat(paste("\nlog-likelihood = "),x$mdl_h0$logLike)
+  cat(paste("\nAIC = "),x$mdl_h0$AIC)
+  cat(paste("\nBIC = "),x$mdl_h0$BIC)
   cat("\n")
   cat("\nUnrestricted Model\n") 
-  frame_h1_tmp <- data.frame(coef = mdl$mdl_h1$theta)
-  if (mdl$mdl_h1$control$getSE==TRUE){
-    frame_h1_tmp["s.e."] <- mdl$mdl_h1$theta_se
+  frame_h1_tmp <- data.frame(coef = x$mdl_h1$theta)
+  if (x$mdl_h1$control$getSE==TRUE){
+    frame_h1_tmp["s.e."] <- x$mdl_h1$theta_se
   }
-  rownames(frame_h1_tmp) <- names(mdl$mdl_h1$theta)
+  rownames(frame_h1_tmp) <- names(x$mdl_h1$theta)
   print(format(signif(frame_h1_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$mdl_h1$logLike)
-  cat(paste("\nAIC = "),mdl$mdl_h1$AIC)
-  cat(paste("\nBIC = "),mdl$mdl_h1$BIC)
+  cat(paste("\nlog-likelihood = "),x$mdl_h1$logLike)
+  cat(paste("\nAIC = "),x$mdl_h1$AIC)
+  cat(paste("\nBIC = "),x$mdl_h1$BIC)
   cat("\n")
   cat("\nRodriguez Rondon & Dufour (2022) Local Monte Carlo Likelihood Ratio Test\n")
-  out <- data.frame(t(as.matrix(c(mdl$LRT_0, mdl$LRN_cv, mdl$pval))))
-  colnames(out) <- c(names(mdl$LRT_0), names(mdl$LRN_cv), "p-value")
+  out <- data.frame(t(as.matrix(c(x$LRT_0, x$LRN_cv, x$pval))))
+  colnames(out) <- c(names(x$LRT_0), names(x$LRN_cv), "p-value")
   rownames(out) <- "LMC_LRT"
   print(format(signif(out, max(1L, digits - 2L))))
-  invisible(mdl)
+  invisible(x)
 }
 
 
 
 #' @title Print summary of a \code{MMCLRTest} object
 #'
+#' @description This is a method for the function \code{print()} for objects of the class \code{MMCLRTest}.
+#' 
 #' @inheritParams base::print
+#'
+#' @return The \code{MMCLRTest} object is returned invisibly.
+#' 
+#' @keywords internal
 #' 
 #' @export
-print.MMCLRTest <- function(mdl, digits = getOption("digits")){
+print.MMCLRTest <- function(x, digits = getOption("digits"), ...){
   cat("\nRestricted Model\n") 
-  frame_h0_tmp <- data.frame(coef = mdl$mdl_h0$theta)
-  if (mdl$mdl_h0$control$getSE==TRUE){
-    frame_h0_tmp["s.e."] <- mdl$mdl_h0$theta_se
+  frame_h0_tmp <- data.frame(coef = x$mdl_h0$theta)
+  if (x$mdl_h0$control$getSE==TRUE){
+    frame_h0_tmp["s.e."] <- x$mdl_h0$theta_se
   }
-  rownames(frame_h0_tmp) <- names(mdl$mdl_h0$theta)
+  rownames(frame_h0_tmp) <- names(x$mdl_h0$theta)
   print(format(signif(frame_h0_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$mdl_h0$logLike)
-  cat(paste("\nAIC = "),mdl$mdl_h0$AIC)
-  cat(paste("\nBIC = "),mdl$mdl_h0$BIC)
+  cat(paste("\nlog-likelihood = "),x$mdl_h0$logLike)
+  cat(paste("\nAIC = "),x$mdl_h0$AIC)
+  cat(paste("\nBIC = "),x$mdl_h0$BIC)
   cat("\n")
   cat("\nUnrestricted Model\n") 
-  frame_h1_tmp <- data.frame(coef = mdl$mdl_h1$theta)
-  if (mdl$mdl_h1$control$getSE==TRUE){
-    frame_h1_tmp["s.e."] <- mdl$mdl_h1$theta_se
+  frame_h1_tmp <- data.frame(coef = x$mdl_h1$theta)
+  if (x$mdl_h1$control$getSE==TRUE){
+    frame_h1_tmp["s.e."] <- x$mdl_h1$theta_se
   }
-  rownames(frame_h1_tmp) <- names(mdl$mdl_h1$theta)
+  rownames(frame_h1_tmp) <- names(x$mdl_h1$theta)
   print(format(signif(frame_h1_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$mdl_h1$logLike)
-  cat(paste("\nAIC = "),mdl$mdl_h1$AIC)
-  cat(paste("\nBIC = "),mdl$mdl_h1$BIC)
+  cat(paste("\nlog-likelihood = "),x$mdl_h1$logLike)
+  cat(paste("\nAIC = "),x$mdl_h1$AIC)
+  cat(paste("\nBIC = "),x$mdl_h1$BIC)
   cat("\n")
   cat("\nRodriguez Rondon & Dufour (2022) Maximized Monte Carlo Likelihood Ratio Test\n")
-  out <- data.frame(t(as.matrix(c(mdl$LRT_0, mdl$pval))))
-  colnames(out) <- c(names(mdl$LRT_0), "p-value")
+  out <- data.frame(t(as.matrix(c(x$LRT_0, x$pval))))
+  colnames(out) <- c(names(x$LRT_0), "p-value")
   rownames(out) <- "MMC_LRT"
   print(format(signif(out, max(1L, digits - 2L))))
-  invisible(mdl)
+  invisible(x)
 }
 
 
 #' @title Print summary of a \code{BootLRTest} object
 #'
+#' @description This is a method for the function \code{print()} for objects of the class \code{BootLRTest}.
+#' 
 #' @inheritParams base::print
+#'
+#' @return The \code{BootLRTest} object is returned invisibly.
+#' 
+#' @keywords internal
 #' 
 #' @export
-print.BootLRTest <- function(mdl, digits = getOption("digits")){
+print.BootLRTest <- function(x, digits = getOption("digits"), ...){
   cat("\nRestricted Model\n") 
-  frame_h0_tmp <- data.frame(coef = mdl$mdl_h0$theta)
-  if (mdl$mdl_h0$control$getSE==TRUE){
-    frame_h0_tmp["s.e."] <- mdl$mdl_h0$theta_se
+  frame_h0_tmp <- data.frame(coef = x$mdl_h0$theta)
+  if (x$mdl_h0$control$getSE==TRUE){
+    frame_h0_tmp["s.e."] <- x$mdl_h0$theta_se
   }
-  rownames(frame_h0_tmp) <- names(mdl$mdl_h0$theta)
+  rownames(frame_h0_tmp) <- names(x$mdl_h0$theta)
   print(format(signif(frame_h0_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$mdl_h0$logLike)
-  cat(paste("\nAIC = "),mdl$mdl_h0$AIC)
-  cat(paste("\nBIC = "),mdl$mdl_h0$BIC)
+  cat(paste("\nlog-likelihood = "),x$mdl_h0$logLike)
+  cat(paste("\nAIC = "),x$mdl_h0$AIC)
+  cat(paste("\nBIC = "),x$mdl_h0$BIC)
   cat("\n")
   cat("\nUnrestricted Model\n") 
-  frame_h1_tmp <- data.frame(coef = mdl$mdl_h1$theta)
-  if (mdl$mdl_h1$control$getSE==TRUE){
-    frame_h1_tmp["s.e."] <- mdl$mdl_h1$theta_se
+  frame_h1_tmp <- data.frame(coef = x$mdl_h1$theta)
+  if (x$mdl_h1$control$getSE==TRUE){
+    frame_h1_tmp["s.e."] <- x$mdl_h1$theta_se
   }
-  rownames(frame_h1_tmp) <- names(mdl$mdl_h1$theta)
+  rownames(frame_h1_tmp) <- names(x$mdl_h1$theta)
   print(format(signif(frame_h1_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),mdl$mdl_h1$logLike)
-  cat(paste("\nAIC = "),mdl$mdl_h1$AIC)
-  cat(paste("\nBIC = "),mdl$mdl_h1$BIC)
+  cat(paste("\nlog-likelihood = "),x$mdl_h1$logLike)
+  cat(paste("\nAIC = "),x$mdl_h1$AIC)
+  cat(paste("\nBIC = "),x$mdl_h1$BIC)
   cat("\n")
   cat("\nBootstrap Likelihood Ratio Test\n")
-  out <- data.frame(t(as.matrix(c(mdl$LRT_0, mdl$LRN_cv, mdl$pval))))
-  colnames(out) <- c(names(mdl$LRT_0), names(mdl$LRN_cv), "p-value")
+  out <- data.frame(t(as.matrix(c(x$LRT_0, x$LRN_cv, x$pval))))
+  colnames(out) <- c(names(x$LRT_0), names(x$LRN_cv), "p-value")
   rownames(out) <- "Boot_LRT"
   print(format(signif(out, max(1L, digits - 2L))))
-  invisible(mdl)
+  invisible(x)
 }

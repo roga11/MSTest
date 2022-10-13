@@ -19,3 +19,4 @@ transformed transition matrix.
 \description{
 This function converts a transition matrix to the transition matrix consistent with a Markov-switching autoregressive model.
 }
+\keyword{internal}

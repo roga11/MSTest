@@ -15,7 +15,7 @@ combine_stat(stats, params, type)
 is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.}
 }
 \value{
-A (\code{N+1 x 1}) vector with test statistics. The last element is the test statistc from observed data.
+A (\code{N x 1}) vector with test statistics. The last element is the test statistc from observed data.
 }
 \description{
 This function is used to combine the four moment-based p-values as in eq. \code{17} and \code{18} of Dufour & Luger 2017.
@@ -33,3 +33,4 @@ Pearson, K. 1933. "On a method of determining whether a sample of size n
 
 Fisher, R. 1932. "Statistical Methods for Research Workers." Edinburgh: Oliver and Boyd.
 }
+\keyword{internal}

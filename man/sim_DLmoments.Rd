@@ -21,3 +21,4 @@ This function computes the four moment-based test statistics (eq. \code{11} - \c
 Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based 
 tests for Markov switching in autoregressive models." \emph{Econometric Reviews}, 36(6-9), 713-727.
 }
+\keyword{internal}
