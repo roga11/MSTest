@@ -6,7 +6,22 @@
 \usage{
 simuMdl(mdl_h0, p, q, k, burnin)
 }
+\arguments{
+\item{mdl_h0}{List with restricted model properties.}
+
+\item{p}{integer specifying the number of autoregressive lags.}
+
+\item{q}{integer specifying the number of series.}
+
+\item{k}{integer specifying the number of regimes.}
+
+\item{burnin}{integer specifying the number of observations to drop from beginning of simulation.}
+}
+\value{
+List with simulated process properties.
+}
 \description{
-Likelihood ratio test statistic sample distribution
+This function is used by Monte Carlo Likelihood ratio testing 
+procedures to simulate processes under the null hypothesis.
 }
 \keyword{internal}

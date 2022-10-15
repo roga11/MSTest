@@ -28,7 +28,7 @@ MMCLRTest(Y, p, k0, k1, control = list())
   \item{\code{stationary_constraint}: }{Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.}
   \item{\code{variance_constraint}: }{Double used to determine the lower bound for variance in parameter set for search. Value should be between \code{0} and \code{1} as it is multiplied by consistent point estimates of variances. Default is \code{0.01} (i.e., \code{1\%} of consistent point estimates.}
   \item{\code{silence}: }{Boolean determining if optimization steps should be silenced (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{FALSE}.}
-  \item{\code{threshold_stop}: }{Default is \code{1}.}
+  \item{\code{threshold_stop}: }{Double determining the global optimum of function. Default is \code{1}.}
   \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
   \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
   \item{\code{type_control}: }{List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is to set \code{list(maxit = 200)} so that maximum number of iterations is \code{200}.}

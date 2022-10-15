@@ -6,7 +6,22 @@
 \usage{
 estimMdl(Y, p, q, k, control = list())
 }
+\arguments{
+\item{Y}{Series to be tested. Must be a (\code{T x q}) matrix.}
+
+\item{p}{integer specifying the number of autoregressive lags.}
+
+\item{q}{integer specifying the number of series.}
+
+\item{k}{integer specifying the number of regimes.}
+
+\item{control}{List with control options for model estimation. For default values, see description of model being estimated.}
+}
+\value{
+List with estimated model properties.
+}
 \description{
-Estimate model for likelihood ratio test
+This function is used by the Monte Carlo testing procedures 
+to estimate restricted and unrestricted models.
 }
 \keyword{internal}

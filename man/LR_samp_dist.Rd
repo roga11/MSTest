@@ -6,7 +6,23 @@
 \usage{
 LR_samp_dist(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control)
 }
+\arguments{
+\item{mdl_h0}{List with restricted model properties.}
+
+\item{k1}{integer specifying the number of regimes under the alternative hypothesis.}
+
+\item{N}{integer specifying the number of replications.}
+
+\item{burnin}{integer specifying the number of observations to drop from beginning of simulation.}
+
+\item{mdl_h0_control}{List with controls/options used to estimate restricted model.}
+
+\item{mdl_h1_control}{List with controls/options used to estimate unrestricted model.}
+}
+\value{
+vector of simulated LRT statistics
+}
 \description{
-Likelihood Ratio Test Statistic Sample Distribution
+This function simulates the sample distribution under the null hypothesis.
 }
 \keyword{internal}

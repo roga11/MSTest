@@ -6,7 +6,27 @@
 \usage{
 compu_tstat(theta_h0, theta_h1, mdl_h0, mdl_h1, p, q, k0, k1)
 }
+\arguments{
+\item{theta_h0}{estimated parameter values for restricted model.}
+
+\item{theta_h1}{estimated parameter values for unrestricted model.}
+
+\item{mdl_h0}{List with restricted model properties.}
+
+\item{mdl_h1}{List with unrestricted model properties.}
+
+\item{p}{integer specifying the number of autoregressive lags.}
+
+\item{q}{integer specifying the number of series.}
+
+\item{k0}{integer specifying the number of regimes under the null hypothesis.}
+
+\item{k1}{integer specifying the number of regimes under the alternative hypothesis.}
+}
+\value{
+LRT statistic
+}
 \description{
-Computes test stat using new parameter vectors
+This function computes the LRT statistic.
 }
 \keyword{internal}

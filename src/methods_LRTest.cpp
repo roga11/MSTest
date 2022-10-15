@@ -6,6 +6,17 @@ using namespace Rcpp;
 
 //' @title Likelihood ratio test statistic sample distribution
 //' 
+//' @description This function is used by Monte Carlo Likelihood ratio testing 
+//' procedures to simulate processes under the null hypothesis.
+//' 
+//' @param mdl_h0 List with restricted model properties.
+//' @param p integer specifying the number of autoregressive lags.
+//' @param q integer specifying the number of series.
+//' @param k integer specifying the number of regimes.
+//' @param burnin integer specifying the number of observations to drop from beginning of simulation.
+//' 
+//' @return List with simulated process properties. 
+//' 
 //' @keywords internal
 //' 
 //' @export
@@ -45,6 +56,19 @@ List simuMdl(List mdl_h0, int p, int q, int k, int burnin){
 
 
 //' @title Change model List with new parameters
+//' 
+//' @description This function is used by the MMC LRT procedure. It makes a 
+//' copy of the restricted model under the null hypothesis and changes the 
+//' parameters used to simulate the process under the null with values being 
+//' considered in the search/optimization. 
+//' 
+//' @param mdl_h0 List with restricted model properties.
+//' @param theta_h0 vector of parameter values under null being considered.
+//' @param p integer specifying the number of autoregressive lags.
+//' @param q integer specifying the number of series.
+//' @param k integer specifying the number of regimes.
+//' 
+//' @return List with model properties
 //' 
 //' @keywords internal
 //' 
@@ -95,6 +119,19 @@ List mdledit(List mdl_h0, arma::vec theta_h0, int p, int q, int k0){
 
 //' @title Computes test stat using new parameter vectors
 //' 
+//' @description This function computes the LRT statistic.
+//' 
+//' @param theta_h0 estimated parameter values for restricted model.
+//' @param theta_h1 estimated parameter values for unrestricted model.
+//' @param mdl_h0 List with restricted model properties.
+//' @param mdl_h1 List with unrestricted model properties.
+//' @param p integer specifying the number of autoregressive lags.
+//' @param q integer specifying the number of series.
+//' @param k0 integer specifying the number of regimes under the null hypothesis.
+//' @param k1 integer specifying the number of regimes under the alternative hypothesis.
+//' 
+//' @return LRT statistic
+//' 
 //' @keywords internal
 //' 
 //' @export
@@ -140,11 +177,23 @@ double compu_tstat(arma::vec theta_h0, arma::vec theta_h1,
 
 //' @title Likelihood Ratio Test Statistic Sample Distribution
 //' 
+//' @description This function simulates the sample distribution under the null hypothesis.
+//' 
+//' @param mdl_h0 List with restricted model properties.
+//' @param k1 integer specifying the number of regimes under the alternative hypothesis.
+//' @param N integer specifying the number of replications.
+//' @param burnin integer specifying the number of observations to drop from beginning of simulation.
+//' @param mdl_h0_control List with controls/options used to estimate restricted model.
+//' @param mdl_h1_control List with controls/options used to estimate unrestricted model.
+//' 
+//' @return vector of simulated LRT statistics
+//' 
 //' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin, List mdl_h0_control, List mdl_h1_control){
+arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin, 
+                       List mdl_h0_control, List mdl_h1_control){
   // ---------- Load R functions
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function estimMdl = mstest["estimMdl"];
@@ -181,12 +230,29 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin, List mdl_h0_contr
 
 //' @title Monte Carlo Likelihood Ratio Test P-value Function 
 //' 
+//' @description This function computes the Maximum Monte Carlo P-value.
+//' 
+//' @param theta vector of parameter values being considered.
+//' @param mdl_h0 List with restricted model properties.
+//' @param mdl_h1 List with unrestricted model properties.
+//' @param N integer specifying the number of replications.
+//' @param burnin integer specifying the number of observations to drop from beginning of simulation.
+//' @param workers Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open.
+//' @param lambda Double determining penalty on nonlinear constraint.
+//' @param stationary_constraint Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}).
+//' @param thtol double determining the convergence criterion used during estimation.
+//' @param mdl_h0_control List with controls/options used to estimate restricted model.
+//' @param mdl_h1_control List with controls/options used to estimate unrestricted model.
+//' 
+//' @return MMC p-value
+//' 
 //' @keywords internal
 //' 
 //' @export
 // [[Rcpp::export]]
-double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, int N, int burnin, int workers, 
-                     double lambda, bool stationary_constraint, double thtol,   
+double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, int N, 
+                     int burnin, int workers, double lambda, 
+                     bool stationary_constraint, double thtol,   
                      List mdl_h0_control, List mdl_h1_control){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function LR_samp_dist_par = mstest["LR_samp_dist_par"];
@@ -280,6 +346,22 @@ double MMCLRpval_fun(arma::vec theta, List mdl_h0, List mdl_h1, int N, int burni
 
 
 //' @title Monte Carlo Likelihood Ratio Test P-value Function 
+//' 
+//' @description This function computes the (negative) Maximum Monte Carlo P-value.
+//' 
+//' @param theta vector of parameter values being considered.
+//' @param mdl_h0 List with restricted model properties.
+//' @param mdl_h1 List with unrestricted model properties.
+//' @param N integer specifying the number of replications.
+//' @param burnin integer specifying the number of observations to drop from beginning of simulation.
+//' @param workers Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open.
+//' @param lambda Double determining penalty on nonlinear constraint.
+//' @param stationary_constraint Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}).
+//' @param thtol double determining the convergence criterion used during estimation.
+//' @param mdl_h0_control List with controls/options used to estimate restricted model.
+//' @param mdl_h1_control List with controls/options used to estimate unrestricted model.
+//' 
+//' @return negative MMC p-value
 //' 
 //' @keywords internal
 //' 

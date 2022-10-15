@@ -6,8 +6,17 @@
 \usage{
 MMC_bounds(theta_0, mdl_h0, mdl_h1, con)
 }
+\arguments{
+\item{mdl_h0}{List with restricted model properties.}
+
+\item{mdl_h1}{List with unrestricted model properties.}
+
+\item{con}{List with control options provided to MMC LRT procedure.}
+
+\item{theta}{vector of parameter values being considered.}
+}
 \description{
-MMC nuisance parameter bounds for univariate models
+This function is used to determine the lower and upper bounds for the MMC LRT parameter search.
 }
 \references{
 Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.

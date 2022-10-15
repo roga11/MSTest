@@ -6,7 +6,24 @@
 \usage{
 mdledit(mdl_h0, theta_h0, p, q, k0)
 }
+\arguments{
+\item{mdl_h0}{List with restricted model properties.}
+
+\item{theta_h0}{vector of parameter values under null being considered.}
+
+\item{p}{integer specifying the number of autoregressive lags.}
+
+\item{q}{integer specifying the number of series.}
+
+\item{k}{integer specifying the number of regimes.}
+}
+\value{
+List with model properties
+}
 \description{
-Change model List with new parameters
+This function is used by the MMC LRT procedure. It makes a 
+copy of the restricted model under the null hypothesis and changes the 
+parameters used to simulate the process under the null with values being 
+considered in the search/optimization.
 }
 \keyword{internal}

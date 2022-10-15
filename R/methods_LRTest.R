@@ -1,6 +1,18 @@
 
 #' @title Monte Carlo Likelihood Ratio Test sample distribution (parallel version)
 #' 
+#' @description This function simulates the sample distribution under the null hypothesis using a parallel pool.
+#'  
+#' @param mdl_h0 List with restricted model properties.
+#' @param k1 integer specifying the number of regimes under the alternative hypothesis.
+#' @param N integer specifying the number of replications.
+#' @param burnin integer specifying the number of observations to drop from beginning of simulation.
+#' @param mdl_h0_control List with controls/options used to estimate restricted model.
+#' @param mdl_h1_control List with controls/options used to estimate unrestricted model.
+#' @param workers Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open.
+#'  
+#' @return vector of simulated LRT statistics
+#' 
 #' @keywords internal
 #'
 #' @export
@@ -25,6 +37,17 @@ LR_samp_dist_par <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_contr
 
 
 #' @title Estimate model for likelihood ratio test
+#' 
+#' @description This function is used by the Monte Carlo testing procedures 
+#' to estimate restricted and unrestricted models.
+#' 
+#' @param Y Series to be tested. Must be a (\code{T x q}) matrix.
+#' @param p integer specifying the number of autoregressive lags.
+#' @param q integer specifying the number of series.
+#' @param k integer specifying the number of regimes.
+#' @param control List with control options for model estimation. For default values, see description of model being estimated.
+#' 
+#' @return List with estimated model properties. 
 #' 
 #' @keywords internal
 #' 
@@ -171,6 +194,13 @@ LMCLRTest <- function(Y, p, k0, k1, control = list()){
 
 #' @title MMC nuisance parameter bounds for univariate models 
 #' 
+#' @description This function is used to determine the lower and upper bounds for the MMC LRT parameter search.
+#' 
+#' @param theta vector of parameter values being considered.
+#' @param mdl_h0 List with restricted model properties.
+#' @param mdl_h1 List with unrestricted model properties.
+#' @param con List with control options provided to MMC LRT procedure.
+#' 
 #' @keywords internal
 #' 
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
@@ -232,7 +262,7 @@ MMC_bounds <- function(theta_0, mdl_h0, mdl_h1, con){
 #'   \item{\code{stationary_constraint}: }{Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.}
 #'   \item{\code{variance_constraint}: }{Double used to determine the lower bound for variance in parameter set for search. Value should be between \code{0} and \code{1} as it is multiplied by consistent point estimates of variances. Default is \code{0.01} (i.e., \code{1\%} of consistent point estimates.}
 #'   \item{\code{silence}: }{Boolean determining if optimization steps should be silenced (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{FALSE}.}
-#'   \item{\code{threshold_stop}: }{Default is \code{1}.}
+#'   \item{\code{threshold_stop}: }{Double determining the global optimum of function. Default is \code{1}.}
 #'   \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
 #'   \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
 #'   \item{\code{type_control}: }{List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is to set \code{list(maxit = 200)} so that maximum number of iterations is \code{200}.}

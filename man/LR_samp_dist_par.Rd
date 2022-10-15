@@ -14,7 +14,25 @@ LR_samp_dist_par(
   workers
 )
 }
+\arguments{
+\item{mdl_h0}{List with restricted model properties.}
+
+\item{k1}{integer specifying the number of regimes under the alternative hypothesis.}
+
+\item{N}{integer specifying the number of replications.}
+
+\item{burnin}{integer specifying the number of observations to drop from beginning of simulation.}
+
+\item{mdl_h0_control}{List with controls/options used to estimate restricted model.}
+
+\item{mdl_h1_control}{List with controls/options used to estimate unrestricted model.}
+
+\item{workers}{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open.}
+}
+\value{
+vector of simulated LRT statistics
+}
 \description{
-Monte Carlo Likelihood Ratio Test sample distribution (parallel version)
+This function simulates the sample distribution under the null hypothesis using a parallel pool.
 }
 \keyword{internal}

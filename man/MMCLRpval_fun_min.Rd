@@ -18,7 +18,33 @@ MMCLRpval_fun_min(
   mdl_h1_control
 )
 }
+\arguments{
+\item{theta}{vector of parameter values being considered.}
+
+\item{mdl_h0}{List with restricted model properties.}
+
+\item{mdl_h1}{List with unrestricted model properties.}
+
+\item{N}{integer specifying the number of replications.}
+
+\item{burnin}{integer specifying the number of observations to drop from beginning of simulation.}
+
+\item{workers}{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open.}
+
+\item{lambda}{Double determining penalty on nonlinear constraint.}
+
+\item{stationary_constraint}{Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}).}
+
+\item{thtol}{double determining the convergence criterion used during estimation.}
+
+\item{mdl_h0_control}{List with controls/options used to estimate restricted model.}
+
+\item{mdl_h1_control}{List with controls/options used to estimate unrestricted model.}
+}
+\value{
+negative MMC p-value
+}
 \description{
-Monte Carlo Likelihood Ratio Test P-value Function
+This function computes the (negative) Maximum Monte Carlo P-value.
 }
 \keyword{internal}
