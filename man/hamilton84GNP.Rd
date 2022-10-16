@@ -9,7 +9,7 @@
 Hamilton (1989). This series ranges from 1951Q2 to 1984Q4. 
   \item{DATE}{Vector of dates}
   \item{GNP_logdiff}{US GNP log difference}
-  \item{GNP}{US GNP seies}
+  \item{GNP}{US GNP series}
 }
 }
 \source{

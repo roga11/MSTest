@@ -11,7 +11,7 @@
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 "USGNP"
 # -----------------------------------------------------------------------------
-#' @title Carasco, Hu, & Ploberger 2010 GNP data
+#' @title Carrasco, Hu, & Ploberger 2010 GNP data
 #' 
 #' @format 
 #' \describe{This data is the extension of the GNP series used in CHP (2014), Econometrica. This series ranges from 
@@ -33,7 +33,7 @@
 #' Hamilton (1989). This series ranges from 1951Q2 to 1984Q4. 
 #'   \item{DATE}{Vector of dates}
 #'   \item{GNP_logdiff}{US GNP log difference}
-#'   \item{GNP}{US GNP seies}
+#'   \item{GNP}{US GNP series}
 #' }
 #' @source \url{https://www.ssc.wisc.edu/~bhansen/progs/jae_92.html}
 #' 

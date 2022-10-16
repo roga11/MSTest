@@ -24,7 +24,7 @@ DLMMCpval_fun_min(
 
 \item{params}{A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.}
 
-\item{sim_stats}{A (\code{N x 1}) vector with test statistics. The last element is the test statistc from observed data.}
+\item{sim_stats}{A (\code{N x 1}) vector with test statistics. The last element is the test statistic from observed data.}
 
 \item{pval_type}{String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.}
 

@@ -10,7 +10,7 @@ simuAR(mdl_h0, burnin = 100L)
 \item{mdl_h0}{List containing the following DGP parameters
 \itemize{
   \item{\code{n}: }{Length of series.}
-  \item{\code{mu}: }{Mmean of process.}
+  \item{\code{mu}: }{Mean of process.}
   \item{\code{sigma}: }{Standard deviation of process.}
   \item{\code{phi}: }{Vector of autoregressive coefficients.}
   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}

@@ -83,8 +83,7 @@ arma::vec calc_mu2t_mv(List mdl, double rho, List ltmt, arma::vec hv){
 //' 
 //' @keywords internal
 //' 
-//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
-//' test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 //' 
 //' @export
 // [[Rcpp::export]]

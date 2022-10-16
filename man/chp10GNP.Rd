@@ -3,7 +3,7 @@
 \docType{data}
 \name{chp10GNP}
 \alias{chp10GNP}
-\title{Carasco, Hu, & Ploberger 2010 GNP data}
+\title{Carrasco, Hu, & Ploberger 2010 GNP data}
 \format{
 \describe{This data is the extension of the GNP series used in CHP (2014), Econometrica. This series ranges from 
 1951Q2 to 2010Q4. 
@@ -19,7 +19,7 @@
 chp10GNP
 }
 \description{
-Carasco, Hu, & Ploberger 2010 GNP data
+Carrasco, Hu, & Ploberger 2010 GNP data
 }
 \references{
 Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.

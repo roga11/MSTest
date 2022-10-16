@@ -261,7 +261,7 @@ logLikelihood.MSARmdl <- function(mdl){
 
 #' @title Log likelihood for Markov-switching vector autoregressive model  
 #' 
-#' @description This function is used to compute the log-likelihood for a Markv-switching vector autoregressive model.
+#' @description This function is used to compute the log-likelihood for a Markov-switching vector autoregressive model.
 #'
 #' @param mdl List with model properties.
 #'

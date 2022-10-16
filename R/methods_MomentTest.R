@@ -146,7 +146,7 @@ DLMCTest <- function(Y, p, control = list()){
 #' @return List of class \code{DLMCTest} (\code{S3} object) with attributes including: 
 #' \itemize{
 #'   \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} if \code{p>0} or \code{Nmdl} otherwise (\code{S3} objects). See \code{\link{ARmdl}} or \code{\link{Nmdl}}.}    
-#'   \item{\code{theta_max_min}: }{Value of nuisance parameters when min version of p-value is maxmimized as discussed in Dufour & Luger (2017) MMC procedure.}
+#'   \item{\code{theta_max_min}: }{Value of nuisance parameters when min version of p-value is maximized as discussed in Dufour & Luger (2017) MMC procedure.}
 #'   \item{\code{theta_max_prod}: }{Value of nuisance parameters when prod version of p-value is maxmimized as discussed in Dufour & Luger (2017) MMC procedure.}
 #'   \item{\code{theta_low}: }{Lower bound on nuisance parameter values used when searching for maximum p-value.}
 #'   \item{\code{theta_upp}: }{Upper bound on nuisance parameter values used when searching for maximum p-value.}
@@ -161,8 +161,8 @@ DLMCTest <- function(Y, p, control = list()){
 #'   \item{\code{FN_min_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for min version of Local Monte Carlo moment-based test.}
 #'   \item{\code{FN_prod_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for prod version of Local Monte Carlo moment-based test.}
 #'   \item{\code{control}: }{List with test procedure options used.}
-#'   \item{\code{optim_min_output}: }{List with optimization output for min verion of Maximized Monte Carlo moment-based test.}
-#'   \item{\code{optim_prod_output}: }{List with optimization output for prod verion of Maximized Monte Carlo moment-based test.}
+#'   \item{\code{optim_min_output}: }{List with optimization output for min version of Maximized Monte Carlo moment-based test.}
+#'   \item{\code{optim_prod_output}: }{List with optimization output for prod version of Maximized Monte Carlo moment-based test.}
 #' }
 #'
 #' @references Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based tests for 

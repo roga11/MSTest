@@ -619,7 +619,7 @@ arma::mat randSN(int T, int q){
 //' @param mdl_h0 List containing the following DGP parameters
 //' \itemize{
 //'   \item{\code{n}: }{Length of series.}
-//'   \item{\code{mu}: }{Mmean of process.}
+//'   \item{\code{mu}: }{Mean of process.}
 //'   \item{\code{sigma}: }{Standard deviation of process.}
 //'   \item{\code{phi}: }{Vector of autoregressive coefficients.}
 //'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
@@ -1563,7 +1563,7 @@ double logLike_MSVARmdl_min(arma::vec theta, List mdl, int k){
 // ==============================================================================
 //' @title Hidden Markov model log-likelihood function 
 //' 
-//' @description This function computes the log-likelihood for a Hidden MArkov model and uses the Hamilton smoother to obtain smoothed probabilities of each state. This is also the expectation step in the Expectation Maximization algorithm for a Markov-switching autoregressive model.
+//' @description This function computes the log-likelihood for a Hidden Markov model and uses the Hamilton smoother to obtain smoothed probabilities of each state. This is also the expectation step in the Expectation Maximization algorithm for a Markov-switching autoregressive model.
 //' 
 //' @param \code{theta} Vector of model parameters.
 //' @param \code{mdl} List with model attributes.

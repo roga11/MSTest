@@ -275,7 +275,7 @@ randSN <- function(T, q) {
 #' @param mdl_h0 List containing the following DGP parameters
 #' \itemize{
 #'   \item{\code{n}: }{Length of series.}
-#'   \item{\code{mu}: }{Mmean of process.}
+#'   \item{\code{mu}: }{Mean of process.}
 #'   \item{\code{sigma}: }{Standard deviation of process.}
 #'   \item{\code{phi}: }{Vector of autoregressive coefficients.}
 #'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
@@ -562,7 +562,7 @@ logLike_MSVARmdl_min <- function(theta, mdl, k) {
 
 #' @title Hidden Markov model log-likelihood function 
 #' 
-#' @description This function computes the log-likelihood for a Hidden MArkov model and uses the Hamilton smoother to obtain smoothed probabilities of each state. This is also the expectation step in the Expectation Maximization algorithm for a Markov-switching autoregressive model.
+#' @description This function computes the log-likelihood for a Hidden Markov model and uses the Hamilton smoother to obtain smoothed probabilities of each state. This is also the expectation step in the Expectation Maximization algorithm for a Markov-switching autoregressive model.
 #' 
 #' @param \code{theta} Vector of model parameters.
 #' @param \code{mdl} List with model attributes.
@@ -816,8 +816,7 @@ calc_mu2t_mv <- function(mdl, rho, ltmt, hv) {
 #' 
 #' @keywords internal
 #' 
-#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
-#' test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 #' 
 #' @export
 calc_mu2t <- function(mdl, rho, ltmt) {
@@ -1051,7 +1050,7 @@ sim_DLmoments <- function(Tsize, N) {
 #' @param \code{type} String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
 #' is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
 #' 
-#' @return A (\code{N x 1}) vector with test statistics. The last element is the test statistc from observed data.
+#' @return A (\code{N x 1}) vector with test statistics. The last element is the test statistic from observed data.
 #' 
 #' @keywords internal
 #' 
@@ -1094,7 +1093,7 @@ approx_dist_loop <- function(SN2) {
 #' @param y series being tested.
 #' @param x lagged values of series.
 #' @param params A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
-#' @param sim_stats A (\code{N x 1}) vector with test statistics. The last element is the test statistc from observed data.
+#' @param sim_stats A (\code{N x 1}) vector with test statistics. The last element is the test statistic from observed data.
 #' @param pval_type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
 #' @param stationary_ind Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.
 #' @param lambda Numeric value for penalty on stationary constraint not being met. Default is \code{100}.
@@ -1119,7 +1118,7 @@ DLMMCpval_fun <- function(theta, y, x, params, sim_stats, pval_type, stationary_
 #' @param y series being tested.
 #' @param x lagged values of series.
 #' @param params A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
-#' @param sim_stats A (\code{N x 1}) vector with test statistics. The last element is the test statistc from observed data.
+#' @param sim_stats A (\code{N x 1}) vector with test statistics. The last element is the test statistic from observed data.
 #' @param pval_type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
 #' @param stationary_ind Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.
 #' @param lambda Numeric value for penalty on stationary constraint not being met. Default is \code{100}.

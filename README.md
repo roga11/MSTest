@@ -65,7 +65,7 @@ hamilton89_mdl
 plot(hamilton89_mdl$St[,1], type = 'l')
 ```
  
-This package also provies functions to simulate Markov switching pocesses among others. To do this, we use the 'simuMSAR' function to simulate a Markov switching process and then uses 'MSARmdl' to estimate the model. Estimated coefficients may be compared with the true parameters used to generate the data. A plot also shows the fit of the smoothed probabilities. 
+This package also provides functions to simulate Markov switching processes among others. To do this, we use the 'simuMSAR' function to simulate a Markov switching process and then uses 'MSARmdl' to estimate the model. Estimated coefficients may be compared with the true parameters used to generate the data. A plot also shows the fit of the smoothed probabilities. 
 
 ```r
 set.seed(123)

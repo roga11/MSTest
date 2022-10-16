@@ -24,7 +24,7 @@ HLRTest(Y, p, control = list())
   \item{\code{siggrid_from}: }{Double determining the minimum value of sigma in second regime (if \code{msvar = TRUE}). Default is \code{0.1}.}
   \item{\code{siggrid_by}: }{Double determining the step size for grid points of sigma in second regime. This, along with \code{gridsize} will determine the max value of sigma in second regime. Default is \code{0.1}.}
   \item{\code{N}: }{Integer determining the number of replications.}
-  \item{\code{nwband}: }{Integer determining maximum bandwith in Bartlett kernel. Critical values and p-values are returned for each bandwith from \code{0:nwband} as suggested in Hansen (1996). Default is \code{4}.}
+  \item{\code{nwband}: }{Integer determining maximum bandwidth in Bartlett kernel. Critical values and p-values are returned for each bandwith from \code{0:nwband} as suggested in Hansen (1996). Default is \code{4}.}
   \item{\code{sig_min}: }{Double determining minimum value of sigma in first regime that will be used in non-linear optimization with fixed value of sigma in second regime. This is used to avoid negative variances. Default is \code{0.01}.}
 }}
 }

@@ -22,7 +22,6 @@ eq. 2.5 of CHP 2014 when the alternative has switching mean only. The output
 is used in \code{\link{chpStat}} which computes the full test statistics.
 }
 \references{
-Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
-test for Markov switch- ing parameters.” \emph{Econometrica} 82 (2): 765–784.
+Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 }
 \keyword{internal}

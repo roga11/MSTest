@@ -13,6 +13,6 @@
 Log-likelihood value.
 }
 \description{
-This function is used to compute the log-likelihood for a Markv-switching vector autoregressive model.
+This function is used to compute the log-likelihood for a Markov-switching vector autoregressive model.
 }
 \keyword{internal}
