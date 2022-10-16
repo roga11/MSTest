@@ -1,6 +1,6 @@
-set.seed(1234)
+set.seed(123)
 # Define DGP of MS VAR process
-mdl_msvar2 <- list(n     = 1000, 
+mdl_msvar2 <- list(n     = 200, 
                    p     = 1,
                    q     = 2,
                    mu    = rbind(c(5, -2),
@@ -22,12 +22,10 @@ y_msvar_simu <- simuMSVAR(mdl_msvar2)
 control <- list(msmu   = TRUE, 
                 msvar  = TRUE,
                 method = "EM",
-                use_diff_init = 10)
+                use_diff_init = 1)
                 
 # Estimate model
 y_msvar_mdl <- MSVARmdl(y_msvar_simu$y, p = 1, k = 2, control)
-
 y_msvar_mdl
 
-plot(y_msvar_mdl$St[,2], type = 'l')
-lines(y_msvar_simu$St, col = 'red', lty = 2)
+

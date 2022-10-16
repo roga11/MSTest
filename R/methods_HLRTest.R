@@ -10,7 +10,7 @@
 #' @param control List with test procedure options including: 
 #' \itemize{
 #'   \item{\code{ix}: }{List of Markov Switching parameters. 1 = just mean c(1,2) = mean and first param, (default: 1).}
-#'   \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
+#'   \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered. Default is \code{FALSE}.}
 #'   \item{\code{qbound}: }{Indicator that bounds q by 1-p (default: \code{FALSE}).}
 #'   \item{\code{gridsize}: }{Integer determining the number of grid points for markov switching parameters. Default is \code{20}.}
 #'   \item{\code{p_gridsize}: }{Integer determining the number of grid points for transition probabilities. Default is \code{12}.}
@@ -19,8 +19,8 @@
 #'   \item{\code{mugrid_by}: }{Double determining the step size for grid points of mean in second regime. This, along with \code{gridsize} will determine the max value of mean in second regime. Default is \code{0.1}.}
 #'   \item{\code{siggrid_from}: }{Double determining the minimum value of sigma in second regime (if \code{msvar = TRUE}). Default is \code{0.1}.}
 #'   \item{\code{siggrid_by}: }{Double determining the step size for grid points of sigma in second regime. This, along with \code{gridsize} will determine the max value of sigma in second regime. Default is \code{0.1}.}
-#'   \item{\code{N}: }{Integer determining the number of replications.}
-#'   \item{\code{nwband}: }{Integer determining maximum bandwidth in Bartlett kernel. Critical values and p-values are returned for each bandwith from \code{0:nwband} as suggested in Hansen (1996). Default is \code{4}.}
+#'   \item{\code{N}: }{Integer determining the number of replications. Default is \code{1000}.}
+#'   \item{\code{nwband}: }{Integer determining maximum bandwidth in Bartlett kernel. Critical values and p-values are returned for each bandwidth from \code{0:nwband} as suggested in Hansen (1996). Default is \code{4}.}
 #'   \item{\code{sig_min}: }{Double determining minimum value of sigma in first regime that will be used in non-linear optimization with fixed value of sigma in second regime. This is used to avoid negative variances. Default is \code{0.01}.}
 #' }
 #' 
@@ -73,7 +73,7 @@ HLRTest <- function(Y, p, control = list()){
   HLR_opt_ls <- con
   HLR_opt_ls$y    <- mdl_h0$y
   HLR_opt_ls$x    <- mdl_h0$X
-  HLR_opt_ls$k    <- ncol(mdl_h0$X) 
+  HLR_opt_ls$k    <- ncol(mdl_h0$X)
   HLR_opt_ls$kx   <- length(con$ix)
   HLR_opt_ls$k1   <- HLR_opt_ls$kx + con$msvar
   HLR_opt_ls$b1   <- matrix(0, HLR_opt_ls$k, 1)
@@ -158,19 +158,19 @@ HLRparamSearch <- function(gx, gp, gq, b, null, HLR_opt_ls){
   reps      <- HLR_opt_ls$N
   nwband    <- HLR_opt_ls$nwband
   mnull     <- sum(null)
-  gnn <- nrow(gx)
-  cnum <- length(gp)*gnn
+  gnn       <- nrow(gx)
+  cnum      <- length(gp)*gnn
   if (qbound == FALSE){
     cnum <- cnum*length(gq)
   }
-  ny <- length(y)
-  eps <- matrix(stats::rnorm((ny+nwband)*reps), nrow=(ny+nwband), ncol=reps)
-  draws <- matrix(1,nrow=1+nwband,ncol=reps)*(-1000)
+  ny      <- length(y)
+  eps     <- matrix(stats::rnorm((ny+nwband)*reps), nrow=(ny+nwband), ncol=reps)
+  draws   <- matrix(1,nrow=1+nwband,ncol=reps)*(-1000)
   drawsLs <- list()
-  c <- matrix(0, nrow = cnum, ncol = 1)
-  cs <- c
-  beta <- matrix(0, nrow = k + 3 + k1 - qbound, ncol = cnum) # All parameters 
-  j <- 0
+  c       <- matrix(0, nrow = cnum, ncol = 1)
+  cs      <- c
+  beta    <- matrix(0, nrow = k + 3 + k1 - qbound, ncol = cnum) # All parameters 
+  j       <- 0
   HLR_opt_ls_tmp <- HLR_opt_ls
   lowb <- rep(-Inf, length(b))
   lowb[length(b)] <- HLR_opt_ls$sig_min
@@ -192,9 +192,9 @@ HLRparamSearch <- function(gx, gp, gq, b, null, HLR_opt_ls){
         HLR_opt_ls_tmp$b1 <- as.matrix(gx[xi,]) #value for constant in regime 2
         # Optimization (optimal theta which contains constant in regime 1, ar coefs, and variance)
         #optlst <- optim(bs, mclike, dmclike, HLR_opt_ls = HLR_opt_ls_tmp, method = 'BFGS')
-        optlst <- stats::optim(bs, mclike, dmclike, HLR_opt_ls = HLR_opt_ls_tmp, method = 'L-BFGS-B', lower = lowb, upper = uppb)
-        bnew <- optlst$par
-        f <- optlst$value
+        optlst  <- stats::optim(bs, mclike, dmclike, HLR_opt_ls = HLR_opt_ls_tmp, method = 'L-BFGS-B', lower = lowb, upper = uppb)
+        bnew    <- optlst$par
+        f       <- optlst$value
         beta[1:(k+1),j] <- bnew
         beta[(k+2):(k+1+k1),j] <- HLR_opt_ls_tmp$b1
         beta[(k+2+k1),j] <- HLR_opt_ls_tmp$p

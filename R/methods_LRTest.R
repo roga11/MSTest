@@ -287,7 +287,6 @@ MMC_bounds <- function(theta_0, mdl_h0, mdl_h1, con){
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #'
-#' @example /inst/examples/MMCLRTest_examples.R
 #' @export
 MMCLRTest <- function(Y, p, k0, k1, control = list()){
   # ----- Set control values
@@ -456,7 +455,6 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
 #' @references Kasahara, Hiroyuk, and Katsum Shimotsu. 2018. “Testing the number of regimes in Markov regime switching models.” \emph{arXiv preprint arXiv:1801.06862}.
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #' 
-#' @example /inst/examples/BootLRTest_examples.R
 #' @export
 BootLRTest <- function(Y, p, k0, k1, control = list()){
   # ----- Set control values

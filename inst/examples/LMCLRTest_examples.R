@@ -1,28 +1,18 @@
-# ------ MS-AR example ----- #
-# Set test procedure options
-lmc_control = list(N = 99,
-                   burnin = 100,
-                   converge_check = NULL,
-                   mdl_h0_control = list(const  = TRUE, 
-                                         getSE  = TRUE),
-                   mdl_h1_control = list(msmu   = TRUE, 
-                                         msvar  = FALSE,
-                                         getSE  = TRUE,
-                                         method = "EM",
-                                         maxit  = 500,
-                                         use_diff_init = 1))
-
 set.seed(1234)
-# load data used in Hamilton 1989 and extended data used in CHP 2014 
-y84 <- as.matrix(hamilton84GNP$GNP_logdiff)
+# Define DGP of MS AR process
+mdl_ms2 <- list(n     = 200, 
+                mu    = c(5,10),
+                sigma = c(1,4),
+                phi   = c(0.5),
+                k     = 2,
+                P     = rbind(c(0.90, 0.10),
+                              c(0.10, 0.90)))
+
+# Simulate process using simuMSAR() function
+y_ms_simu <- simuMSAR(mdl_ms2)
 
 
-mdl <- LMCLRTest(y84, p = 4 , k0 = 1 , k1 = 2, lmc_control)
-mdl
-
-
-# ------ MS-VAR example ----- #
-
+# ------ MS-AR example ----- #
 # Set test procedure options
 lmc_control = list(N = 19,
                    burnin = 100,
@@ -33,30 +23,11 @@ lmc_control = list(N = 19,
                                          msvar  = TRUE,
                                          getSE  = TRUE,
                                          method = "EM",
-                                         maxit  = 500,
+                                         maxit  = 300,
                                          use_diff_init = 1))
 
 
-set.seed(1234)
-# Define DGP of MS VAR process
-mdl_msvar2 <- list(n     = 1000, 
-                   p     = 1,
-                   q     = 2,
-                   mu    = rbind(c(5, -2),
-                                 c(10, 2)),
-                   sigma = list(rbind(c(5.0, 1.5),
-                                      c(1.5, 1.0)),
-                                rbind(c(7.0, 3.0),
-                                      c(3.0, 2.0))),
-                   phi   = rbind(c(0.50, 0.30),
-                                 c(0.20, 0.70)),
-                   k     = 2,
-                   P     = rbind(c(0.90, 0.10),
-                                 c(0.10, 0.90)))
-
-# Simulate process using simuMSVAR() function
-y_msvar_simu <- simuMSVAR(mdl_msvar2)
-
-
-mdl <- LMCLRTest(y_msvar_simu$y, p = 1 , k0 = 1 , k1 = 2, lmc_control)
+mdl <- LMCLRTest(y_ms_simu$y, p = 1, k0 = 1 , k1 = 2, lmc_control)
 mdl
+
+

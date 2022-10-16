@@ -14,7 +14,7 @@ HLRTest(Y, p, control = list())
 \item{control}{List with test procedure options including: 
 \itemize{
   \item{\code{ix}: }{List of Markov Switching parameters. 1 = just mean c(1,2) = mean and first param, (default: 1).}
-  \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
+  \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered. Default is \code{FALSE}.}
   \item{\code{qbound}: }{Indicator that bounds q by 1-p (default: \code{FALSE}).}
   \item{\code{gridsize}: }{Integer determining the number of grid points for markov switching parameters. Default is \code{20}.}
   \item{\code{p_gridsize}: }{Integer determining the number of grid points for transition probabilities. Default is \code{12}.}
@@ -23,8 +23,8 @@ HLRTest(Y, p, control = list())
   \item{\code{mugrid_by}: }{Double determining the step size for grid points of mean in second regime. This, along with \code{gridsize} will determine the max value of mean in second regime. Default is \code{0.1}.}
   \item{\code{siggrid_from}: }{Double determining the minimum value of sigma in second regime (if \code{msvar = TRUE}). Default is \code{0.1}.}
   \item{\code{siggrid_by}: }{Double determining the step size for grid points of sigma in second regime. This, along with \code{gridsize} will determine the max value of sigma in second regime. Default is \code{0.1}.}
-  \item{\code{N}: }{Integer determining the number of replications.}
-  \item{\code{nwband}: }{Integer determining maximum bandwidth in Bartlett kernel. Critical values and p-values are returned for each bandwith from \code{0:nwband} as suggested in Hansen (1996). Default is \code{4}.}
+  \item{\code{N}: }{Integer determining the number of replications. Default is \code{1000}.}
+  \item{\code{nwband}: }{Integer determining maximum bandwidth in Bartlett kernel. Critical values and p-values are returned for each bandwidth from \code{0:nwband} as suggested in Hansen (1996). Default is \code{4}.}
   \item{\code{sig_min}: }{Double determining minimum value of sigma in first regime that will be used in non-linear optimization with fixed value of sigma in second regime. This is used to avoid negative variances. Default is \code{0.01}.}
 }}
 }
@@ -45,23 +45,29 @@ This function performs Hansen's likelihood ratio test as described in Hansen (19
 Original source code can be found \href{https://www.ssc.wisc.edu/~bhansen/progs/jae_92.html}{here}.
 }
 \examples{
+# --------------------------- Use simulated process ----------------------------
+set.seed(1234)
+# Define DGP of MS AR process
+mdl_ms2 <- list(n     = 200, 
+                mu    = c(5,1),
+                sigma = c(1,1),
+                phi   = c(0.5),
+                k     = 2,
+                P     = rbind(c(0.90, 0.10),
+                              c(0.10, 0.90)))
 
+# Simulate process using simuMSAR() function
+y_ms_simu <- simuMSAR(mdl_ms2)
 
-y84 <- as.matrix(hamilton84GNP$GNP_logdiff)
+hlrt_control  <- list(ix          = 1, 
+                      gridsize    = 5,
+                      p_gridsize  = 9,
+                      p_stepsize  = 0.1,
+                      mugrid_from = 0,
+                      mugrid_by   = 1)
 
-
-Y <- y84
-
-
-hlrt_control  <- list(ix = 1, 
-                      p_gridsize = 17,
-                      p_stepsize = 0.05)
-
-
-hlrt <- HLRTest(Y, p = 4, control = hlrt_control)
+hlrt <- HLRTest(y_ms_simu$y, p = 1, control = hlrt_control)
 hlrt
-
-
 
 }
 \references{

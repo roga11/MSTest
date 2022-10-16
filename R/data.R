@@ -5,7 +5,7 @@
 #' 1947Q2 to 2022Q2.
 #'   \item{DATE}{Vector of dates}
 #'   \item{GNP_logdiff}{log difference of US GDP series}
-#'   \item{GNP}{US GNP seies}
+#'   \item{GNP}{US GNP series}
 #' }
 #' @source \url{https://fred.stlouisfed.org/graph/?g=UKDQ}
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.

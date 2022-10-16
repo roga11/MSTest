@@ -9,7 +9,7 @@
 1947Q2 to 2022Q2.
   \item{DATE}{Vector of dates}
   \item{GNP_logdiff}{log difference of US GDP series}
-  \item{GNP}{US GNP seies}
+  \item{GNP}{US GNP series}
 }
 }
 \source{

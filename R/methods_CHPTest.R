@@ -73,7 +73,7 @@ CHPTest <- function(Y, p, control = list()){
 
 #' @title Derivative matrix
 #'
-#' @description This function organizes the first and second derivatives of the log-likelihoood. 
+#' @description This function organizes the first and second derivatives of the log-likelihood. 
 #'
 #' @param Mdl List containing output from \code{\link{ARmdl}}.
 #' @param msvar Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.

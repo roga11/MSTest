@@ -147,7 +147,7 @@ DLMCTest <- function(Y, p, control = list()){
 #' \itemize{
 #'   \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} if \code{p>0} or \code{Nmdl} otherwise (\code{S3} objects). See \code{\link{ARmdl}} or \code{\link{Nmdl}}.}    
 #'   \item{\code{theta_max_min}: }{Value of nuisance parameters when min version of p-value is maximized as discussed in Dufour & Luger (2017) MMC procedure.}
-#'   \item{\code{theta_max_prod}: }{Value of nuisance parameters when prod version of p-value is maxmimized as discussed in Dufour & Luger (2017) MMC procedure.}
+#'   \item{\code{theta_max_prod}: }{Value of nuisance parameters when prod version of p-value is maximized as discussed in Dufour & Luger (2017) MMC procedure.}
 #'   \item{\code{theta_low}: }{Lower bound on nuisance parameter values used when searching for maximum p-value.}
 #'   \item{\code{theta_upp}: }{Upper bound on nuisance parameter values used when searching for maximum p-value.}
 #'   \item{\code{S0_min}: }{A (\code{1 x 4})) matrix containing the four moment-based test statistics defined in (\code{11}) - (\code{14}) in Dufour & Luger (2017) when \code{theta_min} is used.}
