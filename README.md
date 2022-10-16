@@ -186,7 +186,7 @@ lmc_mb <- DLMCTest(y_ms_simu$y, p = 1, control = lmc_control)
 lmc_mb
 ```
 
-The package also makes available the Maximized Monte Carlo versions of both these tests and the standardized likelihood ratio test proposed by Hansen (1992) (see \code{\link{HLRTest}}) and the parameter stability test of Carrasco, Hu, & Ploberger (2014) (see \code{\link{CHPTest}}).
+The package also makes available the Maximized Monte Carlo versions of both these tests and the standardized likelihood ratio test proposed by Hansen (1992) (see HLRTest()) and the parameter stability test of Carrasco, Hu, & Ploberger (2014) (see CHPTest()).
 
 
 ## References
