@@ -190,6 +190,9 @@ double compu_tstat(arma::vec theta_h0, arma::vec theta_h1,
 //' 
 //' @keywords internal
 //' 
+//' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
+//' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+//' 
 //' @export
 // [[Rcpp::export]]
 arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin, 

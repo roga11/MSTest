@@ -947,6 +947,9 @@ compu_tstat <- function(theta_h0, theta_h1, mdl_h0, mdl_h1, p, q, k0, k1) {
 #' 
 #' @keywords internal
 #' 
+#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
+#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#' 
 #' @export
 LR_samp_dist <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control) {
     .Call(`_MSTest_LR_samp_dist`, mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control)

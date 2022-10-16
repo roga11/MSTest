@@ -19,6 +19,8 @@ MMC_bounds(theta_0, mdl_h0, mdl_h1, con)
 This function is used to determine the lower and upper bounds for the MMC LRT parameter search.
 }
 \references{
+Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
+
 Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 }
 \keyword{internal}

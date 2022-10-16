@@ -2,11 +2,19 @@
 % Please edit documentation in R/methods_HLRTest.R
 \name{mclike}
 \alias{mclike}
-\title{mclike}
+\title{Sum of likelihood used by \code{HLRTest()}}
 \usage{
 mclike(th, HLR_opt_ls)
 }
+\arguments{
+\item{th}{vector of parameter values.}
+
+\item{HLR_opt_ls}{List with model properties and test controls defined in \code{HLRTest()}.}
+}
+\value{
+Sum of likelihood.
+}
 \description{
-mclike
+This function computes the sum of the likelihood.
 }
 \keyword{internal}

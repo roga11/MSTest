@@ -2,11 +2,19 @@
 % Please edit documentation in R/methods_HLRTest.R
 \name{dmclike}
 \alias{dmclike}
-\title{dmclike}
+\title{Gradient of likelihood function.}
 \usage{
 dmclike(th, HLR_opt_ls)
 }
+\arguments{
+\item{th}{vector of parameter values.}
+
+\item{HLR_opt_ls}{List with model properties and test controls defined in \code{HLRTest()}.}
+}
+\value{
+vector with gradient of likelihood function for each parameter. Used in \code{HLRpramSearch()}.
+}
 \description{
-Gradient optimization function i.e markov likelihood function.
+this function computes the score vector.
 }
 \keyword{internal}

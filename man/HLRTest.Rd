@@ -13,28 +13,30 @@ HLRTest(Y, p, control = list())
 
 \item{control}{List with test procedure options including: 
 \itemize{
-  \item{\code{ix}: }{List of Markov Switching parameters. 1 = just mean c(1,2) = mean and first param, (default: 1). • iv: Idicates if Variance is also Markov Switching. 1 for true (default: 0).}
+  \item{\code{ix}: }{List of Markov Switching parameters. 1 = just mean c(1,2) = mean and first param, (default: 1).}
   \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
-  \item{\code{qbound}: }{Indicator that bounds q by 1-p (default: 0).}
-  \item{\code{gridsize}: }{}
-  \item{\code{p_gridsize}: }{}
-  \item{\code{p_stepsize}: }{}
-  \item{\code{mugrid_from}: }{}
-  \item{\code{mugrid_by}: }{}
-  \item{\code{siggrid_from}: }{}
-  \item{\code{siggrid_by}: }{}
-  \item{\code{N}: }{}
-  \item{\code{sig_min}: }{}
+  \item{\code{qbound}: }{Indicator that bounds q by 1-p (default: \code{FALSE}).}
+  \item{\code{gridsize}: }{Integer determining the number of grid points for markov switching parameters. Default is \code{20}.}
+  \item{\code{p_gridsize}: }{Integer determining the number of grid points for transition probabilities. Default is \code{12}.}
+  \item{\code{p_stepsize}: }{Double determining the step size for grid points of transition probabilities. This, along with \code{p_gridsize} will determine the bounds of search space. Default is \code{0.075}.}
+  \item{\code{mugrid_from}: }{Double determining the minimum value of mean in second regime. Default is \code{0.1}.}
+  \item{\code{mugrid_by}: }{Double determining the step size for grid points of mean in second regime. This, along with \code{gridsize} will determine the max value of mean in second regime. Default is \code{0.1}.}
+  \item{\code{siggrid_from}: }{Double determining the minimum value of sigma in second regime (if \code{msvar = TRUE}). Default is \code{0.1}.}
+  \item{\code{siggrid_by}: }{Double determining the step size for grid points of sigma in second regime. This, along with \code{gridsize} will determine the max value of sigma in second regime. Default is \code{0.1}.}
+  \item{\code{N}: }{Integer determining the number of replications.}
+  \item{\code{nwband}: }{Integer determining maximum bandwith in Bartlett kernel. Critical values and p-values are returned for each bandwith from \code{0:nwband} as suggested in Hansen (1996). Default is \code{4}.}
+  \item{\code{sig_min}: }{Double determining minimum value of sigma in first regime that will be used in non-linear optimization with fixed value of sigma in second regime. This is used to avoid negative variances. Default is \code{0.01}.}
 }}
 }
 \value{
 List of class \code{HLRTest} (\code{S3} object) with model attributes including: 
 \itemize{
   \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} (\code{S3} object). See \code{\link{ARmdl}}.}
-  \item{\code{supTS}: }{supTS test statistic value.}
-  \item{\code{supTS_N}: }{A (\code{N x 1}) vector with simulated supTS test statistics under null hypothesis.}
-  \item{\code{pval_supTS}: }{P-value for supTS version of parameter stability test.}
-  \item{\code{supTS_cv}: }{Vector with 90\%, 95\%, and 99\% bootstrap critical values for supTS version of parameter stability test.}
+  \item{\code{LR0}: }{Likelihood ratio test statistic value.}
+  \item{\code{LRN}: }{A (\code{N x 1}) vector with simulated LRT statistics under null hypothesis.}
+  \item{\code{pval}: }{P-value.}
+  \item{\code{LR_cv}: }{A (\code{nwband x 3}) matrix with 90\%, 95\%, and 99\% critical values in each column respectively.}
+  \item{\code{coef}: }{Vector of coefficients from restricted model and grid search that maximized standardized LRT. }
   \item{\code{control}: }{List with test procedure options used.}
 }
 }
@@ -64,4 +66,6 @@ hlrt
 }
 \references{
 Hansen, Bruce E. 1992. “The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP.” \emph{Journal of applied Econometrics} 7 (S1): S61–S82.
+
+Hansen, Bruce E. 1996. “Erratum: The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP.” \emph{Journal of applied Econometrics} 7 (S1): S61–S82.
 }

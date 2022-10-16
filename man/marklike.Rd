@@ -2,11 +2,19 @@
 % Please edit documentation in R/methods_HLRTest.R
 \name{marklike}
 \alias{marklike}
-\title{marklike}
+\title{Likelihood function used by \code{HLRTest()}}
 \usage{
 marklike(ths, HLR_opt_ls)
 }
+\arguments{
+\item{ths}{vector of parameter values.}
+
+\item{HLR_opt_ls}{List with model properties and test controls defined in \code{HLRTest()}.}
+}
+\value{
+Vector of likelihood values.
+}
 \description{
-Markov likelihood
+this function computes the sum Markov likelihood
 }
 \keyword{internal}

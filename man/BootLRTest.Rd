@@ -79,4 +79,6 @@ mdl
 Qu, Zhongjun, and Fan Zhuo. 2021. “Likelihood Ratio-Based Tests for Markov Regime Switching.” \emph{The Review of Economic Studies} 88 (2): 937–968.
 
 Kasahara, Hiroyuk, and Katsum Shimotsu. 2018. “Testing the number of regimes in Markov regime switching models.” \emph{arXiv preprint arXiv:1801.06862}.
+
+Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 }

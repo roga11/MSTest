@@ -14,6 +14,9 @@
 #' @return vector of simulated LRT statistics
 #' 
 #' @keywords internal
+#' 
+#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
+#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #'
 #' @export
 LR_samp_dist_par <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control, workers){ 
@@ -117,6 +120,7 @@ estimMdl <- function(Y, p, q, k, control = list()){
 #'   \item{\code{control}: }{List with test procedure options used.}
 #' }
 #'
+#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #'
 #' @example /inst/examples/LMCLRTest_examples.R
@@ -203,6 +207,7 @@ LMCLRTest <- function(Y, p, k0, k1, control = list()){
 #' 
 #' @keywords internal
 #' 
+#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #' 
 #' @export
@@ -279,6 +284,7 @@ MMC_bounds <- function(theta_0, mdl_h0, mdl_h1, con){
 #'   \item{\code{control}: }{List with test procedure options used.}
 #' }
 #'
+#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #'
 #' @example /inst/examples/MMCLRTest_examples.R
@@ -448,6 +454,7 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
 #' 
 #' @references Qu, Zhongjun, and Fan Zhuo. 2021. “Likelihood Ratio-Based Tests for Markov Regime Switching.” \emph{The Review of Economic Studies} 88 (2): 937–968.
 #' @references Kasahara, Hiroyuk, and Katsum Shimotsu. 2018. “Testing the number of regimes in Markov regime switching models.” \emph{arXiv preprint arXiv:1801.06862}.
+#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #' 
 #' @example /inst/examples/BootLRTest_examples.R
 #' @export

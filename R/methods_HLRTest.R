@@ -9,31 +9,34 @@
 #' @param p Integer determining the number of autoregressive lags.
 #' @param control List with test procedure options including: 
 #' \itemize{
-#'   \item{\code{ix}: }{List of Markov Switching parameters. 1 = just mean c(1,2) = mean and first param, (default: 1). • iv: Idicates if Variance is also Markov Switching. 1 for true (default: 0).}
+#'   \item{\code{ix}: }{List of Markov Switching parameters. 1 = just mean c(1,2) = mean and first param, (default: 1).}
 #'   \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
-#'   \item{\code{qbound}: }{Indicator that bounds q by 1-p (default: 0).}
-#'   \item{\code{gridsize}: }{}
-#'   \item{\code{p_gridsize}: }{}
-#'   \item{\code{p_stepsize}: }{}
-#'   \item{\code{mugrid_from}: }{}
-#'   \item{\code{mugrid_by}: }{}
-#'   \item{\code{siggrid_from}: }{}
-#'   \item{\code{siggrid_by}: }{}
-#'   \item{\code{N}: }{}
-#'   \item{\code{sig_min}: }{}
+#'   \item{\code{qbound}: }{Indicator that bounds q by 1-p (default: \code{FALSE}).}
+#'   \item{\code{gridsize}: }{Integer determining the number of grid points for markov switching parameters. Default is \code{20}.}
+#'   \item{\code{p_gridsize}: }{Integer determining the number of grid points for transition probabilities. Default is \code{12}.}
+#'   \item{\code{p_stepsize}: }{Double determining the step size for grid points of transition probabilities. This, along with \code{p_gridsize} will determine the bounds of search space. Default is \code{0.075}.}
+#'   \item{\code{mugrid_from}: }{Double determining the minimum value of mean in second regime. Default is \code{0.1}.}
+#'   \item{\code{mugrid_by}: }{Double determining the step size for grid points of mean in second regime. This, along with \code{gridsize} will determine the max value of mean in second regime. Default is \code{0.1}.}
+#'   \item{\code{siggrid_from}: }{Double determining the minimum value of sigma in second regime (if \code{msvar = TRUE}). Default is \code{0.1}.}
+#'   \item{\code{siggrid_by}: }{Double determining the step size for grid points of sigma in second regime. This, along with \code{gridsize} will determine the max value of sigma in second regime. Default is \code{0.1}.}
+#'   \item{\code{N}: }{Integer determining the number of replications.}
+#'   \item{\code{nwband}: }{Integer determining maximum bandwith in Bartlett kernel. Critical values and p-values are returned for each bandwith from \code{0:nwband} as suggested in Hansen (1996). Default is \code{4}.}
+#'   \item{\code{sig_min}: }{Double determining minimum value of sigma in first regime that will be used in non-linear optimization with fixed value of sigma in second regime. This is used to avoid negative variances. Default is \code{0.01}.}
 #' }
 #' 
 #' @return List of class \code{HLRTest} (\code{S3} object) with model attributes including: 
 #' \itemize{
 #'   \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} (\code{S3} object). See \code{\link{ARmdl}}.}
-#'   \item{\code{supTS}: }{supTS test statistic value.}
-#'   \item{\code{supTS_N}: }{A (\code{N x 1}) vector with simulated supTS test statistics under null hypothesis.}
-#'   \item{\code{pval_supTS}: }{P-value for supTS version of parameter stability test.}
-#'   \item{\code{supTS_cv}: }{Vector with 90\%, 95\%, and 99\% bootstrap critical values for supTS version of parameter stability test.}
+#'   \item{\code{LR0}: }{Likelihood ratio test statistic value.}
+#'   \item{\code{LRN}: }{A (\code{N x 1}) vector with simulated LRT statistics under null hypothesis.}
+#'   \item{\code{pval}: }{P-value.}
+#'   \item{\code{LR_cv}: }{A (\code{nwband x 3}) matrix with 90\%, 95\%, and 99\% critical values in each column respectively.}
+#'   \item{\code{coef}: }{Vector of coefficients from restricted model and grid search that maximized standardized LRT. }
 #'   \item{\code{control}: }{List with test procedure options used.}
 #' }
 #' 
 #' @references Hansen, Bruce E. 1992. “The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP.” \emph{Journal of applied Econometrics} 7 (S1): S61–S82.
+#' @references Hansen, Bruce E. 1996. “Erratum: The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP.” \emph{Journal of applied Econometrics} 7 (S1): S61–S82.
 #'
 #' @example /inst/examples/HLRTest_examples.R
 #' @export
@@ -127,6 +130,23 @@ HLRTest <- function(Y, p, control = list()){
 
 #' @title HLR param search
 #'
+#' @description This function performs the parameter grid search needed for 
+#' the likelihood ratio test described in Hansen (1992).
+#'
+#' @param gx matrix/grid containing values for switching parameters in second regime.
+#' @param gp matrix/grid containing values for probability of going from regime 1 at (\code{t}) to regime 1 at (\code{t+1}).
+#' @param gq matrix/grid containing values for probability of going from regime 2 at (\code{t}) to regime 2 at (\code{t+1}) (if not bounded to be \code{1-p} i.e., \code{qbound=FALSE}).
+#' @param b vector of initial parameter values of restricted model. 
+#' @param null vector with likelihood under the null hypothesis. 
+#' @param HLR_opt_ls List with model properties and test controls defined in \code{HLRTest()}.
+#' 
+#' @return List which contains:
+#' \itemize{
+#'   \item{\code{cs}: }{Vector with standardized LRT statistic for each grid point.}
+#'   \item{\code{draws}: }{List with a (\code{nwband+1 x N} matrix for each grid point. Each row of these matrices is a vector of simulated test statistics under the null hypothesis for a value of bandwidth .}
+#'   \item{\code{coefficients}: }{A  matrix with coefficients for each grid point.}
+#' }
+#' 
 #' @keywords internal
 #' 
 #' @export
@@ -203,7 +223,14 @@ HLRparamSearch <- function(gx, gp, gq, b, null, HLR_opt_ls){
   return(output)
 }
 
-#' @title clike
+#' @title Parameter vector & likelihood function used by \code{HLRTest()}
+#'
+#' @description  This function combines parameters of restricted model 
+#' with parameters of unrestricted model and then computes the likelihood using 
+#' \code{marklike()}.
+#' 
+#' @param b vector of parameters from restricted model.
+#' @param HLR_opt_ls List with model properties and test controls defined in \code{HLRTest()}.
 #'
 #' @keywords internal
 #' 
@@ -224,13 +251,18 @@ clike <- function(b, HLR_opt_ls){
   return(lik)
 }
 
-#' @title dmclike
+#' @title Gradient of likelihood function.
 #'
-#' @description  Gradient optimization function i.e markov likelihood function.
+#' @description this function computes the score vector.
+#' 
+#' @param th vector of parameter values.
+#' @param HLR_opt_ls List with model properties and test controls defined in \code{HLRTest()}.
+#' 
+#' @return vector with gradient of likelihood function for each parameter. Used in \code{HLRpramSearch()}.
 #'
 #' @keywords internal
 #' 
-#' @export
+#' @export 
 dmclike <-function(th, HLR_opt_ls){
   k   <- HLR_opt_ls$k 
   p   <- HLR_opt_ls$p
@@ -296,10 +328,16 @@ dmclike <-function(th, HLR_opt_ls){
   return(nfit)
 }
 
-#' @title marklike
+#' @title Likelihood function used by \code{HLRTest()}
 #'
-#' @description Markov likelihood
-#' @keywords internal
+#' @description this function computes the sum Markov likelihood
+#' 
+#' @param ths vector of parameter values.
+#' @param HLR_opt_ls List with model properties and test controls defined in \code{HLRTest()}.
+#' 
+#' @return Vector of likelihood values.
+#' 
+#' @keywords internal 
 #' 
 #' @export
 marklike <- function(ths, HLR_opt_ls){
@@ -332,7 +370,6 @@ marklike <- function(ths, HLR_opt_ls){
     fit[it] <- ff
     it <- it+1
   }
-  
   # some values of b0 in optimization produce qq1 and/or qq0 =0 and result
   # in pp =NaN and everything after also NaN. This line eliminates these.
   fit[is.nan(fit)]<- -9999
@@ -347,7 +384,14 @@ marklike <- function(ths, HLR_opt_ls){
 }
 
 
-#' @title mclike
+#' @title Sum of likelihood used by \code{HLRTest()}
+#'
+#' @description This function computes the sum of the likelihood. 
+#' 
+#' @param th vector of parameter values.
+#' @param HLR_opt_ls List with model properties and test controls defined in \code{HLRTest()}.
+#' 
+#' @return Sum of likelihood.
 #'
 #' @keywords internal
 #' 

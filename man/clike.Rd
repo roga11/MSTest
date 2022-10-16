@@ -2,11 +2,18 @@
 % Please edit documentation in R/methods_HLRTest.R
 \name{clike}
 \alias{clike}
-\title{clike}
+\title{Parameter vector & likelihood function used by \code{HLRTest()}}
 \usage{
 clike(b, HLR_opt_ls)
 }
+\arguments{
+\item{b}{vector of parameters from restricted model.}
+
+\item{HLR_opt_ls}{List with model properties and test controls defined in \code{HLRTest()}.}
+}
 \description{
-clike
+This function combines parameters of restricted model 
+with parameters of unrestricted model and then computes the likelihood using 
+\code{marklike()}.
 }
 \keyword{internal}
