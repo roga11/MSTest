@@ -373,7 +373,6 @@ VARmdl <- function(Y, p, control = list()){
 #' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.”. Springer.
 #' 
 #' @seealso \code{\link{Nmdl}}
-#' @example /inst/examples/HMmdl_examples.R
 #' @export
 HMmdl <- function(Y, k, control = list()){
   # ----- Set control values

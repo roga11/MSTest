@@ -4,10 +4,10 @@
 \alias{randSN}
 \title{Standard normal errors using box Muller}
 \usage{
-randSN(T, q)
+randSN(n, q)
 }
 \arguments{
-\item{\code{T}}{Integer determining the length of the process to be simulated}
+\item{\code{n}}{Integer determining the length of the process to be simulated}
 
 \item{\code{q}}{Integer determining the number of processes to be simulated}
 }

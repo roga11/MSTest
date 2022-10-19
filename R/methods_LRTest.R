@@ -123,7 +123,6 @@ estimMdl <- function(Y, p, q, k, control = list()){
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #'
-#' @example /inst/examples/LMCLRTest_examples.R
 #' @export
 LMCLRTest <- function(Y, p, k0, k1, control = list()){
   # ----- Set control values
@@ -204,6 +203,8 @@ LMCLRTest <- function(Y, p, k0, k1, control = list()){
 #' @param mdl_h0 List with restricted model properties.
 #' @param mdl_h1 List with unrestricted model properties.
 #' @param con List with control options provided to MMC LRT procedure.
+#' 
+#' @return List with \code{theta_low}, vector of parameter lower bounds, and \code{theta_upp}, vector of parameter upper bounds.
 #' 
 #' @keywords internal
 #' 

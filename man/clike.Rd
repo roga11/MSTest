@@ -11,6 +11,9 @@ clike(b, HLR_opt_ls)
 
 \item{HLR_opt_ls}{List with model properties and test controls defined in \code{HLRTest()}.}
 }
+\value{
+Value of likelihood at each period \code{t}.
+}
 \description{
 This function combines parameters of restricted model 
 with parameters of unrestricted model and then computes the likelihood using 

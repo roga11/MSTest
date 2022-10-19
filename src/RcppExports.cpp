@@ -186,14 +186,14 @@ BEGIN_RCPP
 END_RCPP
 }
 // randSN
-arma::mat randSN(int T, int q);
-RcppExport SEXP _MSTest_randSN(SEXP TSEXP, SEXP qSEXP) {
+arma::mat randSN(int n, int q);
+RcppExport SEXP _MSTest_randSN(SEXP nSEXP, SEXP qSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< int >::type T(TSEXP);
+    Rcpp::traits::input_parameter< int >::type n(nSEXP);
     Rcpp::traits::input_parameter< int >::type q(qSEXP);
-    rcpp_result_gen = Rcpp::wrap(randSN(T, q));
+    rcpp_result_gen = Rcpp::wrap(randSN(n, q));
     return rcpp_result_gen;
 END_RCPP
 }

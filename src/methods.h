@@ -32,7 +32,7 @@ arma::vec initVals_MSVARmdl(List mdl, int k);
 
 double MCpval(double test_stat, arma::vec null_vec, Rcpp::String type = "geq");
 
-arma::mat randSN(int T, int q);
+arma::mat randSN(int n, int q);
 
 List simuAR(List mdl_h0, int burnin = 100);
 

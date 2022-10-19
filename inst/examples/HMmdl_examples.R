@@ -1,8 +1,8 @@
 
 # -------------------------- Multivariate normal process -----------------------
-set.seed(1234)
+set.seed(123)
 # Define DGP 
-mdl_hmm <- list(n     = 1000, 
+mdl_hmm <- list(n     = 500, 
                 q     = 2,
                 mu    = rbind(c(5, -2),
                               c(10, 2)),
@@ -21,7 +21,7 @@ y_hmm_simu <- simuHMM(mdl_hmm)
 control <- list(msmu   = TRUE, 
                 msvar  = TRUE,
                 method = "EM",
-                use_diff_init = 10)
+                use_diff_init = 1)
 
 # Estimate model
 y_hmm_mdl <- HMmdl(y_hmm_simu$y, k = 2, control)

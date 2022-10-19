@@ -38,21 +38,6 @@ List of class \code{CHPTest} (\code{S3} object) with model attributes including:
 This function performs the CHP (2014) parameter stability test as outline in Carrasco, M., Hu, L. and Ploberger, W. (2014).
 Original source code can be found \href{https://www.econometricsociety.org/content/supplement-optimal-test-markov-switching-parameters}{here}.
 }
-\examples{
-# load data used in Hamilton 1989 
-y84 <- as.matrix(hamilton84GNP$GNP_logdiff)
-
-
-# Set test procedure options
-control = list(N = 1000, 
-               rho_b = 0.7, 
-               msvar = FALSE)
-
-# perform test with switch in mean only on Hamilton 1989 data
-mdl_84_msmu <- CHPTest(y84, p = 4, control = control)
-mdl_84_msmu
-
-}
 \references{
 Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 }

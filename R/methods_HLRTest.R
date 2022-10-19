@@ -38,7 +38,6 @@
 #' @references Hansen, Bruce E. 1992. “The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP.” \emph{Journal of applied Econometrics} 7 (S1): S61–S82.
 #' @references Hansen, Bruce E. 1996. “Erratum: The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP.” \emph{Journal of applied Econometrics} 7 (S1): S61–S82.
 #'
-#' @example /inst/examples/HLRTest_examples.R
 #' @export
 HLRTest <- function(Y, p, control = list()){
   # ----- Set control values
@@ -232,6 +231,8 @@ HLRparamSearch <- function(gx, gp, gq, b, null, HLR_opt_ls){
 #' @param b vector of parameters from restricted model.
 #' @param HLR_opt_ls List with model properties and test controls defined in \code{HLRTest()}.
 #'
+#' @return Value of likelihood at each period \code{t}.
+#' 
 #' @keywords internal
 #' 
 #' @export

@@ -256,7 +256,7 @@ MCpval <- function(test_stat, null_vec, type = "geq") {
 #' 
 #' @description This function generates uncorrelated standard normal processes using box Muller method.
 #' 
-#' @param \code{T} Integer determining the length of the process to be simulated
+#' @param \code{n} Integer determining the length of the process to be simulated
 #' @param \code{q}  Integer determining the number of processes to be simulated
 #' 
 #' @return A (\code{T x q}) matrix of standard normal distributed errors
@@ -264,8 +264,8 @@ MCpval <- function(test_stat, null_vec, type = "geq") {
 #' @keywords internal
 #' 
 #' @export
-randSN <- function(T, q) {
-    .Call(`_MSTest_randSN`, T, q)
+randSN <- function(n, q) {
+    .Call(`_MSTest_randSN`, n, q)
 }
 
 #' @title Simulate autoregressive process

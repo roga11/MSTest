@@ -15,6 +15,9 @@ MMC_bounds(theta_0, mdl_h0, mdl_h1, con)
 
 \item{theta}{vector of parameter values being considered.}
 }
+\value{
+List with \code{theta_low}, vector of parameter lower bounds, and \code{theta_upp}, vector of parameter upper bounds.
+}
 \description{
 This function is used to determine the lower and upper bounds for the MMC LRT parameter search.
 }

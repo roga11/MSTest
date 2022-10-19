@@ -593,7 +593,7 @@ double MCpval(double test_stat, arma::vec null_vec, Rcpp::String type = "geq"){
 //' 
 //' @description This function generates uncorrelated standard normal processes using box Muller method.
 //' 
-//' @param \code{T} Integer determining the length of the process to be simulated
+//' @param \code{n} Integer determining the length of the process to be simulated
 //' @param \code{q}  Integer determining the number of processes to be simulated
 //' 
 //' @return A (\code{T x q}) matrix of standard normal distributed errors
@@ -602,10 +602,10 @@ double MCpval(double test_stat, arma::vec null_vec, Rcpp::String type = "geq"){
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::mat randSN(int T, int q){
+arma::mat randSN(int n, int q){
   double pi = arma::datum::pi;
-  arma::mat U1(T, q, arma::fill::randu);
-  arma::mat U2(T, q, arma::fill::randu);
+  arma::mat U1(n, q, arma::fill::randu);
+  arma::mat U2(n, q, arma::fill::randu);
   arma::mat eps = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
   return(eps);
 }
