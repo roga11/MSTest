@@ -14,5 +14,4 @@ control <- list(const  = TRUE,
 
 # Estimate model
 y_ar_mdl <- ARmdl(y_simu$y, p = 2, control)
-
 y_ar_mdl

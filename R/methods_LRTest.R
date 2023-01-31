@@ -60,12 +60,10 @@ estimMdl <- function(Y, p, q, k, control = list()){
     # Normally distributed model
     control$const <- TRUE # forced to be TRUE for testing
     mdl <- Nmdl(Y, control)
-    mdl$p <- 0
     mdl$converged = TRUE
   }else if ((k>1) & (p==0)){
     # Hidden Markov model
     mdl <- HMmdl(Y, k, control)
-    mdl$p <- 0
     mdl$converged = (mdl$deltath <= mdl$control$thtol)
   }else if ((k==1) & (q==1) & (p>0)){
     # Autoregressive model

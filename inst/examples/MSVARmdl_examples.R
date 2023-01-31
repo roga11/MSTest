@@ -27,5 +27,3 @@ control <- list(msmu   = TRUE,
 # Estimate model
 y_msvar_mdl <- MSVARmdl(y_msvar_simu$y, p = 1, k = 2, control)
 y_msvar_mdl
-
-

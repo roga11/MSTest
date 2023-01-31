@@ -17,6 +17,3 @@ mdl_msvar2 <- list(n     = 1000,
 
 # Simulate process using simuMSVAR() function
 y_msvar_simu <- simuMSVAR(mdl_msvar2)
-
-plot(y_msvar_simu$y[,1], type = 'l')
-plot(y_msvar_simu$y[,2], type = 'l')

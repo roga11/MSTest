@@ -1,4 +1,4 @@
-# -------------------------- Bivariate VAR(1) process --------------------------
+# ----- Bivariate VAR(1) process ----- #
 set.seed(1234)
 # Define DGP of VAR process
 mdl_var <- list(n     = 1000, 
@@ -20,4 +20,3 @@ control <- list(const  = TRUE,
 # Estimate model
 y_var_mdl <- VARmdl(y_simu$y, p = 1, control)
 y_var_mdl
-

@@ -1,4 +1,21 @@
 set.seed(1234)
+
+# ----- Univariate ----- #
+# Define DGP 
+mdl_hmm <- list(n     = 1000, 
+                q     = 1,
+                mu    = as.matrix(c(5,
+                                   -2)),
+                sigma = list(as.matrix(5.0),
+                             as.matrix(7.0)),
+                k     = 2,
+                P     = rbind(c(0.90, 0.10),
+                              c(0.10, 0.90)))
+
+# Simulate process using simuHMM() function
+y_hmm_simu <- simuHMM(mdl_hmm)
+
+# ----- Multivariate ----- #
 # Define DGP 
 mdl_hmm <- list(n     = 1000, 
                 q     = 2,
@@ -15,5 +32,3 @@ mdl_hmm <- list(n     = 1000,
 # Simulate process using simuHMM() function
 y_hmm_simu <- simuHMM(mdl_hmm)
 
-plot(y_hmm_simu$y[,1], type = 'l')
-plot(y_hmm_simu$y[,2], type = 'l')

@@ -1,6 +1,6 @@
 # ------ MS-AR example ----- #
 # Set test procedure options
-bootlrt_control = list(B = 99,
+bootlrt_control = list(B = 999,
                        burnin = 100,
                        converge_check = NULL,
                        mdl_h0_control = list(const  = TRUE, 
@@ -25,8 +25,5 @@ mdl_ms2 <- list(n     = 100,
 # Simulate process using simuMSAR() function
 y_ms_simu <- simuMSAR(mdl_ms2)
 
-st <- Sys.time()
-mdl <- BootLRTest(y_ms_simu$y, p = 1, k0 = 1, k1 = 2, bootlrt_control)
-end <- Sys.time() - st
-end
-mdl
+#mdl <- BootLRTest(y_ms_simu$y, p = 1, k0 = 1, k1 = 2, bootlrt_control)
+#mdl

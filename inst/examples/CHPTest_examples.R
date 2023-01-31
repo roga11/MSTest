@@ -8,6 +8,6 @@ control = list(N = 1000,
                msvar = FALSE)
 
 # perform test with switch in mean only on Hamilton 1989 data
-mdl_84_msmu <- CHPTest(y84, p = 4, control = control)
-mdl_84_msmu
+#mdl_84_msmu <- CHPTest(y84, p = 4, control = control)
+#mdl_84_msmu
 

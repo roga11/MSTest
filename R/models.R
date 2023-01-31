@@ -66,7 +66,7 @@ Nmdl <- function(Y, control = list()){
   # ----- Output
   out     <- list(y = Y, X = matrix(1, n, 1), resid = resid, mu = mu, stdev = stdev, sigma = sigma, theta = theta, 
                   theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind,
-                  n = n, q = q, k = 1, control = con)
+                  n = n, q = q, p = 0, k = 1, control = con)
   # Define class
   class(out) <- "Nmdl"
   # get log-likelihood
@@ -324,7 +324,7 @@ VARmdl <- function(Y, p, control = list()){
 #'  \item{\code{getSE}: }{Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.}
 #'  \item{\code{msmu}: }{Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.}
 #'  \item{\code{msvar}: }{Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.}
-#'  \item{\code{init_value}: }{vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.}
+#'  \item{\code{init_theta}: }{vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.}
 #'  \item{\code{method}: }{string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.}
 #'  \item{\code{maxit}: }{integer determining the maximum number of EM iterations.}
 #'  \item{\code{thtol}: }{double determining the convergence criterion for the absolute difference in parameter estimates \code{theta} between iterations. Default is \code{1e-6}.}
@@ -379,7 +379,7 @@ HMmdl <- function(Y, k, control = list()){
   con <- list(getSE = TRUE,
               msmu = TRUE, 
               msvar = TRUE,
-              init_value = NULL,
+              init_theta = NULL,
               method = "EM",
               maxit = 10000,
               thtol = 1.e-6, 
@@ -469,14 +469,14 @@ HMmdl <- function(Y, k, control = list()){
   }else{
     if (con$method=="EM"){
       # ----- Estimate using EM algorithm and initial values provided
-      output <- HMmdl_em(con$init_value, init_mdl, k, optim_options)
-      output$theta_0 <- con$init_value
+      output <- HMmdl_em(con$init_theta, init_mdl, k, optim_options)
+      output$theta_0 <- con$init_theta
       output$init_used <- 1  
     }else if (con$method=="MLE"){
       init_mdl$mle_variance_constraint <- con$mle_variance_constraint
       # ----- Estimate using roptim and initial values provided 
-      output_tmp <- HMmdl_mle(con$init_value, init_mdl, k, optim_options)  
-      output$theta_0 <- con$init_value
+      output <- HMmdl_mle(con$init_theta, init_mdl, k, optim_options)  
+      output$theta_0 <- con$init_theta
       output$init_used <- 1  
     }
   }
@@ -489,7 +489,7 @@ HMmdl <- function(Y, k, control = list()){
   theta_P_ind <- c(rep(0, q + q*(k-1)*con$msmu + Nsig + Nsig*(k-1)*con$msvar), rep(1, k*k))
   out <- list(y = init_mdl$y, resid = output$resid, mu = output$mu, sigma = output$sigma, theta = output$theta, 
               theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind,
-              n = init_mdl$n, q = q, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, St = output$St,
+              n = init_mdl$n, q = q, p = 0, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, St = output$St,
               deltath = output$deltath,  iterations = output$iterations, theta_0 = output$theta_0,
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, control = con)
   out$AIC <- aic(out$logLike, length(out$theta))
@@ -696,7 +696,7 @@ MSARmdl <- function(Y, p, k, control = list()){
       init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
       init_mdl$mle_variance_constraint <- con$mle_variance_constraint
       # ----- Estimate using roptim and initial values provided 
-      output_tmp <- MSARmdl_mle(con$init_theta, init_mdl, k, optim_options)  
+      output <- MSARmdl_mle(con$init_theta, init_mdl, k, optim_options)  
       output$theta_0 <- con$init_theta
       output$init_used <- 1  
     }
@@ -918,7 +918,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
       init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
       init_mdl$mle_variance_constraint <- con$mle_variance_constraint
       # ----- Estimate using roptim and initial values provided 
-      output_tmp <- MSVARmdl_mle(con$init_theta, init_mdl, k, optim_options)  
+      output <- MSVARmdl_mle(con$init_theta, init_mdl, k, optim_options)  
       output$theta_0 <- con$init_theta
       output$init_used <- 1  
     }
