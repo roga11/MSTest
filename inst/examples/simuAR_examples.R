@@ -7,6 +7,3 @@ mdl_ar <- list(n     = 500,
 
 # Simulate process using simuAR() function
 y_simu <- simuAR(mdl_ar)
-
-
-plot(y_simu$y, type = 'l')

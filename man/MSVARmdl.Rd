@@ -26,6 +26,8 @@ MSVARmdl(Y, p, k, control = list())
  \item{\code{use_diff_init}: }{integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.}
  \item{\code{mle_stationary_constraint}: }{Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.}
  \item{\code{mle_variance_constraint}: }{double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is \code{1e-3}.}
+ \item{\code{lower}: }{Vector with lower bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.}
+ \item{\code{upper}: }{Vector with upper bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.}
 }}
 }
 \value{

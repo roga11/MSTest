@@ -39,7 +39,4 @@ mdl_ms2 <- list(n     = 500,
 
 # Simulate process using simuMSAR() function
 y_ms_simu <- simuMSAR(mdl_ms2)
-
-plot(y_ms_simu$y, type = 'l')
-plot(y_ms_simu$St[,1], type = 'l', col = 'red')
 }

@@ -7,7 +7,8 @@
 MMCLRpval_fun_min(
   theta,
   mdl_h0,
-  mdl_h1,
+  k1,
+  LT_h1,
   N,
   burnin,
   workers,
@@ -23,7 +24,9 @@ MMCLRpval_fun_min(
 
 \item{mdl_h0}{List with restricted model properties.}
 
-\item{mdl_h1}{List with unrestricted model properties.}
+\item{k1}{integer determining the number of regimes under the alternative.}
+
+\item{LT_h1}{double specifying maximum log likelihood under alternative.}
 
 \item{N}{integer specifying the number of replications.}
 

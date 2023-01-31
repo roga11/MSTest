@@ -914,21 +914,19 @@ mdledit <- function(mdl_h0, theta_h0, p, q, k0) {
 #' @description This function computes the LRT statistic.
 #' 
 #' @param theta_h0 estimated parameter values for restricted model.
-#' @param theta_h1 estimated parameter values for unrestricted model.
 #' @param mdl_h0 List with restricted model properties.
-#' @param mdl_h1 List with unrestricted model properties.
+#' @param LT_h1 Double specifying maximum log likelihood under alternative.
 #' @param p integer specifying the number of autoregressive lags.
 #' @param q integer specifying the number of series.
 #' @param k0 integer specifying the number of regimes under the null hypothesis.
-#' @param k1 integer specifying the number of regimes under the alternative hypothesis.
 #' 
 #' @return LRT statistic
 #' 
 #' @keywords internal
 #' 
 #' @export
-compu_tstat <- function(theta_h0, theta_h1, mdl_h0, mdl_h1, p, q, k0, k1) {
-    .Call(`_MSTest_compu_tstat`, theta_h0, theta_h1, mdl_h0, mdl_h1, p, q, k0, k1)
+compu_tstat <- function(theta_h0, mdl_h0, LT_h1, p, q, k0) {
+    .Call(`_MSTest_compu_tstat`, theta_h0, mdl_h0, LT_h1, p, q, k0)
 }
 
 #' @title Likelihood Ratio Test Statistic Sample Distribution
@@ -958,9 +956,10 @@ LR_samp_dist <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control) 
 #' 
 #' @description This function computes the Maximum Monte Carlo P-value.
 #' 
-#' @param theta vector of parameter values being considered.
+#' @param theta_h0 vector of parameter values under the null being considered.
 #' @param mdl_h0 List with restricted model properties.
-#' @param mdl_h1 List with unrestricted model properties.
+#' @param k1 integer determining the number of regimes under the alternative.
+#' @param LT_h1 double specifying maximum log likelihood under alternative.
 #' @param N integer specifying the number of replications.
 #' @param burnin integer specifying the number of observations to drop from beginning of simulation.
 #' @param workers Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open.
@@ -975,8 +974,8 @@ LR_samp_dist <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control) 
 #' @keywords internal
 #' 
 #' @export
-MMCLRpval_fun <- function(theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control) {
-    .Call(`_MSTest_MMCLRpval_fun`, theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control)
+MMCLRpval_fun <- function(theta_h0, mdl_h0, k1, LT_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control) {
+    .Call(`_MSTest_MMCLRpval_fun`, theta_h0, mdl_h0, k1, LT_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control)
 }
 
 #' @title Monte Carlo Likelihood Ratio Test P-value Function 
@@ -985,7 +984,8 @@ MMCLRpval_fun <- function(theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, sta
 #' 
 #' @param theta vector of parameter values being considered.
 #' @param mdl_h0 List with restricted model properties.
-#' @param mdl_h1 List with unrestricted model properties.
+#' @param k1 integer determining the number of regimes under the alternative.
+#' @param LT_h1 double specifying maximum log likelihood under alternative.
 #' @param N integer specifying the number of replications.
 #' @param burnin integer specifying the number of observations to drop from beginning of simulation.
 #' @param workers Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open.
@@ -1000,8 +1000,8 @@ MMCLRpval_fun <- function(theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, sta
 #' @keywords internal
 #' 
 #' @export
-MMCLRpval_fun_min <- function(theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control) {
-    .Call(`_MSTest_MMCLRpval_fun_min`, theta, mdl_h0, mdl_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control)
+MMCLRpval_fun_min <- function(theta, mdl_h0, k1, LT_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control) {
+    .Call(`_MSTest_MMCLRpval_fun_min`, theta, mdl_h0, k1, LT_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control)
 }
 
 #' @title Moment-based test statistics 

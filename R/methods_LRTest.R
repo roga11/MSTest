@@ -199,9 +199,7 @@ LMCLRTest <- function(Y, p, k0, k1, control = list()){
 #' 
 #' @description This function is used to determine the lower and upper bounds for the MMC LRT parameter search.
 #' 
-#' @param theta vector of parameter values being considered.
 #' @param mdl_h0 List with restricted model properties.
-#' @param mdl_h1 List with unrestricted model properties.
 #' @param con List with control options provided to MMC LRT procedure.
 #' 
 #' @return List with \code{theta_low}, vector of parameter lower bounds, and \code{theta_upp}, vector of parameter upper bounds.
@@ -212,32 +210,29 @@ LMCLRTest <- function(Y, p, k0, k1, control = list()){
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #' 
 #' @export
-MMC_bounds <- function(theta_0, mdl_h0, mdl_h1, con){
+MMC_bounds <- function(mdl_h0, con){
+  theta_0 <- mdl_h0$theta
   k0 <- mdl_h0$k
-  k1 <- mdl_h1$k
   # ----- Define lower & upper bounds for search
   theta_low = theta_0 - con$eps
   theta_upp = theta_0 + con$eps
   # create ball around union of eps and 2*standard error (if set to true and SE are finite)
-  if ((con$CI_union==TRUE) & all(is.finite(mdl_h0$theta_se)) & all(is.finite(mdl_h1$theta_se))){
-    theta_low <- apply(cbind(as.matrix(theta_0 - 2*c(mdl_h0$theta_se,mdl_h1$theta_se)),as.matrix(theta_low)), 1, FUN = min)
-    theta_upp <- apply(cbind(as.matrix(theta_0 + 2*c(mdl_h0$theta_se,mdl_h1$theta_se)),as.matrix(theta_upp)), 1, FUN = max)
+  if ((con$CI_union==TRUE) & all(is.finite(mdl_h0$theta_se))){
+    theta_low <- apply(cbind(as.matrix(theta_0 - 2*c(mdl_h0$theta_se)), as.matrix(theta_low)), 1, FUN = min)
+    theta_upp <- apply(cbind(as.matrix(theta_0 + 2*c(mdl_h0$theta_se)), as.matrix(theta_upp)), 1, FUN = max)
   }
   # ----- Check that bounds respect admissible regions
   # correct lower bound of variances to be in admissible region
-  sigma_ind <- c(mdl_h0$theta_var_ind,mdl_h1$theta_var_ind)
+  sigma_ind <- mdl_h0$theta_var_ind
   if (any(theta_low[sigma_ind==1]<=0)==TRUE){
     theta_low[sigma_ind==1][theta_low[sigma_ind==1]<=0] = theta_0[sigma_ind==1][theta_low[sigma_ind==1]<=0]*con$variance_constraint  
   }
   # correct transition probability bounds to be in admissible region
-  if (k0==1){
-    P_h0_ind <- rep(0,length(mdl_h0$theta))
-  }else if (k0>1){
+  if (k0>1){
     P_h0_ind <- mdl_h0$theta_P_ind
+    theta_low[P_ind==1][theta_low[P_ind==1]<0] <- 0
+    theta_upp[P_ind==1][theta_upp[P_ind==1]>1] <- 1
   }
-  P_ind <- c(P_h0_ind, mdl_h1$theta_P_ind)
-  theta_low[P_ind==1][theta_low[P_ind==1]<0] <- 0
-  theta_upp[P_ind==1][theta_upp[P_ind==1]>1] <- 1
   # ----- output
   mmc_bounds <- list(theta_low = theta_low, theta_upp = theta_upp)
   return(mmc_bounds)
@@ -340,9 +335,9 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
       stop("Model did not converge. Run again to use different initial values and/or increase 'maxit' for each models.")
     }
   }
-  theta_0 <- c(mdl_h0$theta, mdl_h1$theta)
+  theta_0 <- mdl_h0$theta
   # ----- Define lower & upper bounds for search
-  mmc_bounds <- MMC_bounds(theta_0, mdl_h0, mdl_h1, con)
+  mmc_bounds <- MMC_bounds(mdl_h0, con)
   theta_low <- mmc_bounds$theta_low
   theta_upp <- mmc_bounds$theta_upp
   # ----- Search for Max p-value within bounds
@@ -354,7 +349,7 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
     # begin optimization
     mmc_out   <- pso::psoptim(par = theta_0, fn = MMCLRpval_fun_min, lower = theta_low, upper = theta_upp, 
                               gr = NULL, control = con$type_control,
-                              mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, N = con$N, burnin = con$burnin, workers = con$workers,
+                              mdl_h0 = mdl_h0, k1 = k1, LT_h1 = mdl_h1$logLike, N = con$N, burnin = con$burnin, workers = con$workers,
                               lambda = con$lambda, stationary_constraint = con$stationary_constraint, 
                               thtol = mdl_h1$control$thtol, mdl_h0_control = con$mdl_h0_control, 
                               mdl_h1_control = con$mdl_h1_control)
@@ -368,7 +363,7 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
     # begin optimization
     mmc_out   <- GenSA::GenSA(par = theta_0, fn = MMCLRpval_fun_min, lower = theta_low, upper = theta_upp, 
                               control = con$type_control,
-                              mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, N = con$N, burnin = con$burnin, workers = con$workers,
+                              mdl_h0 = mdl_h0, k1 = k1, LT_h1 = mdl_h1$logLike, N = con$N, burnin = con$burnin, workers = con$workers,
                               lambda = con$lambda, stationary_constraint = con$stationary_constraint, 
                               thtol = mdl_h1$control$thtol, mdl_h0_control = con$mdl_h0_control, 
                               mdl_h1_control = con$mdl_h1_control)
@@ -377,7 +372,7 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
   }else if(con$type=="GA"){
     # begin optimization
     mmc_out   <- GA::ga(type = "real-valued", fitness = MMCLRpval_fun, 
-                      mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, N = con$N, burnin = con$burnin, workers = con$workers,
+                      mdl_h0 = mdl_h0, k1 = k1, LT_h1 = mdl_h1$logLike, N = con$N, burnin = con$burnin, workers = con$workers,
                       lambda = con$lambda, stationary_constraint = con$stationary_constraint, 
                       thtol = mdl_h1$control$thtol, mdl_h0_control = con$mdl_h0_control, 
                       mdl_h1_control = con$mdl_h1_control,
@@ -390,29 +385,22 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
     # Grid Search: not ready
   }
   # ----- get test output using optimization output params
-  theta_h0 <- theta[1:length(mdl_h0[["theta"]])]
-  theta_h1 <- theta[(length(mdl_h0[["theta"]])+1):length(theta)]
+  theta_h0 <- theta
+  theta_h1 <- mdl_h1$theta
   names(theta_h0) <- names(mdl_h0$theta)
   names(theta_h1) <- names(mdl_h1$theta)
   mdl_h0_mmc <- mdledit(mdl_h0, theta_h0, p, q, k0)
   mdl_h0_mmc$logLike <- logLikelihood(mdl_h0_mmc)
   mdl_h0_mmc$AIC <- aic(mdl_h0_mmc$logLike, length(theta_h0))
   mdl_h0_mmc$BIC <- bic(mdl_h0_mmc$logLike, mdl_h0_mmc$n, length(theta_h0))
-  mdl_h1_mmc <- mdledit(mdl_h0, theta_h0, p, q, k0)
-  mdl_h1_mmc$logLike <- logLikelihood(mdl_h1_mmc)
-  mdl_h1_mmc$AIC <- aic(mdl_h1_mmc$logLike, length(theta_h1))
-  mdl_h1_mmc$BIC <- bic(mdl_h1_mmc$logLike, mdl_h1_mmc$n, length(theta_h1))
   if (mdl_h0$control$getSE==TRUE){
     mdl_h0_mmc <- thetaSE(mdl_h0_mmc)
   }
-  if (mdl_h1$control$getSE==TRUE){
-    mdl_h1_mmc <- thetaSE(mdl_h1_mmc)
-  }
   # Compute test stats
-  LRT_0 = compu_tstat(theta_h0, theta_h1, mdl_h0, mdl_h1, p, q, k0, k1)
+  LRT_0 = compu_tstat(theta_h0, mdl_h0, mdl_h1$logLike, p, q, k0)
   names(LRT_0) <- c("LRT_0")
   # ----- organize test output
-  MMCLRTest_output <- list(mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, mdl_h0_mmc = mdl_h0_mmc, mdl_h1_mmc = mdl_h1_mmc, 
+  MMCLRTest_output <- list(mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, mdl_h0_mmc = mdl_h0_mmc, mdl_h1_mmc = mdl_h1, 
                            LRT_0 = LRT_0, 
                            pval = pval,
                            theta_h0 = theta_h0, theta_h1 = theta_h1, control = con)

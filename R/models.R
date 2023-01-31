@@ -689,15 +689,15 @@ MSARmdl <- function(Y, p, k, control = list()){
   }else{
     if (con$method=="EM"){
       # ----- Estimate using EM algorithm and initial values provided
-      output <- MSARmdl_em(con$init_value, init_mdl, k, optim_options)
-      output$theta_0 <- con$init_value
+      output <- MSARmdl_em(con$init_theta, init_mdl, k, optim_options)
+      output$theta_0 <- con$init_theta
       output$init_used <- 1  
     }else if (con$method=="MLE"){
       init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
       init_mdl$mle_variance_constraint <- con$mle_variance_constraint
       # ----- Estimate using roptim and initial values provided 
-      output_tmp <- MSARmdl_mle(con$init_value, init_mdl, k, optim_options)  
-      output$theta_0 <- con$init_value
+      output_tmp <- MSARmdl_mle(con$init_theta, init_mdl, k, optim_options)  
+      output$theta_0 <- con$init_theta
       output$init_used <- 1  
     }
   }
@@ -756,6 +756,8 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'  \item{\code{use_diff_init}: }{integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.}
 #'  \item{\code{mle_stationary_constraint}: }{Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.}
 #'  \item{\code{mle_variance_constraint}: }{double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is \code{1e-3}.}
+#'  \item{\code{lower}: }{Vector with lower bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.}
+#'  \item{\code{upper}: }{Vector with upper bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.}
 #' }
 #' 
 #' @return List of class \code{MSVARmdl} (\code{S3} object) with model attributes including:
@@ -818,7 +820,9 @@ MSVARmdl <- function(Y, p, k, control = list()){
               maxit_converge = 500, 
               use_diff_init = 1,
               mle_stationary_constraint = TRUE,
-              mle_variance_constraint = 1e-3)
+              mle_variance_constraint = 1e-3,
+              lower = NULL,
+              upper = NULL)
   # ----- Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
@@ -861,6 +865,8 @@ MSVARmdl <- function(Y, p, k, control = list()){
         output_all[[xi]] <- output_tmp
       }
     }else if (con$method=="MLE"){
+      optim_options$lower <- con$lower
+      optim_options$upper <- con$upper
       init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
       init_mdl$mle_variance_constraint <- con$mle_variance_constraint
       # ----- Estimate using 'use_diff_init' different initial values
@@ -903,15 +909,17 @@ MSVARmdl <- function(Y, p, k, control = list()){
   }else{
     if (con$method=="EM"){
       # ----- Estimate using EM algorithm and initial values provided
-      output <- MSVARmdl_em(con$init_value, init_mdl, k, optim_options)
-      output$theta_0 <- con$init_value
+      output <- MSVARmdl_em(con$init_theta, init_mdl, k, optim_options)
+      output$theta_0 <- con$init_theta
       output$init_used <- 1  
     }else if (con$method=="MLE"){
+      optim_options$lower <- con$lower
+      optim_options$upper <- con$upper
       init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
       init_mdl$mle_variance_constraint <- con$mle_variance_constraint
       # ----- Estimate using roptim and initial values provided 
-      output_tmp <- MSVARmdl_mle(con$init_value, init_mdl, k, optim_options)  
-      output$theta_0 <- con$init_value
+      output_tmp <- MSVARmdl_mle(con$init_theta, init_mdl, k, optim_options)  
+      output$theta_0 <- con$init_theta
       output$init_used <- 1  
     }
   }

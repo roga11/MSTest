@@ -4,16 +4,12 @@
 \alias{MMC_bounds}
 \title{MMC nuisance parameter bounds for univariate models}
 \usage{
-MMC_bounds(theta_0, mdl_h0, mdl_h1, con)
+MMC_bounds(mdl_h0, con)
 }
 \arguments{
 \item{mdl_h0}{List with restricted model properties.}
 
-\item{mdl_h1}{List with unrestricted model properties.}
-
 \item{con}{List with control options provided to MMC LRT procedure.}
-
-\item{theta}{vector of parameter values being considered.}
 }
 \value{
 List with \code{theta_low}, vector of parameter lower bounds, and \code{theta_upp}, vector of parameter upper bounds.
