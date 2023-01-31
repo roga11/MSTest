@@ -1,6 +1,5 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
 ^data-raw$
-^NEWS\.md$
 ^cran-comments\.md$
 ^CRAN-SUBMISSION$
