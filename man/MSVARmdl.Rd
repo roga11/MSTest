@@ -104,8 +104,8 @@ control <- list(msmu   = TRUE,
                 use_diff_init = 1)
                 
 # Estimate model
-y_msvar_mdl <- MSVARmdl(y_msvar_simu$y, p = 1, k = 2, control)
-y_msvar_mdl
+#y_msvar_mdl <- MSVARmdl(y_msvar_simu$y, p = 1, k = 2, control)
+#y_msvar_mdl
 }
 \references{
 Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38..

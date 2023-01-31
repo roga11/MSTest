@@ -54,9 +54,6 @@ lmc_control = list(N = 99,
 lmc_gnp84 <- DLMCTest(y84, p = 4, control = lmc_control)
 lmc_gnp84
 
-# perform test on extended data used in CHP 2014
-lmc_gnp10 <- DLMCTest(y10, p = 4, control = lmc_control)
-lmc_gnp10
 }
 \references{
 Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based tests for 

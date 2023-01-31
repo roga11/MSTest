@@ -25,5 +25,5 @@ control <- list(msmu   = TRUE,
                 use_diff_init = 1)
                 
 # Estimate model
-y_msvar_mdl <- MSVARmdl(y_msvar_simu$y, p = 1, k = 2, control)
-y_msvar_mdl
+#y_msvar_mdl <- MSVARmdl(y_msvar_simu$y, p = 1, k = 2, control)
+#y_msvar_mdl

@@ -77,9 +77,6 @@ mmc_control <- list(N = 99,
 mmc_gnp84 <- DLMMCTest(y84, p = 4, control = mmc_control)
 mmc_gnp84
 
-# perform test on extended data used in Carrasco, Hu & Ploberger 2014 & Dufour & Luger 2017
-mmc_gnp10 <- DLMMCTest(y10, p = 4, control = mmc_control)
-mmc_gnp10
 }
 \references{
 Dufour, J. M., & Luger, R. 2017. "Identification-robust moment-based tests for 
