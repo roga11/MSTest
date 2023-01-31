@@ -228,8 +228,8 @@ MMC_bounds <- function(mdl_h0, con){
   # correct transition probability bounds to be in admissible region
   if (k0>1){
     P_h0_ind <- mdl_h0$theta_P_ind
-    theta_low[P_ind==1][theta_low[P_ind==1]<0] <- 0
-    theta_upp[P_ind==1][theta_upp[P_ind==1]>1] <- 1
+    theta_low[P_h0_ind==1][theta_low[P_h0_ind==1]<0] <- 0
+    theta_upp[P_h0_ind==1][theta_upp[P_h0_ind==1]>1] <- 1
   }
   # ----- output
   mmc_bounds <- list(theta_low = theta_low, theta_upp = theta_upp)

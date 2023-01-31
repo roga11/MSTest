@@ -43,8 +43,4 @@ mdl_3var2 <- list(n     = 1000,
 # Simulate process using simuVAR() function
 y3var2_simu <- simuVAR(mdl_3var2)
 
-
-plot(y3var2_simu$y[,1], type = 'l')
-plot(y3var2_simu$y[,2], type = 'l')
-plot(y3var2_simu$y[,3], type = 'l')
 }

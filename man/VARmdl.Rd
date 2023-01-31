@@ -55,7 +55,7 @@ List of class \code{VARmdl} (\code{S3} object) with model attributes including:
 This function estimates a vector autoregresive model with \code{p} lags. This can be used for the null hypothesis of a linear model against an alternative hypothesis of a Markov switching vector autoregressive model with \code{k} regimes.
 }
 \examples{
-# -------------------------- Bivariate VAR(1) process --------------------------
+# ----- Bivariate VAR(1) process ----- #
 set.seed(1234)
 # Define DGP of VAR process
 mdl_var <- list(n     = 1000, 
@@ -77,7 +77,6 @@ control <- list(const  = TRUE,
 # Estimate model
 y_var_mdl <- VARmdl(y_simu$y, p = 1, control)
 y_var_mdl
-
 }
 \seealso{
 \code{\link{MSVARmdl}}
