@@ -337,9 +337,9 @@ VARmdl <- function(Y, p, control = list()){
 #' \itemize{
 #'   \item{\code{y}: }{a \code{(T x q)} matrix of observations.}
 #'   \item{\code{resid}: }{a \code{(T x q)} matrix of residuals.}
-#'   \item{\code{mu}: }{a \code{(1 x q)} vector of estimated means of each process.}
-#'   \item{\code{stdev}: }{a \code{(q x 1)} vector of estimated standard deviation of each process.}
-#'   \item{\code{sigma}: }{a \code{(q x q)} estimated covariance matrix.}
+#'   \item{\code{mu}: }{a \code{(k x q)} matrix of estimated means of each process.}
+#'   \item{\code{stdev}: }{List with \code{k} \code{(q x 1)} vector of estimated standard deviation of each process.}
+#'   \item{\code{sigma}: }{List with \code{k} \code{(q x q)} estimated covariance matrix.}
 #'   \item{\code{theta}: }{vector containing: \code{mu} and \code{vech(sigma)}.}
 #'   \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
 #'   \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
@@ -487,6 +487,9 @@ HMmdl <- function(Y, k, control = list()){
   theta_sig_ind <- c(rep(0, q + q*(k-1)*con$msmu), rep(1, Nsig + Nsig*(k-1)*con$msvar), rep(0, k*k))
   theta_var_ind <- c(rep(0, q + q*(k-1)*con$msmu), rep(t(covar_vech(diag(q))), 1+(k-1)*con$msvar), rep(0, k*k))
   theta_P_ind <- c(rep(0, q + q*(k-1)*con$msmu + Nsig + Nsig*(k-1)*con$msvar), rep(1, k*k))
+  if (con$msmu==FALSE){
+    output$mu <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
+  }
   out <- list(y = init_mdl$y, resid = output$resid, mu = output$mu, sigma = output$sigma, theta = output$theta, 
               theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind,
               n = init_mdl$n, q = q, p = 0, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, St = output$St,
@@ -709,6 +712,12 @@ MSARmdl <- function(Y, p, k, control = list()){
   theta_phi_ind <- c(rep(0, 2 + (k-1)*con$msmu + (k-1)*con$msvar), rep(1, p), rep(0, k*k))
   theta_P_ind <- c(rep(0, 2 + (k-1)*con$msmu + (k-1)*con$msvar + p), rep(1, k*k))
   # ----- Output
+  if (con$msmu==FALSE){
+    output$mu <- matrix(output$mu, nrow=k, ncol=1, byrow=TRUE) 
+  }
+  if (con$msvar==FALSE){
+    output$sigma <- matrix(output$sigma, nrow=k, ncol=1, byrow=TRUE) 
+  }
   out <- list(y = init_mdl$y, X = init_mdl$X, x = init_mdl$x, resid = output$resid, mu = output$mu, 
               phi = output$phi, stdev = sqrt(output$sigma), sigma = output$sigma, 
               theta = output$theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, 
@@ -766,10 +775,10 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'   \item{\code{X}: }{a \code{(T-p x p*q + const)} matrix of lagged observations with a leading column of \code{1}s.}
 #'   \item{\code{x}: }{a \code{(T-p x p*q)} matrix of lagged observations.}
 #'   \item{\code{resid}: }{a \code{(T-p x q)} matrix of residuals.}
-#'   \item{\code{mu}: }{a \code{(k x q)} vector of estimated means of each process.}
+#'   \item{\code{mu}: }{a \code{(k x q)} matrix of estimated means of each process.}
 #'   \item{\code{phi}: }{estimates of autoregressive coefficients.}
-#'   \item{\code{stdev}: }{a List with \code{k} \code{(q x q)} matrices with estimated standard deviation on the diagonal.}
-#'   \item{\code{sigma}: }{a List with \code{k} \code{(q x q)} matrices with estimated covariance matrix.}
+#'   \item{\code{stdev}: }{List with \code{k} \code{(q x q)} matrices with estimated standard deviation on the diagonal.}
+#'   \item{\code{sigma}: }{List with \code{k} \code{(q x q)} matrices with estimated covariance matrix.}
 #'   \item{\code{theta}: }{vector containing: \code{mu} and \code{vech(sigma)}.}
 #'   \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
 #'   \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
@@ -932,6 +941,9 @@ MSVARmdl <- function(Y, p, k, control = list()){
   theta_var_ind <- c(rep(0, q + q*(k-1)*con$msmu), rep(t(covar_vech(diag(q))), 1+(k-1)*con$msvar), rep(0, phi_len + k*k))
   theta_phi_ind <- c(rep(0, q + q*(k-1)*con$msmu + Nsig + Nsig*(k-1)*con$msvar), rep(1, phi_len), rep(0, k*k))
   theta_P_ind <- c(rep(0, q + q*(k-1)*con$msmu + Nsig + Nsig*(k-1)*con$msvar + phi_len), rep(1, k*k))
+  if (con$msmu==FALSE){
+    output$mu <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
+  }
   out <- list(y = init_mdl$y, X = init_mdl$X, x = init_mdl$x, resid = output$resid, mu = output$mu, phi = output$phi,
               sigma = output$sigma, theta = output$theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, 
               theta_phi_ind = theta_phi_ind, theta_P_ind = theta_P_ind, stationary = NULL, n = init_mdl$n, p = p, q = q, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, 
