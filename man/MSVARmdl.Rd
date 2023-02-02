@@ -37,10 +37,10 @@ List of class \code{MSVARmdl} (\code{S3} object) with model attributes including
   \item{\code{X}: }{a \code{(T-p x p*q + const)} matrix of lagged observations with a leading column of \code{1}s.}
   \item{\code{x}: }{a \code{(T-p x p*q)} matrix of lagged observations.}
   \item{\code{resid}: }{a \code{(T-p x q)} matrix of residuals.}
-  \item{\code{mu}: }{a \code{(k x q)} vector of estimated means of each process.}
+  \item{\code{mu}: }{a \code{(k x q)} matrix of estimated means of each process.}
   \item{\code{phi}: }{estimates of autoregressive coefficients.}
-  \item{\code{stdev}: }{a List with \code{k} \code{(q x q)} matrices with estimated standard deviation on the diagonal.}
-  \item{\code{sigma}: }{a List with \code{k} \code{(q x q)} matrices with estimated covariance matrix.}
+  \item{\code{stdev}: }{List with \code{k} \code{(q x q)} matrices with estimated standard deviation on the diagonal.}
+  \item{\code{sigma}: }{List with \code{k} \code{(q x q)} matrices with estimated covariance matrix.}
   \item{\code{theta}: }{vector containing: \code{mu} and \code{vech(sigma)}.}
   \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
   \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}

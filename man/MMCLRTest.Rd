@@ -31,6 +31,7 @@ MMCLRTest(Y, p, k0, k1, control = list())
   \item{\code{threshold_stop}: }{Double determining the global optimum of function. Default is \code{1}.}
   \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
   \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+  \item{\code{use_diff_init_sim}: }{Value which determines the number of initial values to use when estimating models for null distribution. Default is set to use the same as specified in \code{mdl_h0_control} and \code{mdl_h1_control}.}
   \item{\code{type_control}: }{List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is to set \code{list(maxit = 200)} so that maximum number of iterations is \code{200}.}
 }}
 }
@@ -49,6 +50,42 @@ List of class \code{LMCLRTest} (\code{S3} object) with attributes including:
 \description{
 This function performs the Maximized Monte Carlo likelihood ratio 
 test (MMC-LRT) proposed in Rodriguez Rondon & Dufour (2022).
+}
+\examples{
+
+set.seed(1234)
+# ----- Univariate ----- # 
+# Define DGP 
+mdl_norm <- list(n     = 1000, 
+                 q     = 1,
+                 mu    = as.matrix(5),
+                 sigma = as.matrix(5.0))
+
+# Simulate process using simuNorm() function
+y_norm_simu <- simuNorm(mdl_norm)
+
+
+# Set test procedure options
+mmc_control = list(N = 19,
+                   burnin = 100,
+                   converge_check = NULL,
+                   eps = 0.1,
+                   CI_union = TRUE,
+                   silence = FALSE,
+                   threshold_stop = 0.05 + 1e-6,
+                   type = "GenSA",
+                   mdl_h0_control = list(const  = TRUE, 
+                                         getSE  = TRUE),
+                   mdl_h1_control = list(msmu   = TRUE, 
+                                         msvar  = TRUE,
+                                         getSE  = TRUE,
+                                         method = "EM",
+                                         maxit  = 300,
+                                         use_diff_init = 1),
+                   type_control = list(maxit = 10))
+
+#mdl <- MMCLRTest(y_ms_simu$y, p = 0 , k0 = 1 , k1 = 2, mmc_control)
+#mdl
 }
 \references{
 Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.

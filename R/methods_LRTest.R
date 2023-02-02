@@ -105,6 +105,7 @@ estimMdl <- function(Y, p, q, k, control = list()){
 #'   \item{\code{workers}: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. Default is \code{0}.}
 #'   \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
 #'   \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+#'   \item{\code{use_diff_init_sim}: }{Value which determines the number of initial values to use when estimating models for null distribution. Default is set to use the same as specified in \code{mdl_h0_control} and \code{mdl_h1_control}.}
 #' }
 #'
 #' @return List of class \code{LMCLRTest} (\code{S3} object) with attributes including: 
@@ -120,7 +121,7 @@ estimMdl <- function(Y, p, q, k, control = list()){
 #'
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
-#'
+#' @example /inst/examples/LMCLRTest_examples.R
 #' @export
 LMCLRTest <- function(Y, p, k0, k1, control = list()){
   # ----- Set control values
@@ -129,7 +130,8 @@ LMCLRTest <- function(Y, p, k0, k1, control = list()){
               converge_check = NULL,
               workers = 0,
               mdl_h0_control = list(),
-              mdl_h1_control = list())
+              mdl_h1_control = list(),
+              use_diff_init_sim = NULL)
   # ----- Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
@@ -174,10 +176,16 @@ LMCLRTest <- function(Y, p, k0, k1, control = list()){
   }
   names(LRT_0) <- c("LRT_0")
   # ----- Simulate sample null distribution
+  mdl_h0_null_cont <- con$mdl_h0_control
+  mdl_h1_null_cont <- con$mdl_h1_control
+  if (is.null(con$use_diff_init_sim)==FALSE){
+    mdl_h0_null_cont$use_diff_init <- con$use_diff_init_sim
+    mdl_h1_null_cont$use_diff_init <- con$use_diff_init_sim
+  }
   if (con$workers>0){
-    LRN <- LR_samp_dist_par(mdl_h0, k1, con$N, con$burnin, con$mdl_h0_control, con$mdl_h1_control, con$workers)
+    LRN <- LR_samp_dist_par(mdl_h0, k1, con$N, con$burnin, mdl_h0_null_cont, mdl_h1_null_cont, con$workers)
   }else{
-    LRN <- LR_samp_dist(mdl_h0, k1, con$N, con$burnin, con$mdl_h0_control, con$mdl_h1_control) 
+    LRN <- LR_samp_dist(mdl_h0, k1, con$N, con$burnin, mdl_h0_null_cont, mdl_h1_null_cont) 
   }
   # ----- get critical values
   LRN     <- as.matrix(sort(LRN))
@@ -264,6 +272,7 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item{\code{threshold_stop}: }{Double determining the global optimum of function. Default is \code{1}.}
 #'   \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
 #'   \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+#'   \item{\code{use_diff_init_sim}: }{Value which determines the number of initial values to use when estimating models for null distribution. Default is set to use the same as specified in \code{mdl_h0_control} and \code{mdl_h1_control}.}
 #'   \item{\code{type_control}: }{List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is to set \code{list(maxit = 200)} so that maximum number of iterations is \code{200}.}
 #' }
 #'
@@ -280,7 +289,7 @@ MMC_bounds <- function(mdl_h0, con){
 #'
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
 #' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
-#'
+#' @example /inst/examples/MMCLRTest_examples.R
 #' @export
 MMCLRTest <- function(Y, p, k0, k1, control = list()){
   # ----- Set control values
@@ -298,6 +307,7 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
               threshold_stop = 1,
               mdl_h0_control = list(getSE = TRUE),
               mdl_h1_control = list(getSE = TRUE),
+              use_diff_init_sim = NULL,
               type_control = list(maxit = 200))
   # ----- Perform some checks for controls
   nmsC <- names(con)
@@ -339,6 +349,12 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
   theta_low <- mmc_bounds$theta_low
   theta_upp <- mmc_bounds$theta_upp
   # ----- Search for Max p-value within bounds
+  mdl_h0_null_cont <- con$mdl_h0_control
+  mdl_h1_null_cont <- con$mdl_h1_control
+  if (is.null(con$use_diff_init_sim)==FALSE){
+    mdl_h0_null_cont$use_diff_init <- con$use_diff_init_sim
+    mdl_h1_null_cont$use_diff_init <- con$use_diff_init_sim
+  }
   if (con$type=="pso"){
     # Set PSO specific controls
     con$type_control$trace.stats <- TRUE
@@ -349,8 +365,8 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
                               gr = NULL, control = con$type_control,
                               mdl_h0 = mdl_h0, k1 = k1, LT_h1 = mdl_h1$logLike, N = con$N, burnin = con$burnin, workers = con$workers,
                               lambda = con$lambda, stationary_constraint = con$stationary_constraint, 
-                              thtol = mdl_h1$control$thtol, mdl_h0_control = con$mdl_h0_control, 
-                              mdl_h1_control = con$mdl_h1_control)
+                              thtol = mdl_h1$control$thtol, mdl_h0_control = mdl_h0_null_cont, 
+                              mdl_h1_control = mdl_h1_null_cont)
     theta     <- mmc_out$par
     pval      <- -mmc_out$value
   }else if(con$type=="GenSA"){
@@ -363,8 +379,8 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
                               control = con$type_control,
                               mdl_h0 = mdl_h0, k1 = k1, LT_h1 = mdl_h1$logLike, N = con$N, burnin = con$burnin, workers = con$workers,
                               lambda = con$lambda, stationary_constraint = con$stationary_constraint, 
-                              thtol = mdl_h1$control$thtol, mdl_h0_control = con$mdl_h0_control, 
-                              mdl_h1_control = con$mdl_h1_control)
+                              thtol = mdl_h1$control$thtol, mdl_h0_control = mdl_h0_null_cont, 
+                              mdl_h1_control = mdl_h1_null_cont)
     theta     <- mmc_out$par
     pval      <- -mmc_out$value
   }else if(con$type=="GA"){
@@ -372,8 +388,8 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
     mmc_out   <- GA::ga(type = "real-valued", fitness = MMCLRpval_fun, 
                       mdl_h0 = mdl_h0, k1 = k1, LT_h1 = mdl_h1$logLike, N = con$N, burnin = con$burnin, workers = con$workers,
                       lambda = con$lambda, stationary_constraint = con$stationary_constraint, 
-                      thtol = mdl_h1$control$thtol, mdl_h0_control = con$mdl_h0_control, 
-                      mdl_h1_control = con$mdl_h1_control,
+                      thtol = mdl_h1$control$thtol, mdl_h0_control = mdl_h0_null_cont, 
+                      mdl_h1_control = mdl_h1_null_cont,
                       lower = theta_low, upper = theta_upp, 
                       maxiter = con$type_control$maxit, maxFitness = con$threshold_stop, 
                       monitor = (con$silence==FALSE), suggestions = t(theta_0))

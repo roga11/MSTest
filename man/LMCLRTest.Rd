@@ -23,6 +23,7 @@ LMCLRTest(Y, p, k0, k1, control = list())
   \item{\code{workers}: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. Default is \code{0}.}
   \item{\code{mdl_h0_control}: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
   \item{\code{mdl_h1_control}: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
+  \item{\code{use_diff_init_sim}: }{Value which determines the number of initial values to use when estimating models for null distribution. Default is set to use the same as specified in \code{mdl_h0_control} and \code{mdl_h1_control}.}
 }}
 }
 \value{
@@ -40,6 +41,39 @@ List of class \code{LMCLRTest} (\code{S3} object) with attributes including:
 \description{
 This function performs the Local Monte Carlo likelihood ratio 
 test (LMC-LRT) proposed in Rodriguez Rondon & Dufour (2022).
+}
+\examples{
+set.seed(1234)
+# Define DGP of MS AR process
+mdl_ms2 <- list(n     = 200, 
+                mu    = c(5,10),
+                sigma = c(1,4),
+                phi   = c(0.5),
+                k     = 2,
+                P     = rbind(c(0.90, 0.10),
+                              c(0.10, 0.90)))
+
+# Simulate process using simuMSAR() function
+y_ms_simu <- simuMSAR(mdl_ms2)
+
+
+# ------ MS-AR example ----- #
+# Set test procedure options
+lmc_control = list(N = 19,
+                   burnin = 100,
+                   converge_check = NULL,
+                   mdl_h0_control = list(const  = TRUE, 
+                                         getSE  = TRUE),
+                   mdl_h1_control = list(msmu   = TRUE, 
+                                         msvar  = TRUE,
+                                         getSE  = TRUE,
+                                         method = "EM",
+                                         maxit  = 300,
+                                         use_diff_init = 1))
+
+
+#mdl <- LMCLRTest(y_ms_simu$y, p = 1, k0 = 1 , k1 = 2, lmc_control)
+#mdl
 }
 \references{
 Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.

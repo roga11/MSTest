@@ -30,9 +30,9 @@ List of class \code{HMmdl} (\code{S3} object) with model attributes including:
 \itemize{
   \item{\code{y}: }{a \code{(T x q)} matrix of observations.}
   \item{\code{resid}: }{a \code{(T x q)} matrix of residuals.}
-  \item{\code{mu}: }{a \code{(1 x q)} vector of estimated means of each process.}
-  \item{\code{stdev}: }{a \code{(q x 1)} vector of estimated standard deviation of each process.}
-  \item{\code{sigma}: }{a \code{(q x q)} estimated covariance matrix.}
+  \item{\code{mu}: }{a \code{(k x q)} matrix of estimated means of each process.}
+  \item{\code{stdev}: }{List with \code{k} \code{(q x 1)} vector of estimated standard deviation of each process.}
+  \item{\code{sigma}: }{List with \code{k} \code{(q x q)} estimated covariance matrix.}
   \item{\code{theta}: }{vector containing: \code{mu} and \code{vech(sigma)}.}
   \item{\code{theta_mu_ind}: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
   \item{\code{theta_sig_ind}: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
