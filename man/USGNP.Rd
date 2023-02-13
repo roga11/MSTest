@@ -3,10 +3,10 @@
 \docType{data}
 \name{USGNP}
 \alias{USGNP}
-\title{US GNP data 1947Q2 - 2022Q2}
+\title{US GNP data 1947Q2 - 2022Q3}
 \format{
 \describe{This data is used in Rodriguez Rondon & Dufour (2022) working paper. The series ranges from 
-1947Q2 to 2022Q2.
+1947Q2 to 2022Q3.
   \item{DATE}{Vector of dates}
   \item{GNP_logdiff}{log difference of US GDP series}
   \item{GNP}{US GNP series}
@@ -19,7 +19,7 @@
 USGNP
 }
 \description{
-US GNP data 1947Q2 - 2022Q2
+US GNP data 1947Q2 - 2022Q3
 }
 \references{
 Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
