@@ -239,6 +239,16 @@ MMC_bounds <- function(mdl_h0, con){
     theta_low[P_h0_ind==1][theta_low[P_h0_ind==1]<0] <- 0
     theta_upp[P_h0_ind==1][theta_upp[P_h0_ind==1]>1] <- 1
   }
+  if (mdl_h0$p>0){
+    # correct lower and upper bounds for autoregressive parameters, if any
+    phi_ind <- mdl_h0$theta_phi_ind
+    if (is.null(con$phi_low)==FALSE){
+      theta_low[phi_ind==1] <- apply(cbind(as.matrix(theta_low[phi_ind==1]),as.matrix(con$phi_low)), 1, function(x) max(x))
+    }  
+    if (is.null(con$phi_upp)==FALSE){
+      theta_upp[phi_ind==1] <- apply(cbind(as.matrix(theta_upp[phi_ind==1]),as.matrix(con$phi_upp)), 1, function(x) min(x))
+    }  
+  }
   # ----- output
   mmc_bounds <- list(theta_low = theta_low, theta_upp = theta_upp)
   return(mmc_bounds)
@@ -267,6 +277,8 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item{\code{CI_union}: }{Boolean determining if union of set determined by \code{eps} and confidence set should be used to define consistent set for search. Default is \code{TRUE}.}
 #'   \item{\code{lambda}: }{Double determining penalty on nonlinear constraint. Default is \code{100}.}
 #'   \item{\code{stationary_constraint}: }{Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.}
+#'   \item{\code{phi_low}: }{Vector with lower bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
+#'   \item{\code{phi_upper}: }{Vector with upper bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
 #'   \item{\code{variance_constraint}: }{Double used to determine the lower bound for variance in parameter set for search. Value should be between \code{0} and \code{1} as it is multiplied by consistent point estimates of variances. Default is \code{0.01} (i.e., \code{1\%} of consistent point estimates.}
 #'   \item{\code{silence}: }{Boolean determining if optimization steps should be silenced (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{FALSE}.}
 #'   \item{\code{threshold_stop}: }{Double determining the global optimum of function. Default is \code{1}.}
@@ -302,6 +314,8 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
               CI_union = TRUE,
               lambda = 100,
               stationary_constraint = TRUE,
+              phi_low = NULL,
+              phi_upp = NULL,
               variance_constraint = 0.01,
               silence = FALSE,
               threshold_stop = 1,

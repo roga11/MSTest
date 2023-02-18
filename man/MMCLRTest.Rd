@@ -26,6 +26,8 @@ MMCLRTest(Y, p, k0, k1, control = list())
   \item{\code{CI_union}: }{Boolean determining if union of set determined by \code{eps} and confidence set should be used to define consistent set for search. Default is \code{TRUE}.}
   \item{\code{lambda}: }{Double determining penalty on nonlinear constraint. Default is \code{100}.}
   \item{\code{stationary_constraint}: }{Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.}
+  \item{\code{phi_low}: }{Vector with lower bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
+  \item{\code{phi_upper}: }{Vector with upper bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
   \item{\code{variance_constraint}: }{Double used to determine the lower bound for variance in parameter set for search. Value should be between \code{0} and \code{1} as it is multiplied by consistent point estimates of variances. Default is \code{0.01} (i.e., \code{1\%} of consistent point estimates.}
   \item{\code{silence}: }{Boolean determining if optimization steps should be silenced (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{FALSE}.}
   \item{\code{threshold_stop}: }{Double determining the global optimum of function. Default is \code{1}.}
