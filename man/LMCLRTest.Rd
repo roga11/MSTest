@@ -40,7 +40,7 @@ List of class \code{LMCLRTest} (\code{S3} object) with attributes including:
 }
 \description{
 This function performs the Local Monte Carlo likelihood ratio 
-test (LMC-LRT) proposed in Rodriguez Rondon & Dufour (2022).
+test (LMC-LRT) proposed in Rodriguez-Rondon & Dufour (2022).
 }
 \examples{
 set.seed(1234)
@@ -76,7 +76,7 @@ lmc_control = list(N = 19,
 #mdl
 }
 \references{
-Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
+Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
 
-Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2023. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 }

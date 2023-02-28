@@ -1,25 +1,25 @@
 ---
 title: "MSTest: Examples"
 author: |
-  | Gabriel Rodriguez Rondon
+  | Gabriel Rodriguez-Rondon
   | Jean-Marie Dufour
   | McGill University
-date: "29-May-2020"
+date: "28-February-2023"
 output: pdf_document
 ---
 
-This package implements hypothesis testing procedures that can be used to identify the number of regimes in a Markov-Switching model. It includes the Monte Carlo moment-based test of Dufour & Luger (2017), the parametric bootstrap test described in Qu & Zhuo (2021) and Kasahara & Shimotsu (2018), the Monte Carlo Likelihood ratio tests of Rodriguez Rondon & Dufour (2022), the optimal test for regime switching of Carrasco, Hu, & Ploberger (2014), and the likelihood ratio test described in Hansen (1992).
+This package implements hypothesis testing procedures that can be used to identify the number of regimes in a Markov switching model. It includes the Monte Carlo moment-based test of Dufour & Luger (2017), the parametric bootstrap test described in Qu & Zhuo (2021) and Kasahara & Shimotsu (2018), the Monte Carlo Likelihood ratio tests of Rodriguez-Rondon & Dufour (2023a), the optimal test for regime switching of Carrasco, Hu, & Ploberger (2014), and the likelihood ratio test described in Hansen (1992).
 
-In addition to testing procedures, the package also includes functions that can be used to simulate: autoregressive, vector autoregressive, Markov switching autoregressive, and Markov switching vector autoregressive processes among others. Model estimation procedures are also available.
+In addition to testing procedures, the package also includes datasets and functions that can be used to simulate: autoregressive, vector autoregressive, Markov switching autoregressive, and Markov switching vector autoregressive processes among others. Model estimation procedures are also available.
 
-For a more detailed description of this package see Rodriguez Rondon & Dufour (2022).
+For a more detailed description of this package see Rodriguez-Rondon & Dufour (2023b).
 
 ## Installation
 
 Currently, this package is only available through github. To install it you can use the following (requires 'devtools' package): 
 
 ```r
-devtools::install_github("roga11/MSTest")
+install.packages("MSTest")
 ```
 
 ## Load Package
@@ -215,10 +215,10 @@ Hamilton, James D. 1994. "Time series analysis". Princeton university press.
 
 Hansen, Bruce E. 1992. “The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP.” *Journal of applied Econometrics* 7 (S1): S61–S82.
 
-Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” *JSM Proceedings, Business and Economic Statistics Section: American Statistical Association*.
+Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” *JSM Proceedings, Business and Economic Statistics Section: American Statistical Association*.
 
-Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” Unpublished manuscript.
+Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2023a. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” Unpublished manuscript.
 
-Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “MSTest: An R-package for Testing Markov-Switching Models.” Unpublished manuscript.
+Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2023b. “MSTest: An R-package for Testing Markov-Switching Models.” Unpublished manuscript.
 
 Qu, Zhongjun, and Fan Zhuo. 2021. “Likelihood Ratio-Based Tests for Markov Regime Switching.” *The Review of Economic Studies* 88 (2): 937–968.

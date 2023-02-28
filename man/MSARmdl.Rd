@@ -26,6 +26,8 @@ MSARmdl(Y, p, k, control = list())
  \item{\code{use_diff_init}: }{integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.}
  \item{\code{mle_stationary_constraint}: }{Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.}
  \item{\code{mle_variance_constraint}: }{Double used to determine the lower bound for variance in each regime. Value should be between \code{0} and \code{1} as it is multiplied by single regime variance. Default is \code{0.01} (i.e., \code{1\%} of single regime variance.}
+ \item{\code{mle_theta_low}: }{Vector with lower bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.}
+ \item{\code{mle_theta_upp}: }{Vector with upper bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.}
 }}
 }
 \value{

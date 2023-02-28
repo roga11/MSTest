@@ -20,6 +20,8 @@ DLMMCTest(Y, p, control = list())
   \item{\code{CI_union}: }{Boolean indicator determining if union between \code{eps} and confidence interval is used to determine lower and upper bound on consistent set considered for nuisance parameter space. If \code{TRUE} union is used and if \code{FALSE} only \code{eps} is used. Note that if standard errors obtained are not finite then only \code{eps} is used. Default is \code{FALSE}.}       
   \item{\code{lambda}: }{Numeric value for penalty on stationary constraint not being met. Default is \code{100}.}
   \item{\code{stationary_ind}: }{Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.}
+  \item{\code{phi_low}: }{Vector with lower bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
+  \item{\code{phi_upp}: }{Vector with upper bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
   \item{\code{optim_type}: }{String determining type of numerical optimization algorithm to use. Available options are: "\code{\link{pso}}", ""\code{\link{GenSA}}", "\code{\link{GA}}". Default is "\code{\link{GenSA}}".}
   \item{\code{silence}: }{Boolean indicator determining if optimization updates should be silenced if \code{TRUE} or not if \code{FALSE}. Default is \code{FALSE}.}
   \item{\code{threshold_stop}: }{Numeric value determining the maximum possible p-value attainable. Default is \code{1}.}

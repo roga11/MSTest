@@ -121,6 +121,46 @@ DLMCTest <- function(Y, p, control = list()){
 }
 
 
+#' @title MMC nuisance parameter bounds for Moment-based test
+#' 
+#' @description This function is used to determine the lower and upper bounds for the MMC LRT parameter search.
+#' 
+#' @param mdl_h0 List with restricted model properties.
+#' @param con List with control options provided to \code{DLMMCTest} procedure.
+#' 
+#' @return List with \code{theta_low}, vector of parameter lower bounds, and \code{theta_upp}, vector of parameter upper bounds.
+#' 
+#' @keywords internal
+#' 
+#' @export
+DLMMC_bounds <- function(mdl_h0, con){
+  theta_0 <- mdl_h0$phi
+  # ----- Define lower & upper bounds for MMC search
+  theta_low <- theta_0 - con$eps
+  theta_upp <- theta_0 + con$eps
+  # if CI_union==TRUE use union of eps & 2*standard error to define bounds
+  phi_ind <- mdl_h0$theta_phi_ind
+  phiSE <- mdl_h0$theta_se[phi_ind==1]
+  if ((con$CI_union==TRUE) & all(is.finite(phiSE))){
+    theta_low <- apply(cbind(as.matrix(theta_0 - 2*phiSE), as.matrix(theta_low)), 1, FUN = min)
+    theta_upp <- apply(cbind(as.matrix(theta_0 + 2*phiSE), as.matrix(theta_upp)), 1, FUN = max)
+  }
+  if (is.null(con$phi_low)==FALSE){
+    theta_low <- apply(cbind(as.matrix(theta_low),as.matrix(con$phi_low)), 1, function(x) max(x))
+  }  
+  if (is.null(con$phi_upp)==FALSE){
+    theta_upp <- apply(cbind(as.matrix(theta_upp),as.matrix(con$phi_upp)), 1, function(x) min(x))
+  }  
+  # ----- output
+  mmc_bounds <- list(theta_low = theta_low, theta_upp = theta_upp)
+  return(mmc_bounds)
+}
+
+
+
+
+
+
 #' @title Maximized Monte Carlo moment-based test for Markov switching model
 #' 
 #' @description This function performs the maximized Monte Carlo moment-based test for
@@ -137,6 +177,8 @@ DLMCTest <- function(Y, p, control = list()){
 #'   \item{\code{CI_union}: }{Boolean indicator determining if union between \code{eps} and confidence interval is used to determine lower and upper bound on consistent set considered for nuisance parameter space. If \code{TRUE} union is used and if \code{FALSE} only \code{eps} is used. Note that if standard errors obtained are not finite then only \code{eps} is used. Default is \code{FALSE}.}       
 #'   \item{\code{lambda}: }{Numeric value for penalty on stationary constraint not being met. Default is \code{100}.}
 #'   \item{\code{stationary_ind}: }{Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.}
+#'   \item{\code{phi_low}: }{Vector with lower bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
+#'   \item{\code{phi_upp}: }{Vector with upper bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
 #'   \item{\code{optim_type}: }{String determining type of numerical optimization algorithm to use. Available options are: "\code{\link{pso}}", ""\code{\link{GenSA}}", "\code{\link{GA}}". Default is "\code{\link{GenSA}}".}
 #'   \item{\code{silence}: }{Boolean indicator determining if optimization updates should be silenced if \code{TRUE} or not if \code{FALSE}. Default is \code{FALSE}.}
 #'   \item{\code{threshold_stop}: }{Numeric value determining the maximum possible p-value attainable. Default is \code{1}.}
@@ -179,6 +221,8 @@ DLMMCTest <- function(Y, p, control = list()){
               CI_union = FALSE,
               lambda = 100,
               stationary_ind = TRUE,
+              phi_low = NULL,
+              phi_upp = NULL,
               optim_type = "GenSA",
               silence = FALSE,
               threshold_stop = 1,
@@ -200,7 +244,6 @@ DLMMCTest <- function(Y, p, control = list()){
     mdl_h0 <- ARmdl(Y, p, null_control)
     y <- mdl_h0$y
     x <- mdl_h0$x
-    theta_0 <- mdl_h0$phi
   }else{
     stop("No Nuisance parameters is model is not Autoregressive. Number of lags must be greater than 0.")
   }
@@ -210,15 +253,11 @@ DLMMCTest <- function(Y, p, control = list()){
   sim_ms    <- sim_DLmoments(Tsize, con$N)
   Fmin_sim  <-  as.matrix(sort(combine_stat(sim_ms, params, "min")))
   Fprd_sim  <-  as.matrix(sort(combine_stat(sim_ms, params, "prod")))
-  # ----- Define lower & upper bounds for MMC search
-  theta_low <- theta_0 - con$eps
-  theta_upp <- theta_0 + con$eps
-  # if CI_union==TRUE use union of eps & 2*standard error to define bounds
-  phiSE <- mdl_h0$theta_se[3:(3+p-1)]
-  if ((con$CI_union==TRUE) & all(is.finite(phiSE))){
-    theta_low <- apply(cbind(as.matrix(theta_0 - 2*phiSE), as.matrix(theta_low)), 1, FUN = min)
-    theta_upp <- apply(cbind(as.matrix(theta_0 + 2*phiSE), as.matrix(theta_upp)), 1, FUN = max)
-  }
+  # ----- Define starting values, lower & upper bounds for search
+  theta_0 <- mdl_h0$phi
+  mmc_bounds <- DLMMC_bounds(mdl_h0, con)
+  theta_low <- mmc_bounds$theta_low
+  theta_upp <- mmc_bounds$theta_upp
   # ----- Search for Max p-value within bounds
   if(con$optim_type=="pso"){
     # Set PSO specific controls

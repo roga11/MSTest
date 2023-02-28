@@ -488,8 +488,8 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   res <- nloptr::slsqp(x0 = theta_0,
                        fn = logLike_HMmdl_min,
                        gr = NULL,
-                       lower = NULL,
-                       upper = NULL,
+                       lower = optim_options$mle_theta_low,
+                       upper = optim_options$mle_theta_upp,
                        hin = loglik_const_ineq_HMmdl,
                        heq = loglik_const_eq_HMmdl,
                        nl.info = FALSE,
@@ -572,8 +572,8 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   res <- nloptr::slsqp(x0 = theta_0,
                        fn = logLike_MSARmdl_min,
                        gr = NULL,
-                       lower = NULL,
-                       upper = NULL,
+                       lower = optim_options$mle_theta_low,
+                       upper = optim_options$mle_theta_upp,
                        hin = loglik_const_ineq_MSARmdl,
                        heq = loglik_const_eq_MSARmdl,
                        nl.info = FALSE,
@@ -669,8 +669,8 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   res <- nloptr::slsqp(x0 = theta_0,
                        fn = logLike_MSVARmdl_min,
                        gr = NULL,
-                       lower = optim_options$lower,
-                       upper = optim_options$upper,
+                       lower = optim_options$mle_theta_low,
+                       upper = optim_options$mle_theta_upp,
                        hin = loglik_const_ineq_MSVARmdl,
                        heq = loglik_const_eq_MSVARmdl,
                        nl.info = FALSE,
@@ -964,9 +964,9 @@ print.DLMMCTest <- function(x, digits = getOption("digits"), ...){
   cat(paste("\nBIC = "),x$mdl_h0$BIC)
   cat("\n")
   cat("\nDufour & Luger (2017) Moment-Based Maximized Monte Carlo Test\n")
-  out <- data.frame(rbind(c(t(x$theta_max_min),x$S0_min, x$F0_min, x$FN_min_cv, x$pval_min),
-                          c(t(x$theta_max_prod),x$S0_prod, x$F0_prod, x$FN_prod_cv, x$pval_prod)))
-  colnames(out) <- c(rownames(x$theta_max_min), colnames(x$S0_min), colnames(x$F0_min), names(x$FN_min_cv), "p-value")
+  out <- data.frame(rbind(c(x$S0_min, x$F0_min, x$pval_min),
+                          c(x$S0_prod, x$F0_prod, x$pval_prod)))
+  colnames(out) <- c(colnames(x$S0_min), colnames(x$F0_min), "p-value")
   rownames(out) <- c("MMC_min","MMC_prod")
   print(format(signif(out, max(1L, digits - 2L))))
   invisible(x)
@@ -1006,7 +1006,7 @@ print.LMCLRTest <- function(x, digits = getOption("digits"), ...){
   cat(paste("\nAIC = "),x$mdl_h1$AIC)
   cat(paste("\nBIC = "),x$mdl_h1$BIC)
   cat("\n")
-  cat("\nRodriguez Rondon & Dufour (2022) Local Monte Carlo Likelihood Ratio Test\n")
+  cat("\nRodriguez-Rondon & Dufour (2023) Local Monte Carlo Likelihood Ratio Test\n")
   out <- data.frame(t(as.matrix(c(x$LRT_0, x$LRN_cv, x$pval))))
   colnames(out) <- c(names(x$LRT_0), names(x$LRN_cv), "p-value")
   rownames(out) <- "LMC_LRT"
@@ -1050,7 +1050,7 @@ print.MMCLRTest <- function(x, digits = getOption("digits"), ...){
   cat(paste("\nAIC = "),x$mdl_h1$AIC)
   cat(paste("\nBIC = "),x$mdl_h1$BIC)
   cat("\n")
-  cat("\nRodriguez Rondon & Dufour (2022) Maximized Monte Carlo Likelihood Ratio Test\n")
+  cat("\nRodriguez-Rondon & Dufour (2023) Maximized Monte Carlo Likelihood Ratio Test\n")
   out <- data.frame(t(as.matrix(c(x$LRT_0, x$pval))))
   colnames(out) <- c(names(x$LRT_0), "p-value")
   rownames(out) <- "MMC_LRT"

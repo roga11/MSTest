@@ -15,8 +15,8 @@
 #' 
 #' @keywords internal
 #' 
-#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2023. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #'
 #' @export
 LR_samp_dist_par <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control, workers){ 
@@ -91,7 +91,7 @@ estimMdl <- function(Y, p, q, k, control = list()){
 #' @title Monte Carlo Likelihood Ratio Test
 #' 
 #' @description This function performs the Local Monte Carlo likelihood ratio 
-#' test (LMC-LRT) proposed in Rodriguez Rondon & Dufour (2022).
+#' test (LMC-LRT) proposed in Rodriguez-Rondon & Dufour (2022).
 #' 
 #' @param Y  Series to be tested. Must be a (\code{T x q}) matrix.
 #' @param p  Number of autoregressive lags. Must be greater than or equal to 0. 
@@ -119,8 +119,8 @@ estimMdl <- function(Y, p, q, k, control = list()){
 #'   \item{\code{control}: }{List with test procedure options used.}
 #' }
 #'
-#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2023. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #' @example /inst/examples/LMCLRTest_examples.R
 #' @export
 LMCLRTest <- function(Y, p, k0, k1, control = list()){
@@ -201,7 +201,7 @@ LMCLRTest <- function(Y, p, k0, k1, control = list()){
 }
 
 
-#' @title MMC nuisance parameter bounds for univariate models 
+#' @title MMC nuisance parameter bounds 
 #' 
 #' @description This function is used to determine the lower and upper bounds for the MMC LRT parameter search.
 #' 
@@ -212,8 +212,8 @@ LMCLRTest <- function(Y, p, k0, k1, control = list()){
 #' 
 #' @keywords internal
 #' 
-#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2023. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #' 
 #' @export
 MMC_bounds <- function(mdl_h0, con){
@@ -236,8 +236,8 @@ MMC_bounds <- function(mdl_h0, con){
   # correct transition probability bounds to be in admissible region
   if (k0>1){
     P_h0_ind <- mdl_h0$theta_P_ind
-    theta_low[P_h0_ind==1][theta_low[P_h0_ind==1]<0] <- 0
-    theta_upp[P_h0_ind==1][theta_upp[P_h0_ind==1]>1] <- 1
+    theta_low[P_h0_ind==1][theta_low[P_h0_ind==1]<con$P_low] <- con$P_low
+    theta_upp[P_h0_ind==1][theta_upp[P_h0_ind==1]>con$P_upp] <- con$P_upp
   }
   if (mdl_h0$p>0){
     # correct lower and upper bounds for autoregressive parameters, if any
@@ -260,7 +260,7 @@ MMC_bounds <- function(mdl_h0, con){
 #' @title Maximized Monte Carlo Likelihood Ratio Test
 #'
 #' @description This function performs the Maximized Monte Carlo likelihood ratio 
-#' test (MMC-LRT) proposed in Rodriguez Rondon & Dufour (2022).
+#' test (MMC-LRT) proposed in Rodriguez-Rondon & Dufour (2022).
 #' 
 #' @param Y  Series to be tested. Must be a (\code{T x q}) matrix.
 #' @param p  Number of autoregressive lags. Must be greater than or equal to 0. 
@@ -278,7 +278,9 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item{\code{lambda}: }{Double determining penalty on nonlinear constraint. Default is \code{100}.}
 #'   \item{\code{stationary_constraint}: }{Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.}
 #'   \item{\code{phi_low}: }{Vector with lower bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
-#'   \item{\code{phi_upper}: }{Vector with upper bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
+#'   \item{\code{phi_upp}: }{Vector with upper bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
+#'   \item{\code{P_low}: }{Value with lower bound for transition probabilities when optimizing. Default is \code{0}.}
+#'   \item{\code{P_upp}: }{Value with upper bound for transition probabilities when optimizing. Default is \code{1}.}
 #'   \item{\code{variance_constraint}: }{Double used to determine the lower bound for variance in parameter set for search. Value should be between \code{0} and \code{1} as it is multiplied by consistent point estimates of variances. Default is \code{0.01} (i.e., \code{1\%} of consistent point estimates.}
 #'   \item{\code{silence}: }{Boolean determining if optimization steps should be silenced (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{FALSE}.}
 #'   \item{\code{threshold_stop}: }{Double determining the global optimum of function. Default is \code{1}.}
@@ -299,8 +301,8 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item{\code{control}: }{List with test procedure options used.}
 #' }
 #'
-#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2023. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #' @example /inst/examples/MMCLRTest_examples.R
 #' @export
 MMCLRTest <- function(Y, p, k0, k1, control = list()){
@@ -316,6 +318,8 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
               stationary_constraint = TRUE,
               phi_low = NULL,
               phi_upp = NULL,
+              P_low = 0,
+              P_upp = 1,
               variance_constraint = 0.01,
               silence = FALSE,
               threshold_stop = 1,
@@ -470,7 +474,7 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
 #' 
 #' @references Qu, Zhongjun, and Fan Zhuo. 2021. “Likelihood Ratio-Based Tests for Markov Regime Switching.” \emph{The Review of Economic Studies} 88 (2): 937–968.
 #' @references Kasahara, Hiroyuk, and Katsum Shimotsu. 2018. “Testing the number of regimes in Markov regime switching models.” \emph{arXiv preprint arXiv:1801.06862}.
-#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2023. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #' 
 #' @export
 BootLRTest <- function(Y, p, k0, k1, control = list()){

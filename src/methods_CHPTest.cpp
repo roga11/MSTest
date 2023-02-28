@@ -239,16 +239,30 @@ arma::mat bootCV(List mdl,double rho_b, int N, int msvar){
   int ar =  mdl["p"];
   arma::vec supb(N,arma::fill::zeros);  // stores the bootstrapped supTS critical value
   arma::vec expb(N,arma::fill::zeros);  // stores the bootstrapped expTS critical value
-  for (int itb=0; itb<N; itb++){
-    // first simulate the series N (e.g., 3000) times according to ML estimators 
+  int itb = 0;
+  while (itb<N){
+    // simulate the series N times according to ML estimators 
     List y_out_tmp = simuAR(mdl);
     arma::vec y0 = y_out_tmp["y"];
     List  Mdl_tmp  = ARmdl(y0,ar);
     List ltmtb  = chpDmat(Mdl_tmp,msvar);
     arma::vec cv4  = chpStat(Mdl_tmp, rho_b, ltmtb, msvar);
-    supb(itb)   = cv4(0);
-    expb(itb)   = cv4(1);
+    if (cv4.has_nan()==FALSE){
+      supb(itb)   = cv4(0);
+      expb(itb)   = cv4(1);
+      itb = itb + 1;
+    }
   }
   arma::mat boot_out = join_rows(sort(supb),sort(expb));
   return(boot_out);  
 }
+
+
+
+
+
+
+
+
+
+
