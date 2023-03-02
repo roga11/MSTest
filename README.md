@@ -1,12 +1,5 @@
----
-title: "MSTest: Examples"
-author: |
-  | Gabriel Rodriguez-Rondon
-  | Jean-Marie Dufour
-  | McGill University
-date: "28-February-2023"
-output: pdf_document
----
+#MSTest
+[![Downloads](https://cranlogs.r-pkg.org/badges/MSTest)](https://cran.r-project.org/package=MSTest)
 
 This package implements hypothesis testing procedures that can be used to identify the number of regimes in a Markov switching model. It includes the Monte Carlo moment-based test of Dufour & Luger (2017), the parametric bootstrap test described in Qu & Zhuo (2021) and Kasahara & Shimotsu (2018), the Monte Carlo Likelihood ratio tests of Rodriguez-Rondon & Dufour (2023a), the optimal test for regime switching of Carrasco, Hu, & Ploberger (2014), and the likelihood ratio test described in Hansen (1992).
 
