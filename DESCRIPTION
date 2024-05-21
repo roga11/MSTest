@@ -14,18 +14,19 @@ Authors@R:
            email = "jean-marie.dufour@mcgill.ca"))
 Maintainer: Gabriel Rodriguez Rondon <gabriel.rodriguezrondon@mail.mcgill.ca>
 Description: Implementation of hypothesis testing procedures described in Hansen (1992) <doi:10.1002/jae.3950070506>, Carrasco, Hu, & Ploberger (2014) <doi:10.3982/ECTA8609>, Dufour & Luger (2017) <doi:10.1080/07474938.2017.1307548>, and Rodriguez Rondon & Dufour (2022) <https://grodriguezrondon.com/research/> that can be used to identify the number of regimes in Markov switching models.
-License: GPL(>= 3)
+License: GPL(>= 2)
 LazyData: TRUE
 RoxygenNote: 7.2.1
 Encoding: UTF-8
 URL: https://github.com/roga11/MSTest
+BugReports: https://github.com/roga11/MSTest/issues
 Imports: 
   stats,
   rlang,
   nloptr,
   Rcpp (>= 1.0.1), 
   numDeriv, 
-  lmf, 
+  pracma, 
   foreach,
   GenSA, 
   pso, 

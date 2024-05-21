@@ -172,10 +172,10 @@ calcResid_MSVARmdl <- function(mdl, mu, k) {
 #' 
 #' @param \code{mdl} List with parameter values of simple (one-regime) model. This includes:
 #' \itemize{
-#'   \item{\code{mu}: }{Vector of means.}
-#'   \item{\code{sigma}: }{covariance matrix.}
-#'   \item{\code{msmu}: }{Boolean indicator. If \code{TRUE}, mean is function of markov process. If \code{FALSE}, mean is constant across regimes.}
-#'   \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, standard deviation is function of markov process. If \code{FALSE}, standard deviation is constant across regimes.}
+#'   \item{mu: }{Vector of means.}
+#'   \item{sigma: }{covariance matrix.}
+#'   \item{msmu: }{Boolean indicator. If \code{TRUE}, mean is function of markov process. If \code{FALSE}, mean is constant across regimes.}
+#'   \item{msvar: }{Boolean indicator. If \code{TRUE}, standard deviation is function of markov process. If \code{FALSE}, standard deviation is constant across regimes.}
 #' }
 #' @param \code{k} Number of regimes.
 #' 
@@ -194,11 +194,11 @@ initVals_HMmdl <- function(mdl, k) {
 #' 
 #' @param \code{mdl} List with parameter values of simple (one-regime) autoregressive model. This includes:
 #' \itemize{
-#'   \item{\code{phi}: }{Vector autoregressive coefficients.}
-#'   \item{\code{mu}: }{Mean of process.}
-#'   \item{\code{stdev}: }{Standard deviation.}
-#'   \item{\code{msmu}: }{Boolean indicator. If \code{TRUE}, mean is function of markov process. If \code{FALSE}, mean is constant across regimes.}
-#'   \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, standard deviation is function of markov process. If \code{FALSE}, standard deviation is constant across regimes.}
+#'   \item{phi: }{Vector autoregressive coefficients.}
+#'   \item{mu: }{Mean of process.}
+#'   \item{stdev: }{Standard deviation.}
+#'   \item{msmu: }{Boolean indicator. If \code{TRUE}, mean is function of markov process. If \code{FALSE}, mean is constant across regimes.}
+#'   \item{msvar: }{Boolean indicator. If \code{TRUE}, standard deviation is function of markov process. If \code{FALSE}, standard deviation is constant across regimes.}
 #' }
 #' @param \code{k} Number of regimes.
 #' 
@@ -217,11 +217,11 @@ initVals_MSARmdl <- function(mdl, k) {
 #' 
 #' @param \code{mdl} List with parameter values of simple (one-regime) vector autoregressive model. This includes:
 #'   \itemize{
-#'    \item{\code{phi}: }{Matrix autoregressive coefficients.}
-#'    \item{\code{mu}: }{Vector of means.}
-#'    \item{\code{sigma}: }{Covariance matrix.}
-#'    \item{\code{msmu}: }{Boolean indicator. If \code{TRUE}, mean is function of markov process. If \code{FALSE}, mean is constant across regimes.}
-#'    \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, standard deviation is function of markov process. If \code{FALSE}, standard deviation is constant across regimes.}
+#'    \item{phi: }{Matrix autoregressive coefficients.}
+#'    \item{mu: }{Vector of means.}
+#'    \item{sigma: }{Covariance matrix.}
+#'    \item{msmu: }{Boolean indicator. If \code{TRUE}, mean is function of markov process. If \code{FALSE}, mean is constant across regimes.}
+#'    \item{msvar: }{Boolean indicator. If \code{TRUE}, standard deviation is function of markov process. If \code{FALSE}, standard deviation is constant across regimes.}
 #' }
 #' @param \code{k} Number of regimes.
 #' 
@@ -274,11 +274,11 @@ randSN <- function(n, q) {
 #' 
 #' @param mdl_h0 List containing the following DGP parameters
 #' \itemize{
-#'   \item{\code{n}: }{Length of series.}
-#'   \item{\code{mu}: }{Mean of process.}
-#'   \item{\code{sigma}: }{Standard deviation of process.}
-#'   \item{\code{phi}: }{Vector of autoregressive coefficients.}
-#'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+#'   \item{n: }{Length of series.}
+#'   \item{mu: }{Mean of process.}
+#'   \item{sigma: }{Standard deviation of process.}
+#'   \item{phi: }{Vector of autoregressive coefficients.}
+#'   \item{eps: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 #' }
 #' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
@@ -296,13 +296,13 @@ simuAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @param mdl_h0 List containing the following DGP parameters
 #' \itemize{
-#'   \item{\code{n}: }{Length of series.}
-#'   \item{\code{k}: }{Number of regimes.}
-#'   \item{\code{mu}: }{A (\code{k x 1}) vector with mean of process in each regime.}
-#'   \item{\code{sigma}: }{A (\code{k x 1}) vector with standard deviation of process in each regime.}
-#'   \item{\code{phi}: }{Vector of autoregressive coefficients.}
-#'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
-#'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+#'   \item{n: }{Length of series.}
+#'   \item{k: }{Number of regimes.}
+#'   \item{mu: }{A (\code{k x 1}) vector with mean of process in each regime.}
+#'   \item{sigma: }{A (\code{k x 1}) vector with standard deviation of process in each regime.}
+#'   \item{phi: }{Vector of autoregressive coefficients.}
+#'   \item{P: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+#'   \item{eps: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 #' }
 #' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
@@ -320,13 +320,13 @@ simuMSAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @param mdl_h0 List containing the following DGP parameters
 #' \itemize{
-#'   \item{\code{n}: }{Length of series.}
-#'   \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
-#'   \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
-#'   \item{\code{phi}: }{ A (\code{q x qp}) matrix of autoregressive coefficients.}
-#'   \item{\code{p}: }{Number of autoregressive lags.}
-#'   \item{\code{q}: }{Number of series.}
-#'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+#'   \item{n: }{Length of series.}
+#'   \item{mu: }{A (\code{q x 1}) vector of means.}
+#'   \item{sigma: }{A (\code{q x q}) covariance matrix.}
+#'   \item{phi: }{ A (\code{q x qp}) matrix of autoregressive coefficients.}
+#'   \item{p: }{Number of autoregressive lags.}
+#'   \item{q: }{Number of series.}
+#'   \item{eps: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 #' }
 #' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
@@ -344,15 +344,15 @@ simuVAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @param mdl_h0 List containing the following DGP parameters
 #' \itemize{
-#'   \item{\code{n}: }{Length of series.}
-#'   \item{\code{k}: }{Number of regimes.}
-#'   \item{\code{mu}: }{A (\code{k x q}) matrix of means.}
-#'   \item{\code{sigma}: }{List with \code{k} (\code{q x q}) covariance matrices.}
-#'   \item{\code{phi}: }{A (\code{q x qp}) matrix of autoregressive coefficients.}
-#'   \item{\code{p}: }{Number of autoregressive lags.}
-#'   \item{\code{q}: }{Number of series.}
-#'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
-#'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+#'   \item{n: }{Length of series.}
+#'   \item{k: }{Number of regimes.}
+#'   \item{mu: }{A (\code{k x q}) matrix of means.}
+#'   \item{sigma: }{List with \code{k} (\code{q x q}) covariance matrices.}
+#'   \item{phi: }{A (\code{q x qp}) matrix of autoregressive coefficients.}
+#'   \item{p: }{Number of autoregressive lags.}
+#'   \item{q: }{Number of series.}
+#'   \item{P: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+#'   \item{eps: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 #' }
 #' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
@@ -370,11 +370,11 @@ simuMSVAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @param mdl_h0 List containing the following DGP parameters
 #' \itemize{
-#'   \item{\code{n}: }{Length of series.}
-#'   \item{\code{mu}: }{A (\code{q x 1}) vector of means.}
-#'   \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
-#'   \item{\code{q}: }{Number of series.}
-#'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+#'   \item{n: }{Length of series.}
+#'   \item{mu: }{A (\code{q x 1}) vector of means.}
+#'   \item{sigma: }{A (\code{q x q}) covariance matrix.}
+#'   \item{q: }{Number of series.}
+#'   \item{eps: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 #' }
 #' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
@@ -392,13 +392,13 @@ simuNorm <- function(mdl_h0, burnin = 0L) {
 #' 
 #' @param mdl_h0 List containing the following DGP parameters
 #' \itemize{
-#'   \item{\code{n}: }{Length of series.}
-#'   \item{\code{k}: }{Number of regimes.}
-#'   \item{\code{mu}: }{A (\code{k x q}) vector of means.}
-#'   \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
-#'   \item{\code{q}: }{Number of series.}
-#'   \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
-#'   \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+#'   \item{n: }{Length of series.}
+#'   \item{k: }{Number of regimes.}
+#'   \item{mu: }{A (\code{k x q}) vector of means.}
+#'   \item{sigma: }{A (\code{q x q}) covariance matrix.}
+#'   \item{q: }{Number of series.}
+#'   \item{P: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+#'   \item{eps: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 #' }
 #' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 

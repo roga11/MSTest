@@ -9,30 +9,33 @@
 #' @param p Integer determining the number of autoregressive lags.
 #' @param control List with test procedure options including: 
 #' \itemize{
-#'   \item{\code{ix}: }{List of Markov Switching parameters. 1 = just mean c(1,2) = mean and first param, (default: 1).}
-#'   \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered. Default is \code{FALSE}.}
-#'   \item{\code{qbound}: }{Indicator that bounds q by 1-p (default: \code{FALSE}).}
-#'   \item{\code{gridsize}: }{Integer determining the number of grid points for markov switching parameters. Default is \code{20}.}
-#'   \item{\code{p_gridsize}: }{Integer determining the number of grid points for transition probabilities. Default is \code{12}.}
-#'   \item{\code{p_stepsize}: }{Double determining the step size for grid points of transition probabilities. This, along with \code{p_gridsize} will determine the bounds of search space. Default is \code{0.075}.}
-#'   \item{\code{mugrid_from}: }{Double determining the minimum value of mean in second regime. Default is \code{0.1}.}
-#'   \item{\code{mugrid_by}: }{Double determining the step size for grid points of mean in second regime. This, along with \code{gridsize} will determine the max value of mean in second regime. Default is \code{0.1}.}
-#'   \item{\code{siggrid_from}: }{Double determining the minimum value of sigma in second regime (if \code{msvar = TRUE}). Default is \code{0.1}.}
-#'   \item{\code{siggrid_by}: }{Double determining the step size for grid points of sigma in second regime. This, along with \code{gridsize} will determine the max value of sigma in second regime. Default is \code{0.1}.}
-#'   \item{\code{N}: }{Integer determining the number of replications. Default is \code{1000}.}
-#'   \item{\code{nwband}: }{Integer determining maximum bandwidth in Bartlett kernel. Critical values and p-values are returned for each bandwidth from \code{0:nwband} as suggested in Hansen (1996). Default is \code{4}.}
-#'   \item{\code{sig_min}: }{Double determining minimum value of sigma in first regime that will be used in non-linear optimization with fixed value of sigma in second regime. This is used to avoid negative variances. Default is \code{0.01}.}
+#'   \item{ix: }{List of Markov Switching parameters. 1 = just mean c(1,2) = mean and first param, (default: 1).}
+#'   \item{msvar: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered. Default is \code{FALSE}.}
+#'   \item{qbound: }{Indicator that bounds q by 1-p (default: \code{FALSE}).}
+#'   \item{gridsize: }{Integer determining the number of grid points for markov switching parameters. Default is \code{20}.}
+#'   \item{pgrid_from: }{Double determining the initial grid point for transition probabilities. Default is \code{0.1}.}
+#'   \item{pgrid_by: }{Double determining the step size for grid points of transition probabilities. This, along with \code{p_gridsize} will determine the bounds of search space. Default is \code{0.075}.}
+#'   \item{pgrid_to: }{Double determining the end grid point for transition probabilities. Default is \code{0.925}.}
+#'   \item{mugrid_from: }{Double determining the minimum value of mean in second regime. Default is \code{0.1}.}
+#'   \item{mugrid_by: }{Double determining the step size for grid points of mean in second regime. This, along with \code{gridsize} will determine the max value of mean in second regime. Default is \code{0.1}.}
+#'   \item{siggrid_from: }{Double determining the minimum value of sigma in second regime (if \code{msvar = TRUE}). Default is \code{0.1}.}
+#'   \item{siggrid_by: }{Double determining the step size for grid points of sigma in second regime. This, along with \code{gridsize} will determine the max value of sigma in second regime. Default is \code{0.1}.}
+#'   \item{N: }{Integer determining the number of replications. Default is \code{1000}.}
+#'   \item{nwband: }{Integer determining maximum bandwidth in Bartlett kernel. Critical values and p-values are returned for each bandwidth from \code{0:nwband} as suggested in Hansen (1996). Default is \code{4}.}
+#'   \item{theta_null_low: }{Vector determining lower bound on parameters under the null hypothesis. Length of vector should be number of model coefficients + 1 for variance. Default is to only bound variance at \code{0.01}.}
+#'   \item{theta_null_upp: }{Vector determining upper bound on parameters under the null hypothesis. Length of vector should be number of model coefficients + 1 for variance. Default is to no bounds (i.e. \code{Inf}).}
+#'   \item{optim_method: }{String determining the type of optimization procedure used. Allowed options are "gp-optim" for general purpose optimization using \code{\link{optim}} from \code{\link{stats}} or "nl-optim" using \code{\link{slsqp}} from \code{\link{nloptr}}. Default is "gp-optim".}
 #' }
 #' 
 #' @return List of class \code{HLRTest} (\code{S3} object) with model attributes including: 
 #' \itemize{
-#'   \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} (\code{S3} object). See \code{\link{ARmdl}}.}
-#'   \item{\code{LR0}: }{Likelihood ratio test statistic value.}
-#'   \item{\code{LRN}: }{A (\code{N x 1}) vector with simulated LRT statistics under null hypothesis.}
-#'   \item{\code{pval}: }{P-value.}
-#'   \item{\code{LR_cv}: }{A (\code{nwband x 3}) matrix with 90\%, 95\%, and 99\% critical values in each column respectively.}
-#'   \item{\code{coef}: }{Vector of coefficients from restricted model and grid search that maximized standardized LRT. }
-#'   \item{\code{control}: }{List with test procedure options used.}
+#'   \item{mdl_h0: }{List with restricted model attributes. This will be of class \code{ARmdl} (\code{S3} object). See \code{\link{ARmdl}}.}
+#'   \item{LR0: }{Likelihood ratio test statistic value.}
+#'   \item{LRN: }{A (\code{N x 1}) vector with simulated LRT statistics under null hypothesis.}
+#'   \item{pval: }{P-value.}
+#'   \item{LR_cv: }{A (\code{nwband x 3}) matrix with 90\%, 95\%, and 99\% critical values in each column respectively.}
+#'   \item{coef: }{Vector of coefficients from restricted model and grid search that maximized standardized LRT. }
+#'   \item{control: }{List with test procedure options used.}
 #' }
 #' 
 #' @references Hansen, Bruce E. 1992. “The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP.” \emph{Journal of applied Econometrics} 7 (S1): S61–S82.
@@ -45,15 +48,18 @@ HLRTest <- function(Y, p, control = list()){
               msvar = FALSE, 
               qbound = FALSE,
               gridsize = 20,
-              p_gridsize = 12,
-              p_stepsize = 0.075,
+              pgrid_from = 0.1,
+              pgrid_by = 0.075,
+              pgrid_to = 0.925,
               mugrid_from = 0.1,
               mugrid_by  = 0.1,
               siggrid_from = 0.1,
               siggrid_by  = 0.1,
               N = 1000,
               nwband  = 4,
-              sig_min = 0.01)
+              optim_method = "gp-optim",
+              theta_null_low = NULL,
+              theta_null_upp = NULL)
   # Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
@@ -68,6 +74,12 @@ HLRTest <- function(Y, p, control = list()){
   }else{
     stop("Value for 'p' must be an integer >=0.")
   }
+  if(is.null(con$theta_null_low)){
+    con$theta_null_low <- c(rep(-Inf, length(mdl_h0$coef)),0.01)
+  }
+  if(is.null(con$theta_null_upp)){
+    con$theta_null_upp <- c(rep(Inf, length(mdl_h0$coef)+1))
+  }
   # Optimization values
   HLR_opt_ls <- con
   HLR_opt_ls$y    <- mdl_h0$y
@@ -79,11 +91,11 @@ HLRTest <- function(Y, p, control = list()){
   HLR_opt_ls$p    <- 0 # under null hypothesis
   HLR_opt_ls$q    <- 0 # under null hypothesis
   # Create grids
-  gp    <- seq(from = 0.1, by = con$p_stepsize, to = (con$p_gridsize-1)*con$p_stepsize+0.1)
+  gp    <- seq(from = con$pgrid_from, by = con$pgrid_by, to = con$pgrid_to)
   gq    <- gp
   gmu   <- as.matrix(seq(from = con$mugrid_from, by = con$mugrid_by, length.out = con$gridsize))
   gar   <- matrix(rep(seq(from = -1, to = 1, length.out = con$gridsize), HLR_opt_ls$kx-1), nrow = con$gridsize, ncol = HLR_opt_ls$kx-1)
-  gsig  <- matrix(rep(seq(from = con$mugrid_from, by = con$mugrid_by, length.out = con$gridsize), con$msvar), nrow = con$gridsize, ncol = con$msvar)
+  gsig  <- matrix(rep(seq(from = con$siggrid_from, by = con$siggrid_by, length.out = con$gridsize), con$msvar), nrow = con$gridsize, ncol = con$msvar)
   gx    <- do.call(expand.grid, as.data.frame(cbind(gmu, gar, gsig)))
   # ---------- Calculation Under null # Regression 
   # LR from Null 
@@ -141,9 +153,9 @@ HLRTest <- function(Y, p, control = list()){
 #' 
 #' @return List which contains:
 #' \itemize{
-#'   \item{\code{cs}: }{Vector with standardized LRT statistic for each grid point.}
-#'   \item{\code{draws}: }{List with a (\code{nwband+1 x N} matrix for each grid point. Each row of these matrices is a vector of simulated test statistics under the null hypothesis for a value of bandwidth .}
-#'   \item{\code{coefficients}: }{A  matrix with coefficients for each grid point.}
+#'   \item{cs: }{Vector with standardized LRT statistic for each grid point.}
+#'   \item{draws: }{List with a (\code{nwband+1 x N} matrix for each grid point. Each row of these matrices is a vector of simulated test statistics under the null hypothesis for a value of bandwidth .}
+#'   \item{coefficients: }{A  matrix with coefficients for each grid point.}
 #' }
 #' 
 #' @keywords internal
@@ -171,9 +183,8 @@ HLRparamSearch <- function(gx, gp, gq, b, null, HLR_opt_ls){
   beta    <- matrix(0, nrow = k + 3 + k1 - qbound, ncol = cnum) # All parameters 
   j       <- 0
   HLR_opt_ls_tmp <- HLR_opt_ls
-  lowb <- rep(-Inf, length(b))
-  lowb[length(b)] <- HLR_opt_ls$sig_min
-  uppb <- rep(Inf, length(b))
+  lowb <- HLR_opt_ls$theta_null_low
+  uppb <- HLR_opt_ls$theta_null_upp
   for (i1 in 1:length(gp)){
     HLR_opt_ls_tmp$p <- gp[i1]
     i2 <- 1
@@ -190,8 +201,18 @@ HLRparamSearch <- function(gx, gp, gq, b, null, HLR_opt_ls){
         j <- j+1  
         HLR_opt_ls_tmp$b1 <- as.matrix(gx[xi,]) #value for constant in regime 2
         # Optimization (optimal theta which contains constant in regime 1, ar coefs, and variance)
-        #optlst <- optim(bs, mclike, dmclike, HLR_opt_ls = HLR_opt_ls_tmp, method = 'BFGS')
-        optlst  <- stats::optim(bs, mclike, dmclike, HLR_opt_ls = HLR_opt_ls_tmp, method = 'L-BFGS-B', lower = lowb, upper = uppb)
+        #optlst <- stats::optim(bs, mclike, dmclike, HLR_opt_ls = HLR_opt_ls_tmp, method = 'BFGS')
+        if (HLR_opt_ls$optim_method == "gp-optim"){
+          optlst <- NULL
+          try(
+            optlst <- stats::optim(bs, mclike, dmclike, HLR_opt_ls = HLR_opt_ls_tmp, method = 'L-BFGS-B', lower = lowb, upper = uppb)   
+          )
+          if (is.null(optlst)){
+            optlst  <- nloptr::slsqp(bs, fn = mclike, gr = dmclike, lower = lowb, upper = uppb, HLR_opt_ls = HLR_opt_ls_tmp)  
+          }
+        }else if(HLR_opt_ls$optim_method == "nl-optim"){
+          optlst  <- nloptr::slsqp(bs, fn = mclike, gr = dmclike, lower = lowb, upper = uppb, HLR_opt_ls = HLR_opt_ls_tmp)  
+        }
         bnew    <- optlst$par
         f       <- optlst$value
         beta[1:(k+1),j] <- bnew
@@ -214,10 +235,10 @@ HLRparamSearch <- function(gx, gp, gq, b, null, HLR_opt_ls){
           nw <- nw+1
         }
         drawsLs[[j]] <- draws
-        bs <- bnew
+        #bs <- bnew
       }
     }
-  }
+  } 
   output <- list(cs = cs, draws = drawsLs, coefficients = t(beta))
   return(output)
 }

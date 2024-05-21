@@ -17,15 +17,18 @@ HLRTest(Y, p, control = list())
   \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered. Default is \code{FALSE}.}
   \item{\code{qbound}: }{Indicator that bounds q by 1-p (default: \code{FALSE}).}
   \item{\code{gridsize}: }{Integer determining the number of grid points for markov switching parameters. Default is \code{20}.}
-  \item{\code{p_gridsize}: }{Integer determining the number of grid points for transition probabilities. Default is \code{12}.}
-  \item{\code{p_stepsize}: }{Double determining the step size for grid points of transition probabilities. This, along with \code{p_gridsize} will determine the bounds of search space. Default is \code{0.075}.}
+  \item{\code{pgrid_from}: }{Double determining the initial grid point for transition probabilities. Default is \code{0.1}.}
+  \item{\code{pgrid_by}: }{Double determining the step size for grid points of transition probabilities. This, along with \code{p_gridsize} will determine the bounds of search space. Default is \code{0.075}.}
+  \item{\code{pgrid_to}: }{Double determining the end grid point for transition probabilities. Default is \code{0.925}.}
   \item{\code{mugrid_from}: }{Double determining the minimum value of mean in second regime. Default is \code{0.1}.}
   \item{\code{mugrid_by}: }{Double determining the step size for grid points of mean in second regime. This, along with \code{gridsize} will determine the max value of mean in second regime. Default is \code{0.1}.}
   \item{\code{siggrid_from}: }{Double determining the minimum value of sigma in second regime (if \code{msvar = TRUE}). Default is \code{0.1}.}
   \item{\code{siggrid_by}: }{Double determining the step size for grid points of sigma in second regime. This, along with \code{gridsize} will determine the max value of sigma in second regime. Default is \code{0.1}.}
   \item{\code{N}: }{Integer determining the number of replications. Default is \code{1000}.}
   \item{\code{nwband}: }{Integer determining maximum bandwidth in Bartlett kernel. Critical values and p-values are returned for each bandwidth from \code{0:nwband} as suggested in Hansen (1996). Default is \code{4}.}
-  \item{\code{sig_min}: }{Double determining minimum value of sigma in first regime that will be used in non-linear optimization with fixed value of sigma in second regime. This is used to avoid negative variances. Default is \code{0.01}.}
+  \item{\code{theta_null_low}: }{Vector determining lower bound on parameters under the null hypothesis. Length of vector should be number of model coefficients + 1 for variance. Default is to only bound variance at \code{0.01}.}
+  \item{\code{theta_null_upp}: }{Vector determining upper bound on parameters under the null hypothesis. Length of vector should be number of model coefficients + 1 for variance. Default is to no bounds (i.e. \code{Inf}).}
+  \item{\code{optim_method}: }{String determining the type of optimization procedure used. Allowed options are "gp-optim" for general purpose optimization using \code{\link{optim}} from \code{\link{stats}} or "nl-optim" using \code{\link{slsqp}} from \code{\link{nloptr}}. Default is "gp-optim".}
 }}
 }
 \value{

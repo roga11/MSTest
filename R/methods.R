@@ -403,7 +403,7 @@ thetaSE <- function(mdl){
   info_mat <- solve(-Hess)
   nearPD_used <- FALSE
   if ((all(is.na(Hess)==FALSE)) & (any(diag(info_mat)<0))){
-    info_mat <- lmf::nearPD(info_mat)
+    info_mat <- pracma::nearest_spd(info_mat)
     nearPD_used <- TRUE
   }
   mdl$Hess <- Hess
@@ -422,8 +422,8 @@ thetaSE <- function(mdl){
 #' @param k integer determining the number of regimes
 #' @param optim_options List containing 
 #' \itemize{
-#'  \item{\code{maxit}: }{maximum number of iterations.}
-#'  \item{\code{thtol}: }{convergence criterion.}
+#'  \item{maxit: }{maximum number of iterations.}
+#'  \item{thtol: }{convergence criterion.}
 #'}
 #'
 #' @return List with model attributes
@@ -511,8 +511,8 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 #' @param k integer determining the number of regimes
 #' @param optim_options List containing 
 #' \itemize{
-#'  \item{\code{maxit}: }{maximum number of iterations.}
-#'  \item{\code{thtol}: }{convergence criterion.}
+#'  \item{maxit: }{maximum number of iterations.}
+#'  \item{thtol: }{convergence criterion.}
 #'}
 #'
 #' @return List with model attributes
@@ -596,8 +596,8 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 #' @param k integer determining the number of regimes
 #' @param optim_options List containing 
 #' \itemize{
-#'  \item{\code{maxit}: }{maximum number of iterations.}
-#'  \item{\code{thtol}: }{convergence criterion.}
+#'  \item{maxit: }{maximum number of iterations.}
+#'  \item{thtol: }{convergence criterion.}
 #'}
 #'
 #' @return List with model attributes
@@ -895,10 +895,11 @@ print.CHPTest <- function(x, digits = getOption("digits"), ...){
   cat(paste("\nAIC = "),x$mdl_h0$AIC)
   cat(paste("\nBIC = "),x$mdl_h0$BIC)
   cat("\n")
+  cat("\nCarrasco, Hu, & Ploberger (2014) Parameter Stability Test \n")
   if (x$control$msvar){
-    cat("\nCarrasco, Hu, & Ploberger (2014) Parameter Stability Test -  Switch in Mean and Variance\n")
+    cat("\n- Switch in Mean and Variance\n")
   }else{
-    cat("\nCarrasco, Hu, & Ploberger (2014) Parameter Stability Test -  Switch in Mean only\n") 
+    cat("\n- Switch in Mean only\n") 
   }
   out <- data.frame(rbind(c(x$supTS, x$supTS_cv, x$pval_supTS),
                           c(x$expTS, x$expTS_cv, x$pval_expTS)))

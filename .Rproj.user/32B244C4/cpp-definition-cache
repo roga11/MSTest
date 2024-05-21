@@ -612,5 +612,619 @@
             }
         ],
         "hidden": false
+    },
+    {
+        "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+        "file_last_write": 1666102166.0,
+        "definitions": [
+            {
+                "usr": "c:@F@cov2corr#$@N@arma@S@Mat>#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "cov2corr(arma::mat)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 20,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@covar_vech#$@N@arma@S@Mat>#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "covar_vech(arma::mat)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 38,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@covar_unvech#$@N@arma@S@Col>#d#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "covar_unvech(arma::vec, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 66,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@randP#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "randP(int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 93,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@limP#$@N@arma@S@Mat>#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "limP(arma::mat)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 115,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@ts_lagged#$@N@arma@S@Mat>#d#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "ts_lagged(arma::mat, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 148,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@paramList_MSARmdl#$@N@arma@S@Col>#d#I#I#b#b#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "paramList_MSARmdl(arma::vec, int, int, bool, bool)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 180,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@paramList_MSVARmdl#$@N@arma@S@Col>#d#I#I#I#b#b#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "paramList_MSVARmdl(arma::vec, int, int, int, bool, bool)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 236,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@calcResid_MSARmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#$@N@arma@S@Mat>#d#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "calcResid_MSARmdl(Rcpp::List, arma::mat, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 313,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@calcResid_MSVARmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S0_#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "calcResid_MSVARmdl(Rcpp::List, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 351,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@initVals_HMmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "initVals_HMmdl(Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 399,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@initVals_MSARmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "initVals_MSARmdl(Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 462,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@initVals_MSVARmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "initVals_MSVARmdl(Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 511,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@MCpval#d#$@N@arma@S@Col>#d#$@N@Rcpp@S@String#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "MCpval(double, arma::vec, Rcpp::String)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 571,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@randSN#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "randSN(int, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 605,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@simuAR#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "simuAR(Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 634,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@simuMSAR#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "simuMSAR(Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 692,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@simuVAR#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "simuVAR(Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 792,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@simuMSVAR#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "simuMSVAR(Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 862,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@simuNorm#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "simuNorm(Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 972,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@simuHMM#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "simuHMM(Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 1024,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@logLike_Nmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "logLike_Nmdl(arma::vec, Rcpp::List)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 1110,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@logLike_ARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "logLike_ARmdl(arma::vec, Rcpp::List)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 1147,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@logLike_VARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "logLike_VARmdl(arma::vec, Rcpp::List)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 1176,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@logLike_HMmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "logLike_HMmdl(arma::vec, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 1225,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@logLike_HMmdl_min#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "logLike_HMmdl_min(arma::vec, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 1312,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@logLike_MSARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "logLike_MSARmdl(arma::vec, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 1332,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@logLike_MSARmdl_min#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "logLike_MSARmdl_min(arma::vec, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 1413,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@logLike_MSVARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "logLike_MSVARmdl(arma::vec, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 1434,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@logLike_MSVARmdl_min#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "logLike_MSVARmdl_min(arma::vec, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 1557,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@ExpectationM_HMmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "ExpectationM_HMmdl(arma::vec, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 1578,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@ExpectationM_MSARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "ExpectationM_MSARmdl(arma::vec, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 1697,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@ExpectationM_MSVARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "ExpectationM_MSVARmdl(arma::vec, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 1809,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@EMaximization_HMmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S1_#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "EMaximization_HMmdl(arma::vec, Rcpp::List, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 1928,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@EMaximization_MSARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S1_#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "EMaximization_MSARmdl(arma::vec, Rcpp::List, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 2052,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@EMaximization_MSVARmdl#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S1_#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "EMaximization_MSVARmdl(arma::vec, Rcpp::List, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 2192,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@EMiter_HMmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S0_#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "EMiter_HMmdl(Rcpp::List, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 2377,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@EMiter_MSARmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S0_#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "EMiter_MSARmdl(Rcpp::List, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 2425,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@EMiter_MSVARmdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#S0_#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "EMiter_MSVARmdl(Rcpp::List, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 2475,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@HMmdl_em#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#S1_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "HMmdl_em(arma::vec, Rcpp::List, int, Rcpp::List)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 2528,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@MSARmdl_em#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#S1_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "MSARmdl_em(arma::vec, Rcpp::List, int, Rcpp::List)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 2571,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@MSVARmdl_em#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#S1_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "MSVARmdl_em(arma::vec, Rcpp::List, int, Rcpp::List)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.cpp",
+                "line": 2613,
+                "column": 6,
+                "hidden": false
+            }
+        ],
+        "hidden": false
+    },
+    {
+        "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods.h",
+        "file_last_write": 1666103117.0,
+        "definitions": [],
+        "hidden": false
+    },
+    {
+        "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_CHPTest.cpp",
+        "file_last_write": 1677616152.0,
+        "definitions": [
+            {
+                "usr": "c:@F@calc_mu2t_mv#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#S0_#$@N@arma@S@Col>#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "calc_mu2t_mv(Rcpp::List, double, Rcpp::List, arma::vec)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_CHPTest.cpp",
+                "line": 27,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@calc_mu2t#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#S0_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "calc_mu2t(Rcpp::List, double, Rcpp::List)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_CHPTest.cpp",
+                "line": 90,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@chpStat#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#S0_#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "chpStat(Rcpp::List, double, Rcpp::List, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_CHPTest.cpp",
+                "line": 127,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@bootCV#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "bootCV(Rcpp::List, double, int, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_CHPTest.cpp",
+                "line": 233,
+                "column": 11,
+                "hidden": false
+            }
+        ],
+        "hidden": false
+    },
+    {
+        "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
+        "file_last_write": 1675359244.0,
+        "definitions": [
+            {
+                "usr": "c:@F@simuMdl#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#I#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "simuMdl(Rcpp::List, int, int, int, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
+                "line": 24,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@mdledit#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#$@N@arma@S@Col>#d#I#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "mdledit(Rcpp::List, arma::vec, int, int, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
+                "line": 77,
+                "column": 6,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@compu_tstat#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#d#I#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "compu_tstat(arma::vec, Rcpp::List, double, int, int, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
+                "line": 137,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@LR_samp_dist#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#I#I#S0_#S0_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "LR_samp_dist(Rcpp::List, int, int, int, Rcpp::List, Rcpp::List)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
+                "line": 188,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@MMCLRpval_fun#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#d#I#I#I#d#b#d#S1_#S1_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "MMCLRpval_fun(arma::vec, Rcpp::List, int, double, int, int, int, double, bool, double, Rcpp::List, Rcpp::List)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
+                "line": 247,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@MMCLRpval_fun_min#$@N@arma@S@Col>#d#$@N@Rcpp@S@Vector>#VI19#@N@Rcpp@ST>1#T@PreserveStorage#I#d#I#I#I#d#b#d#S1_#S1_#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "MMCLRpval_fun_min(arma::vec, Rcpp::List, int, double, int, int, int, double, bool, double, Rcpp::List, Rcpp::List)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_LRTest.cpp",
+                "line": 342,
+                "column": 8,
+                "hidden": false
+            }
+        ],
+        "hidden": false
+    },
+    {
+        "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
+        "file_last_write": 1665894099.0,
+        "definitions": [
+            {
+                "usr": "c:@F@calc_DLmoments#$@N@arma@S@Col>#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "calc_DLmoments(arma::vec)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
+                "line": 21,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@sim_DLmoments#I#I#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "sim_DLmoments(int, int)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
+                "line": 65,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@combine_stat#$@N@arma@S@Mat>#d#S0_#$@N@std@N@__1@S@basic_string>#C#$@N@std@N@__1@S@char_traits>#C#$@N@std@N@__1@S@allocator>#C#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "combine_stat(arma::mat, arma::mat, std::string)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
+                "line": 100,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@approx_dist_loop#$@N@arma@S@Mat>#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "approx_dist_loop(arma::mat)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
+                "line": 139,
+                "column": 11,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@DLMMCpval_fun#$@N@arma@S@Col>#d#S0_#$@N@arma@S@Mat>#d#S1_#S0_#$@N@Rcpp@S@String#b#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "DLMMCpval_fun(arma::vec, arma::vec, arma::mat, arma::mat, arma::vec, Rcpp::String, bool, double)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
+                "line": 174,
+                "column": 8,
+                "hidden": false
+            },
+            {
+                "usr": "c:@F@DLMMCpval_fun_min#$@N@arma@S@Col>#d#S0_#$@N@arma@S@Mat>#d#S1_#S0_#$@N@Rcpp@S@String#b#d#",
+                "kind": 6,
+                "parent_name": "",
+                "name": "DLMMCpval_fun_min(arma::vec, arma::vec, arma::mat, arma::mat, arma::vec, Rcpp::String, bool, double)",
+                "file": "/Users/grodriguezrondon/Library/CloudStorage/Dropbox/Mac/Documents/Res/structbreak/MSTest_rpack_v2/MSTest/src/methods_MomentTests.cpp",
+                "line": 237,
+                "column": 8,
+                "hidden": false
+            }
+        ],
+        "hidden": false
     }
 ]

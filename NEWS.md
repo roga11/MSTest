@@ -6,6 +6,10 @@
 * DLMMCTest() now has the option to add lower and upper bounds for autoregressive coefficients to help reduce errors from polyroot() when optimizing. DLMMC_bounds() has been created for this. 
 * Fixed error in bootCV() used by CHPTest(). When NaN occurs, new draw is used. 
 * Added option to allow user to specify 'mle_theta_low' and 'mle_theta_upp' which determine the lower and upper bounds for optimization in HMmdl(), MSARmdl(), and MSVARmdl() when "method='MLE'" is specified.
+* print.CHPTest() now used two lines to print description.
+* In HLRTest() user can now define entire grid for transition probabilities. 
+* added new optional optimization routine for HLRparamSearch() (nloptr::slsqp() can be used now).
+* Fixed bug in HLRTest() where grid for sigma options are properly used now. 
 
 # MSTest 0.1.1
 
