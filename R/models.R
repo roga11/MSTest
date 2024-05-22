@@ -56,7 +56,7 @@ Nmdl <- function(Y, control = list()){
   }
   # ----- Obtain variables of interest
   resid       <- Y - matrix(1, n, 1)%*%t(as.matrix(mu))
-  sigma       <- (t(resid)%*%resid)/(n-1)
+  sigma       <- crossprod(resid)/(n-1)
   stdev       <- sqrt(diag(sigma))
   theta       <- c(mu,covar_vech(sigma))
   # theta indicators
@@ -153,12 +153,12 @@ ARmdl <- function(Y, p, control = list()){
   if (con$const==TRUE){
     X     <- cbind(1, x)
     npar  <- npar + 1
-    b0    <- solve(t(X)%*%X)%*%t(X)%*%y
+    b0    <- crossprod(solve(crossprod(X)),crossprod(X,y))
     phi   <- b0[(2:npar),1]
     inter <- b0[1,1]
   }else{
     X     <- x
-    b0    <- solve(t(X)%*%X)%*%t(X)%*%y
+    b0    <- crossprod(solve(crossprod(X)),crossprod(X,y))
     phi   <- b0
     inter <- 0
   }
@@ -166,7 +166,7 @@ ARmdl <- function(Y, p, control = list()){
   phisum  <- sum(phi)
   mu      <- inter/(1-phisum)
   resid   <- y - X%*%b0
-  stdev   <- sqrt((t(resid)%*%resid)/(n-1))
+  stdev   <- sqrt((crossprod(resid))/(n-1))
   sigma   <- stdev^2
   theta   <- as.matrix(c(mu,sigma,phi))
   roots   <- all(Mod(as.complex(polyroot(c(1,-phi))))>1)
@@ -265,12 +265,12 @@ VARmdl <- function(Y, p, control = list()){
   # ----- estimate model
   if (con$const==TRUE){
     X     <- cbind(1,x)
-    b0    <- solve(t(X)%*%X)%*%t(X)%*%y
+    b0    <- crossprod(solve(crossprod(X)),crossprod(X,y))
     inter <- t(b0[1,])
     phi   <- t(b0[-1,])
   }else{
     X     <- x
-    b0    <- solve(t(X)%*%X)%*%t(X)%*%y
+    b0    <- crossprod(solve(crossprod(X)),crossprod(X,y))
     inter <- matrix(0,q,1)
     phi   <- t(b0)
   }
@@ -280,7 +280,7 @@ VARmdl <- function(Y, p, control = list()){
   mu_tmp      <- solve(diag(q*p)-Fmat)%*%as.matrix(c(inter,rep(0,q*(p-1))))
   mu          <- mu_tmp[(1:(q))]
   resid       <- y - X%*%b0
-  sigma       <- (t(resid)%*%resid)/(n-1)
+  sigma       <- (crossprod(resid))/(n-1)
   stdev       <- sqrt(diag(sigma))
   theta       <- c(mu,covar_vech(sigma),c(t(phi)))
   # theta indicators

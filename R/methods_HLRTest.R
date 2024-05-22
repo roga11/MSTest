@@ -223,14 +223,14 @@ HLRparamSearch <- function(gx, gp, gq, b, null, HLR_opt_ls){
         }
         diff <- null - clike(bnew, HLR_opt_ls_tmp)
         diff <- diff - mean(diff)
-        se <- as.numeric(sqrt(t(diff)%*%diff))
+        se <- as.numeric(sqrt(crossprod(diff)))
         diff <- (diff/se)
         c[j] <- mnull - f
         cs[j] <- ((mnull-f)/se)
         diffe <- matrix(0, nrow = 1, ncol = reps)
         nw <- 0
         while (nw<=nwband){
-          diffe <- diffe+t(diff)%*%eps[(1+nw):(ny+nw),]
+          diffe <- diffe+crossprod(diff,eps[(1+nw):(ny+nw),])
           draws[(1+nw),] <- apply(rbind(draws[(1+nw),],(diffe/sqrt(1+nw))),2,max)
           nw <- nw+1
         }
