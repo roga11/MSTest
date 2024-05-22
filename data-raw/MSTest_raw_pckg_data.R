@@ -1,7 +1,7 @@
 #' -----------------------------------------------------------------------------
-#' Rodriguez Rondon & Dufour 2022 GNP data
+#' Rodriguez-Rondon & Dufour 2024 GNP data
 rm(list=ls())
-USGNP <- read.table('inst/extdata/GNP22Q3.csv', sep = ',', header = T)
+USGNP <- read.table('inst/extdata/GNP23.csv', sep = ',', header = T)
 USGNP[2:nrow(USGNP),3] <- diff(log(USGNP[,2]))*100
 USGNP <- USGNP[2:nrow(USGNP), c(1,3,2)]
 colnames(USGNP) <- c('DATE','GNP_logdiff','GNP')

@@ -72,8 +72,8 @@ Nmdl <- function(Y, control = list()){
   # get log-likelihood
   out$logLike <- logLikelihood(out)
   # get information criterion
-  out$AIC <- aic(out$logLike, length(out$theta))
-  out$BIC <- bic(out$logLike, out$n, length(out$theta))
+  out$AIC <- AIC(out)
+  out$BIC <- BIC(out)
   # names
   names(out$theta) <- c(paste0("mu_",(1:q)),
                         paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))))
@@ -186,8 +186,8 @@ ARmdl <- function(Y, p, control = list()){
   # get log-likelihood
   out$logLike <- logLikelihood(out)
   # get information criterion
-  out$AIC <- aic(out$logLike, length(out$theta))
-  out$BIC <- bic(out$logLike, out$n, length(out$theta))
+  out$AIC <- AIC(out)
+  out$BIC <- BIC(out)
   # names 
   names(out$theta) <- c(c("mu","sig"), paste0("phi_",(1:p)))
   # get standard errors if 'con$getSE' is 'TRUE'
@@ -298,8 +298,8 @@ VARmdl <- function(Y, p, control = list()){
   # get log-likelihood
   out$logLike <- logLikelihood(out)
   # get information criterion
-  out$AIC <- aic(out$logLike, length(out$theta))
-  out$BIC <- bic(out$logLike, out$n, length(out$theta))
+  out$AIC <- AIC(out)
+  out$BIC <- BIC(out)
   # names
   phi_n_tmp <- expand.grid((1:q),(1:p),(1:q))
   names(out$theta) <- c(paste0("mu_",(1:q)),
@@ -383,7 +383,7 @@ HMmdl <- function(Y, k, control = list()){
               msvar = TRUE,
               init_theta = NULL,
               method = "EM",
-              maxit = 10000,
+              maxit = 1000,
               thtol = 1.e-6, 
               maxit_converge = 500, 
               use_diff_init = 1,
@@ -501,8 +501,8 @@ HMmdl <- function(Y, k, control = list()){
               n = init_mdl$n, q = q, p = 0, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, St = output$St,
               deltath = output$deltath,  iterations = output$iterations, theta_0 = output$theta_0,
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, control = con)
-  out$AIC <- aic(out$logLike, length(out$theta))
-  out$BIC <- bic(out$logLike, out$n, length(out$theta))
+  out$AIC <- AIC(out)
+  out$BIC <- BIC(out)
   stdev <- list(k)
   for (xk in 1:k){
     stdev[[xk]] <- diag(sqrt(diag(out$sigma[[xk]])))
@@ -610,7 +610,7 @@ MSARmdl <- function(Y, p, k, control = list()){
               msvar = TRUE,
               init_theta = NULL,
               method = "EM",
-              maxit = 10000, 
+              maxit = 1000, 
               thtol = 1.e-6, 
               maxit_converge = 500, 
               use_diff_init = 1, 
@@ -740,8 +740,8 @@ MSARmdl <- function(Y, p, k, control = list()){
               n = init_mdl$n, p = p, q = 1, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, 
               St = output$St, deltath = output$deltath, iterations = output$iterations, theta_0 = output$theta_0, 
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, control = con)
-  out$AIC <- aic(out$logLike, length(out$theta))
-  out$BIC <- bic(out$logLike, out$n, length(out$theta))
+  out$AIC <- AIC(out)
+  out$BIC <- BIC(out)
   # names 
   names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_", (1:k)) else "mu",
                         if (con$msvar==TRUE) paste0("sig_", (1:k)) else "sig",
@@ -839,7 +839,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
               msvar = TRUE,
               init_theta = NULL,
               method = "EM",
-              maxit = 10000,
+              maxit = 1000,
               thtol = 1.e-6, 
               maxit_converge = 500, 
               use_diff_init = 1,
@@ -964,8 +964,8 @@ MSVARmdl <- function(Y, p, k, control = list()){
               theta_phi_ind = theta_phi_ind, theta_P_ind = theta_P_ind, stationary = NULL, n = init_mdl$n, p = p, q = q, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, 
               St = output$St, deltath = output$deltath,  iterations = output$iterations, theta_0 = output$theta_0,
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, control = con)
-  out$AIC <- aic(out$logLike, length(out$theta))
-  out$BIC <- bic(out$logLike, out$n, length(out$theta))
+  out$AIC <- AIC(out)
+  out$BIC <- BIC(out)
   stdev <- list(k)
   for (xk in 1:k){
     stdev[[xk]] <- diag(sqrt(diag(out$sigma[[xk]])))

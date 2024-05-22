@@ -9,11 +9,11 @@ initVals_MSARmdl(mdl, k)
 \arguments{
 \item{\code{mdl}}{List with parameter values of simple (one-regime) autoregressive model. This includes:
 \itemize{
-  \item{\code{phi}: }{Vector autoregressive coefficients.}
-  \item{\code{mu}: }{Mean of process.}
-  \item{\code{stdev}: }{Standard deviation.}
-  \item{\code{msmu}: }{Boolean indicator. If \code{TRUE}, mean is function of markov process. If \code{FALSE}, mean is constant across regimes.}
-  \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, standard deviation is function of markov process. If \code{FALSE}, standard deviation is constant across regimes.}
+  \item{phi: }{Vector autoregressive coefficients.}
+  \item{mu: }{Mean of process.}
+  \item{stdev: }{Standard deviation.}
+  \item{msmu: }{Boolean indicator. If \code{TRUE}, mean is function of markov process. If \code{FALSE}, mean is constant across regimes.}
+  \item{msvar: }{Boolean indicator. If \code{TRUE}, standard deviation is function of markov process. If \code{FALSE}, standard deviation is constant across regimes.}
 }}
 
 \item{\code{k}}{Number of regimes.}

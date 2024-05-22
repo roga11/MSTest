@@ -10,6 +10,9 @@
 * In HLRTest() user can now define entire grid for transition probabilities. 
 * added new optional optimization routine for HLRparamSearch() (nloptr::slsqp() can be used now).
 * Fixed bug in HLRTest() where grid for sigma options are properly used now. 
+* Now using nearest_spd() from pracma instead of nearPD() from lmf package.
+* Updated USGNP dataset to include data up to end of 2023.  
+* Updated `DESCRIPTION` file for changed dependencies and new version.
 
 # MSTest 0.1.1
 

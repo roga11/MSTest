@@ -15,8 +15,8 @@ HMmdl_mle(theta_0, mdl_in, k, optim_options)
 
 \item{optim_options}{List containing 
 \itemize{
- \item{\code{maxit}: }{maximum number of iterations.}
- \item{\code{thtol}: }{convergence criterion.}
+ \item{maxit: }{maximum number of iterations.}
+ \item{thtol: }{convergence criterion.}
 }}
 }
 \value{

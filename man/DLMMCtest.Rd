@@ -13,42 +13,42 @@ DLMMCTest(Y, p, control = list())
 
 \item{control}{List with test procedure options including: 
 \itemize{
-  \item{\code{N}: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
-  \item{\code{simdist_N}: }{Integer determining the number of simulations for CDF distribution approximation. Default is set to \code{10000}.}
-  \item{\code{getSE}: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated. Default is \code{TRUE}.}
-  \item{\code{eps}: }{Fixed positive constant that does not depend on \code{T} used to determine lower and upper bounds on consistent set considered for nuisance parameter space.}
-  \item{\code{CI_union}: }{Boolean indicator determining if union between \code{eps} and confidence interval is used to determine lower and upper bound on consistent set considered for nuisance parameter space. If \code{TRUE} union is used and if \code{FALSE} only \code{eps} is used. Note that if standard errors obtained are not finite then only \code{eps} is used. Default is \code{FALSE}.}       
-  \item{\code{lambda}: }{Numeric value for penalty on stationary constraint not being met. Default is \code{100}.}
-  \item{\code{stationary_ind}: }{Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.}
-  \item{\code{phi_low}: }{Vector with lower bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
-  \item{\code{phi_upp}: }{Vector with upper bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
-  \item{\code{optim_type}: }{String determining type of numerical optimization algorithm to use. Available options are: "\code{\link{pso}}", ""\code{\link{GenSA}}", "\code{\link{GA}}". Default is "\code{\link{GenSA}}".}
-  \item{\code{silence}: }{Boolean indicator determining if optimization updates should be silenced if \code{TRUE} or not if \code{FALSE}. Default is \code{FALSE}.}
-  \item{\code{threshold_stop}: }{Numeric value determining the maximum possible p-value attainable. Default is \code{1}.}
-  \item{\code{type_control}: }{List containing other optimization options specific to the numerical optimization algorithm used. This includes maximum number of iterations which is \code{200} b y default. For other options see documentation of numerical algorithm chosen.}
+  \item{N: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
+  \item{simdist_N: }{Integer determining the number of simulations for CDF distribution approximation. Default is set to \code{10000}.}
+  \item{getSE: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated. Default is \code{TRUE}.}
+  \item{eps: }{Fixed positive constant that does not depend on \code{T} used to determine lower and upper bounds on consistent set considered for nuisance parameter space.}
+  \item{CI_union: }{Boolean indicator determining if union between \code{eps} and confidence interval is used to determine lower and upper bound on consistent set considered for nuisance parameter space. If \code{TRUE} union is used and if \code{FALSE} only \code{eps} is used. Note that if standard errors obtained are not finite then only \code{eps} is used. Default is \code{FALSE}.}       
+  \item{lambda: }{Numeric value for penalty on stationary constraint not being met. Default is \code{100}.}
+  \item{stationary_ind: }{Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.}
+  \item{phi_low: }{Vector with lower bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
+  \item{phi_upp: }{Vector with upper bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
+  \item{optim_type: }{String determining type of numerical optimization algorithm to use. Available options are: "\code{\link{pso}}", ""\code{\link{GenSA}}", "\code{\link{GA}}". Default is "\code{\link{GenSA}}".}
+  \item{silence: }{Boolean indicator determining if optimization updates should be silenced if \code{TRUE} or not if \code{FALSE}. Default is \code{FALSE}.}
+  \item{threshold_stop: }{Numeric value determining the maximum possible p-value attainable. Default is \code{1}.}
+  \item{type_control: }{List containing other optimization options specific to the numerical optimization algorithm used. This includes maximum number of iterations which is \code{200} b y default. For other options see documentation of numerical algorithm chosen.}
 }}
 }
 \value{
 List of class \code{DLMCTest} (\code{S3} object) with attributes including: 
 \itemize{
-  \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} if \code{p>0} or \code{Nmdl} otherwise (\code{S3} objects). See \code{\link{ARmdl}} or \code{\link{Nmdl}}.}    
-  \item{\code{theta_max_min}: }{Value of nuisance parameters when min version of p-value is maximized as discussed in Dufour & Luger (2017) MMC procedure.}
-  \item{\code{theta_max_prod}: }{Value of nuisance parameters when prod version of p-value is maximized as discussed in Dufour & Luger (2017) MMC procedure.}
-  \item{\code{theta_low}: }{Lower bound on nuisance parameter values used when searching for maximum p-value.}
-  \item{\code{theta_upp}: }{Upper bound on nuisance parameter values used when searching for maximum p-value.}
-  \item{\code{S0_min}: }{A (\code{1 x 4})) matrix containing the four moment-based test statistics defined in (\code{11}) - (\code{14}) in Dufour & Luger (2017) when \code{theta_min} is used.}
-  \item{\code{S0_prod}: }{A (\code{1 x 4})) matrix containing the four moment-based test statistics defined in (\code{11}) - (\code{14}) in Dufour & Luger (2017) when \code{theta_prod} is used.}
-  \item{\code{F0_min}: }{Test statistic value for min version of Maximized Monte Carlo moment-based test.}
-  \item{\code{F0_prod}: }{Test statistic value for prod version of Maximized Monte Carlo moment-based test.}
-  \item{\code{FN_min}: }{A (\code{N x 1}) vector with simulated test statistics for min version of Maximized Monte Carlo moment-based test under null hypothesis.}
-  \item{\code{FN_prod}: }{A (\code{N x 1}) vector with simulated test statistics for prod version of Maximized Monte Carlo moment-based test under null hypothesis.}
-  \item{\code{pval_min}: }{Maximum p-value for min version of Maximized Monte Carlo moment-based test.}
-  \item{\code{pval_prod}: }{Maximum p-value for prod version of Local Monte Carlo moment-based test.}
-  \item{\code{FN_min_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for min version of Local Monte Carlo moment-based test.}
-  \item{\code{FN_prod_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for prod version of Local Monte Carlo moment-based test.}
-  \item{\code{control}: }{List with test procedure options used.}
-  \item{\code{optim_min_output}: }{List with optimization output for min version of Maximized Monte Carlo moment-based test.}
-  \item{\code{optim_prod_output}: }{List with optimization output for prod version of Maximized Monte Carlo moment-based test.}
+  \item{mdl_h0: }{List with restricted model attributes. This will be of class \code{ARmdl} if \code{p>0} or \code{Nmdl} otherwise (\code{S3} objects). See \code{\link{ARmdl}} or \code{\link{Nmdl}}.}    
+  \item{theta_max_min: }{Value of nuisance parameters when min version of p-value is maximized as discussed in Dufour & Luger (2017) MMC procedure.}
+  \item{theta_max_prod: }{Value of nuisance parameters when prod version of p-value is maximized as discussed in Dufour & Luger (2017) MMC procedure.}
+  \item{theta_low: }{Lower bound on nuisance parameter values used when searching for maximum p-value.}
+  \item{theta_upp: }{Upper bound on nuisance parameter values used when searching for maximum p-value.}
+  \item{S0_min: }{A (\code{1 x 4})) matrix containing the four moment-based test statistics defined in (\code{11}) - (\code{14}) in Dufour & Luger (2017) when \code{theta_min} is used.}
+  \item{S0_prod: }{A (\code{1 x 4})) matrix containing the four moment-based test statistics defined in (\code{11}) - (\code{14}) in Dufour & Luger (2017) when \code{theta_prod} is used.}
+  \item{F0_min: }{Test statistic value for min version of Maximized Monte Carlo moment-based test.}
+  \item{F0_prod: }{Test statistic value for prod version of Maximized Monte Carlo moment-based test.}
+  \item{FN_min: }{A (\code{N x 1}) vector with simulated test statistics for min version of Maximized Monte Carlo moment-based test under null hypothesis.}
+  \item{FN_prod: }{A (\code{N x 1}) vector with simulated test statistics for prod version of Maximized Monte Carlo moment-based test under null hypothesis.}
+  \item{pval_min: }{Maximum p-value for min version of Maximized Monte Carlo moment-based test.}
+  \item{pval_prod: }{Maximum p-value for prod version of Local Monte Carlo moment-based test.}
+  \item{FN_min_cv: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for min version of Local Monte Carlo moment-based test.}
+  \item{FN_prod_cv: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for prod version of Local Monte Carlo moment-based test.}
+  \item{control: }{List with test procedure options used.}
+  \item{optim_min_output: }{List with optimization output for min version of Maximized Monte Carlo moment-based test.}
+  \item{optim_prod_output: }{List with optimization output for prod version of Maximized Monte Carlo moment-based test.}
 }
 }
 \description{

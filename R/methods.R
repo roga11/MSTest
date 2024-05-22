@@ -21,40 +21,6 @@ companionMat <- function(phi, p, q){
   return(compMat)
 }
 
-#' @title Compute AIC
-#'
-#' @description This function computes the AIC when given the log-likelihood and number of parameters.
-#'
-#' @param logLike log-likelihood of estimated model.
-#' @param param_len number of parameters in model.
-#'
-#' @return AIC value. 
-#' 
-#' @keywords internal
-#' 
-#' @export
-aic <- function(logLike, param_len){
-  aic_val <- -2*(logLike) + 2*param_len
-  return(aic_val)
-}
-
-#' @title Compute BIC
-#'
-#' @description This function computes the BIC when given the log-likelihood, number of observations, and number of parameters.
-#'
-#' @param logLike log-likelihood of estimated model.
-#' @param n number of time series observations.
-#' @param param_len number of parameters in model.
-#'
-#' @return BIC value.
-#' 
-#' @keywords internal
-#' 
-#' @export
-bic <- function(logLike, n, param_len){
-  bic_val <- -param_len*log(n) -2*(logLike) 
-  return(bic_val)
-}
 
 #' @title Autoregressive transition matrix
 #'
@@ -163,6 +129,39 @@ argrid_MSVARmdl <- function(mu, sigma, k, ar, msmu, msvar){
   musig_out[["state_ind"]] <- as.matrix(state_indicator)
   return(musig_out)
 }
+
+#' @title Compute AIC
+#'
+#' @description This function computes the AIC for a given model.
+#'
+#' @param mdl List with model properties.
+#'
+#' @return AIC value. 
+#' 
+#' @keywords internal
+#' 
+#' @export
+AIC <- function(mdl){
+  aic_val <- -2*(mdl$logLike) + 2*length(mdl$theta)
+  return(aic_val)
+}
+
+#' @title Compute BIC
+#'
+#' @description This function computes the BIC for a given model.
+#'
+#' @param mdl List with model properties.
+#'
+#' @return BIC value.
+#' 
+#' @keywords internal
+#' 
+#' @export
+BIC <- function(mdl){
+  bic_val <- -length(mdl$theta)*log(mdl$n) -2*(mdl$logLike) 
+  return(bic_val)
+}
+
 
 #' @title Log likelihood  
 #' 

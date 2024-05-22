@@ -13,25 +13,25 @@ CHPTest(Y, p, control = list())
 
 \item{control}{List with test procedure options including: 
 \itemize{
-  \item{\code{N}: }{Integer determining the number of Bootstrap iterations. Default is set to \code{3000} as in paper.}
-  \item{\code{rho_b}: }{Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).}
-  \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
-  \item{\code{getSE}: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated. Default is \code{TRUE}.}
+  \item{N: }{Integer determining the number of Bootstrap iterations. Default is set to \code{3000} as in paper.}
+  \item{rho_b: }{Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).}
+  \item{msvar: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
+  \item{getSE: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated. Default is \code{TRUE}.}
 }}
 }
 \value{
 List of class \code{CHPTest} (\code{S3} object) with model attributes including: 
 \itemize{
-  \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} (\code{S3} object). See \code{\link{ARmdl}}.}
-  \item{\code{supTS}: }{supTS test statistic value.}
-  \item{\code{expTS}: }{expTS test statistic value.}
-  \item{\code{supTS_N}: }{A (\code{N x 1}) vector with simulated supTS test statistics under null hypothesis.}
-  \item{\code{expTS_N}: }{A (\code{N x 1}) vector with simulated expTS test statistics under null hypothesis.}
-  \item{\code{pval_supTS}: }{P-value for supTS version of parameter stability test.}
-  \item{\code{pval_expTS}: }{P-value for expTS version of parameter stability test.}
-  \item{\code{supTS_cv}: }{Vector with 90\%, 95\%, and 99\% bootstrap critical values for supTS version of parameter stability test.}
-  \item{\code{expTS_cv}: }{Vector with 90\%, 95\%, and 99\% bootstrap critical values for expTS version of parameter stability test.}
-  \item{\code{control}: }{List with test procedure options used.}
+  \item{mdl_h0: }{List with restricted model attributes. This will be of class \code{ARmdl} (\code{S3} object). See \code{\link{ARmdl}}.}
+  \item{supTS: }{supTS test statistic value.}
+  \item{expTS: }{expTS test statistic value.}
+  \item{supTS_N: }{A (\code{N x 1}) vector with simulated supTS test statistics under null hypothesis.}
+  \item{expTS_N: }{A (\code{N x 1}) vector with simulated expTS test statistics under null hypothesis.}
+  \item{pval_supTS: }{P-value for supTS version of parameter stability test.}
+  \item{pval_expTS: }{P-value for expTS version of parameter stability test.}
+  \item{supTS_cv: }{Vector with 90\%, 95\%, and 99\% bootstrap critical values for supTS version of parameter stability test.}
+  \item{expTS_cv: }{Vector with 90\%, 95\%, and 99\% bootstrap critical values for expTS version of parameter stability test.}
+  \item{control: }{List with test procedure options used.}
 }
 }
 \description{

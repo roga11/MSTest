@@ -58,7 +58,7 @@ LR_samp_dist_par <- function(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_contr
 estimMdl <- function(Y, p, q, k, control = list()){
   if ((k==1) & (p==0)){
     # Normally distributed model
-    control$const <- TRUE # forced to be TRUE for testing
+    control$const <- TRUE # forced to be TRUE for hypothesis testing
     mdl <- Nmdl(Y, control)
     mdl$converged = TRUE
   }else if ((k>1) & (p==0)){
@@ -67,7 +67,7 @@ estimMdl <- function(Y, p, q, k, control = list()){
     mdl$converged = (mdl$deltath <= mdl$control$thtol)
   }else if ((k==1) & (q==1) & (p>0)){
     # Autoregressive model
-    control$const <- TRUE # forced to be TRUE for testing
+    control$const <- TRUE # forced to be TRUE for hypothesis testing
     mdl <- ARmdl(Y, p, control)
     mdl$converged = TRUE
   }else if ((k>1) & (q==1) & (p>0)){
@@ -76,7 +76,7 @@ estimMdl <- function(Y, p, q, k, control = list()){
     mdl$converged = (mdl$deltath <= mdl$control$thtol)
   }else if ((k==1) & (q>1) & (p>0)){
     # Vector autoregressive model
-    control$const <- TRUE # forced to be TRUE for testing
+    control$const <- TRUE # forced to be TRUE for hypothesis testing
     mdl <- VARmdl(Y, p, control)
     mdl$converged = TRUE
   }else if ((k>1) & (q>1) & (p>0)){
@@ -326,7 +326,8 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
               mdl_h0_control = list(getSE = TRUE),
               mdl_h1_control = list(getSE = TRUE),
               use_diff_init_sim = NULL,
-              type_control = list(maxit = 200))
+              maxit = 50,
+              type_control = list())
   # ----- Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
@@ -378,6 +379,7 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
     con$type_control$trace.stats <- TRUE
     con$type_control$trace <- as.numeric(con$silence==FALSE)
     con$type_control$abstol <- -con$threshold_stop
+    con$type_control$maxf <- con$maxit
     # begin optimization
     mmc_out   <- pso::psoptim(par = theta_0, fn = MMCLRpval_fun_min, lower = theta_low, upper = theta_upp, 
                               gr = NULL, control = con$type_control,
@@ -392,6 +394,7 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
     con$type_control$trace.mat <- TRUE
     con$type_control$verbose <- con$silence==FALSE
     con$type_control$threshold.stop <- -con$threshold_stop
+    con$type_control$max.call <- con$maxit
     # begin optimization
     mmc_out   <- GenSA::GenSA(par = theta_0, fn = MMCLRpval_fun_min, lower = theta_low, upper = theta_upp, 
                               control = con$type_control,
@@ -409,7 +412,7 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
                       thtol = mdl_h1$control$thtol, mdl_h0_control = mdl_h0_null_cont, 
                       mdl_h1_control = mdl_h1_null_cont,
                       lower = theta_low, upper = theta_upp, 
-                      maxiter = con$type_control$maxit, maxFitness = con$threshold_stop, 
+                      maxiter = con$maxit, maxFitness = con$threshold_stop, 
                       monitor = (con$silence==FALSE), suggestions = t(theta_0))
     theta     <- as.matrix(mmc_out@solution[1,])
     pval      <- mmc_out@fitnessValue
@@ -423,8 +426,8 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
   names(theta_h1) <- names(mdl_h1$theta)
   mdl_h0_mmc <- mdledit(mdl_h0, theta_h0, p, q, k0)
   mdl_h0_mmc$logLike <- logLikelihood(mdl_h0_mmc)
-  mdl_h0_mmc$AIC <- aic(mdl_h0_mmc$logLike, length(theta_h0))
-  mdl_h0_mmc$BIC <- bic(mdl_h0_mmc$logLike, mdl_h0_mmc$n, length(theta_h0))
+  mdl_h0_mmc$AIC <- AIC(mdl_h0_mmc)
+  mdl_h0_mmc$BIC <- BIC(mdl_h0_mmc)
   if (mdl_h0$control$getSE==TRUE){
     mdl_h0_mmc <- thetaSE(mdl_h0_mmc)
   }

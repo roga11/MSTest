@@ -13,26 +13,26 @@ DLMCTest(Y, p, control = list())
 
 \item{control}{List with test procedure options including: 
 \itemize{
-  \item{\code{N}: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
-  \item{\code{simdist_N}: }{Integer determining the number of simulations for CDF distribution approximation. Default is set to \code{10000}.}
-  \item{\code{getSE}: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated. Default is \code{TRUE}.}
+  \item{N: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
+  \item{simdist_N: }{Integer determining the number of simulations for CDF distribution approximation. Default is set to \code{10000}.}
+  \item{getSE: }{Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated. Default is \code{TRUE}.}
 }}
 }
 \value{
 List of class \code{DLMCTest} (\code{S3} object) with attributes including: 
 \itemize{
-  \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} if \code{p>0} or \code{Nmdl} otherwise (\code{S3} objects). See \code{\link{ARmdl}} or \code{\link{Nmdl}}.}    
-  \item{\code{theta}: }{Value of nuisance parameters. Specifically, these are the consistent estimates of nuisance parameters as discussed in Dufour & Luger (2017) LMC procedure.}
-  \item{\code{S0}: }{A (\code{1 x 4})) matrix containing the four moment-based test statistics defined in (\code{11}) - (\code{14}) in Dufour & Luger (2017).}
-  \item{\code{F0_min}: }{Test statistic value for min version of Local Monte Carlo moment-based test.}
-  \item{\code{F0_prod}: }{Test statistic value for prod version of Local Monte Carlo moment-based test.}
-  \item{\code{FN_min}: }{A (\code{N x 1}) vector with simulated test statistics for min version of Local Monte Carlo moment-based test under null hypothesis.}
-  \item{\code{FN_prod}: }{A (\code{N x 1}) vector with simulated test statistics for prod version of Local Monte Carlo moment-based test under null hypothesis.}
-  \item{\code{pval_min}: }{P-value for min version of Local Monte Carlo moment-based test.}
-  \item{\code{pval_prod}: }{P-value for prod version of Local Monte Carlo moment-based test.}
-  \item{\code{FN_min_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for min version of Local Monte Carlo moment-based test.}
-  \item{\code{FN_prod_cv}: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for prod version of Local Monte Carlo moment-based test.}
-  \item{\code{control}: }{List with test procedure options used.}
+  \item{mdl_h0: }{List with restricted model attributes. This will be of class \code{ARmdl} if \code{p>0} or \code{Nmdl} otherwise (\code{S3} objects). See \code{\link{ARmdl}} or \code{\link{Nmdl}}.}    
+  \item{theta: }{Value of nuisance parameters. Specifically, these are the consistent estimates of nuisance parameters as discussed in Dufour & Luger (2017) LMC procedure.}
+  \item{S0: }{A (\code{1 x 4})) matrix containing the four moment-based test statistics defined in (\code{11}) - (\code{14}) in Dufour & Luger (2017).}
+  \item{F0_min: }{Test statistic value for min version of Local Monte Carlo moment-based test.}
+  \item{F0_prod: }{Test statistic value for prod version of Local Monte Carlo moment-based test.}
+  \item{FN_min: }{A (\code{N x 1}) vector with simulated test statistics for min version of Local Monte Carlo moment-based test under null hypothesis.}
+  \item{FN_prod: }{A (\code{N x 1}) vector with simulated test statistics for prod version of Local Monte Carlo moment-based test under null hypothesis.}
+  \item{pval_min: }{P-value for min version of Local Monte Carlo moment-based test.}
+  \item{pval_prod: }{P-value for prod version of Local Monte Carlo moment-based test.}
+  \item{FN_min_cv: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for min version of Local Monte Carlo moment-based test.}
+  \item{FN_prod_cv: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values for prod version of Local Monte Carlo moment-based test.}
+  \item{control: }{List with test procedure options used.}
 }
 }
 \description{

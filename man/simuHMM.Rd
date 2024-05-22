@@ -9,13 +9,13 @@ simuHMM(mdl_h0, burnin = 100L)
 \arguments{
 \item{mdl_h0}{List containing the following DGP parameters
 \itemize{
-  \item{\code{n}: }{Length of series.}
-  \item{\code{k}: }{Number of regimes.}
-  \item{\code{mu}: }{A (\code{k x q}) vector of means.}
-  \item{\code{sigma}: }{A (\code{q x q}) covariance matrix.}
-  \item{\code{q}: }{Number of series.}
-  \item{\code{P}: }{A (\code{k x k}) transition matrix (columns must sum to one).}
-  \item{\code{eps}: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+  \item{n: }{Length of series.}
+  \item{k: }{Number of regimes.}
+  \item{mu: }{A (\code{k x q}) vector of means.}
+  \item{sigma: }{A (\code{q x q}) covariance matrix.}
+  \item{q: }{Number of series.}
+  \item{P: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+  \item{eps: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
 }}
 
 \item{burnin}{Number of simulated observations to remove from beginning. Default is \code{100}.}

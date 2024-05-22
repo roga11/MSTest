@@ -1,14 +1,14 @@
-#' @title US GNP data 1947Q2 - 2022Q3
+#' @title US GNP data 1947Q2 - 2023Q4
 #' 
 #' @format 
-#' \describe{This data is used in Rodriguez Rondon & Dufour (2022) working paper. The series ranges from 
-#' 1947Q2 to 2022Q3.
+#' \describe{This data is used in Rodriguez-Rondon & Dufour (2024). The series ranges from 
+#' 1947Q2 to 2023Q4.
 #'   \item{DATE}{Vector of dates}
 #'   \item{GNP_logdiff}{log difference of US GDP series}
 #'   \item{GNP}{US GNP series}
 #' }
 #' @source \url{https://fred.stlouisfed.org/graph/?g=UKDQ}
-#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2024. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 "USGNP"
 # -----------------------------------------------------------------------------
 #' @title Carrasco, Hu, & Ploberger 2010 GNP data

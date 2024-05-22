@@ -13,34 +13,34 @@ HLRTest(Y, p, control = list())
 
 \item{control}{List with test procedure options including: 
 \itemize{
-  \item{\code{ix}: }{List of Markov Switching parameters. 1 = just mean c(1,2) = mean and first param, (default: 1).}
-  \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered. Default is \code{FALSE}.}
-  \item{\code{qbound}: }{Indicator that bounds q by 1-p (default: \code{FALSE}).}
-  \item{\code{gridsize}: }{Integer determining the number of grid points for markov switching parameters. Default is \code{20}.}
-  \item{\code{pgrid_from}: }{Double determining the initial grid point for transition probabilities. Default is \code{0.1}.}
-  \item{\code{pgrid_by}: }{Double determining the step size for grid points of transition probabilities. This, along with \code{p_gridsize} will determine the bounds of search space. Default is \code{0.075}.}
-  \item{\code{pgrid_to}: }{Double determining the end grid point for transition probabilities. Default is \code{0.925}.}
-  \item{\code{mugrid_from}: }{Double determining the minimum value of mean in second regime. Default is \code{0.1}.}
-  \item{\code{mugrid_by}: }{Double determining the step size for grid points of mean in second regime. This, along with \code{gridsize} will determine the max value of mean in second regime. Default is \code{0.1}.}
-  \item{\code{siggrid_from}: }{Double determining the minimum value of sigma in second regime (if \code{msvar = TRUE}). Default is \code{0.1}.}
-  \item{\code{siggrid_by}: }{Double determining the step size for grid points of sigma in second regime. This, along with \code{gridsize} will determine the max value of sigma in second regime. Default is \code{0.1}.}
-  \item{\code{N}: }{Integer determining the number of replications. Default is \code{1000}.}
-  \item{\code{nwband}: }{Integer determining maximum bandwidth in Bartlett kernel. Critical values and p-values are returned for each bandwidth from \code{0:nwband} as suggested in Hansen (1996). Default is \code{4}.}
-  \item{\code{theta_null_low}: }{Vector determining lower bound on parameters under the null hypothesis. Length of vector should be number of model coefficients + 1 for variance. Default is to only bound variance at \code{0.01}.}
-  \item{\code{theta_null_upp}: }{Vector determining upper bound on parameters under the null hypothesis. Length of vector should be number of model coefficients + 1 for variance. Default is to no bounds (i.e. \code{Inf}).}
-  \item{\code{optim_method}: }{String determining the type of optimization procedure used. Allowed options are "gp-optim" for general purpose optimization using \code{\link{optim}} from \code{\link{stats}} or "nl-optim" using \code{\link{slsqp}} from \code{\link{nloptr}}. Default is "gp-optim".}
+  \item{ix: }{List of Markov Switching parameters. 1 = just mean c(1,2) = mean and first param, (default: 1).}
+  \item{msvar: }{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered. Default is \code{FALSE}.}
+  \item{qbound: }{Indicator that bounds q by 1-p (default: \code{FALSE}).}
+  \item{gridsize: }{Integer determining the number of grid points for markov switching parameters. Default is \code{20}.}
+  \item{pgrid_from: }{Double determining the initial grid point for transition probabilities. Default is \code{0.1}.}
+  \item{pgrid_by: }{Double determining the step size for grid points of transition probabilities. This, along with \code{p_gridsize} will determine the bounds of search space. Default is \code{0.075}.}
+  \item{pgrid_to: }{Double determining the end grid point for transition probabilities. Default is \code{0.925}.}
+  \item{mugrid_from: }{Double determining the minimum value of mean in second regime. Default is \code{0.1}.}
+  \item{mugrid_by: }{Double determining the step size for grid points of mean in second regime. This, along with \code{gridsize} will determine the max value of mean in second regime. Default is \code{0.1}.}
+  \item{siggrid_from: }{Double determining the minimum value of sigma in second regime (if \code{msvar = TRUE}). Default is \code{0.1}.}
+  \item{siggrid_by: }{Double determining the step size for grid points of sigma in second regime. This, along with \code{gridsize} will determine the max value of sigma in second regime. Default is \code{0.1}.}
+  \item{N: }{Integer determining the number of replications. Default is \code{1000}.}
+  \item{nwband: }{Integer determining maximum bandwidth in Bartlett kernel. Critical values and p-values are returned for each bandwidth from \code{0:nwband} as suggested in Hansen (1996). Default is \code{4}.}
+  \item{theta_null_low: }{Vector determining lower bound on parameters under the null hypothesis. Length of vector should be number of model coefficients + 1 for variance. Default is to only bound variance at \code{0.01}.}
+  \item{theta_null_upp: }{Vector determining upper bound on parameters under the null hypothesis. Length of vector should be number of model coefficients + 1 for variance. Default is to no bounds (i.e. \code{Inf}).}
+  \item{optim_method: }{String determining the type of optimization procedure used. Allowed options are "gp-optim" for general purpose optimization using \code{\link{optim}} from \code{\link{stats}} or "nl-optim" using \code{\link{slsqp}} from \code{\link{nloptr}}. Default is "gp-optim".}
 }}
 }
 \value{
 List of class \code{HLRTest} (\code{S3} object) with model attributes including: 
 \itemize{
-  \item{\code{mdl_h0}: }{List with restricted model attributes. This will be of class \code{ARmdl} (\code{S3} object). See \code{\link{ARmdl}}.}
-  \item{\code{LR0}: }{Likelihood ratio test statistic value.}
-  \item{\code{LRN}: }{A (\code{N x 1}) vector with simulated LRT statistics under null hypothesis.}
-  \item{\code{pval}: }{P-value.}
-  \item{\code{LR_cv}: }{A (\code{nwband x 3}) matrix with 90\%, 95\%, and 99\% critical values in each column respectively.}
-  \item{\code{coef}: }{Vector of coefficients from restricted model and grid search that maximized standardized LRT. }
-  \item{\code{control}: }{List with test procedure options used.}
+  \item{mdl_h0: }{List with restricted model attributes. This will be of class \code{ARmdl} (\code{S3} object). See \code{\link{ARmdl}}.}
+  \item{LR0: }{Likelihood ratio test statistic value.}
+  \item{LRN: }{A (\code{N x 1}) vector with simulated LRT statistics under null hypothesis.}
+  \item{pval: }{P-value.}
+  \item{LR_cv: }{A (\code{nwband x 3}) matrix with 90\%, 95\%, and 99\% critical values in each column respectively.}
+  \item{coef: }{Vector of coefficients from restricted model and grid search that maximized standardized LRT. }
+  \item{control: }{List with test procedure options used.}
 }
 }
 \description{

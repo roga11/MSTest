@@ -9,10 +9,10 @@ initVals_HMmdl(mdl, k)
 \arguments{
 \item{\code{mdl}}{List with parameter values of simple (one-regime) model. This includes:
 \itemize{
-  \item{\code{mu}: }{Vector of means.}
-  \item{\code{sigma}: }{covariance matrix.}
-  \item{\code{msmu}: }{Boolean indicator. If \code{TRUE}, mean is function of markov process. If \code{FALSE}, mean is constant across regimes.}
-  \item{\code{msvar}: }{Boolean indicator. If \code{TRUE}, standard deviation is function of markov process. If \code{FALSE}, standard deviation is constant across regimes.}
+  \item{mu: }{Vector of means.}
+  \item{sigma: }{covariance matrix.}
+  \item{msmu: }{Boolean indicator. If \code{TRUE}, mean is function of markov process. If \code{FALSE}, mean is constant across regimes.}
+  \item{msvar: }{Boolean indicator. If \code{TRUE}, standard deviation is function of markov process. If \code{FALSE}, standard deviation is constant across regimes.}
 }}
 
 \item{\code{k}}{Number of regimes.}
