@@ -425,7 +425,7 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
   names(theta_h0) <- names(mdl_h0$theta)
   names(theta_h1) <- names(mdl_h1$theta)
   mdl_h0_mmc <- mdledit(mdl_h0, theta_h0, p, q, k0)
-  mdl_h0_mmc$logLike <- logLikelihood(mdl_h0_mmc)
+  mdl_h0_mmc$logLike <- logLik(mdl_h0_mmc)
   mdl_h0_mmc$AIC <- AIC(mdl_h0_mmc)
   mdl_h0_mmc$BIC <- BIC(mdl_h0_mmc)
   if (mdl_h0$control$getSE==TRUE){

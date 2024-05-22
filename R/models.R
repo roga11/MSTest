@@ -70,7 +70,7 @@ Nmdl <- function(Y, control = list()){
   # Define class
   class(out) <- "Nmdl"
   # get log-likelihood
-  out$logLike <- logLikelihood(out)
+  out$logLike <- logLik(out)
   # get information criterion
   out$AIC <- AIC(out)
   out$BIC <- BIC(out)
@@ -184,7 +184,7 @@ ARmdl <- function(Y, p, control = list()){
   # Define class
   class(out) <- "ARmdl"
   # get log-likelihood
-  out$logLike <- logLikelihood(out)
+  out$logLike <- logLik(out)
   # get information criterion
   out$AIC <- AIC(out)
   out$BIC <- BIC(out)
@@ -296,7 +296,7 @@ VARmdl <- function(Y, p, control = list()){
   # Define class
   class(out) <- "VARmdl"
   # get log-likelihood
-  out$logLike <- logLikelihood(out)
+  out$logLike <- logLik(out)
   # get information criterion
   out$AIC <- AIC(out)
   out$BIC <- BIC(out)

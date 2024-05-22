@@ -130,53 +130,283 @@ argrid_MSVARmdl <- function(mu, sigma, k, ar, msmu, msvar){
   return(musig_out)
 }
 
-#' @title Compute AIC
+
+#' @title coef of a \code{Nmdl} object
 #'
-#' @description This function computes the AIC for a given model.
-#'
+#' @description This is a method for the function \code{coef()} for objects of the class \code{Nmdl}.
+#' 
 #' @param mdl List with model properties.
 #'
-#' @return AIC value. 
+#' @return vector of coefficients. The \code{Nmdl} object is returned invisibly.
 #' 
 #' @keywords internal
 #' 
 #' @export
-AIC <- function(mdl){
-  aic_val <- -2*(mdl$logLike) + 2*length(mdl$theta)
-  return(aic_val)
+coef.Nmdl <- function(mdl){
+  return(mdl$theta)
 }
 
-#' @title Compute BIC
+#' @title coef of a \code{ARmdl} object
 #'
-#' @description This function computes the BIC for a given model.
-#'
+#' @description This is a method for the function \code{coef()} for objects of the class \code{ARmdl}.
+#' 
 #' @param mdl List with model properties.
 #'
-#' @return BIC value.
+#' @return vector of coefficients. The \code{ARmdl} object is returned invisibly.
 #' 
 #' @keywords internal
 #' 
 #' @export
-BIC <- function(mdl){
-  bic_val <- -length(mdl$theta)*log(mdl$n) -2*(mdl$logLike) 
-  return(bic_val)
+coef.ARmdl <- function(mdl){
+  return(mdl$theta)
 }
 
-
-#' @title Log likelihood  
-#' 
-#' @description This function is used to compute the log-likelihood for a given model.
+#' @title coef of a \code{VARmdl} object
 #'
+#' @description This is a method for the function \code{coef()} for objects of the class \code{VARmdl}.
+#' 
 #' @param mdl List with model properties.
 #'
-#' @return Log-likelihood value.
+#' @return vector of coefficients. The \code{VARmdl} object is returned invisibly.
 #' 
 #' @keywords internal
 #' 
 #' @export
-logLikelihood <- function(mdl){
-  UseMethod("logLikelihood", mdl)
+coef.VARmdl <- function(mdl){
+  return(mdl$theta)
 }
+
+#' @title coef of a \code{HMmdl} object
+#'
+#' @description This is a method for the function \code{coef()} for objects of the class \code{HMmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return vector of coefficients. The \code{HMmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+coef.HMmdl <- function(mdl){
+  return(mdl$theta)
+}
+
+#' @title coef of a \code{MSARmdl} object
+#'
+#' @description This is a method for the function \code{coef()} for objects of the class \code{MSARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return vector of coefficients. The \code{MSARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+coef.MSARmdl <- function(mdl){
+  return(mdl$theta)
+}
+
+#' @title coef of a \code{MSVARmdl} object
+#'
+#' @description This is a method for the function \code{coef()} for objects of the class \code{MSVARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return vector of coefficients. The \code{MSVARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+coef.MSVARmdl <- function(mdl){
+  return(mdl$theta)
+}
+
+#' @title residuals of a \code{Nmdl} object
+#'
+#' @description This is a method for the function \code{residuals()} for objects of the class \code{Nmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return vector of residuals. The \code{Nmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+residuals.Nmdl <- function(mdl){
+  return(mdl$resid)
+}
+
+#' @title residuals of a \code{ARmdl} object
+#'
+#' @description This is a method for the function \code{residuals()} for objects of the class \code{ARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return vector of residuals. The \code{ARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+residuals.ARmdl <- function(mdl){
+  return(mdl$resid)
+}
+
+
+#' @title residuals of a \code{VARmdl} object
+#'
+#' @description This is a method for the function \code{residuals()} for objects of the class \code{VARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return vector of residuals. The \code{VARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+residuals.VARmdl <- function(mdl){
+  return(mdl$resid)
+}
+
+
+#' @title residuals of a \code{HMmdl} object
+#'
+#' @description This is a method for the function \code{residuals()} for objects of the class \code{HMmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return vector of residuals. The \code{HMmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+residuals.HMmdl <- function(mdl){
+  return(mdl$resid)
+}
+
+#' @title residuals of a \code{MSARmdl} object
+#'
+#' @description This is a method for the function \code{residuals()} for objects of the class \code{MSARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return vector of residuals. The \code{ARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+residuals.MSARmdl <- function(mdl){
+  return(mdl$resid)
+}
+
+
+#' @title residuals of a \code{MSVARmdl} object
+#'
+#' @description This is a method for the function \code{residuals()} for objects of the class \code{MSVARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return vector of residuals. The \code{MSVARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+residuals.MSVARmdl <- function(mdl){
+  return(mdl$resid)
+}
+
+
+#' @title Nobs of a \code{Nmdl} object
+#'
+#' @description This is a method for the function \code{nobs()} for objects of the class \code{Nmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return Number of time series observations. The \code{Nmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+nobs.Nmdl <- function(mdl){
+  return(mdl$n)
+}
+
+#' @title Nobs of a \code{ARmdl} object
+#'
+#' @description This is a method for the function \code{nobs()} for objects of the class \code{ARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return Number of time series observations. The \code{ARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+nobs.ARmdl <- function(mdl){
+  return(mdl$n)
+}
+
+#' @title Nobs of a \code{VARmdl} object
+#'
+#' @description This is a method for the function \code{nobs()} for objects of the class \code{VARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return Number of time series observations. The \code{VARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+nobs.VARmdl <- function(mdl){
+  return(mdl$n)
+}
+
+#' @title Nobs of a \code{HMmdl} object
+#'
+#' @description This is a method for the function \code{nobs()} for objects of the class \code{HMmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return Number of time series observations. The \code{HMmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+nobs.HMmdl <- function(mdl){
+  return(mdl$n)
+}
+
+
+#' @title Nobs of a \code{MSARmdl} object
+#'
+#' @description This is a method for the function \code{nobs()} for objects of the class \code{MSARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return Number of time series observations. The \code{MSARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+nobs.MSARmdl <- function(mdl){
+  return(mdl$n)
+}
+
+#' @title Nobs of a \code{MSVARmdl} object
+#'
+#' @description This is a method for the function \code{nobs()} for objects of the class \code{MSVARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return Number of time series observations. The \code{MSVARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+nobs.MSVARmdl <- function(mdl){
+  return(mdl$n)
+}
+
+
 
 #' @title Log likelihood for Normal model  
 #' 
@@ -189,8 +419,9 @@ logLikelihood <- function(mdl){
 #' @keywords internal
 #' 
 #' @export
-logLikelihood.Nmdl <- function(mdl){
+logLik.Nmdl <- function(mdl){
   logLike <- logLike_Nmdl(mdl$theta, mdl)
+  set.attrs(.logLike)
   return(logLike)
 }
 
@@ -205,7 +436,7 @@ logLikelihood.Nmdl <- function(mdl){
 #' @keywords internal
 #' 
 #' @export
-logLikelihood.ARmdl <- function(mdl){
+logLik.ARmdl <- function(mdl){
   logLike <- logLike_ARmdl(mdl$theta, mdl)
   return(logLike)
 }
@@ -221,7 +452,7 @@ logLikelihood.ARmdl <- function(mdl){
 #' @keywords internal
 #' 
 #' @export
-logLikelihood.VARmdl <- function(mdl){
+logLik.VARmdl <- function(mdl){
   logLike <- logLike_VARmdl(mdl$theta, mdl)
   return(logLike)
 }
@@ -237,7 +468,7 @@ logLikelihood.VARmdl <- function(mdl){
 #' @keywords internal
 #' 
 #' @export
-logLikelihood.HMmdl <- function(mdl){
+logLik.HMmdl <- function(mdl){
   logLike <- logLike_HMmdl(mdl$theta, mdl, mdl$k)
   return(logLike)
 }
@@ -253,7 +484,7 @@ logLikelihood.HMmdl <- function(mdl){
 #' @keywords internal
 #' 
 #' @export
-logLikelihood.MSARmdl <- function(mdl){
+logLik.MSARmdl <- function(mdl){
   logLike <- logLike_MSARmdl(mdl$theta, mdl, mdl$k)
   return(logLike)
 }
@@ -269,10 +500,211 @@ logLikelihood.MSARmdl <- function(mdl){
 #' @keywords internal
 #' 
 #' @export
-logLikelihood.MSVARmdl <- function(mdl){
+logLik.MSVARmdl <- function(mdl){
   logLike <- logLike_MSVARmdl(mdl$theta, mdl, mdl$k)
   return(logLike)
 }
+
+
+
+#' @title AIC of a \code{Nmdl} object
+#'
+#' @description This is a method for the function \code{AIC()} for objects of the class \code{Nmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return AIC value. The \code{Nmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+AIC.Nmdl <- function(mdl){
+  aic_val <- -2*(logLik(mdl)) + 2*length(mdl$theta)
+  return(aic_val)
+}
+
+#' @title AIC of a \code{ARmdl} object
+#'
+#' @description This is a method for the function \code{AIC()} for objects of the class \code{ARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return AIC value. The \code{ARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+AIC.ARmdl <- function(mdl){
+  aic_val <- -2*(logLik(mdl)) + 2*length(mdl$theta)
+  return(aic_val)
+}
+
+#' @title AIC of a \code{VARmdl} object
+#'
+#' @description This is a method for the function \code{AIC()} for objects of the class \code{VARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return AIC value. The \code{VARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+AIC.VARmdl <- function(mdl){
+  aic_val <- -2*(logLik(mdl)) + 2*length(mdl$theta)
+  return(aic_val)
+}
+
+#' @title AIC of a \code{HMmdl} object
+#'
+#' @description This is a method for the function \code{AIC()} for objects of the class \code{HMmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return AIC value. The \code{HMmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+AIC.HMmdl <- function(mdl){
+  aic_val <- -2*(logLik(mdl)) + 2*length(mdl$theta)
+  return(aic_val)
+}
+
+
+#' @title AIC of a \code{MSARmdl} object
+#'
+#' @description This is a method for the function \code{AIC()} for objects of the class \code{MSARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return AIC value. The \code{MSARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+AIC.MSARmdl <- function(mdl){
+  aic_val <- -2*(logLik(mdl)) + 2*length(mdl$theta)
+  return(aic_val)
+}
+
+
+#' @title AIC of a \code{MSVARmdl} object
+#'
+#' @description This is a method for the function \code{AIC()} for objects of the class \code{MSVARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return AIC value. The \code{MSVARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+AIC.MSVARmdl <- function(mdl){
+  aic_val <- -2*(logLik(mdl)) + 2*length(mdl$theta)
+  return(aic_val)
+}
+
+
+
+#' @title BIC of a \code{Nmdl} object
+#'
+#' @description This is a method for the function \code{BIC()} for objects of the class \code{Nmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return BIC value. The \code{Nmdl} object is returned invisibly.
+#'
+#' @keywords internal
+#' 
+#' @export
+BIC.Nmdl <- function(mdl){
+  bic_val <- -length(coef(mdl))*log(nobs(mdl)) -2*(logLik(mdl)) 
+  return(bic_val)
+}
+
+#' @title BIC of a \code{ARmdl} object
+#'
+#' @description This is a method for the function \code{BIC()} for objects of the class \code{ARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return BIC value. The \code{ARmdl} object is returned invisibly.
+#'
+#' @keywords internal
+#' 
+#' @export
+BIC.ARmdl <- function(mdl){
+  bic_val <- -length(coef(mdl))*log(nobs(mdl)) -2*(logLik(mdl)) 
+  return(bic_val)
+}
+
+#' @title BIC of a \code{VARmdl} object
+#'
+#' @description This is a method for the function \code{BIC()} for objects of the class \code{VARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return BIC value. The \code{VARmdl} object is returned invisibly.
+#'
+#' @keywords internal
+#' 
+#' @export
+BIC.VARmdl <- function(mdl){
+  bic_val <- -length(coef(mdl))*log(nobs(mdl)) -2*(logLik(mdl)) 
+  return(bic_val)
+}
+
+
+#' @title BIC of a \code{HMmdl} object
+#'
+#' @description This is a method for the function \code{BIC()} for objects of the class \code{HMmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return BIC value. The \code{HMmdl} object is returned invisibly.
+#'
+#' @keywords internal
+#' 
+#' @export
+BIC.HMmdl <- function(mdl){
+  bic_val <- -length(coef(mdl))*log(nobs(mdl)) -2*(logLik(mdl)) 
+  return(bic_val)
+}
+
+#' @title BIC of a \code{MSARmdl} object
+#'
+#' @description This is a method for the function \code{BIC()} for objects of the class \code{MSARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return BIC value. The \code{MSARmdl} object is returned invisibly.
+#'
+#' @keywords internal
+#' 
+#' @export
+BIC.MSARmdl <- function(mdl){
+  bic_val <- -length(coef(mdl))*log(nobs(mdl)) -2*(logLik(mdl)) 
+  return(bic_val)
+}
+
+
+#' @title BIC of a \code{MSVARmdl} object
+#'
+#' @description This is a method for the function \code{BIC()} for objects of the class \code{MSVARmdl}.
+#' 
+#' @param mdl List with model properties.
+#'
+#' @return BIC value. The \code{MSVARmdl} object is returned invisibly.
+#'
+#' @keywords internal
+#' 
+#' @export
+BIC.MSVARmdl <- function(mdl){
+  bic_val <- -length(coef(mdl))*log(nobs(mdl)) -2*(logLik(mdl)) 
+  return(bic_val)
+}
+
 
 #' @title Hessian matrix 
 #' 
