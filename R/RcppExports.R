@@ -641,10 +641,11 @@ randSN <- function(n, q) {
 #' 
 #' @return List with simulated autoregressive series and its DGP parameters.
 #' 
-#' @example /inst/examples/simuAR_examples.R
+#' @keywords internal
+#' 
 #' @export
-simuAR <- function(mdl_h0, burnin = 100L) {
-    .Call(`_MSTest_simuAR`, mdl_h0, burnin)
+simuAR_cpp <- function(mdl_h0, burnin = 100L) {
+    .Call(`_MSTest_simuAR_cpp`, mdl_h0, burnin)
 }
 
 #' @title Simulate Markov-switching autoregressive process
@@ -665,10 +666,11 @@ simuAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @return List with simulated Markov-switching autoregressive process and its DGP properties.
 #' 
-#' @example /inst/examples/simuMSAR_examples.R
+#' @keywords internal
+#' 
 #' @export
-simuMSAR <- function(mdl_h0, burnin = 100L) {
-    .Call(`_MSTest_simuMSAR`, mdl_h0, burnin)
+simuMSAR_cpp <- function(mdl_h0, burnin = 100L) {
+    .Call(`_MSTest_simuMSAR_cpp`, mdl_h0, burnin)
 }
 
 #' @title Simulate VAR process
@@ -689,10 +691,11 @@ simuMSAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @return List with simulated vector autoregressive series and its DGP parameters.
 #' 
-#' @example /inst/examples/simuVAR_examples.R
+#' @keywords internal
+#' 
 #' @export
-simuVAR <- function(mdl_h0, burnin = 100L) {
-    .Call(`_MSTest_simuVAR`, mdl_h0, burnin)
+simuVAR_cpp <- function(mdl_h0, burnin = 100L) {
+    .Call(`_MSTest_simuVAR_cpp`, mdl_h0, burnin)
 }
 
 #' @title Simulate Markov-switching vector autoregressive process
@@ -715,10 +718,11 @@ simuVAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @return List with simulated vector autoregressive series and its DGP parameters.
 #' 
-#' @example /inst/examples/simuMSVAR_examples.R
+#' @keywords internal
+#' 
 #' @export
-simuMSVAR <- function(mdl_h0, burnin = 100L) {
-    .Call(`_MSTest_simuMSVAR`, mdl_h0, burnin)
+simuMSVAR_cpp <- function(mdl_h0, burnin = 100L) {
+    .Call(`_MSTest_simuMSVAR_cpp`, mdl_h0, burnin)
 }
 
 #' @title Simulate normally distributed process
@@ -737,10 +741,11 @@ simuMSVAR <- function(mdl_h0, burnin = 100L) {
 #' 
 #' @return List with simulated series and its DGP parameters.
 #' 
-#' @example /inst/examples/simuNorm_examples.R
+#' @keywords internal
+#' 
 #' @export
-simuNorm <- function(mdl_h0, burnin = 0L) {
-    .Call(`_MSTest_simuNorm`, mdl_h0, burnin)
+simuNorm_cpp <- function(mdl_h0, burnin = 0L) {
+    .Call(`_MSTest_simuNorm_cpp`, mdl_h0, burnin)
 }
 
 #' @title Simulate Hidden Markov model with normally distributed errors
@@ -761,10 +766,11 @@ simuNorm <- function(mdl_h0, burnin = 0L) {
 #' 
 #' @return List with simulated series and its DGP parameters.
 #' 
-#' @example /inst/examples/simuHMM_examples.R
+#' @keywords internal
+#' 
 #' @export
-simuHMM <- function(mdl_h0, burnin = 100L) {
-    .Call(`_MSTest_simuHMM`, mdl_h0, burnin)
+simuHMM_cpp <- function(mdl_h0, burnin = 100L) {
+    .Call(`_MSTest_simuHMM_cpp`, mdl_h0, burnin)
 }
 
 #' @title Normal log-likelihood objective function 

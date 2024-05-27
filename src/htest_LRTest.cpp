@@ -32,22 +32,22 @@ List simuMdl(List mdl_h0, int p, int q, int k, int burnin){
   Rcpp::Function HMmdl = mstest["HMmdl"];
   List simu_mdl;
   if ((k==1) & (p==0)){
-    simu_mdl = simuNorm(mdl_h0, burnin);
+    simu_mdl = simuNorm_cpp(mdl_h0, burnin);
   }else if ((k>1) & (p==0)){
     // Hidden Markov model
-    simu_mdl = simuHMM(mdl_h0, burnin);
+    simu_mdl = simuHMM_cpp(mdl_h0, burnin);
   }else if ((k==1) & (q==1) & (p>0)){
     // Autoregressive model
-    simu_mdl = simuAR(mdl_h0, burnin);
+    simu_mdl = simuAR_cpp(mdl_h0, burnin);
   }else if ((k>1) & (q==1) & (p>0)){
     // Markov switching model
-    simu_mdl = simuMSAR(mdl_h0, burnin);
+    simu_mdl = simuMSAR_cpp(mdl_h0, burnin);
   }else if ((k==1) & (q>1) & (p>0)){
     // Vector autoregressive model
-    simu_mdl = simuVAR(mdl_h0, burnin);
+    simu_mdl = simuVAR_cpp(mdl_h0, burnin);
   }else if ((k>1) & (q>1) & (p>0)){
     // Vector autoregressive Markov switching model
-    simu_mdl = simuMSVAR(mdl_h0, burnin);
+    simu_mdl = simuMSVAR_cpp(mdl_h0, burnin);
   }
   return(simu_mdl);
 }

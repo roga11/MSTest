@@ -1,4 +1,5 @@
 #include <RcppArmadillo.h>
+#include "methods.h"
 //[[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 
@@ -232,7 +233,7 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,int msvar){
 // [[Rcpp::export]]
 arma::mat bootCV(List mdl,double rho_b, int N, int msvar){
   // calling required R functions 
-  Function simuAR("simuAR");
+  //Function simuAR("simuAR");
   Function ARmdl("ARmdl");
   Function chpDmat("chpDmat");
   // define vars from Model list
@@ -242,7 +243,7 @@ arma::mat bootCV(List mdl,double rho_b, int N, int msvar){
   int itb = 0;
   while (itb<N){
     // simulate the series N times according to ML estimators 
-    List y_out_tmp = simuAR(mdl);
+    List y_out_tmp = simuAR_cpp(mdl);
     arma::vec y0 = y_out_tmp["y"];
     List  Mdl_tmp  = ARmdl(y0,ar);
     List ltmtb  = chpDmat(Mdl_tmp,msvar);

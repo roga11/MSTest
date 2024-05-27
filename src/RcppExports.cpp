@@ -441,75 +441,75 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// simuAR
-List simuAR(List mdl_h0, int burnin);
-RcppExport SEXP _MSTest_simuAR(SEXP mdl_h0SEXP, SEXP burninSEXP) {
+// simuAR_cpp
+List simuAR_cpp(List mdl_h0, int burnin);
+RcppExport SEXP _MSTest_simuAR_cpp(SEXP mdl_h0SEXP, SEXP burninSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< List >::type mdl_h0(mdl_h0SEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    rcpp_result_gen = Rcpp::wrap(simuAR(mdl_h0, burnin));
+    rcpp_result_gen = Rcpp::wrap(simuAR_cpp(mdl_h0, burnin));
     return rcpp_result_gen;
 END_RCPP
 }
-// simuMSAR
-List simuMSAR(List mdl_h0, int burnin);
-RcppExport SEXP _MSTest_simuMSAR(SEXP mdl_h0SEXP, SEXP burninSEXP) {
+// simuMSAR_cpp
+List simuMSAR_cpp(List mdl_h0, int burnin);
+RcppExport SEXP _MSTest_simuMSAR_cpp(SEXP mdl_h0SEXP, SEXP burninSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< List >::type mdl_h0(mdl_h0SEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    rcpp_result_gen = Rcpp::wrap(simuMSAR(mdl_h0, burnin));
+    rcpp_result_gen = Rcpp::wrap(simuMSAR_cpp(mdl_h0, burnin));
     return rcpp_result_gen;
 END_RCPP
 }
-// simuVAR
-List simuVAR(List mdl_h0, int burnin);
-RcppExport SEXP _MSTest_simuVAR(SEXP mdl_h0SEXP, SEXP burninSEXP) {
+// simuVAR_cpp
+List simuVAR_cpp(List mdl_h0, int burnin);
+RcppExport SEXP _MSTest_simuVAR_cpp(SEXP mdl_h0SEXP, SEXP burninSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< List >::type mdl_h0(mdl_h0SEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    rcpp_result_gen = Rcpp::wrap(simuVAR(mdl_h0, burnin));
+    rcpp_result_gen = Rcpp::wrap(simuVAR_cpp(mdl_h0, burnin));
     return rcpp_result_gen;
 END_RCPP
 }
-// simuMSVAR
-List simuMSVAR(List mdl_h0, int burnin);
-RcppExport SEXP _MSTest_simuMSVAR(SEXP mdl_h0SEXP, SEXP burninSEXP) {
+// simuMSVAR_cpp
+List simuMSVAR_cpp(List mdl_h0, int burnin);
+RcppExport SEXP _MSTest_simuMSVAR_cpp(SEXP mdl_h0SEXP, SEXP burninSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< List >::type mdl_h0(mdl_h0SEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    rcpp_result_gen = Rcpp::wrap(simuMSVAR(mdl_h0, burnin));
+    rcpp_result_gen = Rcpp::wrap(simuMSVAR_cpp(mdl_h0, burnin));
     return rcpp_result_gen;
 END_RCPP
 }
-// simuNorm
-List simuNorm(List mdl_h0, int burnin);
-RcppExport SEXP _MSTest_simuNorm(SEXP mdl_h0SEXP, SEXP burninSEXP) {
+// simuNorm_cpp
+List simuNorm_cpp(List mdl_h0, int burnin);
+RcppExport SEXP _MSTest_simuNorm_cpp(SEXP mdl_h0SEXP, SEXP burninSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< List >::type mdl_h0(mdl_h0SEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    rcpp_result_gen = Rcpp::wrap(simuNorm(mdl_h0, burnin));
+    rcpp_result_gen = Rcpp::wrap(simuNorm_cpp(mdl_h0, burnin));
     return rcpp_result_gen;
 END_RCPP
 }
-// simuHMM
-List simuHMM(List mdl_h0, int burnin);
-RcppExport SEXP _MSTest_simuHMM(SEXP mdl_h0SEXP, SEXP burninSEXP) {
+// simuHMM_cpp
+List simuHMM_cpp(List mdl_h0, int burnin);
+RcppExport SEXP _MSTest_simuHMM_cpp(SEXP mdl_h0SEXP, SEXP burninSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< List >::type mdl_h0(mdl_h0SEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    rcpp_result_gen = Rcpp::wrap(simuHMM(mdl_h0, burnin));
+    rcpp_result_gen = Rcpp::wrap(simuHMM_cpp(mdl_h0, burnin));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -822,12 +822,12 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_initVals_MSVARmdl", (DL_FUNC) &_MSTest_initVals_MSVARmdl, 2},
     {"_MSTest_MCpval", (DL_FUNC) &_MSTest_MCpval, 3},
     {"_MSTest_randSN", (DL_FUNC) &_MSTest_randSN, 2},
-    {"_MSTest_simuAR", (DL_FUNC) &_MSTest_simuAR, 2},
-    {"_MSTest_simuMSAR", (DL_FUNC) &_MSTest_simuMSAR, 2},
-    {"_MSTest_simuVAR", (DL_FUNC) &_MSTest_simuVAR, 2},
-    {"_MSTest_simuMSVAR", (DL_FUNC) &_MSTest_simuMSVAR, 2},
-    {"_MSTest_simuNorm", (DL_FUNC) &_MSTest_simuNorm, 2},
-    {"_MSTest_simuHMM", (DL_FUNC) &_MSTest_simuHMM, 2},
+    {"_MSTest_simuAR_cpp", (DL_FUNC) &_MSTest_simuAR_cpp, 2},
+    {"_MSTest_simuMSAR_cpp", (DL_FUNC) &_MSTest_simuMSAR_cpp, 2},
+    {"_MSTest_simuVAR_cpp", (DL_FUNC) &_MSTest_simuVAR_cpp, 2},
+    {"_MSTest_simuMSVAR_cpp", (DL_FUNC) &_MSTest_simuMSVAR_cpp, 2},
+    {"_MSTest_simuNorm_cpp", (DL_FUNC) &_MSTest_simuNorm_cpp, 2},
+    {"_MSTest_simuHMM_cpp", (DL_FUNC) &_MSTest_simuHMM_cpp, 2},
     {"_MSTest_logLike_Nmdl", (DL_FUNC) &_MSTest_logLike_Nmdl, 2},
     {"_MSTest_logLike_ARmdl", (DL_FUNC) &_MSTest_logLike_ARmdl, 2},
     {"_MSTest_logLike_VARmdl", (DL_FUNC) &_MSTest_logLike_VARmdl, 2},

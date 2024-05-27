@@ -34,17 +34,17 @@ double MCpval(double test_stat, arma::vec null_vec, Rcpp::String type = "geq");
 
 arma::mat randSN(int n, int q);
 
-List simuAR(List mdl_h0, int burnin = 100);
+List simuAR_cpp(List mdl_h0, int burnin = 100);
 
-List simuMSAR(List mdl_h0, int burnin = 100);
+List simuMSAR_cpp(List mdl_h0, int burnin = 100);
 
-List simuVAR(List mdl_h0, int burnin = 100);
+List simuVAR_cpp(List mdl_h0, int burnin = 100);
 
-List simuMSVAR(List mdl_h0, int burnin = 100);
+List simuMSVAR_cpp(List mdl_h0, int burnin = 100);
 
-List simuNorm(List mdl_h0, int burnin = 0);
+List simuNorm_cpp(List mdl_h0, int burnin = 0);
 
-List simuHMM(List mdl_h0, int burnin = 100);
+List simuHMM_cpp(List mdl_h0, int burnin = 100);
 
 double logLike_Nmdl(arma::vec theta, List mdl);
 

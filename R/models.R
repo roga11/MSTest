@@ -1,3 +1,168 @@
+#' @title Simulate normally distributed process
+#' 
+#' @description This function simulates a normally distributed process.
+#' 
+#' @param mdl_h0 List containing the following DGP parameters
+#' \itemize{
+#'   \item{n: }{Length of series.}
+#'   \item{mu: }{A (\code{q x 1}) vector of means.}
+#'   \item{sigma: }{A (\code{q x q}) covariance matrix.}
+#'   \item{q: }{Number of series.}
+#'   \item{eps: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+#' }
+#' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
+#' 
+#' @return List with simulated series and its DGP parameters.
+#' 
+#' @example /inst/examples/simuNorm_examples.R
+#' @export
+simuNorm <- function(mdl_h0, burnin = 0){
+  simu_output <- simuNorm_cpp(mdl_h0, burnin)
+  # Define class
+  class(simu_output) <- "simuNorm"
+  return(simu_output)
+}
+
+
+#' @title Simulate autoregressive process
+#' 
+#' @description This function simulates an autoregresive process.
+#' 
+#' @param mdl_h0 List containing the following DGP parameters
+#' \itemize{
+#'   \item{n: }{Length of series.}
+#'   \item{mu: }{Mean of process.}
+#'   \item{sigma: }{Standard deviation of process.}
+#'   \item{phi: }{Vector of autoregressive coefficients.}
+#'   \item{eps: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+#' }
+#' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
+#' 
+#' @return List with simulated autoregressive series and its DGP parameters.
+#' 
+#' @example /inst/examples/simuAR_examples.R
+#' @export
+simuAR <- function(mdl_h0, burnin = 100){
+  simu_output <- simuAR_cpp(mdl_h0, burnin)  
+  # Define class
+  class(simu_output) <- "simuAR"
+  return(simu_output)
+}
+
+
+#' @title Simulate VAR process
+#' 
+#' @description This function simulates a vector autoregresive process.
+#' 
+#' @param mdl_h0 List containing the following DGP parameters
+#' \itemize{
+#'   \item{n: }{Length of series.}
+#'   \item{mu: }{A (\code{q x 1}) vector of means.}
+#'   \item{sigma: }{A (\code{q x q}) covariance matrix.}
+#'   \item{phi: }{ A (\code{q x qp}) matrix of autoregressive coefficients.}
+#'   \item{p: }{Number of autoregressive lags.}
+#'   \item{q: }{Number of series.}
+#'   \item{eps: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+#' }
+#' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
+#' 
+#' @return List with simulated vector autoregressive series and its DGP parameters.
+#' 
+#' @export
+simuVAR <- function(mdl_h0, burnin = 100){
+  simu_output <- simuVAR_cpp(mdl_h0, burnin)
+  # Define class
+  class(simu_output) <- "simuVAR"
+  return(simu_output)
+}
+
+
+#' @title Simulate Hidden Markov model with normally distributed errors
+#' 
+#' @description This function simulates a Hidden Markov Model process.
+#' 
+#' @param mdl_h0 List containing the following DGP parameters
+#' \itemize{
+#'   \item{n: }{Length of series.}
+#'   \item{k: }{Number of regimes.}
+#'   \item{mu: }{A (\code{k x q}) vector of means.}
+#'   \item{sigma: }{A (\code{q x q}) covariance matrix.}
+#'   \item{q: }{Number of series.}
+#'   \item{P: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+#'   \item{eps: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+#' }
+#' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
+#' 
+#' @return List with simulated series and its DGP parameters.
+#' 
+#' @example /inst/examples/simuHMM_examples.R
+#' @export
+simuHMM <- function(mdl_h0, burnin = 100){
+  simu_output <- simuHMM_cpp(mdl_h0, burnin)
+  # Define class
+  class(simu_output) <- "simuHMM"
+  return(simu_output)
+}
+
+
+#' @title Simulate Markov-switching autoregressive process
+#' 
+#' @description This function simulates a Markov-switching autoregressive process.
+#' 
+#' @param mdl_h0 List containing the following DGP parameters
+#' \itemize{
+#'   \item{n: }{Length of series.}
+#'   \item{k: }{Number of regimes.}
+#'   \item{mu: }{A (\code{k x 1}) vector with mean of process in each regime.}
+#'   \item{sigma: }{A (\code{k x 1}) vector with standard deviation of process in each regime.}
+#'   \item{phi: }{Vector of autoregressive coefficients.}
+#'   \item{P: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+#'   \item{eps: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+#' }
+#' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
+#' 
+#' @return List with simulated Markov-switching autoregressive process and its DGP properties.
+#' 
+#' @example /inst/examples/simuMSAR_examples.R
+#' @export
+simuMSAR <- function(mdl_h0, burnin = 100){
+  simu_output <- simuMSAR_cpp(mdl_h0, burnin)
+  # Define class
+  class(simu_output) <- "simuMSAR"
+  return(simu_output)
+}
+
+
+#' @title Simulate Markov-switching vector autoregressive process
+#' 
+#' @description This function simulates a Markov-switching vector autoregressive process.
+#' 
+#' @param mdl_h0 List containing the following DGP parameters
+#' \itemize{
+#'   \item{n: }{Length of series.}
+#'   \item{k: }{Number of regimes.}
+#'   \item{mu: }{A (\code{k x q}) matrix of means.}
+#'   \item{sigma: }{List with \code{k} (\code{q x q}) covariance matrices.}
+#'   \item{phi: }{A (\code{q x qp}) matrix of autoregressive coefficients.}
+#'   \item{p: }{Number of autoregressive lags.}
+#'   \item{q: }{Number of series.}
+#'   \item{P: }{A (\code{k x k}) transition matrix (columns must sum to one).}
+#'   \item{eps: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+#' }
+#' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
+#' 
+#' @return List with simulated vector autoregressive series and its DGP parameters.
+#' 
+#' @example /inst/examples/simuMSVAR_examples.R
+#' @export
+simuMSVAR <- function(mdl_h0, burnin = 100){
+  simu_output <- simuMSVAR_cpp(mdl_h0, burnin)
+  # Define class
+  class(simu_output) <- "simuMSVAR"
+  return(simu_output)
+}
+
+
 #' @title Normal distribution model
 #' 
 #' @description This function estimates a univariate or multivariate normally distributed model. This can be used for the null hypothesis of a linear model against an alternative hypothesis of a HMM with \code{k} regimes. 

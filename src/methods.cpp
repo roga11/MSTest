@@ -628,10 +628,11 @@ arma::mat randSN(int n, int q){
 //' 
 //' @return List with simulated autoregressive series and its DGP parameters.
 //' 
-//' @example /inst/examples/simuAR_examples.R
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
-List simuAR(List mdl_h0, int burnin = 100){
+List simuAR_cpp(List mdl_h0, int burnin = 100){
   // ----- DGP parameter
   arma::vec phi = mdl_h0["phi"];
   int Tsize = mdl_h0["n"];
@@ -686,10 +687,11 @@ List simuAR(List mdl_h0, int burnin = 100){
 //' 
 //' @return List with simulated Markov-switching autoregressive process and its DGP properties.
 //' 
-//' @example /inst/examples/simuMSAR_examples.R
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
-List simuMSAR(List mdl_h0, int burnin = 100){
+List simuMSAR_cpp(List mdl_h0, int burnin = 100){
   // ----- DGP parameter
   arma::vec phi = mdl_h0["phi"];
   arma::vec mu = mdl_h0["mu"];
@@ -786,10 +788,11 @@ List simuMSAR(List mdl_h0, int burnin = 100){
 //' 
 //' @return List with simulated vector autoregressive series and its DGP parameters.
 //' 
-//' @example /inst/examples/simuVAR_examples.R
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
-List simuVAR(List mdl_h0, int burnin = 100){
+List simuVAR_cpp(List mdl_h0, int burnin = 100){
   // ----- DGP parameters
   arma::vec mu = mdl_h0["mu"];
   arma::mat cov_mat = mdl_h0["sigma"];
@@ -856,10 +859,11 @@ List simuVAR(List mdl_h0, int burnin = 100){
 //' 
 //' @return List with simulated vector autoregressive series and its DGP parameters.
 //' 
-//' @example /inst/examples/simuMSVAR_examples.R
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
-List simuMSVAR(List mdl_h0, int burnin = 100){
+List simuMSVAR_cpp(List mdl_h0, int burnin = 100){
   // ----- DGP parameters
   arma::mat mu = mdl_h0["mu"];
   List cov_matLs = mdl_h0["sigma"];
@@ -966,10 +970,11 @@ List simuMSVAR(List mdl_h0, int burnin = 100){
 //' 
 //' @return List with simulated series and its DGP parameters.
 //' 
-//' @example /inst/examples/simuNorm_examples.R
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
-List simuNorm(List mdl_h0, int burnin = 0){
+List simuNorm_cpp(List mdl_h0, int burnin = 0){
   // ----- DGP parameter
   arma::vec mu = mdl_h0["mu"];
   int Tsize = mdl_h0["n"];
@@ -1018,10 +1023,11 @@ List simuNorm(List mdl_h0, int burnin = 0){
 //' 
 //' @return List with simulated series and its DGP parameters.
 //' 
-//' @example /inst/examples/simuHMM_examples.R
+//' @keywords internal
+//' 
 //' @export
 // [[Rcpp::export]]
-List simuHMM(List mdl_h0, int burnin = 100){
+List simuHMM_cpp(List mdl_h0, int burnin = 100){
   // ----- DGP parameter
   arma::mat mu = mdl_h0["mu"];
   List cov_matLs = mdl_h0["sigma"];
