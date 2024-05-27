@@ -48,4 +48,6 @@ mdl_msvar2 <- list(n     = 1000,
 
 # Simulate process using simuMSVAR() function
 y_msvar_simu <- simuMSVAR(mdl_msvar2)
+
+plot(y_msvar_simu)
 }

@@ -30,7 +30,8 @@ Imports:
   foreach,
   GenSA, 
   pso, 
-  GA
+  GA,
+  graphics
 LinkingTo: 
   Rcpp, 
   RcppArmadillo

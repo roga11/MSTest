@@ -44,6 +44,8 @@ mdl_hmm <- list(n     = 1000,
 # Simulate process using simuHMM() function
 y_hmm_simu <- simuHMM(mdl_hmm)
 
+plot(y_hmm_simu)
+
 # ----- Multivariate ----- #
 # Define DGP 
 mdl_hmm <- list(n     = 1000, 
@@ -61,4 +63,6 @@ mdl_hmm <- list(n     = 1000,
 # Simulate process using simuHMM() function
 y_hmm_simu <- simuHMM(mdl_hmm)
 
+
+plot(y_hmm_simu)
 }

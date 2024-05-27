@@ -1755,6 +1755,276 @@ predict.MSVARmdl <- function(object, ..., h = 10){
 }
 
 
+#' @title Plot of a \code{simuNorm} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{simuNorm}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{simuNorm} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.simuNorm <- function(x, ...){
+  if (x$q==1){
+    graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated process", 
+                      xlab ="Time", main = "Time series of simulated process")   
+  }else if (x$q>1){
+    graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated processes", 
+                      xlab ="Time", main = "Time series of simulated processes")   
+  }
+}
+
+
+#' @title Plot of a \code{simuAR} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{simuAR}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{simuAR} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.simuAR <- function(x, ...){
+  graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated process", 
+                    xlab ="Time", main = "Time series of simulated process")   
+}
+
+
+#' @title Plot of a \code{simuVAR} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{simuVAR}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{simuVAR} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.simuVAR <- function(x, ...){
+  graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated processes", 
+                    xlab ="Time", main = "Time series of simulated processes")   
+}
+
+
+#' @title Plot of a \code{simuHMM} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{simuHMM}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{simuHMM} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.simuHMM <- function(x, ...){
+  graphics::par(mfrow=c(2,1))
+  if (x$q==1){
+    graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated process", 
+                      xlab ="Time", main = "Time series of simulated process")   
+    graphics::matplot(1:x$n, x$St+1, type = "l", ylab = "State (St)", xlab ="Time",)
+  }else if (x$q>1){
+    graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated processes", 
+                      xlab ="Time", main = "Time series of simulated processes")   
+    graphics::matplot(1:x$n, x$St+1, type = "l", ylab = "State (St)", xlab ="Time",)
+  }
+  graphics::par(mfrow=c(1,1))
+}
+
+
+
+#' @title Plot of a \code{simuMSAR} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{simuMSAR}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{simuMSAR} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.simuMSAR <- function(x, ...){
+  graphics::par(mfrow=c(2,1))
+  graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated process", 
+                    xlab ="Time", main = "Time series of simulated process")   
+  graphics::matplot(1:x$n, x$St+1, type = "l", ylab = "State (St)", xlab ="Time",)
+  graphics::par(mfrow=c(1,1))
+}
+
+
+#' @title Plot of a \code{simuMSVAR} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{simuMSVAR}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{simuMSVAR} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.simuMSVAR <- function(x, ...){
+  graphics::par(mfrow=c(2,1))
+  graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated processes", 
+                    xlab ="Time", main = "Time series of simulated processes")   
+  graphics::matplot(1:x$n, x$St+1, type = "l", ylab = "State (St)", xlab ="Time",)
+  graphics::par(mfrow=c(1,1))
+}
+
+
+
+
+#' @title Plot of a \code{Nmdl} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{Nmdl}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{Nmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.Nmdl <- function(x, ...){
+  graphics::par(mfrow=c(2,1))
+  if (x$q==1){
+    graphics::matplot(1:x$n, x$y, type = "l", ylab = "Observed process", 
+                      xlab ="Time", main = "Time series of process & fitted values")   
+    graphics::matplot(1:x$n, x$fitted, type = "l", ylab = "Fitted values", xlab ="Time")   
+  }else if (x$q>1){
+    graphics::matplot(1:x$n, x$y, type = "l", ylab = "Observed processes", 
+                      xlab ="Time", main = "Time series of processes & fitted values")   
+    graphics::matplot(1:x$n, x$fitted, type = "l", ylab = "Fitted values", xlab ="Time")   
+  }
+  graphics::par(mfrow=c(1,1))
+}
+
+
+#' @title Plot of a \code{ARmdl} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{ARmdl}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{ARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.ARmdl <- function(x, ...){
+  graphics::par(mfrow=c(2,1))
+  graphics::matplot(1:x$n, x$y, type = "l", ylab = "Observed process", 
+                    xlab ="Time", main = "Time series of process & fitted values")   
+  graphics::matplot(1:x$n, x$fitted, type = "l", ylab = "Fitted values", xlab ="Time")   
+  graphics::par(mfrow=c(1,1))
+}
+
+
+#' @title Plot of a \code{VARmdl} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{VARmdl}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{VARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.VARmdl <- function(x, ...){
+  graphics::par(mfrow=c(2,1))
+  graphics::matplot(1:x$n, x$y, type = "l", ylab = "Observed processes", 
+                    xlab ="Time", main = "Time series of processes & fitted values")   
+  graphics::matplot(1:x$n, x$fitted, type = "l", ylab = "Fitted values", xlab ="Time")   
+  graphics::par(mfrow=c(1,1))
+}
+
+
+
+
+#' @title Plot of a \code{HMmdl} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{HMmdl}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{Hmmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.Hmmdl <- function(x, ...){
+  graphics::par(mfrow=c(3,1))
+  if (x$q==1){
+    graphics::matplot(1:x$n, x$y, type = "l", ylab = "Observed process", 
+                      xlab ="Time", main = "Time series of process & fitted values")   
+    graphics::matplot(1:x$n, x$fitted, type = "l", ylab = "Fitted values", xlab ="Time")   
+    graphics::matplot(1:x$n, x$St, type = "l", ylab = "State (St)", xlab ="Time")   
+  }else if (x$q>1){
+    graphics::matplot(1:x$n, x$y, type = "l", ylab = "Observed processes", 
+                      xlab ="Time", main = "Time series of processes & fitted values")   
+    graphics::matplot(1:x$n, x$fitted, type = "l", ylab = "Fitted values", xlab ="Time")   
+    graphics::matplot(1:x$n, x$St, type = "l", ylab = "State (St)", xlab ="Time")   
+  }
+  graphics::par(mfrow=c(1,1))
+}
+
+#' @title Plot of a \code{MSARmdl} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{MSARmdl}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{MSARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.MSARmdl <- function(x, ...){
+  graphics::par(mfrow=c(3,1))
+  graphics::matplot(1:x$n, x$y, type = "l", ylab = "Observed process", 
+                    xlab ="Time", main = "Time series of process & fitted values")   
+  graphics::matplot(1:x$n, x$fitted, type = "l", ylab = "Fitted values", xlab ="Time")  
+  graphics::matplot(1:x$n, x$St, type = "l", ylab = "State (St)", xlab ="Time")   
+  graphics::par(mfrow=c(1,1))
+}
+
+
+
+#' @title Plot of a \code{MSVARmdl} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{MSVARmdl}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{MSVARmdl} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.MSVARmdl <- function(x, ...){
+  graphics::par(mfrow=c(3,1))
+  graphics::matplot(1:x$n, x$y, type = "l", ylab = "Observed processes", 
+                    xlab ="Time", main = "Time series of processes & fitted values")   
+  graphics::matplot(1:x$n, x$fitted, type = "l", ylab = "Fitted values", xlab ="Time")  
+  graphics::matplot(1:x$n, x$St, type = "l", ylab = "State (St)", xlab ="Time")   
+  graphics::par(mfrow=c(1,1))
+}
+
+
+
+
+
+
+
+
+
 
 
 

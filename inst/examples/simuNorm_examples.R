@@ -8,3 +8,5 @@ mdl_norm <- list(n     = 1000,
 
 # Simulate process using simuNorm() function
 y_norm_simu <- simuNorm(mdl_norm)
+
+plot(y_norm_simu)
