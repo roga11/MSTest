@@ -426,8 +426,8 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
   names(theta_h1) <- names(mdl_h1$theta)
   mdl_h0_mmc <- mdledit(mdl_h0, theta_h0, p, q, k0)
   mdl_h0_mmc$logLike <- logLik(mdl_h0_mmc)
-  mdl_h0_mmc$AIC <- AIC(mdl_h0_mmc)
-  mdl_h0_mmc$BIC <- BIC(mdl_h0_mmc)
+  mdl_h0_mmc$AIC <- stats::AIC(mdl_h0_mmc)
+  mdl_h0_mmc$BIC <- stats::BIC(mdl_h0_mmc)
   if (mdl_h0$control$getSE==TRUE){
     mdl_h0_mmc <- thetaSE(mdl_h0_mmc)
   }
@@ -436,9 +436,9 @@ MMCLRTest <- function(Y, p, k0, k1, control = list()){
   names(LRT_0) <- c("LRT_0")
   # ----- organize test output
   MMCLRTest_output <- list(mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, mdl_h0_mmc = mdl_h0_mmc, mdl_h1_mmc = mdl_h1, 
-                           LRT_0 = LRT_0, 
-                           pval = pval,
-                           theta_h0 = theta_h0, theta_h1 = theta_h1, control = con)
+                           LRT_0 = LRT_0, pval = pval,
+                           theta_h0 = theta_h0, theta_h1 = theta_h1, control = con, 
+                           mmc_optimout = mmc_out)
   class(MMCLRTest_output) <- "MMCLRTest"
   return(MMCLRTest_output)
 }

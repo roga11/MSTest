@@ -4,10 +4,14 @@
 \alias{logLik.Nmdl}
 \title{Log likelihood for Normal model}
 \usage{
-\method{logLik}{Nmdl}(mdl)
+\method{logLik}{Nmdl}(object, ...)
 }
 \arguments{
-\item{mdl}{List with model properties.}
+\item{object}{any object from which a log-likelihood value, or a
+   contribution to a log-likelihood value, can be extracted.}
+
+\item{...}{some methods for this generic function require additional
+   arguments.}
 }
 \value{
 Log-likelihood value.

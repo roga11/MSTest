@@ -4,13 +4,15 @@
 \alias{nobs.HMmdl}
 \title{Nobs of a \code{HMmdl} object}
 \usage{
-\method{nobs}{HMmdl}(mdl)
+\method{nobs}{HMmdl}(object, ...)
 }
 \arguments{
-\item{mdl}{List with model properties.}
+\item{object}{A fitted model object.}
+
+\item{...}{Further arguments to be passed to methods.}
 }
 \value{
-Number of time series observations. The \code{HMmdl} object is returned invisibly.
+Number of time series observations.
 }
 \description{
 This is a method for the function \code{nobs()} for objects of the class \code{HMmdl}.

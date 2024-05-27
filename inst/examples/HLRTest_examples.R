@@ -19,6 +19,8 @@ hlrt_control  <- list(ix          = 1,
                       mugrid_from = 0,
                       mugrid_by   = 1)
 
-#hlrt <- HLRTest(y_ms_simu$y, p = 1, control = hlrt_control)
-#hlrt
+\dontrun{
+  hlrt <- HLRTest(y_ms_simu$y, p = 1, control = hlrt_control)
+  hlrt
+}
 

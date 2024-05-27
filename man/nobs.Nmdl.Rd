@@ -4,13 +4,15 @@
 \alias{nobs.Nmdl}
 \title{Nobs of a \code{Nmdl} object}
 \usage{
-\method{nobs}{Nmdl}(mdl)
+\method{nobs}{Nmdl}(object, ...)
 }
 \arguments{
-\item{mdl}{List with model properties.}
+\item{object}{A fitted model object.}
+
+\item{...}{Further arguments to be passed to methods.}
 }
 \value{
-Number of time series observations. The \code{Nmdl} object is returned invisibly.
+Number of time series observations.
 }
 \description{
 This is a method for the function \code{nobs()} for objects of the class \code{Nmdl}.

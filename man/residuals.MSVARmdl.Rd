@@ -4,13 +4,16 @@
 \alias{residuals.MSVARmdl}
 \title{residuals of a \code{MSVARmdl} object}
 \usage{
-\method{residuals}{MSVARmdl}(mdl)
+\method{residuals}{MSVARmdl}(object, ...)
 }
 \arguments{
-\item{mdl}{List with model properties.}
+\item{object}{an object for which the extraction of model residuals is
+    meaningful.}
+
+\item{...}{other arguments.}
 }
 \value{
-vector of residuals. The \code{MSVARmdl} object is returned invisibly.
+vector of residuals.
 }
 \description{
 This is a method for the function \code{residuals()} for objects of the class \code{MSVARmdl}.

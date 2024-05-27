@@ -12,6 +12,7 @@
 #' @return List of class \code{Nmdl} (\code{S3} object) with model attributes including:
 #' \itemize{
 #'   \item{y: }{a \code{(T x q)} matrix of observations.}
+#'   \item{fitted: }{a \code{(T x q)} matrix of fitted values.}
 #'   \item{resid: }{a \code{(T x q)} matrix of residuals.}
 #'   \item{mu: }{a \code{(1 x q)} vector of estimated means of each process.}
 #'   \item{stdev: }{a \code{(q x 1)} vector of estimated standard deviation of each process.}
@@ -55,7 +56,8 @@ Nmdl <- function(Y, control = list()){
     mu <- rep(0, q)
   }
   # ----- Obtain variables of interest
-  resid       <- Y - matrix(1, n, 1)%*%t(as.matrix(mu))
+  fitted      <- matrix(1, n, 1)%*%t(as.matrix(mu))
+  resid       <- Y - fitted
   sigma       <- crossprod(resid)/(n-1)
   stdev       <- sqrt(diag(sigma))
   theta       <- c(mu,covar_vech(sigma))
@@ -64,7 +66,7 @@ Nmdl <- function(Y, control = list()){
   theta_sig_ind <- c(rep(0, q), rep(1,q*(q+1)/2))
   theta_var_ind <- c(rep(0, q), t(covar_vech(diag(q))))
   # ----- Output
-  out     <- list(y = Y, X = matrix(1, n, 1), resid = resid, mu = mu, stdev = stdev, sigma = sigma, theta = theta, 
+  out     <- list(y = Y, X = matrix(1, n, 1), fitted = fitted, resid = resid, mu = mu, stdev = stdev, sigma = sigma, theta = theta, 
                   theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind,
                   n = n, q = q, p = 0, k = 1, control = con)
   # Define class
@@ -72,8 +74,8 @@ Nmdl <- function(Y, control = list()){
   # get log-likelihood
   out$logLike <- logLik(out)
   # get information criterion
-  out$AIC <- AIC(out)
-  out$BIC <- BIC(out)
+  out$AIC <- stats::AIC(out)
+  out$BIC <- stats::BIC(out)
   # names
   names(out$theta) <- c(paste0("mu_",(1:q)),
                         paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))))
@@ -101,7 +103,9 @@ Nmdl <- function(Y, control = list()){
 #'   \item{y: }{a \code{(T-p x 1)} matrix of observations.}
 #'   \item{X: }{a \code{(T-p x p + const)} matrix of lagged observations with a leading column of \code{1}s if \code{const=TRUE} or not if \code{const=FALSE}.}
 #'   \item{x: }{a \code{(T-p x p)} matrix of lagged observations.}
+#'   \item{fitted: }{a \code{(T-p x 1)} matrix of fitted values.}
 #'   \item{resid: }{a \code{(T-p x 1)} matrix of residuals.}
+#'   \item{inter: }{estimated intercept of the process.}
 #'   \item{mu: }{estimated mean of the process.}
 #'   \item{coef: }{coefficient estimates. First value is the intercept (i.e., not \code{mu}) if \code{const=TRUE}. This is the same as \code{phi} if \code{const=FALSE}.}
 #'   \item{intercept: }{estimate of intercept.}
@@ -165,7 +169,8 @@ ARmdl <- function(Y, p, control = list()){
   # ----- Obtain variables of interest
   phisum  <- sum(phi)
   mu      <- inter/(1-phisum)
-  resid   <- y - X%*%b0
+  fitted  <- X%*%b0
+  resid   <- y - fitted
   stdev   <- sqrt((crossprod(resid))/(n-1))
   sigma   <- stdev^2
   theta   <- as.matrix(c(mu,sigma,phi))
@@ -177,7 +182,7 @@ ARmdl <- function(Y, p, control = list()){
   theta_var_ind <- c(0,1,rep(0,p))
   theta_phi_ind <- c(0,0,rep(1,p))
   # ----- Output
-  out     <- list(y = y, X = X, x = x, resid = resid, mu = mu, coef = b0, intercept = inter, phi = phi,
+  out     <- list(y = y, X = X, x = x, fitted = fitted, resid = resid, mu = mu, inter = inter, coef = b0, intercept = inter, phi = phi,
                   stdev = stdev, sigma = sigma, theta = theta, theta_mu_ind = theta_mu_ind, 
                   theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_phi_ind = theta_phi_ind, 
                   stationary = roots, n = n, p = p, q = 1, k = 1, control = con)
@@ -186,8 +191,8 @@ ARmdl <- function(Y, p, control = list()){
   # get log-likelihood
   out$logLike <- logLik(out)
   # get information criterion
-  out$AIC <- AIC(out)
-  out$BIC <- BIC(out)
+  out$AIC <- stats::AIC(out)
+  out$BIC <- stats::BIC(out)
   # names 
   names(out$theta) <- c(c("mu","sig"), paste0("phi_",(1:p)))
   # get standard errors if 'con$getSE' is 'TRUE'
@@ -214,11 +219,14 @@ ARmdl <- function(Y, p, control = list()){
 #'   \item{y: }{a \code{(T-p x q)} matrix of observations.}
 #'   \item{X: }{a \code{(T-p x p*q + const)} matrix of lagged observations with a leading column of \code{1}s if \code{const=TRUE} or not if \code{const=FALSE}.}
 #'   \item{x: }{a \code{(T-p x p*q)} matrix of lagged observations.}
+#'   \item{fitted: }{a \code{(T-p x q)} matrix of fitted values}
 #'   \item{resid: }{a \code{(T-p x q)} matrix of residuals.}
+#'   \item{inter: }{a \code{(1 x q)} vector of estimated intercepts of each process.}
 #'   \item{mu: }{a \code{(1 x q)} vector of estimated means of each process.}
 #'   \item{coef: }{coefficient estimates. First row are the intercept (i.e., not \code{mu}) if \code{const=TRUE}. This is the same as \code{t(phi)} if \code{const=FALSE}.}
 #'   \item{intercept: }{estimate of intercepts.}
 #'   \item{phi: }{a \code{(q x p*q)} matrix of estimated autoregressive coefficients.}
+#'   \item{Fmat: }{Companion matrix containing autoregressive coefficients.}
 #'   \item{stdev: }{a \code{(q x 1)} vector of estimated standard deviation of each process.}
 #'   \item{sigma: }{a \code{(q x q)} estimated covariance matrix.}
 #'   \item{theta: }{vector containing: \code{mu}, \code{vech(sigma)}, and \code{vec(t(phi))}.}
@@ -271,7 +279,7 @@ VARmdl <- function(Y, p, control = list()){
   }else{
     X     <- x
     b0    <- crossprod(solve(crossprod(X)),crossprod(X,y))
-    inter <- matrix(0,q,1)
+    inter <- matrix(0,1,q)
     phi   <- t(b0)
   }
   # ----- Obtain variables of interest
@@ -279,7 +287,8 @@ VARmdl <- function(Y, p, control = list()){
   stationary  <- all(abs(eigen(Fmat)[[1]])<1)
   mu_tmp      <- solve(diag(q*p)-Fmat)%*%as.matrix(c(inter,rep(0,q*(p-1))))
   mu          <- mu_tmp[(1:(q))]
-  resid       <- y - X%*%b0
+  fitted      <- X%*%b0
+  resid       <- y - fitted
   sigma       <- (crossprod(resid))/(n-1)
   stdev       <- sqrt(diag(sigma))
   theta       <- c(mu,covar_vech(sigma),c(t(phi)))
@@ -289,17 +298,18 @@ VARmdl <- function(Y, p, control = list()){
   theta_var_ind <- c(rep(0, q), t(covar_vech(diag(q))),rep(0,q*q*p))
   theta_phi_ind <- c(rep(0,length(theta)-q*q*p),rep(1,q*q*p))
   # ----- Output
-  out     <- list(y = y, X = X, x = x, resid = resid, mu = mu, coef = b0, intercept = inter, phi = phi,
+  out     <- list(y = y, X = X, x = x, fitted = fitted, resid = resid, inter = inter, mu = mu, coef = b0, intercept = inter, phi = phi,
                   stdev = stdev, sigma = sigma, theta = theta, theta_mu_ind = theta_mu_ind, 
                   theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_phi_ind = theta_phi_ind, 
                   stationary = stationary, n = n, p = p, q = q, k = 1, Fmat = Fmat, control = con)
+  out$Fmat    <- Fmat
   # Define class
   class(out) <- "VARmdl"
   # get log-likelihood
   out$logLike <- logLik(out)
   # get information criterion
-  out$AIC <- AIC(out)
-  out$BIC <- BIC(out)
+  out$AIC <- stats::AIC(out)
+  out$BIC <- stats::BIC(out)
   # names
   phi_n_tmp <- expand.grid((1:q),(1:p),(1:q))
   names(out$theta) <- c(paste0("mu_",(1:q)),
@@ -338,6 +348,7 @@ VARmdl <- function(Y, p, control = list()){
 #' @return List of class \code{HMmdl} (\code{S3} object) with model attributes including:
 #' \itemize{
 #'   \item{y: }{a \code{(T x q)} matrix of observations.}
+#'   \item{fitted: }{a \code{(T x q)} matrix of fitted values.}
 #'   \item{resid: }{a \code{(T x q)} matrix of residuals.}
 #'   \item{mu: }{a \code{(k x q)} matrix of estimated means of each process.}
 #'   \item{stdev: }{List with \code{k} \code{(q x 1)} vector of estimated standard deviation of each process.}
@@ -501,8 +512,12 @@ HMmdl <- function(Y, k, control = list()){
               n = init_mdl$n, q = q, p = 0, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, St = output$St,
               deltath = output$deltath,  iterations = output$iterations, theta_0 = output$theta_0,
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, control = con)
-  out$AIC <- AIC(out)
-  out$BIC <- BIC(out)
+  # Define class
+  class(out) <- "HMmdl"
+  # other output
+  out$fitted  <- stats::fitted(out)
+  out$AIC     <- stats::AIC(out)
+  out$BIC     <- stats::BIC(out)
   stdev <- list(k)
   for (xk in 1:k){
     stdev[[xk]] <- diag(sqrt(diag(out$sigma[[xk]])))
@@ -520,8 +535,6 @@ HMmdl <- function(Y, k, control = list()){
                           if (con$msvar==TRUE) paste0("sig_", (1:k)) else "sig",
                           paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
   }
-  # Define class
-  class(out) <- "HMmdl"
   if (con$getSE==TRUE){
     out <- thetaSE(out)
   }
@@ -562,7 +575,9 @@ HMmdl <- function(Y, k, control = list()){
 #'   \item{y: }{a \code{(T x 1)} matrix of observations.}
 #'   \item{X: }{a \code{(T-p x p + const)} matrix of lagged observations with a leading column of \code{1}s.}
 #'   \item{x: }{a \code{(T-p x p)} matrix of lagged observations.}
+#'   \item{fitted: }{a \code{(T x 1)} matrix of fitted values.}
 #'   \item{resid: }{a \code{(T x 1)} matrix of residuals.}
+#'   \item{inter: }{a \code{(k x 1)} vector of estimated intercepts of each process.}
 #'   \item{mu: }{a \code{(k x 1)} vector of estimated means of each process.}
 #'   \item{phi: }{estimates of autoregressive coefficients.}
 #'   \item{stdev: }{a \code{(k x 1)} vector of estimated standard deviation of each process.}
@@ -740,15 +755,18 @@ MSARmdl <- function(Y, p, k, control = list()){
               n = init_mdl$n, p = p, q = 1, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, 
               St = output$St, deltath = output$deltath, iterations = output$iterations, theta_0 = output$theta_0, 
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, control = con)
-  out$AIC <- AIC(out)
-  out$BIC <- BIC(out)
+  # Define class
+  class(out) <- "MSARmdl"
+  # other output
+  out$inter   <- interMSARmdl(out)
+  out$fitted  <- stats::fitted(out)
+  out$AIC     <- stats::AIC(out)
+  out$BIC     <- stats::BIC(out)
   # names 
   names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_", (1:k)) else "mu",
                         if (con$msvar==TRUE) paste0("sig_", (1:k)) else "sig",
                         paste0("phi_",(1:p)),
                         paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
-  # Define class
-  class(out) <- "MSARmdl"
   if (con$getSE==TRUE){
     out <- thetaSE(out)
   }
@@ -790,8 +808,10 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'   \item{X: }{a \code{(T-p x p*q + const)} matrix of lagged observations with a leading column of \code{1}s.}
 #'   \item{x: }{a \code{(T-p x p*q)} matrix of lagged observations.}
 #'   \item{resid: }{a \code{(T-p x q)} matrix of residuals.}
+#'   \item{inter: }{a \code{(k x q)} matrix of estimated intercepts of each process.}
 #'   \item{mu: }{a \code{(k x q)} matrix of estimated means of each process.}
 #'   \item{phi: }{estimates of autoregressive coefficients.}
+#'   \item{Fmat: }{Companion matrix containing autoregressive coefficients.}
 #'   \item{stdev: }{List with \code{k} \code{(q x q)} matrices with estimated standard deviation on the diagonal.}
 #'   \item{sigma: }{List with \code{k} \code{(q x q)} matrices with estimated covariance matrix.}
 #'   \item{theta: }{vector containing: \code{mu} and \code{vech(sigma)}.}
@@ -964,8 +984,14 @@ MSVARmdl <- function(Y, p, k, control = list()){
               theta_phi_ind = theta_phi_ind, theta_P_ind = theta_P_ind, stationary = NULL, n = init_mdl$n, p = p, q = q, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, 
               St = output$St, deltath = output$deltath,  iterations = output$iterations, theta_0 = output$theta_0,
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, control = con)
-  out$AIC <- AIC(out)
-  out$BIC <- BIC(out)
+  # Define class
+  class(out) <- "MSVARmdl"
+  # other output
+  out$Fmat    <- companionMat(out$phi, out$p, out$q)
+  out$inter   <- interMSVARmdl(out)
+  out$fitted  <- stats::fitted(out)
+  out$AIC     <- stats::AIC(out)
+  out$BIC     <- stats::BIC(out)
   stdev <- list(k)
   for (xk in 1:k){
     stdev[[xk]] <- diag(sqrt(diag(out$sigma[[xk]])))
@@ -979,8 +1005,6 @@ MSVARmdl <- function(Y, p, k, control = list()){
                         if (con$msvar==TRUE) paste0("sig_",sig_n_tmp[,1],",",sig_n_tmp[,2]) else paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))),
                         paste0("phi_",paste0(phi_n_tmp[,2],",",phi_n_tmp[,3],phi_n_tmp[,1])),
                         paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
-  # Define class
-  class(out) <- "MSVARmdl"
   if (con$getSE==TRUE){
     out <- thetaSE(out)
   }

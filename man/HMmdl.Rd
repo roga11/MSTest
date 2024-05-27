@@ -31,6 +31,7 @@ HMmdl(Y, k, control = list())
 List of class \code{HMmdl} (\code{S3} object) with model attributes including:
 \itemize{
   \item{y: }{a \code{(T x q)} matrix of observations.}
+  \item{fitted: }{a \code{(T x q)} matrix of fitted values.}
   \item{resid: }{a \code{(T x q)} matrix of residuals.}
   \item{mu: }{a \code{(k x q)} matrix of estimated means of each process.}
   \item{stdev: }{List with \code{k} \code{(q x 1)} vector of estimated standard deviation of each process.}

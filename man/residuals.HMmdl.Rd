@@ -4,13 +4,16 @@
 \alias{residuals.HMmdl}
 \title{residuals of a \code{HMmdl} object}
 \usage{
-\method{residuals}{HMmdl}(mdl)
+\method{residuals}{HMmdl}(object, ...)
 }
 \arguments{
-\item{mdl}{List with model properties.}
+\item{object}{an object for which the extraction of model residuals is
+    meaningful.}
+
+\item{...}{other arguments.}
 }
 \value{
-vector of residuals. The \code{HMmdl} object is returned invisibly.
+vector of residuals.
 }
 \description{
 This is a method for the function \code{residuals()} for objects of the class \code{HMmdl}.

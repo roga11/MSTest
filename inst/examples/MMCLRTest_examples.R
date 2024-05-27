@@ -1,14 +1,16 @@
 
 set.seed(1234)
-# ----- Univariate ----- # 
-# Define DGP 
-mdl_norm <- list(n     = 1000, 
-                 q     = 1,
-                 mu    = as.matrix(5),
-                 sigma = as.matrix(5.0))
+# Define DGP of MS AR process
+mdl_ms2 <- list(n     = 200, 
+                mu    = c(5,10),
+                sigma = c(1,4),
+                phi   = c(0.5),
+                k     = 2,
+                P     = rbind(c(0.90, 0.10),
+                              c(0.10, 0.90)))
 
-# Simulate process using simuNorm() function
-y_norm_simu <- simuNorm(mdl_norm)
+# Simulate process using simuMSAR() function
+y_ms_simu <- simuMSAR(mdl_ms2)
 
 
 # Set test procedure options
@@ -19,7 +21,8 @@ mmc_control = list(N = 19,
                    CI_union = TRUE,
                    silence = FALSE,
                    threshold_stop = 0.05 + 1e-6,
-                   type = "GenSA",
+                   type = "pso",
+                   maxit = 100,
                    mdl_h0_control = list(const  = TRUE, 
                                          getSE  = TRUE),
                    mdl_h1_control = list(msmu   = TRUE, 
@@ -27,8 +30,11 @@ mmc_control = list(N = 19,
                                          getSE  = TRUE,
                                          method = "EM",
                                          maxit  = 300,
-                                         use_diff_init = 1),
-                   type_control = list(maxit = 10))
+                                         use_diff_init = 1))
+\dontrun{
+  MMCtest <- MMCLRTest(y_ms_simu$y, p = 1 , k0 = 1 , k1 = 2, mmc_control)
+  MMCtest
+}
 
-#mdl <- MMCLRTest(y_ms_simu$y, p = 0 , k0 = 1 , k1 = 2, mmc_control)
-#mdl
+
+

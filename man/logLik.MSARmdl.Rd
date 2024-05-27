@@ -4,10 +4,14 @@
 \alias{logLik.MSARmdl}
 \title{Log likelihood for Markov-switching autoregressive model}
 \usage{
-\method{logLik}{MSARmdl}(mdl)
+\method{logLik}{MSARmdl}(object, ...)
 }
 \arguments{
-\item{mdl}{List with model properties.}
+\item{object}{any object from which a log-likelihood value, or a
+   contribution to a log-likelihood value, can be extracted.}
+
+\item{...}{some methods for this generic function require additional
+   arguments.}
 }
 \value{
 Log-likelihood value.

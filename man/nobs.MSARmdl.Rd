@@ -4,13 +4,15 @@
 \alias{nobs.MSARmdl}
 \title{Nobs of a \code{MSARmdl} object}
 \usage{
-\method{nobs}{MSARmdl}(mdl)
+\method{nobs}{MSARmdl}(object, ...)
 }
 \arguments{
-\item{mdl}{List with model properties.}
+\item{object}{A fitted model object.}
+
+\item{...}{Further arguments to be passed to methods.}
 }
 \value{
-Number of time series observations. The \code{MSARmdl} object is returned invisibly.
+Number of time series observations.
 }
 \description{
 This is a method for the function \code{nobs()} for objects of the class \code{MSARmdl}.

@@ -11,7 +11,8 @@
 * added new optional optimization routine for HLRparamSearch() (nloptr::slsqp() can be used now).
 * Fixed bug in HLRTest() where grid for sigma options are properly used now. 
 * Now using nearest_spd() from pracma instead of nearPD() from lmf package.
-* Added new methods for models, namely: coef, residuals, nobs
+* Added new methods for models, namely: coef, fitted, predict, summary, residuals, nobs
+* Made changes to print method.  
 * Changed methods for models, namely: logLiklihood now uses logLik, and aic and bic now use AIC and BIC methods.
 * Updated USGNP dataset to include data up to end of 2023.  
 * Updated `DESCRIPTION` file for changed dependencies and new version.

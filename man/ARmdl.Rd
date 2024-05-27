@@ -23,7 +23,9 @@ List of class \code{ARmdl} (\code{S3} object) with model attributes including:
   \item{y: }{a \code{(T-p x 1)} matrix of observations.}
   \item{X: }{a \code{(T-p x p + const)} matrix of lagged observations with a leading column of \code{1}s if \code{const=TRUE} or not if \code{const=FALSE}.}
   \item{x: }{a \code{(T-p x p)} matrix of lagged observations.}
+  \item{fitted: }{a \code{(T-p x 1)} matrix of fitted values.}
   \item{resid: }{a \code{(T-p x 1)} matrix of residuals.}
+  \item{inter: }{estimated intercept of the process.}
   \item{mu: }{estimated mean of the process.}
   \item{coef: }{coefficient estimates. First value is the intercept (i.e., not \code{mu}) if \code{const=TRUE}. This is the same as \code{phi} if \code{const=FALSE}.}
   \item{intercept: }{estimate of intercept.}
@@ -71,8 +73,6 @@ control <- list(const  = TRUE,
 # Estimate model
 y_ar_mdl <- ARmdl(y_simu$y, p = 2, control)
 y_ar_mdl
-
-
 
 }
 \seealso{

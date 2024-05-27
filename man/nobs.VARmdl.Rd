@@ -4,13 +4,15 @@
 \alias{nobs.VARmdl}
 \title{Nobs of a \code{VARmdl} object}
 \usage{
-\method{nobs}{VARmdl}(mdl)
+\method{nobs}{VARmdl}(object, ...)
 }
 \arguments{
-\item{mdl}{List with model properties.}
+\item{object}{A fitted model object.}
+
+\item{...}{Further arguments to be passed to methods.}
 }
 \value{
-Number of time series observations. The \code{VARmdl} object is returned invisibly.
+Number of time series observations.
 }
 \description{
 This is a method for the function \code{nobs()} for objects of the class \code{VARmdl}.

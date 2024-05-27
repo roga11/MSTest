@@ -26,6 +26,7 @@ lmc_control = list(N = 19,
                                          maxit  = 300,
                                          use_diff_init = 1))
 
-
-#mdl <- LMCLRTest(y_ms_simu$y, p = 1, k0 = 1 , k1 = 2, lmc_control)
-#mdl
+\dontrun{
+  mdl <- LMCLRTest(y_ms_simu$y, p = 1, k0 = 1 , k1 = 2, lmc_control)
+  mdl
+}

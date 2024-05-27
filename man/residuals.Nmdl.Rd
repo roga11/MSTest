@@ -4,13 +4,16 @@
 \alias{residuals.Nmdl}
 \title{residuals of a \code{Nmdl} object}
 \usage{
-\method{residuals}{Nmdl}(mdl)
+\method{residuals}{Nmdl}(object, ...)
 }
 \arguments{
-\item{mdl}{List with model properties.}
+\item{object}{an object for which the extraction of model residuals is
+    meaningful.}
+
+\item{...}{other arguments.}
 }
 \value{
-vector of residuals. The \code{Nmdl} object is returned invisibly.
+vector of residuals.
 }
 \description{
 This is a method for the function \code{residuals()} for objects of the class \code{Nmdl}.

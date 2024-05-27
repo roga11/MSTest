@@ -4,13 +4,17 @@
 \alias{BIC.MSARmdl}
 \title{BIC of a \code{MSARmdl} object}
 \usage{
-\method{BIC}{MSARmdl}(mdl)
+\method{BIC}{MSARmdl}(object, ...)
 }
 \arguments{
-\item{mdl}{List with model properties.}
+\item{object}{a fitted model object for which there exists a
+    \code{logLik} method to extract the corresponding log-likelihood, or
+    an object inheriting from class \code{logLik}.}
+
+\item{...}{optionally more fitted model objects.}
 }
 \value{
-BIC value. The \code{MSARmdl} object is returned invisibly.
+BIC value.
 }
 \description{
 This is a method for the function \code{BIC()} for objects of the class \code{MSARmdl}.

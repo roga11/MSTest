@@ -18,5 +18,5 @@ control <- list(const  = TRUE,
                 getSE  = TRUE)
 
 # Estimate model
-y_var_mdl <- VARmdl(y_simu$y, p = 1, control)
+y_var_mdl <- VARmdl(y_simu$y, p = 2, control)
 y_var_mdl

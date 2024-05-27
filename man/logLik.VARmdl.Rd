@@ -4,10 +4,14 @@
 \alias{logLik.VARmdl}
 \title{Log likelihood for vector autoregressive model}
 \usage{
-\method{logLik}{VARmdl}(mdl)
+\method{logLik}{VARmdl}(object, ...)
 }
 \arguments{
-\item{mdl}{List with model properties.}
+\item{object}{any object from which a log-likelihood value, or a
+   contribution to a log-likelihood value, can be extracted.}
+
+\item{...}{some methods for this generic function require additional
+   arguments.}
 }
 \value{
 Log-likelihood value.

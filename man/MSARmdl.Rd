@@ -36,7 +36,9 @@ List of class \code{MSARmdl} (\code{S3} object) with model attributes including:
   \item{y: }{a \code{(T x 1)} matrix of observations.}
   \item{X: }{a \code{(T-p x p + const)} matrix of lagged observations with a leading column of \code{1}s.}
   \item{x: }{a \code{(T-p x p)} matrix of lagged observations.}
+  \item{fitted: }{a \code{(T x 1)} matrix of fitted values.}
   \item{resid: }{a \code{(T x 1)} matrix of residuals.}
+  \item{inter: }{a \code{(k x 1)} vector of estimated intercepts of each process.}
   \item{mu: }{a \code{(k x 1)} vector of estimated means of each process.}
   \item{phi: }{estimates of autoregressive coefficients.}
   \item{stdev: }{a \code{(k x 1)} vector of estimated standard deviation of each process.}
@@ -96,8 +98,10 @@ control <- list(msmu   = TRUE,
                 use_diff_init = 1)
 
 # Estimate model
-ms_mdl <- MSARmdl(y_ms_simu$y, p = 1, k = 2, control)
-ms_mdl
+\dontrun{
+  ms_mdl <- MSARmdl(y_ms_simu$y, p = 1, k = 2, control)
+  ms_mdl
+}
 
 
 

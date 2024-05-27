@@ -4,13 +4,16 @@
 \alias{coef.HMmdl}
 \title{coef of a \code{HMmdl} object}
 \usage{
-\method{coef}{HMmdl}(mdl)
+\method{coef}{HMmdl}(object, ...)
 }
 \arguments{
-\item{mdl}{List with model properties.}
+\item{object}{an object for which the extraction of model coefficients is
+    meaningful.}
+
+\item{...}{other arguments.}
 }
 \value{
-vector of coefficients. The \code{HMmdl} object is returned invisibly.
+vector of coefficients.
 }
 \description{
 This is a method for the function \code{coef()} for objects of the class \code{HMmdl}.

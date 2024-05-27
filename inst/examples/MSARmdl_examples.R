@@ -19,8 +19,10 @@ control <- list(msmu   = TRUE,
                 use_diff_init = 1)
 
 # Estimate model
-ms_mdl <- MSARmdl(y_ms_simu$y, p = 1, k = 2, control)
-ms_mdl
+\dontrun{
+  ms_mdl <- MSARmdl(y_ms_simu$y, p = 1, k = 2, control)
+  ms_mdl
+}
 
 
 

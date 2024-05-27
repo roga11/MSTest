@@ -4,13 +4,16 @@
 \alias{coef.Nmdl}
 \title{coef of a \code{Nmdl} object}
 \usage{
-\method{coef}{Nmdl}(mdl)
+\method{coef}{Nmdl}(object, ...)
 }
 \arguments{
-\item{mdl}{List with model properties.}
+\item{object}{an object for which the extraction of model coefficients is
+    meaningful.}
+
+\item{...}{other arguments.}
 }
 \value{
-vector of coefficients. The \code{Nmdl} object is returned invisibly.
+vector of coefficients.
 }
 \description{
 This is a method for the function \code{coef()} for objects of the class \code{Nmdl}.

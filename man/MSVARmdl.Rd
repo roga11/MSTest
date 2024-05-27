@@ -37,8 +37,10 @@ List of class \code{MSVARmdl} (\code{S3} object) with model attributes including
   \item{X: }{a \code{(T-p x p*q + const)} matrix of lagged observations with a leading column of \code{1}s.}
   \item{x: }{a \code{(T-p x p*q)} matrix of lagged observations.}
   \item{resid: }{a \code{(T-p x q)} matrix of residuals.}
+  \item{inter: }{a \code{(k x q)} matrix of estimated intercepts of each process.}
   \item{mu: }{a \code{(k x q)} matrix of estimated means of each process.}
   \item{phi: }{estimates of autoregressive coefficients.}
+  \item{Fmat: }{Companion matrix containing autoregressive coefficients.}
   \item{stdev: }{List with \code{k} \code{(q x q)} matrices with estimated standard deviation on the diagonal.}
   \item{sigma: }{List with \code{k} \code{(q x q)} matrices with estimated covariance matrix.}
   \item{theta: }{vector containing: \code{mu} and \code{vech(sigma)}.}
@@ -104,8 +106,10 @@ control <- list(msmu   = TRUE,
                 use_diff_init = 1)
                 
 # Estimate model
-#y_msvar_mdl <- MSVARmdl(y_msvar_simu$y, p = 1, k = 2, control)
-#y_msvar_mdl
+\dontrun{
+  y_msvar_mdl <- MSVARmdl(y_msvar_simu$y, p = 2, k = 2, control)
+  y_msvar_mdl
+}
 }
 \references{
 Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38..

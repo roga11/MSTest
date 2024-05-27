@@ -4,13 +4,16 @@
 \alias{coef.MSVARmdl}
 \title{coef of a \code{MSVARmdl} object}
 \usage{
-\method{coef}{MSVARmdl}(mdl)
+\method{coef}{MSVARmdl}(object, ...)
 }
 \arguments{
-\item{mdl}{List with model properties.}
+\item{object}{an object for which the extraction of model coefficients is
+    meaningful.}
+
+\item{...}{other arguments.}
 }
 \value{
-vector of coefficients. The \code{MSVARmdl} object is returned invisibly.
+vector of coefficients.
 }
 \description{
 This is a method for the function \code{coef()} for objects of the class \code{MSVARmdl}.
