@@ -61,10 +61,10 @@ control <- list(msmu   = TRUE,
 
 # Estimate model with p=4 and switch in mean only as in Hamilton (1989)
 hamilton89_mdl <- MSARmdl(y_gnp_gw_84, p = 4, k = 2, control)
-hamilton89_mdl
+summary(hamilton89_mdl)
 
 # plot smoothed probability of recessionary state
-plot(hamilton89_mdl$St[,1], type = 'l')
+plot(hamilton89_mdl)
 ```
  
 This package also provides functions to simulate Markov switching processes among others. To do this, we use the 'simuMSAR' function to simulate a Markov switching process and then uses 'MSARmdl' to estimate the model. Estimated coefficients may be compared with the true parameters used to generate the data. A plot also shows the fit of the smoothed probabilities. 
@@ -91,10 +91,10 @@ control <- list(msmu   = TRUE,
 
 # Estimate model
 y_ms_mdl <- MSARmdl(y_ms_simu$y, p = 1, k = 2, control)
-y_ms_mdl
 
-plot(y_ms_mdl$St[,1], type = 'l')
-lines(y_ms_simu$St, col = 'red', lty = 2)
+summary(y_ms_mdl)
+
+plot(y_ms_mdl)
 ```
 
 This third example, the 'simuMSVAR' function to simulate a bivariate Markov switching vector autoregressive process and then uses 'MSVARmdl' to estimate the model. Estimated coefficients may be compared with the true parameters used to generate the data. A plot also shows the fit of the smoothed probabilities. 
@@ -104,6 +104,7 @@ set.seed(1234)
 # Define DGP of MS VAR process
 mdl_msvar2 <- list(n     = 1000, 
                    p     = 1,
+                   q     = 2,
                    mu    = rbind(c(5,-2),
                                  c(10,2)),
                    sigma = list(rbind(c(5.0, 1.5),
@@ -128,12 +129,9 @@ control <- list(msmu   = TRUE,
 # Estimate model
 y_msvar_mdl <- MSVARmdl(y_msvar_simu$y, p = 1, k = 2, control)
 
-y_msvar_mdl
+summary(y_msvar_mdl)
 
-plot(y_msvar_mdl$St[,2], type = 'l')
-lines(y_msvar_simu$St, col = 'red', lty = 2)
-
-
+plot(y_msvar_mdl)
 ```
 
 ## Hypothesis Testing
@@ -170,7 +168,7 @@ lmc_control = list(N = 99,
 
 
 lmc_lrt <- LMCLRTest(y_ms_simu$y, p = 1 , k0 = 1 , k1 = 2, lmc_control)
-lmc_lrt
+summary(lmc_lrt)
 ```
 
 We can also use the moment-based test procedure proposed by Dufour & Luger (2017)
@@ -185,7 +183,7 @@ lmc_control = list(N = 99,
 
 # perform test on Hamilton 1989 data
 lmc_mb <- DLMCTest(y_ms_simu$y, p = 1, control = lmc_control)
-lmc_mb
+summary(lmc_mb)
 ```
 
 The package also makes available the Maximized Monte Carlo versions of both these tests and the standardized likelihood ratio test proposed by Hansen (1992) (see HLRTest()) and the parameter stability test of Carrasco, Hu, & Ploberger (2014) (see CHPTest()).
@@ -211,8 +209,8 @@ The package also makes available the Maximized Monte Carlo versions of both thes
 
 **Rodriguez-Rondon, Gabriel and Jean-Marie Dufour (2022).** Simulation-Based Inference for Markov Switching Models, _JSM Proceedings, Business and Economic Statistics Section: American Statistical Association_.
 
-**Rodriguez-Rondon, Gabriel and Jean-Marie Dufour (2023a).** Monte Carlo Likelihood Ratio Tests for Markov Switching Models, _Manuscript, McGill University Economics Department_.
+**Rodriguez-Rondon, Gabriel and Jean-Marie Dufour (2024a).** Monte Carlo Likelihood Ratio Tests for Markov Switching Models, _Manuscript, McGill University Economics Department_.
 
-**Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. (2023b).** MSTest: An R-package for Testing Markov-Switching Models, _Manuscript, McGill University Economics Department_.
+**Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. (2024b).** MSTest: An R-package for Testing Markov-Switching Models, _Manuscript, McGill University Economics Department_.
 
 **Qu, Zhongjun, and Fan Zhuo. (2021).** Likelihood Ratio-Based Tests for Markov Regime Switching, _The Review of Economic Studies_ 88 (2): 937–968. [https://doi.org/10.1093/restud/rdaa035](https://doi.org/10.1093/restud/rdaa035)

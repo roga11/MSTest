@@ -16,6 +16,7 @@
 * Made changes to print method.  
 * Changed methods for models, namely: logLiklihood now uses logLik, and aic and bic now use AIC and BIC methods.
 * Updated USGNP dataset to include data up to end of 2023.  
+* Updated `README.md` file  with usage of new methods.
 * Updated `DESCRIPTION` file for changed dependencies and new version.
 
 # MSTest 0.1.1
