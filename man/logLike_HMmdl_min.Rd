@@ -7,11 +7,11 @@
 logLike_HMmdl_min(theta, mdl, k)
 }
 \arguments{
-\item{\code{theta}}{Vector of model parameters.}
+\item{theta}{Vector of model parameters.}
 
-\item{\code{mdl}}{List with model attributes.}
+\item{mdl}{List with model attributes.}
 
-\item{\code{k}}{integer determining the number of regimes.}
+\item{k}{integer determining the number of regimes.}
 }
 \value{
 Negative log-likelihood value.

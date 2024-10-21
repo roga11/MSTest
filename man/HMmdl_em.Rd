@@ -7,13 +7,13 @@
 HMmdl_em(theta_0, mdl, k, optim_options)
 }
 \arguments{
-\item{\code{theta_0}}{vector with initial values for parameters.}
+\item{theta_0}{vector with initial values for parameters.}
 
-\item{\code{mdl}}{List with model attributes.}
+\item{mdl}{List with model attributes.}
 
-\item{\code{k}}{Integer determining the number of regimes.}
+\item{k}{Integer determining the number of regimes.}
 
-\item{\code{optim_options}}{List with optimization options.}
+\item{optim_options}{List with optimization options.}
 }
 \value{
 List with model results.

@@ -31,9 +31,9 @@ mmc_control = list(N = 19,
                                          method = "EM",
                                          maxit  = 300,
                                          use_diff_init = 1))
-\dontrun{
+\donttest{
   MMCtest <- MMCLRTest(y_ms_simu$y, p = 1 , k0 = 1 , k1 = 2, mmc_control)
-  MMCtest
+  summary(MMCtest)
 }
 
 

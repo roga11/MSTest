@@ -21,7 +21,7 @@ using namespace Rcpp;
 //' 
 //' @export
 // [[Rcpp::export]]
-List simuMdl(List mdl_h0, int p, int q, int k, int burnin){
+List simuMdl(List mdl_h0, int p, int q, int k, int burnin, bool exog){
   // ---------- Load R functions
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function MSARmdl = mstest["MSARmdl"];
@@ -38,16 +38,32 @@ List simuMdl(List mdl_h0, int p, int q, int k, int burnin){
     simu_mdl = simuHMM_cpp(mdl_h0, burnin);
   }else if ((k==1) & (q==1) & (p>0)){
     // Autoregressive model
-    simu_mdl = simuAR_cpp(mdl_h0, burnin);
+    if (exog==FALSE){
+      simu_mdl = simuAR_cpp(mdl_h0, burnin); 
+    }else{
+      simu_mdl = simuARX_cpp(mdl_h0, burnin);
+    }
   }else if ((k>1) & (q==1) & (p>0)){
     // Markov switching model
-    simu_mdl = simuMSAR_cpp(mdl_h0, burnin);
+    if (exog==FALSE){
+      simu_mdl = simuMSAR_cpp(mdl_h0, burnin);
+    }else{
+      simu_mdl = simuMSARX_cpp(mdl_h0, burnin);
+    }
   }else if ((k==1) & (q>1) & (p>0)){
     // Vector autoregressive model
-    simu_mdl = simuVAR_cpp(mdl_h0, burnin);
+    if (exog==FALSE){
+      simu_mdl = simuVAR_cpp(mdl_h0, burnin); 
+    }else{
+      simu_mdl = simuVARX_cpp(mdl_h0, burnin); 
+    }
   }else if ((k>1) & (q>1) & (p>0)){
     // Vector autoregressive Markov switching model
-    simu_mdl = simuMSVAR_cpp(mdl_h0, burnin);
+    if (exog==FALSE){
+      simu_mdl = simuMSVAR_cpp(mdl_h0, burnin);
+    }else{
+      simu_mdl = simuMSVARX_cpp(mdl_h0, burnin);
+    }
   }
   return(simu_mdl);
 }
@@ -66,7 +82,7 @@ List simuMdl(List mdl_h0, int p, int q, int k, int burnin){
 //' @param theta_h0 vector of parameter values under null being considered.
 //' @param p integer specifying the number of autoregressive lags.
 //' @param q integer specifying the number of series.
-//' @param k integer specifying the number of regimes.
+//' @param k0 integer specifying the number of regimes.
 //' 
 //' @return List with model properties
 //' 
@@ -74,7 +90,7 @@ List simuMdl(List mdl_h0, int p, int q, int k, int burnin){
 //' 
 //' @export
 // [[Rcpp::export]]
-List mdledit(List mdl_h0, arma::vec theta_h0, int p, int q, int k0){
+List mdledit(List mdl_h0, arma::vec theta_h0, int p, int q, int k0, bool exog){
   List mdl_h0_tmp = clone(mdl_h0);
   // edit theta vector
   mdl_h0_tmp["theta"] = theta_h0;
@@ -82,10 +98,18 @@ List mdledit(List mdl_h0, arma::vec theta_h0, int p, int q, int k0){
   arma::vec theta_mu_h0 = theta_h0.elem(find(theta_mu_ind_h0));
   arma::vec theta_sig_ind_h0 = mdl_h0["theta_sig_ind"];
   arma::vec theta_sig_h0 = theta_h0.elem(find(theta_sig_ind_h0));
+  if (exog==TRUE){
+    arma::mat Z = mdl_h0["Z"];
+    int qz = Z.n_cols;
+    arma::vec theta_x_ind_h0 = mdl_h0["theta_x_ind"];
+    arma::vec theta_x_h0 = theta_h0.elem(find(theta_x_ind_h0));
+    mdl_h0_tmp["betaZ"] = reshape(theta_x_h0,qz,q);;
+  }
   // edit simulation list params with values from theta_0
   if (q==1){
     mdl_h0_tmp["mu"] = theta_mu_h0;
     mdl_h0_tmp["stdev"] = sqrt(theta_sig_h0);
+    mdl_h0_tmp["sigma"] = theta_sig_h0;
     if (p>0){
       arma::vec theta_phi_ind_h0 = mdl_h0["theta_phi_ind"];
       arma::vec phi_new = theta_h0.elem(find(theta_phi_ind_h0));
@@ -134,7 +158,7 @@ List mdledit(List mdl_h0, arma::vec theta_h0, int p, int q, int k0){
 //' 
 //' @export
 // [[Rcpp::export]]
-double compu_tstat(arma::vec theta_h0, List mdl_h0, double LT_h1, int p, int q, int k0){
+double compu_tstat(arma::vec theta_h0, List mdl_h0, double LT_h1, int p, int q, int k0, bool exog){
   double logL0;
   // compute test stat
   if ((k0==1) & (p==0)){
@@ -145,16 +169,32 @@ double compu_tstat(arma::vec theta_h0, List mdl_h0, double LT_h1, int p, int q, 
     logL0 = logLike_HMmdl(theta_h0, mdl_h0, k0);  
   }else if ((k0==1) & (q==1) & (p>0)){
     // ARmdl under null & MSARmdl under alternative hypothesis
-    logL0 = logLike_ARmdl(theta_h0, mdl_h0);  
+    if (exog==FALSE){
+      logL0 = logLike_ARmdl(theta_h0, mdl_h0);    
+    }else{
+      logL0 = logLike_ARXmdl(theta_h0, mdl_h0);    
+    }
   }else if ((k0>1) & (q==1) & (p>0)){
     // MSARmdl under null & alternative hypothesis
-    logL0 = logLike_MSARmdl(theta_h0, mdl_h0, k0);  
+    if (exog==FALSE){
+      logL0 = logLike_MSARmdl(theta_h0, mdl_h0, k0);  
+    }else{
+      logL0 = logLike_MSARXmdl(theta_h0, mdl_h0, k0);  
+    }
   }else if ((k0==1) & (q>1) & (p>0)){
     // VARmdl under null & MSVARmdl under alternative hypothesis
-    logL0 = logLike_VARmdl(theta_h0, mdl_h0);  
+    if (exog==FALSE){
+      logL0 = logLike_VARmdl(theta_h0, mdl_h0);  
+    }else{
+      logL0 = logLike_VARXmdl(theta_h0, mdl_h0);  
+    }
   }else if ((k0>1) & (q>1) & (p>0)){
     // MSARmdl under null & alternative hypothesis
-    logL0 = logLike_MSVARmdl(theta_h0, mdl_h0, k0);  
+    if (exog==FALSE){
+      logL0 = logLike_MSVARmdl(theta_h0, mdl_h0, k0);  
+    }else{
+      logL0 = logLike_MSVARXmdl(theta_h0, mdl_h0, k0);  
+    }
   }else{
     stop("Verify number of regimes under null and alternative");
   }
@@ -186,7 +226,7 @@ double compu_tstat(arma::vec theta_h0, List mdl_h0, double LT_h1, int p, int q, 
 //' @export
 // [[Rcpp::export]]
 arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin, 
-                       List mdl_h0_control, List mdl_h1_control){
+                       Rcpp::Nullable<arma::mat> Z, List mdl_h0_control, List mdl_h1_control){
   // ---------- Load R functions
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function estimMdl = mstest["estimMdl"];
@@ -194,6 +234,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
   int k0  = mdl_h0["k"];
   int p   = mdl_h0["p"];
   int q   = mdl_h0["q"];
+  bool exog = Z.isNotNull();
   //  Fix 'getSE' options to be FALSE as it is not needed for simulated series and slows down computation
   bool getSE = FALSE;
   List mdl_h0_control_tmp = clone(mdl_h0_control);
@@ -202,14 +243,16 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
   mdl_h1_control_tmp["getSE"] = getSE;
   // ---------- Simulate test statistic under null hypothesis
   double LRT_i;
+  List mdl_h0_tmp;
+  List mdl_h1_tmp;
   arma::vec LRT_N(N,arma::fill::zeros);
   for (int xn = 0; xn<N; xn++){
-    bool LRT_finite   = FALSE; 
+    bool LRT_finite   = FALSE;
     while (LRT_finite==FALSE){
-      List simu_mdl   = simuMdl(mdl_h0, p, q, k0, burnin);
+      List simu_mdl   = simuMdl(mdl_h0, p, q, k0, burnin, exog);
       arma::mat y0    = simu_mdl["y"];
-      List mdl_h0_tmp = estimMdl(y0, p, q, k0, mdl_h0_control_tmp);
-      List mdl_h1_tmp = estimMdl(y0, p, q, k1, mdl_h1_control_tmp);
+      mdl_h0_tmp = estimMdl(y0, p, q, k0, Z, mdl_h0_control_tmp);
+      mdl_h1_tmp = estimMdl(y0, p, q, k1, Z, mdl_h1_control_tmp);
       double l_0      = mdl_h0_tmp["logLike"];
       double l_1      = mdl_h1_tmp["logLike"];
       LRT_i = -2*(l_0 - l_1);
@@ -247,7 +290,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
 double MMCLRpval_fun(arma::vec theta_h0, List mdl_h0, int k1, double LT_h1,
                      int N, int burnin, int workers, double lambda, 
                      bool stationary_constraint, double thtol,   
-                     List mdl_h0_control, List mdl_h1_control){
+                     Rcpp::Nullable<arma::mat> Z, bool exog, List mdl_h0_control, List mdl_h1_control){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function LR_samp_dist_par = mstest["LR_samp_dist_par"];
   Rcpp::Function estimMdl = mstest["estimMdl"];
@@ -301,14 +344,14 @@ double MMCLRpval_fun(arma::vec theta_h0, List mdl_h0, int k1, double LT_h1,
     pval = -(lambda*(P_h0_colsum_const + non_stationary_const));
   }else{
     // If constraints are met, compute pvalue
-    List mdl_h0_simu  = mdledit(mdl_h0, theta_h0, p, q, k0);
-    double LRT_0 = compu_tstat(theta_h0, mdl_h0_simu, LT_h1, p, q, k0); // Can certain value of theta_h0 lead to negative or non finite LRT_0? Check this.
+    List mdl_h0_simu  = mdledit(mdl_h0, theta_h0, p, q, k0, exog);
+    double LRT_0 = compu_tstat(theta_h0, mdl_h0_simu, LT_h1, p, q, k0, exog); // Can certain value of theta_h0 lead to negative or non finite LRT_0? Check this.
     // simulate under null hypothesis
     arma::vec LRN_tmp;
     if(workers>0){
-      LRN_tmp = as<arma::vec>(LR_samp_dist_par(mdl_h0_simu, k1, N, burnin, mdl_h0_control, mdl_h1_control, workers));
+      LRN_tmp = as<arma::vec>(LR_samp_dist_par(mdl_h0_simu, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control, workers));
     }else{
-      LRN_tmp = LR_samp_dist(mdl_h0_simu, k1, N, burnin, mdl_h0_control, mdl_h1_control);
+      LRN_tmp = LR_samp_dist(mdl_h0_simu, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control);
     }
     pval = MCpval(LRT_0, LRN_tmp, "geq");
   }
@@ -341,8 +384,8 @@ double MMCLRpval_fun(arma::vec theta_h0, List mdl_h0, int k1, double LT_h1,
 // [[Rcpp::export]]
 double MMCLRpval_fun_min(arma::vec theta, List mdl_h0, int k1, double LT_h1, int N, int burnin, int workers, 
                          double lambda, bool stationary_constraint, double thtol,   
-                         List mdl_h0_control, List mdl_h1_control){
-  double pval = -MMCLRpval_fun(theta, mdl_h0, k1, LT_h1, N, burnin, workers, lambda, stationary_constraint, thtol, mdl_h0_control, mdl_h1_control);     
+                         Rcpp::Nullable<arma::mat> Z, bool exog, List mdl_h0_control, List mdl_h1_control){
+  double pval = -MMCLRpval_fun(theta, mdl_h0, k1, LT_h1, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control);     
   return(pval);
 }
 

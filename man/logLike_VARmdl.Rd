@@ -7,9 +7,9 @@
 logLike_VARmdl(theta, mdl)
 }
 \arguments{
-\item{\code{theta}}{Vector of model parameters.}
+\item{theta}{Vector of model parameters.}
 
-\item{\code{mdl}}{List with model attributes.}
+\item{mdl}{List with model attributes.}
 }
 \value{
 Log-likelihood value.

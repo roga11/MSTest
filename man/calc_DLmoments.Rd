@@ -7,7 +7,7 @@
 calc_DLmoments(ehat)
 }
 \arguments{
-\item{\code{ehat}}{A (\code{T x 1}) vector of restricted model residuals.}
+\item{ehat}{A (\code{T x 1}) vector of restricted model residuals.}
 }
 \value{
 Vector containing the four test statistics.

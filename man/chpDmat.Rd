@@ -7,9 +7,9 @@
 chpDmat(mdl, msvar)
 }
 \arguments{
-\item{msvar}{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
+\item{mdl}{List containing output from \code{\link{ARmdl}}.}
 
-\item{Mdl}{List containing output from \code{\link{ARmdl}}.}
+\item{msvar}{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
 }
 \value{
 List containing relevant first and second derivatives of log-likelihood function.

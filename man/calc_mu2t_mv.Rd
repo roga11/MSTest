@@ -7,13 +7,13 @@
 calc_mu2t_mv(mdl, rho, ltmt, hv)
 }
 \arguments{
-\item{\code{mdl}}{List containing model attributes (see \code{\link{ARmdl}}).}
+\item{mdl}{List containing model attributes (see \code{\link{ARmdl}}).}
 
-\item{\code{rho_b}}{Number determining value of \code{rho}.}
+\item{rho}{Number determining value of \code{rho}.}
 
-\item{\code{ltmt}}{List containing derivatives output from \code{\link{chpDmat}}.}
+\item{ltmt}{List containing derivatives output from \code{\link{chpDmat}}.}
 
-\item{\code{hv}}{Number determining value of \code{h}.}
+\item{hv}{Number determining value of \code{h}.}
 }
 \value{
 Part of test statistic given \code{rho} and \code{hv} value.

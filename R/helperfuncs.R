@@ -171,7 +171,7 @@ thetaSE <- function(mdl){
 #' 
 #' @export
 interMSARmdl <- function(mdl){
-  inter <- matrix(0,mdl$k,mdl$q)
+  inter <- matrix(0,mdl$k,1)
   for(xk in 1:mdl$k){
     inter[xk,] <- t(as.matrix(mdl$mu[xk,]))*(1-sum(mdl$phi))
   }
@@ -207,8 +207,8 @@ interMSVARmdl <- function(mdl){
 #' @param k integer determining the number of regimes
 #' @param optim_options List containing 
 #' \itemize{
-#'  \item{maxit: }{maximum number of iterations.}
-#'  \item{thtol: }{convergence criterion.}
+#'  \item maxit: maximum number of iterations.
+#'  \item thtol: convergence criterion.
 #'}
 #'
 #' @return List with model attributes
@@ -296,8 +296,8 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 #' @param k integer determining the number of regimes
 #' @param optim_options List containing 
 #' \itemize{
-#'  \item{maxit: }{maximum number of iterations.}
-#'  \item{thtol: }{convergence criterion.}
+#'  \item maxit: maximum number of iterations.
+#'  \item thtol: convergence criterion.
 #'}
 #'
 #' @return List with model attributes
@@ -307,65 +307,82 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 #' @export
 MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   # ----- Define function environment
-  MSARmdl_mle_env <- rlang::env()
+  MSARmdl_mle_env         <- rlang::env()
   # set environment variables
-  MSARmdl_mle_env$p <- mdl_in$p
-  MSARmdl_mle_env$k <- k
-  MSARmdl_mle_env$msmu <- mdl_in$msmu
-  MSARmdl_mle_env$msvar <- mdl_in$msvar
-  MSARmdl_mle_env$var_k1 <- mdl_in$sigma
+  MSARmdl_mle_env$p       <- mdl_in$p
+  MSARmdl_mle_env$k       <- k
+  MSARmdl_mle_env$msmu    <- mdl_in$msmu
+  MSARmdl_mle_env$msvar   <- mdl_in$msvar
+  MSARmdl_mle_env$var_k1  <- mdl_in$sigma
+  MSARmdl_mle_env$betaZ   <- mdl_in$betaZ
   MSARmdl_mle_env$mle_stationary_constraint <- mdl_in$mle_stationary_constraint
-  MSARmdl_mle_env$mle_variance_constraint <- mdl_in$mle_variance_constraint
+  MSARmdl_mle_env$mle_variance_constraint   <- mdl_in$mle_variance_constraint
   # ----------- MSARmdl_mle equality constraint functions
   loglik_const_eq_MSARmdl <- function(theta){
     # ----- Load equality constraint parameters
     k <- get("k", envir = MSARmdl_mle_env)
     # ----- constraint
-    P = matrix(theta[(length(theta)-k*k+1):(length(theta))],k,k)
-    constraint = colSums(P)-1
+    P <- matrix(theta[(length(theta)-k*k+1):(length(theta))],k,k)
+    constraint <- colSums(P)-1
     return(constraint)
   }
   # ---------- MSARmdl_mle inequality constraint functions
   loglik_const_ineq_MSARmdl <- function(theta){
     # ----- Load inequality constraint parameters
-    p <- get("p", envir = MSARmdl_mle_env)
-    k <- get("k", envir = MSARmdl_mle_env)
-    msmu <- get("msmu", envir = MSARmdl_mle_env)
-    msvar <- get("msvar", envir = MSARmdl_mle_env)
-    var_k1 <- get("var_k1", envir = MSARmdl_mle_env)
+    p       <- get("p", envir = MSARmdl_mle_env)
+    k       <- get("k", envir = MSARmdl_mle_env)
+    msmu    <- get("msmu", envir = MSARmdl_mle_env)
+    msvar   <- get("msvar", envir = MSARmdl_mle_env)
+    var_k1  <- get("var_k1", envir = MSARmdl_mle_env)
+    betaZ   <- get("betaZ", envir = MSARmdl_mle_env)
     mle_stationary_constraint <- get("mle_stationary_constraint", envir = MSARmdl_mle_env)
-    mle_variance_constraint <- get("mle_variance_constraint", envir = MSARmdl_mle_env)
+    mle_variance_constraint   <- get("mle_variance_constraint", envir = MSARmdl_mle_env)
     # ----- constraint
     # transition probabilities
     Pvec <- theta[(length(theta)-k*k+1):(length(theta))]
     ineq_constraint <- c(Pvec, 1-Pvec)
     if (mle_stationary_constraint==TRUE){
       # roots of characteristic function
-      n_p <- 3 + msmu*(k-1)+msvar*(k-1)
+      n_p <- 2 + msmu*(k-1)
       poly_fun <- c(1,-theta[n_p:(n_p+p-1)])
       roots <- Mod(polyroot(poly_fun))
       ineq_constraint = c((roots-1), ineq_constraint)
     }
     if (mle_variance_constraint>=0){
       # variances (lower bound is 1% of single regime variance)
-      vars <- theta[c(rep(0, 1 + (k-1)*msmu), rep(1, 1 + (k-1)*msvar), rep(0, p + k*k))==1] - mle_variance_constraint*var_k1
+      vars <- theta[c(rep(0, 1+(k-1)*msmu+p+length(betaZ)), rep(1, 1 + (k-1)*msvar), rep(0, k*k))==1] - c(mle_variance_constraint*var_k1)
       ineq_constraint <- c(vars, ineq_constraint)
     }
     return(ineq_constraint)
   }
   # use nloptr optimization to minimize (maximize) likelihood
-  res <- nloptr::slsqp(x0 = theta_0,
-                       fn = logLike_MSARmdl_min,
-                       gr = NULL,
-                       lower = optim_options$mle_theta_low,
-                       upper = optim_options$mle_theta_upp,
-                       hin = loglik_const_ineq_MSARmdl,
-                       heq = loglik_const_eq_MSARmdl,
-                       nl.info = FALSE,
-                       control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
-                       mdl = mdl_in,
-                       k = k) 
-  output <- ExpectationM_MSARmdl(res$par, mdl_in, k)
+  if (length(mdl_in$betaZ)>0){
+    res <- nloptr::slsqp(x0 = theta_0,
+                         fn = logLike_MSARXmdl_min,
+                         gr = NULL,
+                         lower = optim_options$mle_theta_low,
+                         upper = optim_options$mle_theta_upp,
+                         hin = loglik_const_ineq_MSARmdl,
+                         heq = loglik_const_eq_MSARmdl,
+                         nl.info = FALSE,
+                         control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
+                         mdl = mdl_in,
+                         k = k) 
+    output <- ExpectationM_MSARXmdl(res$par, mdl_in, k)
+  }else{
+    res <- nloptr::slsqp(x0 = theta_0,
+                         fn = logLike_MSARmdl_min,
+                         gr = NULL,
+                         lower = optim_options$mle_theta_low,
+                         upper = optim_options$mle_theta_upp,
+                         hin = loglik_const_ineq_MSARmdl,
+                         heq = loglik_const_eq_MSARmdl,
+                         nl.info = FALSE,
+                         control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
+                         mdl = mdl_in,
+                         k = k) 
+    output <- ExpectationM_MSARmdl(res$par, mdl_in, k)
+  }
   output$iterations <- res$iter
   output$St <- output$xi_t_T
   return(output)
@@ -381,8 +398,8 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 #' @param k integer determining the number of regimes
 #' @param optim_options List containing 
 #' \itemize{
-#'  \item{maxit: }{maximum number of iterations.}
-#'  \item{thtol: }{convergence criterion.}
+#'  \item maxit: maximum number of iterations.
+#'  \item thtol: convergence criterion.
 #'}
 #'
 #' @return List with model attributes

@@ -7,9 +7,9 @@
 randSN(n, q)
 }
 \arguments{
-\item{\code{n}}{Integer determining the length of the process to be simulated}
+\item{n}{Integer determining the length of the process to be simulated}
 
-\item{\code{q}}{Integer determining the number of processes to be simulated}
+\item{q}{Integer determining the number of processes to be simulated}
 }
 \value{
 A (\code{T x q}) matrix of standard normal distributed errors

@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 # MSTest
 [![CRAN](http://www.r-pkg.org/badges/version/MSTest)](https://cran.r-project.org/package=MSTest)[![Downloads](https://cranlogs.r-pkg.org/badges/MSTest)](https://cran.r-project.org/package=MSTest) [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/MSTest)](https://cran.r-project.org/package=MSTest)
 

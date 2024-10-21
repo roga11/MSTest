@@ -22,9 +22,9 @@ HLRparamSearch(gx, gp, gq, b, null, HLR_opt_ls)
 \value{
 List which contains:
 \itemize{
-  \item{cs: }{Vector with standardized LRT statistic for each grid point.}
-  \item{draws: }{List with a (\code{nwband+1 x N} matrix for each grid point. Each row of these matrices is a vector of simulated test statistics under the null hypothesis for a value of bandwidth .}
-  \item{coefficients: }{A  matrix with coefficients for each grid point.}
+  \item cs: Vector with standardized LRT statistic for each grid point.
+  \item draws: List with a (\code{nwband+1 x N} matrix for each grid point. Each row of these matrices is a vector of simulated test statistics under the null hypothesis for a value of bandwidth .
+  \item coefficients: A  matrix with coefficients for each grid point.
 }
 }
 \description{

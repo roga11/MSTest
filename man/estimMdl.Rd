@@ -4,7 +4,7 @@
 \alias{estimMdl}
 \title{Estimate model for likelihood ratio test}
 \usage{
-estimMdl(Y, p, q, k, control = list())
+estimMdl(Y, p, q, k, Z = NULL, control = list())
 }
 \arguments{
 \item{Y}{Series to be tested. Must be a (\code{T x q}) matrix.}
@@ -14,6 +14,8 @@ estimMdl(Y, p, q, k, control = list())
 \item{q}{integer specifying the number of series.}
 
 \item{k}{integer specifying the number of regimes.}
+
+\item{Z}{exogeneous regressors. Defualt is NULL.}
 
 \item{control}{List with control options for model estimation. For default values, see description of model being estimated.}
 }

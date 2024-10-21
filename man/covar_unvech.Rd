@@ -7,9 +7,9 @@
 covar_unvech(sig, n)
 }
 \arguments{
-\item{\code{sig}}{A (n+1)*n/2 vector.}
+\item{sig}{A (n+1)*n/2 vector.}
 
-\item{\code{n}}{Integer determining shape of the original matrix.}
+\item{n}{Integer determining shape of the original matrix.}
 }
 \value{
 A (\code{n x n}) covariance matrix.

@@ -36,11 +36,19 @@ arma::mat randSN(int n, int q);
 
 List simuAR_cpp(List mdl_h0, int burnin = 100);
 
+List simuARX_cpp(List mdl_h0, int burnin = 100);
+
 List simuMSAR_cpp(List mdl_h0, int burnin = 100);
+
+List simuMSARX_cpp(List mdl_h0, int burnin = 100);
 
 List simuVAR_cpp(List mdl_h0, int burnin = 100);
 
+List simuVARX_cpp(List mdl_h0, int burnin = 100);
+
 List simuMSVAR_cpp(List mdl_h0, int burnin = 100);
+
+List simuMSVARX_cpp(List mdl_h0, int burnin = 100);
 
 List simuNorm_cpp(List mdl_h0, int burnin = 0);
 
@@ -50,7 +58,11 @@ double logLike_Nmdl(arma::vec theta, List mdl);
 
 double logLike_ARmdl(arma::vec theta, List mdl);
 
+double logLike_ARXmdl(arma::vec theta, List mdl);
+
 double logLike_VARmdl(arma::vec theta, List mdl);
+
+double logLike_VARXmdl(arma::vec theta, List mdl);
 
 double logLike_HMmdl(arma::vec theta, List mdl, int k);
 
@@ -58,11 +70,19 @@ double logLike_HMmdl_min(arma::vec theta, List mdl, int k);
 
 double logLike_MSARmdl(arma::vec theta, List mdl, int k);
 
+double logLike_MSARXmdl(arma::vec theta, List mdl, int k);
+
 double logLike_MSARmdl_min(arma::vec theta, List mdl, int k);
+
+double logLike_MSARXmdl_min(arma::vec theta, List mdl, int k);
 
 double logLike_MSVARmdl(arma::vec theta, List mdl, int k);
 
+double logLike_MSVARXmdl(arma::vec theta, List mdl, int k);
+
 double logLike_MSVARmdl_min(arma::vec theta, List mdl, int k);
+
+double logLike_MSVARXmdl_min(arma::vec theta, List mdl, int k);
 
 List ExpectationM_HMmdl(arma::vec theta, List mdl, int k);
 

@@ -7,13 +7,13 @@
 EMaximization_HMmdl(theta, mdl, MSloglik_output, k)
 }
 \arguments{
-\item{\code{theta}}{Vector of model parameters.}
+\item{theta}{Vector of model parameters.}
 
-\item{\code{mdl}}{List with model attributes.}
+\item{mdl}{List with model attributes.}
 
-\item{\code{MSloglik_output}}{List with output from \code{\link{ExpectationM_HMmdl}}.}
+\item{MSloglik_output}{List with output from \code{\link{ExpectationM_HMmdl}}.}
 
-\item{\code{k}}{Integer determining the number of regimes.}
+\item{k}{Integer determining the number of regimes.}
 }
 \value{
 List with new maximized parameters.

@@ -19,4 +19,4 @@ control <- list(const  = TRUE,
 
 # Estimate model
 y_var_mdl <- VARmdl(y_simu$y, p = 2, control)
-y_var_mdl
+summary(y_var_mdl)

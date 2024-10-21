@@ -7,17 +7,17 @@
 paramList_MSVARmdl(theta, q, p, k, msmu, msvar)
 }
 \arguments{
-\item{\code{theta}}{Vector of parameters.}
+\item{theta}{Vector of parameters.}
 
-\item{\code{q}}{Number of time series.}
+\item{q}{Number of time series.}
 
-\item{\code{p}}{Number of autoregressive lags.}
+\item{p}{Number of autoregressive lags.}
 
-\item{\code{k}}{Number of regimes.}
+\item{k}{Number of regimes.}
 
-\item{\code{msmu}}{Boolean indicating if the mean switches with regime.}
+\item{msmu}{Boolean indicating if the mean switches with regime.}
 
-\item{\code{msvar}}{Boolean indicating if the variance switches with regime.}
+\item{msvar}{Boolean indicating if the variance switches with regime.}
 }
 \value{
 List with the mean, variance, transition matrix, limiting probabilities, and a vector of state indicators.

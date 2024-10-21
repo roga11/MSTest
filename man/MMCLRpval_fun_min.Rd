@@ -15,6 +15,8 @@ MMCLRpval_fun_min(
   lambda,
   stationary_constraint,
   thtol,
+  Z,
+  exog,
   mdl_h0_control,
   mdl_h1_control
 )

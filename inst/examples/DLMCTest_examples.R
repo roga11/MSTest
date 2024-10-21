@@ -10,5 +10,5 @@ lmc_control = list(N = 99,
 
 # perform test on Hamilton 1989 data
 lmc_gnp84 <- DLMCTest(y84, p = 4, control = lmc_control)
-lmc_gnp84
+summary(lmc_gnp84)
 

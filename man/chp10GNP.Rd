@@ -7,9 +7,9 @@
 \format{
 \describe{This data is the extension of the GNP series used in CHP (2014), Econometrica. This series ranges from 
 1951Q2 to 2010Q4. 
-  \item{DATE}{Vector of dates}
-  \item{GNP_logdiff}{log difference of US GNP series}
+  \item{Date}{Vector of dates}
   \item{GNP}{US GNP series}
+  \item{GNP_gr}{log difference of US GNP series}
 }
 }
 \source{

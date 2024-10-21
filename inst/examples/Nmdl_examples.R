@@ -12,7 +12,7 @@ y_norm_simu <- simuNorm(mdl_norm)
 
 # estimate parameters
 y_norm_mdl <- Nmdl(y_norm_simu$y)
-y_norm_mdl
+summary(y_norm_mdl)
 
 
 # ----- Multivariate ----- # 
@@ -28,4 +28,4 @@ y_norm_simu <- simuNorm(mdl_norm)
 
 # estimate parameters
 y_norm_mdl <- Nmdl(y_norm_simu$y)
-y_norm_mdl
+summary(y_norm_mdl)

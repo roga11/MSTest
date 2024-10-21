@@ -7,7 +7,7 @@
 cov2corr(cov_mat)
 }
 \arguments{
-\item{\code{cov_mat}}{A (\code{n x n}) covariance matrix.}
+\item{cov_mat}{A (\code{n x n}) covariance matrix.}
 }
 \value{
 A (\code{n x n}) correlation matrix.

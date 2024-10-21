@@ -7,11 +7,11 @@
 logLike_MSVARmdl_min(theta, mdl, k)
 }
 \arguments{
-\item{\code{theta}}{Vector of model parameters.}
+\item{theta}{Vector of model parameters.}
 
-\item{\code{mdl}}{List with model attributes.}
+\item{mdl}{List with model attributes.}
 
-\item{\code{k}}{Integer determining the number of regimes.}
+\item{k}{Integer determining the number of regimes.}
 }
 \value{
 Negative log-likelihood value.

@@ -7,9 +7,9 @@
 \format{
 \describe{This data set is used in Hansen (1992) to test the US GNP model proposed by 
 Hamilton (1989). This series ranges from 1951Q2 to 1984Q4. 
-  \item{DATE}{Vector of dates}
-  \item{GNP_logdiff}{US GNP log difference}
+  \item{Date}{Vector of dates}
   \item{GNP}{US GNP series}
+  \item{GNP_gr}{US GNP log difference}
 }
 }
 \source{

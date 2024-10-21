@@ -7,9 +7,9 @@
 ts_lagged(Y, p)
 }
 \arguments{
-\item{\code{Y}}{Vector with time series observations.}
+\item{Y}{Vector with time series observations.}
 
-\item{\code{p}}{integer for the number of lags to use in estimation. Must be greater than or equal to \code{1}.}
+\item{p}{integer for the number of lags to use in estimation. Must be greater than or equal to \code{1}.}
 }
 \value{
 List with vector \code{y} (vector of lagged \code{Y}) and matrix \code{X} of lagged observations.

@@ -7,11 +7,11 @@
 ExpectationM_MSVARmdl(theta, mdl, k)
 }
 \arguments{
-\item{\code{theta}}{Vector of model parameters.}
+\item{theta}{Vector of model parameters.}
 
-\item{\code{mdl}}{List with model attributes.}
+\item{mdl}{List with model attributes.}
 
-\item{\code{k}}{Integer determining the number of regimes.}
+\item{k}{Integer determining the number of regimes.}
 }
 \value{
 List which includes log-likelihood and smoothed probabilities of each regime.

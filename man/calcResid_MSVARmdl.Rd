@@ -7,11 +7,11 @@
 calcResid_MSVARmdl(mdl, mu, k)
 }
 \arguments{
-\item{\code{mdl}}{List containing relevant parameters.}
+\item{mdl}{List containing relevant parameters.}
 
-\item{\code{mu}}{Vector with mean in each regime.}
+\item{mu}{Vector with mean in each regime.}
 
-\item{\code{k}}{Number of regimes. Must be greater than or equal to \code{2}.}
+\item{k}{Number of regimes. Must be greater than or equal to \code{2}.}
 }
 \value{
 List with \code{M} (\code{Txq}) matrices of residuals in each regime \code{M} where \code{M=k^(ar+1)}.

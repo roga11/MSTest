@@ -7,7 +7,7 @@
 randP(k)
 }
 \arguments{
-\item{\code{k}}{Number of regimes. Must be greater than or equal to \code{2}.}
+\item{k}{Number of regimes. Must be greater than or equal to \code{2}.}
 }
 \value{
 Transition matrix with randomly generated entries.

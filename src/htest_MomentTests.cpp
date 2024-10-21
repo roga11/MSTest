@@ -7,7 +7,7 @@ using namespace Rcpp;
 //'
 //' @description This function computes the four moment-based test statistics (eq. \code{11} - \code{14}) discussed in Dufour & Luger 2017.
 //'
-//' @param \code{ehat} A (\code{T x 1}) vector of restricted model residuals.
+//' @param ehat A (\code{T x 1}) vector of restricted model residuals.
 //' 
 //' @return Vector containing the four test statistics.
 //' 
@@ -50,8 +50,8 @@ arma::vec calc_DLmoments(arma::vec ehat){
 //'
 //' @description This function computes the four moment-based test statistics (eq. \code{11} - \code{14}) discussed in Dufour & Luger 2017 for \code{N} different simulated series.
 //' 
-//' @param \code{Tsize} Length of sample size for simulation.
-//' @param \code{N} Number of simulated samples.
+//' @param Tsize Length of sample size for simulation.
+//' @param N Number of simulated samples.
 //' 
 //' @return A (\code{N x 4}) matrix with \code{N} different simulated moment-based test statistics.
 //' 
@@ -78,9 +78,9 @@ arma::mat sim_DLmoments(int Tsize, int N){
 //'
 //' @description This function is used to combine the four moment-based p-values as in eq. \code{17} and \code{18} of Dufour & Luger 2017.
 //' 
-//' @param \code{stats} A (\code{l x 4}) matrix where \code{l} is the number of moment-based test statistics.
-//' @param \code{param} A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
-//' @param \code{type} String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
+//' @param stats A (\code{l x 4}) matrix where \code{l} is the number of moment-based test statistics.
+//' @param params A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
+//' @param type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
 //' is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
 //' 
 //' @return A (\code{N x 1}) vector with test statistics. The last element is the test statistic from observed data.
@@ -125,7 +125,7 @@ arma::vec combine_stat(arma::mat stats, arma::mat params, std::string type){
 //'
 //' @description This function performs the loop in required in \code{\link{approxDistDL}}. 
 //' 
-//' @param \code{SN2} A (\code{T x 4}) matrix of  test-statistics.
+//' @param SN2 A (\code{T x 4}) matrix of  test-statistics.
 //' 
 //' @return The test statistics from simulated data. Used for NLS to get \code{params} needed to combine p-values.
 //' 

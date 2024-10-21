@@ -11,7 +11,7 @@
       single plotting structure, function or \emph{any \R object with a
         \code{plot} method} can be provided.}
 
-\item{...}{Arguments to be passed to methods, such as
+\item{...}{arguments to be passed to methods, such as
     \link{graphical parameters} (see \code{\link{par}}).
     Many methods will accept the following arguments:
     \describe{

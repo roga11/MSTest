@@ -11,10 +11,10 @@ using namespace Rcpp;
 //' The output is used in \code{\link{chpStat}} which computes the full test
 //' statistics.
 //'
-//' @param \code{mdl} List containing model attributes (see \code{\link{ARmdl}}).
-//' @param \code{rho_b} Number determining value of \code{rho}.
-//' @param \code{ltmt} List containing derivatives output from \code{\link{chpDmat}}.
-//' @param \code{hv} Number determining value of \code{h}.
+//' @param mdl List containing model attributes (see \code{\link{ARmdl}}).
+//' @param rho Number determining value of \code{rho}.
+//' @param ltmt List containing derivatives output from \code{\link{chpDmat}}.
+//' @param hv Number determining value of \code{h}.
 //' 
 //' @return Part of test statistic given \code{rho} and \code{hv} value. 
 //' 
@@ -76,9 +76,9 @@ arma::vec calc_mu2t_mv(List mdl, double rho, List ltmt, arma::vec hv){
 //' eq. 2.5 of CHP 2014 when the alternative has switching mean only. The output 
 //' is used in \code{\link{chpStat}} which computes the full test statistics.
 //'
-//' @param \code{mdl} List containing model attributes (see \code{\link{ARmdl}}).
-//' @param \code{rho_b} Number determining value of \code{rho}.
-//' @param \code{ltmt} List containing derivatives output from \code{\link{chpDmat}}.
+//' @param mdl List containing model attributes (see \code{\link{ARmdl}}).
+//' @param rho Number determining value of \code{rho}.
+//' @param ltmt List containing derivatives output from \code{\link{chpDmat}}.
 //' 
 //' @return Part of test statistic given \code{rho} and \code{hv} value. 
 //' 
@@ -111,10 +111,10 @@ arma::vec calc_mu2t(List mdl, double rho, List ltmt){
 //' @description This function computes the supTS and expTS test-statistics 
 //' proposed in CHP 2014.
 //'
-//' @param \code{mdl} List containing model attributes (see \code{\link{ARmdl}}).
-//' @param \code{rho_b} Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).
-//' @param \code{ltmt} List containing derivatives output from \code{\link{chpDmat}}.
-//' @param \code{msvar} Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
+//' @param mdl List containing model attributes (see \code{\link{ARmdl}}).
+//' @param rho_b Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).
+//' @param ltmt List containing derivatives output from \code{\link{chpDmat}}.
+//' @param msvar Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
 //' 
 //' @return A (\code{2 x 1}) vector with supTS test statistic as first element and expTS test-statistics as second element.
 //' 
@@ -125,7 +125,7 @@ arma::vec calc_mu2t(List mdl, double rho, List ltmt){
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::vec chpStat(List mdl, double rho_b, List ltmt,int msvar){
+arma::vec chpStat(List mdl, double rho_b, List ltmt,bool msvar){
   int nn              = mdl["n"];
   int nar             = mdl["p"];
   int tt              = nn + nar;
@@ -217,10 +217,10 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,int msvar){
 //' @description This bootstrap procedure is described on pg. 771 of CHP 2014.
 //'
 //'
-//' @param \code{mdl} List containing model attributes (see \code{\link{ARmdl}}).
-//' @param \code{rho_b} Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).
-//' @param \code{N} Number of bootstrap simulations.
-//' @param \code{msvar} Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
+//' @param mdl List containing model attributes (see \code{\link{ARmdl}}).
+//' @param rho_b Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).
+//' @param N Number of bootstrap simulations.
+//' @param msvar Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
 //' 
 //' @return Bootstrap critical values
 //' 
@@ -231,30 +231,40 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,int msvar){
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::mat bootCV(List mdl,double rho_b, int N, int msvar){
+arma::mat bootCV(List mdl, double rho_b, int N, bool msvar){
   // calling required R functions 
-  //Function simuAR("simuAR");
+  Function simuAR("simuAR");
   Function ARmdl("ARmdl");
   Function chpDmat("chpDmat");
   // define vars from Model list
   int ar =  mdl["p"];
   arma::vec supb(N,arma::fill::zeros);  // stores the bootstrapped supTS critical value
   arma::vec expb(N,arma::fill::zeros);  // stores the bootstrapped expTS critical value
+  List y_out_tmp;
+  arma::vec y0;
+  List Mdl_tmp;
+  List ltmtb;
+  arma::vec cv4;
+  List armdl_con;
+  bool const_con = TRUE;
+  bool getSE_con = FALSE;
+  armdl_con["const"] = const_con;
+  armdl_con["getSE"] = getSE_con;
   int itb = 0;
   while (itb<N){
     // simulate the series N times according to ML estimators 
-    List y_out_tmp = simuAR_cpp(mdl);
-    arma::vec y0 = y_out_tmp["y"];
-    List  Mdl_tmp  = ARmdl(y0,ar);
-    List ltmtb  = chpDmat(Mdl_tmp,msvar);
-    arma::vec cv4  = chpStat(Mdl_tmp, rho_b, ltmtb, msvar);
+    y_out_tmp = simuAR(mdl);
+    y0        = as<arma::vec>(y_out_tmp["y"]);
+    Mdl_tmp   = ARmdl(y0,ar,armdl_con);
+    ltmtb     = chpDmat(Mdl_tmp, msvar);
+    cv4       = chpStat(Mdl_tmp, rho_b, ltmtb, msvar);
     if (cv4.has_nan()==FALSE){
       supb(itb)   = cv4(0);
       expb(itb)   = cv4(1);
       itb = itb + 1;
     }
   }
-  arma::mat boot_out = join_rows(sort(supb),sort(expb));
+  arma::mat boot_out = join_rows(supb,expb);
   return(boot_out);  
 }
 

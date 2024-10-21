@@ -15,8 +15,8 @@ MSVARmdl_mle(theta_0, mdl_in, k, optim_options)
 
 \item{optim_options}{List containing 
 \itemize{
- \item{maxit: }{maximum number of iterations.}
- \item{thtol: }{convergence criterion.}
+ \item maxit: maximum number of iterations.
+ \item thtol: convergence criterion.
 }}
 }
 \value{

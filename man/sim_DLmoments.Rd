@@ -7,9 +7,9 @@
 sim_DLmoments(Tsize, N)
 }
 \arguments{
-\item{\code{Tsize}}{Length of sample size for simulation.}
+\item{Tsize}{Length of sample size for simulation.}
 
-\item{\code{N}}{Number of simulated samples.}
+\item{N}{Number of simulated samples.}
 }
 \value{
 A (\code{N x 4}) matrix with \code{N} different simulated moment-based test statistics.

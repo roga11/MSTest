@@ -169,14 +169,24 @@ fitted.HMmdl <- function(object, ...){
 #' @export
 fitted.MSARmdl <- function(object, ...){
   fittedvals <- matrix(0,object$n,object$q)
-  for(xk in 1:object$k){
-    intercept <- t(as.matrix(object$mu[xk,]))*(1-sum(object$phi))
-    fittedvals <- fittedvals + 
-      object$St[,xk] * (matrix(1, object$n, 1)%*%intercept + 
-                          object$x%*%object$phi)
+  if (is.null(object$betaZ)){
+    for(xk in 1:object$k){
+      intercept <- t(as.matrix(object$mu[xk,]))*(1-sum(object$phi))
+      fittedvals <- fittedvals + 
+        object$St[,xk] * (matrix(1, object$n, 1)%*%intercept + 
+                            object$x%*%object$phi)
+    }  
+  }else{
+    for(xk in 1:object$k){
+      intercept <- object$intercept[xk,]
+      fittedvals <- fittedvals + 
+        object$St[,xk] * (matrix(1, object$n, 1)%*%intercept + 
+                            object$x%*%object$phi + object$Z%*%object$betaZ)
+    }
   }
   return(fittedvals)
 }
+
 
 
 #' @title fitted values of a \code{MSVARmdl} object
@@ -427,7 +437,11 @@ logLik.Nmdl <- function(object, ...){
 #' 
 #' @export
 logLik.ARmdl <- function(object, ...){
-  logLike <- logLike_ARmdl(stats::coef(object), object)
+  if (is.null(object$control$Z)){
+    logLike <- logLike_ARmdl(stats::coef(object), object)  
+  }else{
+    logLike <- logLike_ARXmdl(stats::coef(object), object)  
+  }
   return(logLike)
 }
 
@@ -443,7 +457,11 @@ logLik.ARmdl <- function(object, ...){
 #' 
 #' @export
 logLik.VARmdl <- function(object, ...){
-  logLike <- logLike_Nmdl(stats::coef(object), object)
+  if (is.null(object$control$Z)){
+    logLike <- logLike_VARmdl(stats::coef(object), object)
+  }else{
+    logLike <- logLike_VARXmdl(stats::coef(object), object)
+  }
   return(logLike)
 }
 
@@ -459,7 +477,7 @@ logLik.VARmdl <- function(object, ...){
 #' 
 #' @export
 logLik.HMmdl <- function(object, ...){
-  logLike <- logLike_Nmdl(stats::coef(object), object)
+  logLike <- logLike_HMmdl(stats::coef(object), object, object$k)
   return(logLike)
 }
 
@@ -475,7 +493,11 @@ logLik.HMmdl <- function(object, ...){
 #' 
 #' @export
 logLik.MSARmdl <- function(object, ...){
-  logLike <- logLike_Nmdl(stats::coef(object), object)
+  if (is.null(object$control$Z)){
+    logLike <- logLike_MSARmdl(stats::coef(object), object, object$k)
+  }else{
+    logLike <- logLike_MSARXmdl(stats::coef(object), object, object$k)
+  }
   return(logLike)
 }
 
@@ -491,7 +513,11 @@ logLik.MSARmdl <- function(object, ...){
 #' 
 #' @export
 logLik.MSVARmdl <- function(object, ...){
-  logLike <- logLike_Nmdl(stats::coef(object), object)
+  if (is.null(object$control$Z)){
+    logLike <- logLike_MSVARmdl(stats::coef(object), object, object$k)
+  }else{
+    logLike <- logLike_MSVARXmdl(stats::coef(object), object, object$k)  
+  }
   return(logLike)
 }
 
@@ -738,7 +764,11 @@ getHessian.Nmdl <- function(mdl){
 #' 
 #' @export
 getHessian.ARmdl <- function(mdl){
-  hess <- numDeriv::hessian(logLike_ARmdl, mdl$theta, method = "Richardson", mdl = mdl) 
+  if (is.null(mdl$control$Z)){
+    hess <- numDeriv::hessian(logLike_ARmdl, mdl$theta, method = "Richardson", mdl = mdl)   
+  }else{
+    hess <- numDeriv::hessian(logLike_ARXmdl, mdl$theta, method = "Richardson", mdl = mdl)   
+  }
   return(hess)
 }
 
@@ -754,7 +784,11 @@ getHessian.ARmdl <- function(mdl){
 #' 
 #' @export
 getHessian.VARmdl <- function(mdl){
-  hess <- numDeriv::hessian(logLike_VARmdl, mdl$theta, method = "Richardson", mdl = mdl) 
+  if (is.null(mdl$control$Z)){
+    hess <- numDeriv::hessian(logLike_VARmdl, mdl$theta, method = "Richardson", mdl = mdl) 
+  }else{
+    hess <- numDeriv::hessian(logLike_VARXmdl, mdl$theta, method = "Richardson", mdl = mdl) 
+  }
   return(hess)
 }
 
@@ -786,7 +820,11 @@ getHessian.HMmdl <- function(mdl){
 #' 
 #' @export
 getHessian.MSARmdl <- function(mdl){
-  hess <- numDeriv::hessian(logLike_MSARmdl, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
+  if (is.null(mdl$control$Z)){
+    hess <- numDeriv::hessian(logLike_MSARmdl, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
+  }else{
+    hess <- numDeriv::hessian(logLike_MSARXmdl, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
+  }
   return(hess)
 }
 
@@ -1619,7 +1657,7 @@ predict.ARmdl <- function(object, ..., h = 10){
     Mn <- diag(object$q)
   }
   # E[Y(t)-mu|It]
-  Yt <- t(object$x[object$n,,drop=F]) - object$mu
+  Yt <- t(object$x[object$n,,drop=F]) - c(object$mu)
   # E[Y(t+h)|It]
   predictvals <- matrix(0,h,object$q)
   for (xh in 1:h){
@@ -1823,6 +1861,8 @@ plot.simuVAR <- function(x, ...){
 #' 
 #' @export
 plot.simuHMM <- function(x, ...){
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar)) 
   graphics::par(mfrow=c(2,1))
   if (x$q==1){
     graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated process", 
@@ -1833,7 +1873,6 @@ plot.simuHMM <- function(x, ...){
                       xlab ="Time", main = "Time series of simulated processes")   
     graphics::matplot(1:x$n, x$St+1, type = "l", ylab = "State (St)", xlab ="Time",)
   }
-  graphics::par(mfrow=c(1,1))
 }
 
 
@@ -1850,11 +1889,12 @@ plot.simuHMM <- function(x, ...){
 #' 
 #' @export
 plot.simuMSAR <- function(x, ...){
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar)) 
   graphics::par(mfrow=c(2,1))
   graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated process", 
                     xlab ="Time", main = "Time series of simulated process")   
   graphics::matplot(1:x$n, x$St+1, type = "l", ylab = "State (St)", xlab ="Time",)
-  graphics::par(mfrow=c(1,1))
 }
 
 
@@ -1870,11 +1910,12 @@ plot.simuMSAR <- function(x, ...){
 #' 
 #' @export
 plot.simuMSVAR <- function(x, ...){
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar)) 
   graphics::par(mfrow=c(2,1))
   graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated processes", 
                     xlab ="Time", main = "Time series of simulated processes")   
   graphics::matplot(1:x$n, x$St+1, type = "l", ylab = "State (St)", xlab ="Time",)
-  graphics::par(mfrow=c(1,1))
 }
 
 
@@ -1892,6 +1933,8 @@ plot.simuMSVAR <- function(x, ...){
 #' 
 #' @export
 plot.Nmdl <- function(x, ...){
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar)) 
   graphics::par(mfrow=c(2,1))
   if (x$q==1){
     graphics::matplot(1:x$n, x$y, type = "l", ylab = "Observed process", 
@@ -1902,7 +1945,6 @@ plot.Nmdl <- function(x, ...){
                       xlab ="Time", main = "Time series of processes & fitted values")   
     graphics::matplot(1:x$n, x$fitted, type = "l", ylab = "Fitted values", xlab ="Time")   
   }
-  graphics::par(mfrow=c(1,1))
 }
 
 
@@ -1918,11 +1960,12 @@ plot.Nmdl <- function(x, ...){
 #' 
 #' @export
 plot.ARmdl <- function(x, ...){
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar)) 
   graphics::par(mfrow=c(2,1))
   graphics::matplot(1:x$n, x$y, type = "l", ylab = "Observed process", 
                     xlab ="Time", main = "Time series of process & fitted values")   
   graphics::matplot(1:x$n, x$fitted, type = "l", ylab = "Fitted values", xlab ="Time")   
-  graphics::par(mfrow=c(1,1))
 }
 
 
@@ -1938,11 +1981,12 @@ plot.ARmdl <- function(x, ...){
 #' 
 #' @export
 plot.VARmdl <- function(x, ...){
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar)) 
   graphics::par(mfrow=c(2,1))
   graphics::matplot(1:x$n, x$y, type = "l", ylab = "Observed processes", 
                     xlab ="Time", main = "Time series of processes & fitted values")   
   graphics::matplot(1:x$n, x$fitted, type = "l", ylab = "Fitted values", xlab ="Time")   
-  graphics::par(mfrow=c(1,1))
 }
 
 
@@ -1960,6 +2004,8 @@ plot.VARmdl <- function(x, ...){
 #' 
 #' @export
 plot.Hmmdl <- function(x, ...){
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar)) 
   graphics::par(mfrow=c(3,1))
   if (x$q==1){
     graphics::matplot(1:x$n, x$y, type = "l", ylab = "Observed process", 
@@ -1972,7 +2018,6 @@ plot.Hmmdl <- function(x, ...){
     graphics::matplot(1:x$n, x$fitted, type = "l", ylab = "Fitted values", xlab ="Time")   
     graphics::matplot(1:x$n, x$St, type = "l", ylab = "State (St)", xlab ="Time")   
   }
-  graphics::par(mfrow=c(1,1))
 }
 
 #' @title Plot of a \code{MSARmdl} object
@@ -1987,12 +2032,13 @@ plot.Hmmdl <- function(x, ...){
 #' 
 #' @export
 plot.MSARmdl <- function(x, ...){
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar)) 
   graphics::par(mfrow=c(3,1))
   graphics::matplot(1:x$n, x$y, type = "l", ylab = "Observed process", 
                     xlab ="Time", main = "Time series of process & fitted values")   
   graphics::matplot(1:x$n, x$fitted, type = "l", ylab = "Fitted values", xlab ="Time")  
   graphics::matplot(1:x$n, x$St, type = "l", ylab = "State (St)", xlab ="Time")   
-  graphics::par(mfrow=c(1,1))
 }
 
 
@@ -2009,12 +2055,13 @@ plot.MSARmdl <- function(x, ...){
 #' 
 #' @export
 plot.MSVARmdl <- function(x, ...){
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar)) 
   graphics::par(mfrow=c(3,1))
   graphics::matplot(1:x$n, x$y, type = "l", ylab = "Observed processes", 
                     xlab ="Time", main = "Time series of processes & fitted values")   
   graphics::matplot(1:x$n, x$fitted, type = "l", ylab = "Fitted values", xlab ="Time")  
   graphics::matplot(1:x$n, x$St, type = "l", ylab = "State (St)", xlab ="Time")   
-  graphics::par(mfrow=c(1,1))
 }
 
 

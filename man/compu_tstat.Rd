@@ -4,7 +4,7 @@
 \alias{compu_tstat}
 \title{Computes test stat using new parameter vectors}
 \usage{
-compu_tstat(theta_h0, mdl_h0, LT_h1, p, q, k0)
+compu_tstat(theta_h0, mdl_h0, LT_h1, p, q, k0, exog)
 }
 \arguments{
 \item{theta_h0}{estimated parameter values for restricted model.}

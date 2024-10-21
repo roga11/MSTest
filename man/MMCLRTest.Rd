@@ -4,7 +4,7 @@
 \alias{MMCLRTest}
 \title{Maximized Monte Carlo Likelihood Ratio Test}
 \usage{
-MMCLRTest(Y, p, k0, k1, control = list())
+MMCLRTest(Y, p, k0, k1, Z = NULL, control = list())
 }
 \arguments{
 \item{Y}{Series to be tested. Must be a (\code{T x q}) matrix.}
@@ -15,40 +15,42 @@ MMCLRTest(Y, p, k0, k1, control = list())
 
 \item{k1}{Number of regimes under alternative hypothesis. Must be greater than \code{k0}.}
 
+\item{Z}{Exogenous regressors. Default is NULL.}
+
 \item{control}{List with test procedure options including: 
 \itemize{
-  \item{N: }{Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.}
-  \item{burnin: }{Number of simulated observations to remove from beginning. Default is \code{100}.}
-  \item{converge_check: }{String of NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.}
-  \item{workers: }{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. Default is \code{0}.}
-  \item{type: }{String that determines the type of optimization algorithm used. Arguments allowed are: \code{"pso"}, \code{"GenSA"}, and \code{"GA"}. Default is \code{"pso"}.}
-  \item{eps: }{Double determining the constant value that defines a consistent set for search. Default is \code{0.1}.}
-  \item{CI_union: }{Boolean determining if union of set determined by \code{eps} and confidence set should be used to define consistent set for search. Default is \code{TRUE}.}
-  \item{lambda: }{Double determining penalty on nonlinear constraint. Default is \code{100}.}
-  \item{stationary_constraint: }{Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.}
-  \item{phi_low: }{Vector with lower bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
-  \item{phi_upp: }{Vector with upper bound for autoregressive parameters when optimizing. Default is \code{NULL}.}
-  \item{P_low: }{Value with lower bound for transition probabilities when optimizing. Default is \code{0}.}
-  \item{P_upp: }{Value with upper bound for transition probabilities when optimizing. Default is \code{1}.}
-  \item{variance_constraint: }{Double used to determine the lower bound for variance in parameter set for search. Value should be between \code{0} and \code{1} as it is multiplied by consistent point estimates of variances. Default is \code{0.01} (i.e., \code{1\%} of consistent point estimates.}
-  \item{silence: }{Boolean determining if optimization steps should be silenced (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{FALSE}.}
-  \item{threshold_stop: }{Double determining the global optimum of function. Default is \code{1}.}
-  \item{mdl_h0_control: }{List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
-  \item{mdl_h1_control: }{List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.}
-  \item{use_diff_init_sim: }{Value which determines the number of initial values to use when estimating models for null distribution. Default is set to use the same as specified in \code{mdl_h0_control} and \code{mdl_h1_control}.}
-  \item{type_control: }{List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is to set \code{list(maxit = 200)} so that maximum number of iterations is \code{200}.}
+  \item N: Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.
+  \item burnin: Number of simulated observations to remove from beginning. Default is \code{100}.
+  \item converge_check: String of NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.
+  \item workers: Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. Default is \code{0}.
+  \item type: String that determines the type of optimization algorithm used. Arguments allowed are: \code{"pso"}, \code{"GenSA"}, and \code{"GA"}. Default is \code{"pso"}.
+  \item eps: Double determining the constant value that defines a consistent set for search. Default is \code{0.1}.
+  \item CI_union: Boolean determining if union of set determined by \code{eps} and confidence set should be used to define consistent set for search. Default is \code{TRUE}.
+  \item lambda: Double determining penalty on nonlinear constraint. Default is \code{100}.
+  \item stationary_constraint: Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.
+  \item phi_low: Vector with lower bound for autoregressive parameters when optimizing. Default is \code{NULL}.
+  \item phi_upp: Vector with upper bound for autoregressive parameters when optimizing. Default is \code{NULL}.
+  \item P_low: Value with lower bound for transition probabilities when optimizing. Default is \code{0}.
+  \item P_upp: Value with upper bound for transition probabilities when optimizing. Default is \code{1}.
+  \item variance_constraint: Double used to determine the lower bound for variance in parameter set for search. Value should be between \code{0} and \code{1} as it is multiplied by consistent point estimates of variances. Default is \code{0.01} (i.e., \code{1\%} of consistent point estimates.
+  \item silence: Boolean determining if optimization steps should be silenced (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{FALSE}.
+  \item threshold_stop: Double determining the global optimum of function. Default is \code{1}.
+  \item mdl_h0_control: List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
+  \item mdl_h1_control: List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
+  \item use_diff_init_sim: Value which determines the number of initial values to use when estimating models for null distribution. Default is set to use the same as specified in \code{mdl_h0_control} and \code{mdl_h1_control}.
+  \item type_control: List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is to set \code{list(maxit = 200)} so that maximum number of iterations is \code{200}.
 }}
 }
 \value{
 List of class \code{LMCLRTest} (\code{S3} object) with attributes including: 
 \itemize{
-  \item{mdl_h0: }{List with restricted model attributes. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.}
-  \item{mdl_h0: }{List with unrestricted model attributes. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.}
-  \item{LRT_0: }{Value of test statistic from observed data.}
-  \item{LRN: }{A (\code{N x 1}) vector of test statistics from data simulated under the null hypothesis.}
-  \item{pval: }{P-value of Local Monte Carlo Likelihood Ratio Test.}
-  \item{LRN_cv: }{Vector with 90\%, 95\%, and 99\% Monte Carlo critical values (from vector \code{LRN}).}
-  \item{control: }{List with test procedure options used.}
+  \item mdl_h0: List with restricted model attributes. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.
+  \item mdl_h0: List with unrestricted model attributes. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.
+  \item LRT_0: Value of test statistic from observed data.
+  \item LRN: A (\code{N x 1}) vector of test statistics from data simulated under the null hypothesis.
+  \item pval: P-value of Local Monte Carlo Likelihood Ratio Test.
+  \item LRN_cv: Vector with 90\%, 95\%, and 99\% Monte Carlo critical values (from vector \code{LRN}).
+  \item control: List with test procedure options used.
 }
 }
 \description{
@@ -89,9 +91,9 @@ mmc_control = list(N = 19,
                                          method = "EM",
                                          maxit  = 300,
                                          use_diff_init = 1))
-\dontrun{
+\donttest{
   MMCtest <- MMCLRTest(y_ms_simu$y, p = 1 , k0 = 1 , k1 = 2, mmc_control)
-  MMCtest
+  summary(MMCtest)
 }
 
 

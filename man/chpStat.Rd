@@ -7,13 +7,13 @@
 chpStat(mdl, rho_b, ltmt, msvar)
 }
 \arguments{
-\item{\code{mdl}}{List containing model attributes (see \code{\link{ARmdl}}).}
+\item{mdl}{List containing model attributes (see \code{\link{ARmdl}}).}
 
-\item{\code{rho_b}}{Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).}
+\item{rho_b}{Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).}
 
-\item{\code{ltmt}}{List containing derivatives output from \code{\link{chpDmat}}.}
+\item{ltmt}{List containing derivatives output from \code{\link{chpDmat}}.}
 
-\item{\code{msvar}}{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
+\item{msvar}{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
 }
 \value{
 A (\code{2 x 1}) vector with supTS test statistic as first element and expTS test-statistics as second element.

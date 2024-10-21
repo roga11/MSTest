@@ -7,7 +7,7 @@
 covar_vech(mat)
 }
 \arguments{
-\item{\code{mat}}{A (\code{n x n}) covariance matrix.}
+\item{mat}{A (\code{n x n}) covariance matrix.}
 }
 \value{
 A \code{(n+1)*n/2} column vector.

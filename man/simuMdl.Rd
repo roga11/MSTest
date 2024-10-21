@@ -4,7 +4,7 @@
 \alias{simuMdl}
 \title{Likelihood ratio test statistic sample distribution}
 \usage{
-simuMdl(mdl_h0, p, q, k, burnin)
+simuMdl(mdl_h0, p, q, k, burnin, exog)
 }
 \arguments{
 \item{mdl_h0}{List with restricted model properties.}

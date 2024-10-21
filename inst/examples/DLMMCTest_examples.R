@@ -18,8 +18,8 @@ mmc_control <- list(N = 99,
 
 
 # perform test on Hamilton 1989 data
-\dontrun{
+\donttest{
   mmc_gnp84 <- DLMMCTest(y84, p = 4, control = mmc_control)
-  mmc_gnp84
+  summary(mmc_gnp84)
 }
 

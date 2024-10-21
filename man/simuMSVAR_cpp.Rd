@@ -9,15 +9,15 @@ simuMSVAR_cpp(mdl_h0, burnin = 100L)
 \arguments{
 \item{mdl_h0}{List containing the following DGP parameters
 \itemize{
-  \item{n: }{Length of series.}
-  \item{k: }{Number of regimes.}
-  \item{mu: }{A (\code{k x q}) matrix of means.}
-  \item{sigma: }{List with \code{k} (\code{q x q}) covariance matrices.}
-  \item{phi: }{A (\code{q x qp}) matrix of autoregressive coefficients.}
-  \item{p: }{Number of autoregressive lags.}
-  \item{q: }{Number of series.}
-  \item{P: }{A (\code{k x k}) transition matrix (columns must sum to one).}
-  \item{eps: }{An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.}
+  \item n: Length of series.
+  \item k: Number of regimes.
+  \item mu: A (\code{k x q}) matrix of means.
+  \item sigma: List with \code{k} (\code{q x q}) covariance matrices.
+  \item phi: A (\code{q x qp}) matrix of autoregressive coefficients.
+  \item p: Number of autoregressive lags.
+  \item q: Number of series.
+  \item P: A (\code{k x k}) transition matrix (columns must sum to one).
+  \item eps: An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.
 }}
 
 \item{burnin}{Number of simulated observations to remove from beginning. Default is \code{100}.}

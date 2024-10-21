@@ -7,11 +7,11 @@
 EMiter_MSARmdl(mdl, EMest_output, k)
 }
 \arguments{
-\item{\code{mdl}}{List with model attributes.}
+\item{mdl}{List with model attributes.}
 
-\item{\code{EMest_output}}{List with attributes from previous iteration.}
+\item{EMest_output}{List with attributes from previous iteration.}
 
-\item{\code{k}}{Integer determining the number of regimes.}
+\item{k}{Integer determining the number of regimes.}
 }
 \value{
 List with attributes from new iteration.

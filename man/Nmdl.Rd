@@ -4,41 +4,43 @@
 \alias{Nmdl}
 \title{Normal distribution model}
 \usage{
-Nmdl(Y, control = list())
+Nmdl(Y, Z = NULL, control = list())
 }
 \arguments{
 \item{Y}{a \code{(T x q)} matrix of observations.}
 
+\item{Z}{exogenous regressors. Default is NULL.}
+
 \item{control}{List with model options including:
 \itemize{
-  \item{const: }{Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.}
-  \item{getSE: }{Boolean determining whether to compute standard errors of parameters if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.}
+  \item const: Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
+  \item getSE: Boolean determining whether to compute standard errors of parameters if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
 }}
 }
 \value{
 List of class \code{Nmdl} (\code{S3} object) with model attributes including:
 \itemize{
-  \item{y: }{a \code{(T x q)} matrix of observations.}
-  \item{fitted: }{a \code{(T x q)} matrix of fitted values.}
-  \item{resid: }{a \code{(T x q)} matrix of residuals.}
-  \item{mu: }{a \code{(1 x q)} vector of estimated means of each process.}
-  \item{stdev: }{a \code{(q x 1)} vector of estimated standard deviation of each process.}
-  \item{sigma: }{a \code{(q x q)} estimated covariance matrix.}
-  \item{theta: }{vector containing: \code{mu} and \code{vech(sigma)}.}
-  \item{theta_mu_ind: }{vector indicating location of mean with \code{1} and \code{0} otherwise.}
-  \item{theta_sig_ind: }{vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.}
-  \item{theta_var_ind: }{vector indicating location of variances with \code{1} and \code{0} otherwise.}
-  \item{n: }{number of observations (same as \code{T}).}
-  \item{q: }{number of series.}
-  \item{k: }{number of regimes. This is always \code{1} in \code{Nmdl}.}
-  \item{control: }{List with model options used.}
-  \item{logLike: }{log-likelihood.}
-  \item{AIC: }{Akaike information criterion.}
-  \item{BIC: }{Bayesian (Schwarz) information criterion.}
-  \item{Hess: }{Hessian matrix. Approximated using \code{\link[numDeriv]{hessian}} and only returned if \code{getSE=TRUE}.}
-  \item{info_mat: }{Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[pracma]{nearest_spd}}. Only returned if \code{getSE=TRUE}.}
-  \item{nearPD_used: }{Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.}
-  \item{theta_se: }{standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.}
+  \item y: a \code{(T x q)} matrix of observations.
+  \item fitted: a \code{(T x q)} matrix of fitted values.
+  \item resid: a \code{(T x q)} matrix of residuals.
+  \item mu: a \code{(1 x q)} vector of estimated means of each process.
+  \item stdev: a \code{(q x 1)} vector of estimated standard deviation of each process.
+  \item sigma: a \code{(q x q)} estimated covariance matrix.
+  \item theta: vector containing: \code{mu}, \code{betaZ} (if matrix Z is provided), and \code{vech(sigma)}.
+  \item theta_mu_ind: vector indicating location of mean with \code{1} and \code{0} otherwise.
+  \item theta_sig_ind: vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.
+  \item theta_var_ind: vector indicating location of variances with \code{1} and \code{0} otherwise.
+  \item n: number of observations (same as \code{T}).
+  \item q: number of series.
+  \item k: number of regimes. This is always \code{1} in \code{Nmdl}.
+  \item control: List with model options used.
+  \item logLike: log-likelihood.
+  \item AIC: Akaike information criterion.
+  \item BIC: Bayesian (Schwarz) information criterion.
+  \item Hess: Hessian matrix. Approximated using \code{\link[numDeriv]{hessian}} and only returned if \code{getSE=TRUE}.
+  \item info_mat: Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[pracma]{nearest_spd}}. Only returned if \code{getSE=TRUE}.
+  \item nearPD_used: Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.
+  \item theta_se: standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.
 }
 }
 \description{
@@ -59,7 +61,7 @@ y_norm_simu <- simuNorm(mdl_norm)
 
 # estimate parameters
 y_norm_mdl <- Nmdl(y_norm_simu$y)
-y_norm_mdl
+summary(y_norm_mdl)
 
 
 # ----- Multivariate ----- # 
@@ -75,5 +77,5 @@ y_norm_simu <- simuNorm(mdl_norm)
 
 # estimate parameters
 y_norm_mdl <- Nmdl(y_norm_simu$y)
-y_norm_mdl
+summary(y_norm_mdl)
 }

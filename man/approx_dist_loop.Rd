@@ -7,7 +7,7 @@
 approx_dist_loop(SN2)
 }
 \arguments{
-\item{\code{SN2}}{A (\code{T x 4}) matrix of  test-statistics.}
+\item{SN2}{A (\code{T x 4}) matrix of  test-statistics.}
 }
 \value{
 The test statistics from simulated data. Used for NLS to get \code{params} needed to combine p-values.

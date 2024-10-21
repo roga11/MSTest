@@ -9,6 +9,7 @@ LR_samp_dist_par(
   k1,
   N,
   burnin,
+  Z,
   mdl_h0_control,
   mdl_h1_control,
   workers

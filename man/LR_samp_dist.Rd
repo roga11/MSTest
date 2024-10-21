@@ -4,7 +4,7 @@
 \alias{LR_samp_dist}
 \title{Likelihood Ratio Test Statistic Sample Distribution}
 \usage{
-LR_samp_dist(mdl_h0, k1, N, burnin, mdl_h0_control, mdl_h1_control)
+LR_samp_dist(mdl_h0, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control)
 }
 \arguments{
 \item{mdl_h0}{List with restricted model properties.}

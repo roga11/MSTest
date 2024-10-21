@@ -3,13 +3,13 @@
 \docType{data}
 \name{USGNP}
 \alias{USGNP}
-\title{US GNP data 1947Q2 - 2023Q4}
+\title{US GNP data 1947Q2 - 2024Q2}
 \format{
 \describe{This data is used in Rodriguez-Rondon & Dufour (2024). The series ranges from 
-1947Q2 to 2023Q4.
-  \item{DATE}{Vector of dates}
-  \item{GNP_logdiff}{log difference of US GDP series}
+1947Q2 to 2024Q2.
+  \item{Date}{Vector of dates}
   \item{GNP}{US GNP series}
+  \item{GNP_gr}{log difference of US GNP series}
 }
 }
 \source{
@@ -19,9 +19,11 @@
 USGNP
 }
 \description{
-US GNP data 1947Q2 - 2023Q4
+US GNP data 1947Q2 - 2024Q2
 }
 \references{
+U.S. Bureau of Economic Analysis, Gross National Product [GNP], retrieved from FRED, Federal Reserve Bank of St. Louis; \emph{\url{https://fred.stlouisfed.org/series/GNP}}, September, 2024.
+
 Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2024. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 }
 \keyword{datasets}
