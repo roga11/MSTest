@@ -18,17 +18,29 @@ List ts_lagged(arma::mat Y, int ar);
 
 List paramList_MSARmdl(arma::vec theta, int p, int k, bool msmu, bool msvar);
 
+List paramList_MSARXmdl(arma::vec theta, int p, int k, int qz, bool msmu, bool msvar);
+
 List paramList_MSVARmdl(arma::vec theta, int q, int ar, int k, bool msmu, bool msvar);
+
+List paramList_MSVARXmdl(arma::vec theta, int q, int p, int k, int qz, bool msmu, bool msvar);
 
 arma::mat calcResid_MSARmdl(List mdl, arma::mat mu, int k);
 
+arma::mat calcResid_MSARXmdl(List mdl, arma::mat mu, int k);
+
 List calcResid_MSVARmdl(List mdl, List mu, int k);
+
+List calcResid_MSVARXmdl(List mdl, List mu, int k);
 
 arma::vec initVals_HMmdl(List mdl, int k);
 
 arma::vec initVals_MSARmdl(List mdl, int k);
 
+arma::vec initVals_MSARXmdl(List mdl, int k);
+
 arma::vec initVals_MSVARmdl(List mdl, int k);
+
+arma::vec initVals_MSVARXmdl(List mdl, int k);
 
 double MCpval(double test_stat, arma::vec null_vec, Rcpp::String type = "geq");
 
@@ -50,9 +62,9 @@ List simuMSVAR_cpp(List mdl_h0, int burnin = 100);
 
 List simuMSVARX_cpp(List mdl_h0, int burnin = 100);
 
-List simuNorm_cpp(List mdl_h0, int burnin = 0);
+List simuNorm_cpp(List mdl_h0, int burnin = 0, bool exog = FALSE);
 
-List simuHMM_cpp(List mdl_h0, int burnin = 100);
+List simuHMM_cpp(List mdl_h0, int burnin = 100, bool exog = FALSE);
 
 double logLike_Nmdl(arma::vec theta, List mdl);
 
@@ -88,24 +100,40 @@ List ExpectationM_HMmdl(arma::vec theta, List mdl, int k);
 
 List ExpectationM_MSARmdl(arma::vec theta, List mdl, int k);
 
+List ExpectationM_MSARXmdl(arma::vec theta, List mdl, int k);
+
 List ExpectationM_MSVARmdl(arma::vec theta, List mdl, int k);
+
+List ExpectationM_MSVARXmdl(arma::vec theta, List mdl, int k);
 
 List EMaximization_HMmdl(arma::vec theta, List mdl, List MSloglik_output, int k);
 
 List EMaximization_MSARmdl(arma::vec theta, List mdl, List MSloglik_output, int k);
 
+List EMaximization_MSARXmdl(arma::vec theta, List mdl, List MSloglik_output, int k);
+
 List EMaximization_MSVARmdl(arma::vec theta, List mdl, List MSloglik_output, int k);
+
+List EMaximization_MSVARXmdl(arma::vec theta, List mdl, List MSloglik_output, int k);
 
 List EMiter_HMmdl(List mdl, List EMest_output, int k);
 
 List EMiter_MSARmdl(List mdl, List EMest_output, int k);
 
+List EMiter_MSARXmdl(List mdl, List EMest_output, int k);
+
 List EMiter_MSVARmdl(List mdl, List EMest_output, int k);
+
+List EMiter_MSVARXmdl(List mdl, List EMest_output, int k);
 
 List HMmdl_em(arma::vec theta_0, List mdl, int k, List optim_options);
 
 List MSARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options);
 
+List MSARXmdl_em(arma::vec theta_0, List mdl, int k, List optim_options);
+
 List MSVARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options);
+
+List MSVARXmdl_em(arma::vec theta_0, List mdl, int k, List optim_options);
 
 #endif

@@ -9,6 +9,8 @@
 #'   \item sigma: A (\code{q x q}) covariance matrix.
 #'   \item q: Number of series.
 #'   \item eps: An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.
+#'   \item Z: A (\code{T x qz}) matrix with exogenous regressors (Optional) and where qz is the number of exogenous variables.
+#'   \item betaZ: A (\code{qz x q}) matrix  true coefficients on exogenous regressors (Optional) and where qz is the number of exogenous variables.
 #'   }
 #' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
@@ -17,7 +19,8 @@
 #' @example /inst/examples/simuNorm_examples.R
 #' @export
 simuNorm <- function(mdl_h0, burnin = 0){
-  simu_output <- simuNorm_cpp(mdl_h0, burnin)
+  exog <- (is.null(mdl_h0$Z)==F & is.null(mdl_h0$betaZ)==F)
+  simu_output <- simuNorm_cpp(mdl_h0, burnin, exog)
   # Define class
   class(simu_output) <- "simuNorm"
   return(simu_output)
@@ -60,8 +63,8 @@ simuAR <- function(mdl_h0, burnin = 100){
 #'   \item sigma: Standard deviation of process.
 #'   \item phi: Vector of autoregressive coefficients.
 #'   \item eps: An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.
-#'   \item X: exogenous regressors (must be provided).
-#'   \item beta0: true coefficients on exogenous regressors.
+#'   \item Z: A (\code{T x qz}) matrix with exogenous regressors (Optional) and where qz is the number of exogenous variables.
+#'   \item betaZ: A (\code{qz x 1}) matrix  true coefficients on exogenous regressors (Optional) and where qz is the number of exogenous variables.
 #' }
 #' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
@@ -112,12 +115,12 @@ simuVAR <- function(mdl_h0, burnin = 100){
 #'   \item n: Length of series.
 #'   \item mu: A (\code{q x 1}) vector of means.
 #'   \item sigma: A (\code{q x q}) covariance matrix.
-#'   \item phi:  A (\code{q x qp}) matrix of autoregressive coefficients.
+#'   \item phi:  A (\code{q x (q x p)}) matrix of autoregressive coefficients.
 #'   \item p: Number of autoregressive lags.
 #'   \item q: Number of series.
 #'   \item eps: An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.
-#'   \item X: exogenous regressors (must be provided).
-#'   \item beta0: true coefficients on exogenous regressors.
+#'   \item Z: A (\code{T x qz}) matrix with exogenous regressors (Optional) and where qz is the number of exogenous variables.
+#'   \item betaZ: A (\code{qz x q}) matrix  true coefficients on exogenous regressors (Optional) and where qz is the number of exogenous variables.
 #' }
 #' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
@@ -145,6 +148,8 @@ simuVARX <- function(mdl_h0, burnin = 100){
 #'   \item q: Number of series.
 #'   \item P: A (\code{k x k}) transition matrix (columns must sum to one).
 #'   \item eps: An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.
+#'   \item Z: A (\code{T x qz}) matrix with exogenous regressors (Optional) and where qz is the number of exogenous variables.
+#'   \item betaZ: A (\code{qz x q}) matrix  true coefficients on exogenous regressors (Optional) and where qz is the number of exogenous variables.
 #' }
 #' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
@@ -153,7 +158,8 @@ simuVARX <- function(mdl_h0, burnin = 100){
 #' @example /inst/examples/simuHMM_examples.R
 #' @export
 simuHMM <- function(mdl_h0, burnin = 100){
-  simu_output <- simuHMM_cpp(mdl_h0, burnin)
+  exog <- (is.null(mdl_h0$Z)==F & is.null(mdl_h0$betaZ)==F)
+  simu_output <- simuHMM_cpp(mdl_h0, burnin, exog)
   # Define class
   class(simu_output) <- "simuHMM"
   return(simu_output)
@@ -200,8 +206,8 @@ simuMSAR <- function(mdl_h0, burnin = 100){
 #'   \item phi: Vector of autoregressive coefficients.
 #'   \item P: A (\code{k x k}) transition matrix (columns must sum to one).
 #'   \item eps: An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.
-#'   \item X: exogenous regressors (must be provided).
-#'   \item beta0: true coefficients on exogenous regressors.
+#'   \item Z: A (\code{T x qz}) matrix with exogenous regressors (Optional) and where qz is the number of exogenous variables.
+#'   \item betaZ: A (\code{qz x 1}) matrix  true coefficients on exogenous regressors (Optional) and where qz is the number of exogenous variables.
 #' }
 #' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
@@ -247,12 +253,44 @@ simuMSVAR <- function(mdl_h0, burnin = 100){
 }
 
 
+#' @title Simulate Markov-switching VARX process
+#' 
+#' @description This function simulates a Markov-switching VARX process.
+#' 
+#' @param mdl_h0 List containing the following DGP parameters
+#' \itemize{
+#'   \item n: Length of series.
+#'   \item k: Number of regimes.
+#'   \item mu: A (\code{k x q}) matrix of means.
+#'   \item sigma: List with \code{k} (\code{q x q}) covariance matrices.
+#'   \item phi: A (\code{q x qp}) matrix of autoregressive coefficients.
+#'   \item p: Number of autoregressive lags.
+#'   \item q: Number of series.
+#'   \item P: A (\code{k x k}) transition matrix (columns must sum to one).
+#'   \item eps: An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.
+#'   \item Z: A (\code{T x qz}) matrix with exogenous regressors (Optional) and where qz is the number of exogenous variables.
+#'   \item betaZ: A (\code{qz x q}) matrix  true coefficients on exogenous regressors (Optional) and where qz is the number of exogenous variables.
+#' }
+#' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
+#' 
+#' @return List with simulated vector autoregressive series and its DGP parameters.
+#' 
+#' @example /inst/examples/simuMSVAR_examples.R
+#' @export
+simuMSVARX <- function(mdl_h0, burnin = 100){
+  simu_output <- simuMSVARX_cpp(mdl_h0, burnin)
+  # Define class
+  class(simu_output) <- "simuMSVARX"
+  return(simu_output)
+}
+
+
 #' @title Normal distribution model
 #' 
 #' @description This function estimates a univariate or multivariate normally distributed model. This can be used for the null hypothesis of a linear model against an alternative hypothesis of a HMM with \code{k} regimes. 
 #' 
 #' @param Y a \code{(T x q)} matrix of observations. 
-#' @param Z exogenous regressors. Default is NULL.
+#' @param Z an otpional  \code{(T x qz)} matrix of exogenous regressors. Default is NULL.
 #' @param control List with model options including:
 #' \itemize{
 #'   \item const: Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
@@ -265,6 +303,9 @@ simuMSVAR <- function(mdl_h0, burnin = 100){
 #'   \item fitted: a \code{(T x q)} matrix of fitted values.
 #'   \item resid: a \code{(T x q)} matrix of residuals.
 #'   \item mu: a \code{(1 x q)} vector of estimated means of each process.
+#'   \item intercept: a \code{(1 x q)} vector of estimated intercept of each process. If Z is NULL, it is the same as mu. 
+#'   \item beta: a \code{((1 + p + qz) x q)} matrix of estimated coefficients. 
+#'   \item betaZ: a \code{(qz x q)} matrix of estimated exogenous regressor coefficients (If Z is provided). 
 #'   \item stdev: a \code{(q x 1)} vector of estimated standard deviation of each process.
 #'   \item sigma: a \code{(q x q)} estimated covariance matrix.
 #'   \item theta: vector containing: \code{mu}, \code{betaZ} (if matrix Z is provided), and \code{vech(sigma)}.
@@ -328,9 +369,13 @@ Nmdl <- function(Y, Z = NULL, control = list()){
     zz    <- matrix(1, n, 1)
   }
   if (con$const==TRUE){
-    mu <- as.matrix(beta[1,])  
+    if (is.null(Z)==TRUE){
+      mu <- t(as.matrix(beta[1,]))
+    }else{
+      mu <- t(as.matrix(beta[1,])) + matrix(colMeans(Z),1,ncol(Z))%*%beta[2:nrow(beta),,drop=F]
+    }
   }else{
-    mu <- matrix(0,q,1)
+    mu <- matrix(0,1,q)
   }
   npar <- length(beta)
   # ----- Obtain variables of interest
@@ -346,12 +391,14 @@ Nmdl <- function(Y, Z = NULL, control = list()){
   theta_sig_ind   <- c(rep(0, length(beta)), rep(1,q*(q+1)/2))
   theta_var_ind   <- c(rep(0, length(beta)), t(covar_vech(diag(q))))
   betaZ <- NULL
+  inter <- mu
   if (is.null(Z)==FALSE){
     betaZ <- beta[2:nrow(beta),,drop=F]
+    inter <- beta[1,,drop=F]
   }
   # ----- Output
   out     <- list(y = Y, X = zz, Z = Z, fitted = fitted, resid = resid, 
-                  mu = mu, betaZ = betaZ, beta = beta, 
+                  mu = mu, intercept = inter, betaZ = betaZ, beta = beta, 
                   stdev = stdev, sigma = sigma, theta = theta, 
                   theta_mu_ind = theta_mu_ind, theta_x_ind = theta_x_ind, theta_beta_ind = theta_beta_ind,
                   theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind,
@@ -401,9 +448,8 @@ Nmdl <- function(Y, Z = NULL, control = list()){
 #'   \item x: a \code{(T-p x p)} matrix of lagged observations.
 #'   \item fitted: a \code{(T-p x 1)} matrix of fitted values.
 #'   \item resid: a \code{(T-p x 1)} matrix of residuals.
-#'   \item inter: estimated intercept of the process.
 #'   \item mu: estimated mean of the process.
-#'   \item coef: coefficient estimates. First value is the intercept (i.e., not \code{mu}) if \code{const=TRUE}. This is the same as \code{phi} if \code{const=FALSE}.
+#'   \item beta: a \code{((1 + p) x 1)} matrix of estimated coefficients. 
 #'   \item intercept: estimate of intercept.
 #'   \item phi: estimates of autoregressive coefficients.
 #'   \item stdev: estimated standard deviation of the process.
@@ -516,7 +562,7 @@ ARmdl <- function(Y, p, control = list()){
 #' 
 #' @param Y A \code{(T x 1)} matrix of observations.  
 #' @param p Integer determining the number of autoregressive lags.
-#' @param Z exogenous regressors. 
+#' @param Z A  \code{(T x qz)} matrix of exogenous regressors. 
 #' @param control List with model options including: 
 #' \itemize{
 #'   \item const: Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
@@ -530,9 +576,9 @@ ARmdl <- function(Y, p, control = list()){
 #'   \item x: a \code{(T-p x p)} matrix of lagged observations.
 #'   \item fitted: a \code{(T-p x 1)} matrix of fitted values.
 #'   \item resid: a \code{(T-p x 1)} matrix of residuals.
-#'   \item inter: estimated intercept of the process.
 #'   \item mu: estimated mean of the process.
-#'   \item coef: coefficient estimates. First value is the intercept (i.e., not \code{mu}) if \code{const=TRUE}. This is the same as \code{phi} if \code{const=FALSE}.
+#'   \item beta: a \code{((1 + p + qz) x 1)} matrix of estimated coefficients. 
+#'   \item betaZ: a \code{(qz x q)} matrix of estimated exogenous regressor coefficients.
 #'   \item intercept: estimate of intercept.
 #'   \item phi: estimates of autoregressive coefficients.
 #'   \item stdev: estimated standard deviation of the process.
@@ -659,9 +705,8 @@ ARXmdl <- function(Y, p, Z, control = list()){
 #'   \item x: a \code{(T-p x p*q)} matrix of lagged observations.
 #'   \item fitted: a \code{(T-p x q)} matrix of fitted values.
 #'   \item resid: a \code{(T-p x q)} matrix of residuals.
-#'   \item inter: a \code{(1 x q)} vector of estimated intercepts of each process.
 #'   \item mu: a \code{(1 x q)} vector of estimated means of each process.
-#'   \item coef: coefficient estimates. First row are the intercept (i.e., not \code{mu}) if \code{const=TRUE}. This is the same as \code{t(phi)} if \code{const=FALSE}.
+#'   \item beta: a \code{((1 + p) x q)} matrix of estimated coefficients. .
 #'   \item intercept: estimate of intercepts.
 #'   \item phi: a \code{(q x p*q)} matrix of estimated autoregressive coefficients.
 #'   \item Fmat: Companion matrix containing autoregressive coefficients.
@@ -781,7 +826,7 @@ VARmdl <- function(Y, p, control = list()){
 #' 
 #' @param Y a \code{(T x q)} matrix of observations.
 #' @param p integer determining the number of autoregressive lags.
-#' @param Z exogenous regressors. 
+#' @param Z a \code{(T x qz)} matrix of exogenous regressors. 
 #' @param control List with model options including:
 #' \itemize{
 #'  \item const: Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
@@ -795,9 +840,9 @@ VARmdl <- function(Y, p, control = list()){
 #'   \item x: a \code{(T-p x p*q)} matrix of lagged observations.
 #'   \item fitted: a \code{(T-p x q)} matrix of fitted values.
 #'   \item resid: a \code{(T-p x q)} matrix of residuals.
-#'   \item inter: a \code{(1 x q)} vector of estimated intercepts of each process.
 #'   \item mu: a \code{(1 x q)} vector of estimated means of each process.
-#'   \item coef: coefficient estimates. First row are the intercept (i.e., not \code{mu}) if \code{const=TRUE}. This is the same as \code{t(phi)} if \code{const=FALSE}.
+#'   \item beta: a \code{((1 + p + qz) x q)} matrix of estimated coefficients. 
+#'   \item betaZ: a \code{(qz x q)} matrix of estimated exogenous regressor coefficients.
 #'   \item intercept: estimate of intercepts.
 #'   \item phi: a \code{(q x p*q)} matrix of estimated autoregressive coefficients.
 #'   \item Fmat: Companion matrix containing autoregressive coefficients.
@@ -908,7 +953,6 @@ VARXmdl <- function(Y, p, Z, control = list()){
   
   # names
   phi_n_tmp <- expand.grid((1:q),(1:p),(1:q))
-  
   betaZ_n_tmp <- expand.grid(1:ncol(Z),1:q)
   names(out$theta) <- c(paste0("mu_",(1:q)),
                         paste0("phi_",paste0(phi_n_tmp[,2],",",phi_n_tmp[,3],phi_n_tmp[,1])),
@@ -921,12 +965,14 @@ VARXmdl <- function(Y, p, Z, control = list()){
   return(out)
 }
 
+
 #' @title Hidden Markov model 
 #' 
 #' @description This function estimates a Hidden Markov model with \code{k} regimes.
 #' 
 #' @param Y a \code{(T x q)} matrix of observations.
 #' @param k integer determining the number of regimes to use in estimation. Must be greater than or equal to \code{2}. 
+#' @param Z an otpional  \code{(T x qz)} matrix of exogenous regressors. Default is NULL.
 #' @param control List with model options including:
 #' \itemize{
 #'  \item getSE: Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.
@@ -949,13 +995,16 @@ VARXmdl <- function(Y, p, Z, control = list()){
 #'   \item fitted: a \code{(T x q)} matrix of fitted values.
 #'   \item resid: a \code{(T x q)} matrix of residuals.
 #'   \item mu: a \code{(k x q)} matrix of estimated means of each process.
-#'   \item stdev: List with \code{k} \code{(q x 1)} vector of estimated standard deviation of each process.
-#'   \item sigma: List with \code{k} \code{(q x q)} estimated covariance matrix.
+#'   \item beta: if \code{q=1}, this is a \code{((1 + qz) x k)} matrix of estimated coefficients. If \code{q>1}, this is a list containing \code{k} separate \code{((1 + qz) x q)} matrix of estimated coefficients for each regime.  
+#'   \item betaZ: a \code{(qz x q)} matrix of estimated exogenous regressor coefficients.
+#'   \item intercept: a \code{(k x q)} matrix of estimated intercept of each process. If Z is Null, this is the same as mu.
+#'   \item stdev: If \code{q=1}, this is a \code{(k x 1)} matrix with estimated standard. If \code{q>1}, this is a List with \code{k} \code{(q x q)} matrices with estimated standard deviation on the diagonal.
+#'   \item sigma: If \code{q=1}, this is a \code{(k x 1)} matrix with variances. If \code{q>1}, this is a List with \code{k} \code{(q x q)} estimated covariance matrix.
 #'   \item theta: vector containing: \code{mu} and \code{vech(sigma)}.
 #'   \item theta_mu_ind: vector indicating location of mean with \code{1} and \code{0} otherwise.
 #'   \item theta_sig_ind: vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.
 #'   \item theta_var_ind: vector indicating location of variances with \code{1} and \code{0} otherwise.
-#'   \item theta_var_ind: vector indicating location of transition matrix elements with \code{1} and \code{0} otherwise.
+#'   \item theta_P_ind: vector indicating location of transition matrix elements with \code{1} and \code{0} otherwise.
 #'   \item n: number of observations (same as \code{T}).
 #'   \item q: number of series.
 #'   \item k: number of regimes in estimated model.
@@ -1008,6 +1057,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
   if (k<2){
     stop("value for 'k' must be greater than or equal to 2.")
   }
+  con$Z = Z
   # ---------- Optimization options
   optim_options <- list(maxit = con$maxit, thtol = con$thtol)
   # pre-define list and matrix length for results
@@ -1018,6 +1068,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
   init_mdl <- Nmdl(Y, Z, init_control)
   init_mdl$msmu <- con$msmu
   init_mdl$msvar <- con$msvar
+  init_mdl$exog <- (!is.null(Z))
   if (is.null(con$init_theta)==TRUE){
     if (con$method=="EM"){
       # ----- Estimate using 'use_diff_init' different initial values
@@ -1034,6 +1085,9 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
           theta_tmp <- output_tmp$theta
           converge_check <- ((is.finite(output_tmp$logLike)) & (all(is.finite(output_tmp$theta))))
           init_used <- init_used + 1
+        }
+        if (is.null(Z)){
+          output_tmp$betaZ <- NULL    
         }
         output_tmp$theta_0 <- theta_0
         max_loglik[xi] <- output_tmp$logLike
@@ -1063,6 +1117,9 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
             converge_check <- FALSE
           }
           init_used = init_used + 1
+        }
+        if (is.null(Z)){
+          output_tmp$betaZ <- NULL    
         }
         output_tmp$theta_0 <- theta_0
         max_loglik[xi] <- output_tmp$logLike
@@ -1097,41 +1154,82 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
   }
   # ----- Obtain variables of interest
   q <- ncol(Y)
-  Nsig <- (q*(q+1))/2
-  theta_mu_ind <- c(rep(1, q + q*(k-1)*con$msmu), rep(0, Nsig + Nsig*(k-1)*con$msvar + k*k))
-  theta_sig_ind <- c(rep(0, q + q*(k-1)*con$msmu), rep(1, Nsig + Nsig*(k-1)*con$msvar), rep(0, k*k))
-  theta_var_ind <- c(rep(0, q + q*(k-1)*con$msmu), rep(t(covar_vech(diag(q))), 1+(k-1)*con$msvar), rep(0, k*k))
-  theta_P_ind <- c(rep(0, q + q*(k-1)*con$msmu + Nsig + Nsig*(k-1)*con$msvar), rep(1, k*k))
-  if (con$msmu==FALSE){
-    output$mu <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
+  inter <- output$mu
+  if (!is.null(Z)){
+    inter <- output$mu - matrix(1,k,1)%*%(matrix(colMeans(Z),1,ncol(Z))%*%output$betaZ)  
   }
-  out <- list(y = init_mdl$y, resid = output$resid, mu = output$mu, sigma = output$sigma, theta = output$theta, 
-              theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind,
-              n = init_mdl$n, q = q, p = 0, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, St = output$St,
-              deltath = output$deltath,  iterations = output$iterations, theta_0 = output$theta_0,
-              init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, control = con)
+  if (q>1){
+    beta <- list()
+    stdev <- list()
+    for(xk in 1:k){
+      if (!is.null(Z)){
+        beta[[xk]] <- rbind(inter[xk,,drop=F],output$betaZ)
+      }else{
+        beta[[xk]] <- inter[xk,,drop=F]
+      }
+      stdev[[xk]] = diag(sqrt(diag(output$sigma[[xk]])))
+    }  
+  }else{
+    stdev <- as.matrix(unlist(output$sigma))
+    if (!is.null(Z)){
+      beta <- rbind(t(inter),output$betaZ%*%matrix(1,1,k))
+    }else{
+      beta <- t(inter)
+    }
+  }
+  Nsig <- (q*(q+1))/2
+  theta_beta_ind  <- c(rep(1, length(output$theta) - (Nsig + Nsig*(con$msvar*(k-1)) + k*k)), rep(0,Nsig + Nsig*(con$msvar*(k-1)) + k*k))
+  theta_mu_ind    <- c(rep(1, q + q*(k-1)*con$msmu), rep(0, length(output$theta) - (q + q*(k-1)*con$msmu)))
+  theta_x_ind     <- c(rep(0, q + q*(k-1)*con$msmu), rep(1,length(output$betaZ)), rep(0, length(output$theta) - (q + q*(k-1)*con$msmu) -length(output$betaZ)))
+  theta_sig_ind   <- c(rep(0, q + q*(k-1)*con$msmu + length(output$betaZ)), rep(1, Nsig + Nsig*(k-1)*con$msvar), rep(0, k*k))
+  theta_var_ind   <- c(rep(0, q + q*(k-1)*con$msmu + length(output$betaZ)), rep(t(covar_vech(diag(q))), 1+(k-1)*con$msvar), rep(0, k*k))
+  theta_P_ind     <- c(rep(0, length(output$theta) - (k*k)), rep(1, k*k))
+  if (con$msmu==FALSE){
+    output$mu     <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
+  }
+  # ----- Output
+  out <- list(y = init_mdl$y, Z = Z, resid = output$resid, 
+              mu = output$mu, intercept = inter, betaZ = output$betaZ, beta = beta,
+              stdev = stdev, sigma = output$sigma, theta = output$theta, 
+              theta_mu_ind = theta_mu_ind, theta_x_ind = theta_x_ind, theta_beta_ind = theta_beta_ind,
+              theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind, 
+              n = init_mdl$n, q = q, k = k, control = con,
+              P = output$P, pinf = output$pinf, St = output$St, logLike = output$logLike,  
+              deltath = output$deltath, iterations = output$iterations, theta_0 = output$theta_0,
+              init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, exog = (!is.null(Z)))
   # Define class
   class(out) <- "HMmdl"
   # other output
   out$fitted  <- stats::fitted(out)
   out$AIC     <- stats::AIC(out)
   out$BIC     <- stats::BIC(out)
-  stdev <- list(k)
-  for (xk in 1:k){
-    stdev[[xk]] <- diag(sqrt(diag(out$sigma[[xk]])))
-  }
-  out$stdev <- stdev
   # names
   if (q>1){
     mu_n_tmp <- expand.grid((1:q),(1:k))
     sig_n_tmp <- expand.grid(covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q))),(1:k))
-    names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_",mu_n_tmp[,1],",",mu_n_tmp[,2]) else  paste0("mu_",(1:q)),
-                          if (con$msvar==TRUE) paste0("sig_",sig_n_tmp[,1],",",sig_n_tmp[,2]) else paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))),
-                          paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))  
+    if (is.null(Z)){
+      names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_",mu_n_tmp[,1],",",mu_n_tmp[,2]) else  paste0("mu_",(1:q)),
+                            if (con$msvar==TRUE) paste0("sig_",sig_n_tmp[,1],",",sig_n_tmp[,2]) else paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))),
+                            paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))  
+    }else{
+      betaZ_n_tmp <- expand.grid(1:ncol(Z),1:q)  
+      names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_",mu_n_tmp[,1],",",mu_n_tmp[,2]) else  paste0("mu_",(1:q)),
+                            paste0("x_",paste0(betaZ_n_tmp[,1],",",betaZ_n_tmp[,2])),
+                            if (con$msvar==TRUE) paste0("sig_",sig_n_tmp[,1],",",sig_n_tmp[,2]) else paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))),
+                            paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))  
+      
+    }
   }else if (q==1){
-    names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_", (1:k)) else "mu",
-                          if (con$msvar==TRUE) paste0("sig_", (1:k)) else "sig",
-                          paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
+    if (is.null(Z)){
+      names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_", (1:k)) else "mu",
+                            if (con$msvar==TRUE) paste0("sig_", (1:k)) else "sig",
+                            paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
+    }else{
+      names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_", (1:k)) else "mu",
+                            paste0("x_",1:length(out$betaZ)),
+                            if (con$msvar==TRUE) paste0("sig_", (1:k)) else "sig",
+                            paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
+    }
   }
   if (con$getSE==TRUE){
     out <- thetaSE(out)
@@ -1175,8 +1273,9 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
 #'   \item x: a \code{(T-p x p)} matrix of lagged observations.
 #'   \item fitted: a \code{(T x 1)} matrix of fitted values.
 #'   \item resid: a \code{(T x 1)} matrix of residuals.
-#'   \item inter: a \code{(k x 1)} vector of estimated intercepts of each process.
+#'   \item intercept: a \code{(k x 1)} vector of estimated intercepts of each process.
 #'   \item mu: a \code{(k x 1)} vector of estimated means of each process.
+#'   \item beta: a \code{((1 + p) x k)} matrix of estimated coefficients. 
 #'   \item phi: estimates of autoregressive coefficients.
 #'   \item stdev: a \code{(k x 1)} vector of estimated standard deviation of each process.
 #'   \item sigma: a \code{(k x 1)} estimated covariance matrix.
@@ -1336,7 +1435,7 @@ MSARmdl <- function(Y, p, k, control = list()){
     output$sigma <- matrix(output$sigma, nrow=k, ncol=1, byrow=TRUE) 
   }
   inter <- (1-sum(output$phi))*output$mu
-  beta  <- cbind(inter,matrix(1,k,1)%*%t(output$phi))
+  beta  <- t(cbind(inter,matrix(1,k,1)%*%t(output$phi)))
   betaZ <- NULL
   # theta indicators
   theta_beta_ind  <- c(rep(1,1+(k-1)*con$msmu+p),rep(0,length(output$theta)-(1+(k-1)*con$msmu+p)))
@@ -1385,10 +1484,10 @@ MSARmdl <- function(Y, p, k, control = list()){
 #' 
 #' @description This function estimates a Markov-switching autoregressive model
 #' 
-#' @param Y (T x 1) vector with observational data. 
+#' @param Y a \code{(T x 1)} vector with observational data. 
 #' @param p integer for the number of lags to use in estimation. Must be greater than or equal to \code{1}. 
 #' @param k integer for the number of regimes to use in estimation. Must be greater than or equal to \code{2}.
-#' @param Z exogenous regressors. 
+#' @param Z a \code{(T x qz)} matrix of exogenous regressors. 
 #' @param control List with model options including:
 #' \itemize{
 #'  \item getSE: Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.
@@ -1413,8 +1512,10 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'   \item x: a \code{(T-p x p)} matrix of lagged observations.
 #'   \item fitted: a \code{(T x 1)} matrix of fitted values.
 #'   \item resid: a \code{(T x 1)} matrix of residuals.
-#'   \item inter: a \code{(k x 1)} vector of estimated intercepts of each process.
+#'   \item intercept: a \code{(k x 1)} vector of estimated intercepts of each process.
 #'   \item mu: a \code{(k x 1)} vector of estimated means of each process.
+#'   \item beta: a \code{((1 + p + qz) x k)} matrix of estimated coefficients. 
+#'   \item betaZ: a \code{(qz x q)} matrix of estimated exogenous regressor coefficients.
 #'   \item phi: estimates of autoregressive coefficients.
 #'   \item stdev: a \code{(k x 1)} vector of estimated standard deviation of each process.
 #'   \item sigma: a \code{(k x 1)} estimated covariance matrix.
@@ -1576,7 +1677,7 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
   }
   Zbar  <- as.matrix(colMeans(Z[(p+1):(init_mdl$n+p),,drop=F]))
   inter <- output$mu*(1-sum(output$phi)) - c(t(output$betaZ)%*%Zbar)
-  beta  <- cbind(inter,matrix(1,k,1)%*%t(output$beta))
+  beta  <- t(cbind(inter,matrix(1,k,1)%*%t(output$beta)))
   betaZ <- output$betaZ
   # theta indicators
   theta_beta_ind  <- c(rep(1,1+(k-1)*con$msmu+p+ncol(Z)),rep(0,length(output$theta)-(1+(k-1)*con$msmu+p+ncol(Z))))
@@ -1652,9 +1753,11 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
 #'   \item y: a \code{(T-p x q)} matrix of observations.
 #'   \item X: a \code{(T-p x p*q + const)} matrix of lagged observations with a leading column of \code{1}s.
 #'   \item x: a \code{(T-p x p*q)} matrix of lagged observations.
+#'   \item fitted: a \code{(T x q)} matrix of fitted values.
 #'   \item resid: a \code{(T-p x q)} matrix of residuals.
-#'   \item inter: a \code{(k x q)} matrix of estimated intercepts of each process.
+#'   \item intercept: a \code{(k x q)} matrix of estimated intercepts of each process.
 #'   \item mu: a \code{(k x q)} matrix of estimated means of each process.
+#'   \item beta: a list containing \code{k} separate \code{((1 + p) x q)} matrix of estimated coefficients for each regime.  
 #'   \item phi: estimates of autoregressive coefficients.
 #'   \item Fmat: Companion matrix containing autoregressive coefficients.
 #'   \item stdev: List with \code{k} \code{(q x q)} matrices with estimated standard deviation on the diagonal.
@@ -1724,11 +1827,11 @@ MSVARmdl <- function(Y, p, k, control = list()){
   # ---------- Optimization options
   optim_options <- list(maxit = con$maxit, thtol = con$thtol)
   # pre-define list and matrix length for results
-  output_all <- list(con$use_diff_init)
+  output_all <- list()
   max_loglik <- matrix(0, con$use_diff_init, 1)
   # ---------- Estimate linear model to use for initial values & transformed series
   init_control <- list(const = TRUE, getSE = FALSE)
-  init_mdl <- VARmdl(Y, p = p, init_control)
+  init_mdl <- VARmdl(Y, p = p, control = init_control)
   init_mdl$msmu <- con$msmu
   init_mdl$msvar <- con$msvar
   if (is.null(con$init_theta)==TRUE){
@@ -1812,43 +1915,321 @@ MSVARmdl <- function(Y, p, k, control = list()){
       output$init_used <- 1  
     }
   }
-  # ----- Obtain variables of interest
   q <- ncol(Y)
+  output$Fmat    <- companionMat(output$phi, p, q)
+  inter <- matrix(0,k,q)
+  beta <- list()
+  stdev <- list()
+  for(xk in 1:k){
+    nu_tmp <- (diag(q*p)-output$Fmat)%*%as.matrix(c(output$mu[xk,],rep(0,q*(p-1))))
+    inter[xk,] <- nu_tmp[(1:(q))]
+    beta[[xk]] <- rbind(inter[xk,],t(output$phi))
+    stdev[[xk]] = diag(sqrt(diag(output$sigma[[xk]])))
+  }
+  betaZ <- NULL
+  # theta indicators
   Nsig <- (q*(q+1))/2
   phi_len <- q*p*q 
-  theta_mu_ind <- c(rep(1, q + q*(k-1)*con$msmu), rep(0, Nsig + Nsig*(k-1)*con$msvar + phi_len + k*k))
-  theta_sig_ind <- c(rep(0, q + q*(k-1)*con$msmu), rep(1, Nsig + Nsig*(k-1)*con$msvar), rep(0, phi_len + k*k))
-  theta_var_ind <- c(rep(0, q + q*(k-1)*con$msmu), rep(t(covar_vech(diag(q))), 1+(k-1)*con$msvar), rep(0, phi_len + k*k))
-  theta_phi_ind <- c(rep(0, q + q*(k-1)*con$msmu + Nsig + Nsig*(k-1)*con$msvar), rep(1, phi_len), rep(0, k*k))
-  theta_P_ind <- c(rep(0, q + q*(k-1)*con$msmu + Nsig + Nsig*(k-1)*con$msvar + phi_len), rep(1, k*k))
+  theta_beta_ind  <- c(rep(1, length(output$theta) - (Nsig + Nsig*(con$msvar*(k-1)) + k*k)), rep(0,Nsig + Nsig*(con$msvar*(k-1)) + k*k))
+  theta_mu_ind    <- c(rep(1, q + q*(k-1)*con$msmu), rep(0, length(output$theta) - (q + q*(k-1)*con$msmu)))
+  theta_phi_ind   <- c(rep(0, q + q*(k-1)*con$msmu), rep(1,phi_len), rep(0, k*k + Nsig + Nsig*(con$msvar*(k-1))))
+  theta_x_ind     <- c(rep(0, length(output$theta)))
+  theta_sig_ind   <- c(rep(0, q + q*(k-1)*con$msmu + phi_len), rep(1, Nsig + Nsig*(k-1)*con$msvar), rep(0, k*k))
+  theta_var_ind   <- c(rep(0, q + q*(k-1)*con$msmu + phi_len), rep(t(covar_vech(diag(q))), 1+(k-1)*con$msvar), rep(0, k*k))
+  theta_P_ind     <- c(rep(0, q + q*(k-1)*con$msmu + phi_len + Nsig + Nsig*(k-1)*con$msvar), rep(1, k*k))
   if (con$msmu==FALSE){
-    output$mu <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
+    output$mu     <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
   }
-  out <- list(y = init_mdl$y, X = init_mdl$X, x = init_mdl$x, resid = output$resid, mu = output$mu, phi = output$phi,
-              sigma = output$sigma, theta = output$theta, theta_mu_ind = theta_mu_ind, theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, 
-              theta_phi_ind = theta_phi_ind, theta_P_ind = theta_P_ind, stationary = NULL, n = init_mdl$n, p = p, q = q, k = k, logLike = output$logLike, P = output$P, pinf = output$pinf, 
-              St = output$St, deltath = output$deltath,  iterations = output$iterations, theta_0 = output$theta_0,
-              init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, control = con)
+  stationary <- NULL
+  try(
+    stationary    <- all(eigen(output$Fmat)$values<1)  
+  )
+  # ----- Output
+  out <- list(y = init_mdl$y, X = init_mdl$X, x = init_mdl$x, resid = output$resid, 
+              mu = output$mu, intercept = inter, phi = output$phi, betaZ = betaZ, beta = beta,
+              stdev = stdev, sigma = output$sigma, theta = output$theta, 
+              theta_mu_ind = theta_mu_ind, theta_phi_ind = theta_phi_ind, theta_x_ind = theta_x_ind, theta_beta_ind = theta_beta_ind,
+              theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind, 
+              stationary = stationary, n = init_mdl$n, q = q, p = p, k = k, control = con,
+              P = output$P, pinf = output$pinf, St = output$St, logLike = output$logLike,  
+              deltath = output$deltath, iterations = output$iterations, theta_0 = output$theta_0,
+              init_used = output$init_used, msmu = con$msmu, msvar = con$msvar)
   # Define class
   class(out) <- "MSVARmdl"
   # other output
-  out$Fmat    <- companionMat(out$phi, out$p, out$q)
-  out$inter   <- interMSVARmdl(out)
+  out$Fmat    <- output$Fmat
   out$fitted  <- stats::fitted(out)
   out$AIC     <- stats::AIC(out)
   out$BIC     <- stats::BIC(out)
-  stdev <- list(k)
-  for (xk in 1:k){
-    stdev[[xk]] <- diag(sqrt(diag(out$sigma[[xk]])))
-  }
-  out$stdev <- stdev
   # names
   phi_n_tmp <- expand.grid((1:q),(1:p),(1:q))
   mu_n_tmp <- expand.grid((1:q),(1:k))
   sig_n_tmp <- expand.grid(covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q))),(1:k))
   names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_",mu_n_tmp[,1],",",mu_n_tmp[,2]) else  paste0("mu_",(1:q)),
-                        if (con$msvar==TRUE) paste0("sig_",sig_n_tmp[,1],",",sig_n_tmp[,2]) else paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))),
                         paste0("phi_",paste0(phi_n_tmp[,2],",",phi_n_tmp[,3],phi_n_tmp[,1])),
+                        if (con$msvar==TRUE) paste0("sig_",sig_n_tmp[,1],",",sig_n_tmp[,2]) else paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))),
+                        paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
+  if (con$getSE==TRUE){
+    out <- thetaSE(out)
+  }
+  if (is.null(con$init_theta)){
+    out$trace <- output_all
+  }
+  return(out)
+}
+
+
+
+
+#' @title Markov-switching vector autoregressive model 
+#' 
+#' @description This function estimates a Markov-switching vector autoregressive model 
+#' 
+#' @param Y (\code{T x q}) vector with observational data.
+#' @param p integer for the number of lags to use in estimation. Must be greater than or equal to \code{0}.
+#' @param k integer for the number of regimes to use in estimation. Must be greater than or equal to \code{2}.
+#' @param Z a \code{(T x qz)} matrix of exogenous regressors. 
+#' @param control List with optimization options including:
+#' \itemize{
+#'  \item getSE: Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.
+#'  \item msmu: Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.
+#'  \item msvar: Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.
+#'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix. This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
+#'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
+#'  \item maxit: integer determining the maximum number of EM iterations.
+#'  \item thtol: double determining the convergence criterion for the absolute difference in parameter estimates \code{theta} between iterations. Default is \code{1e-6}.
+#'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{500}.
+#'  \item use_diff_init: integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.
+#'  \item mle_stationary_constraint: Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.
+#'  \item mle_variance_constraint: double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is \code{1e-3}.
+#'  \item mle_theta_low: Vector with lower bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
+#'  \item mle_theta_upp: Vector with upper bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
+#' }
+#' 
+#' @return List of class \code{MSVARmdl} (\code{S3} object) with model attributes including:
+#' \itemize{
+#'   \item y: a \code{(T-p x q)} matrix of observations.
+#'   \item X: a \code{(T-p x p*q + const)} matrix of lagged observations with a leading column of \code{1}s.
+#'   \item x: a \code{(T-p x p*q)} matrix of lagged observations.
+#'   \item resid: a \code{(T-p x q)} matrix of residuals.
+#'   \item fitted: a \code{(T x q)} matrix of fitted values.
+#'   \item intercept: a \code{(k x q)} matrix of estimated intercepts of each process.
+#'   \item mu: a \code{(k x q)} matrix of estimated means of each process.
+#'   \item beta: a list containing \code{k} separate \code{((1 + p + qz) x q)} matrix of estimated coefficients for each regime.  
+#'   \item betaZ: a \code{(qz x q)} matrix of estimated exogenous regressor coefficients.
+#'   \item phi: estimates of autoregressive coefficients.
+#'   \item Fmat: Companion matrix containing autoregressive coefficients.
+#'   \item stdev: List with \code{k} \code{(q x q)} matrices with estimated standard deviation on the diagonal.
+#'   \item sigma: List with \code{k} \code{(q x q)} matrices with estimated covariance matrix.
+#'   \item theta: vector containing: \code{mu} and \code{vech(sigma)}.
+#'   \item theta_mu_ind: vector indicating location of mean with \code{1} and \code{0} otherwise.
+#'   \item theta_sig_ind: vector indicating location of variance and covariances with \code{1} and \code{0} otherwise.
+#'   \item theta_var_ind: vector indicating location of variances with \code{1} and \code{0} otherwise.
+#'   \item theta_P_ind: vector indicating location of transition matrix elements with \code{1} and \code{0} otherwise.
+#'   \item stationary: Boolean indicating if process is stationary if \code{TRUE} or non-stationary if \code{FALSE}.
+#'   \item n: number of observations (same as \code{T}).
+#'   \item p: number of autoregressive lags.
+#'   \item q: number of series.
+#'   \item k: number of regimes in estimated model.
+#'   \item P: a \code{(k x k)} transition matrix.
+#'   \item pinf: a \code{(k x 1)} vector with limiting probabilities of each regime.
+#'   \item St: a \code{(T x k)} vector with smoothed probabilities of each regime at each time \code{t}.
+#'   \item deltath: double with maximum absolute difference in vector \code{theta} between last iteration.
+#'   \item iterations: number of EM iterations performed to achieve convergence (if less than \code{maxit}).
+#'   \item theta_0: vector of initial values used.
+#'   \item init_used: number of different initial values used to get a finite solution. See description of input \code{maxit_converge}.
+#'   \item msmu: Boolean. If \code{TRUE} model was estimated with switch in mean. If \code{FALSE} model was estimated with constant mean.
+#'   \item msvar: Boolean. If \code{TRUE} model was estimated with switch in variance. If \code{FALSE} model was estimated with constant variance.
+#'   \item control: List with model options used.
+#'   \item logLike: log-likelihood.
+#'   \item AIC: Akaike information criterion.
+#'   \item BIC: Bayesian (Schwarz) information criterion.
+#'   \item Hess: Hessian matrix. Approximated using \code{\link[numDeriv]{hessian}} and only returned if \code{getSE=TRUE}.
+#'   \item info_mat: Information matrix. Computed as the inverse of \code{-Hess}. If matrix is not PD then nearest PD matrix is obtained using \code{\link[pracma]{nearest_spd}}. Only returned if \code{getSE=TRUE}.
+#'   \item nearPD_used: Boolean determining whether \code{nearPD} function was used on \code{info_mat} if \code{TRUE} or not if \code{FALSE}. Only returned if \code{getSE=TRUE}.
+#'   \item theta_se: standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.
+#'   \item trace: List with Lists of estimation output for each initial value used due to \code{use_diff_init > 1}.
+#' }
+#' 
+#' @return List with model characteristics
+#' 
+#' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38..
+#' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.”. Springer.
+#'  
+#' @seealso \code{\link{VARmdl}}
+#' @example /inst/examples/MSVARmdl_examples.R
+#' @export
+MSVARXmdl <- function(Y, p, k, Z, control = list()){
+  # ----- Set control values
+  con <- list(getSE = TRUE,
+              msmu = TRUE, 
+              msvar = TRUE,
+              init_theta = NULL,
+              method = "EM",
+              maxit = 1000,
+              thtol = 1.e-6, 
+              maxit_converge = 500, 
+              use_diff_init = 1,
+              mle_stationary_constraint = TRUE,
+              mle_variance_constraint = 1e-3,
+              mle_theta_low = NULL,
+              mle_theta_upp = NULL)
+  # ----- Perform some checks for controls
+  nmsC <- names(con)
+  con[(namc <- names(control))] <- control
+  if(length(noNms <- namc[!namc %in% nmsC])){
+    warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+  }
+  if (k<2){
+    stop("value for 'k' must be greater than or equal to 2.")
+  }
+  con$Z = Z
+  # ---------- Optimization options
+  optim_options <- list(maxit = con$maxit, thtol = con$thtol)
+  # pre-define list and matrix length for results
+  output_all <- list()
+  max_loglik <- matrix(0, con$use_diff_init, 1)
+  # ---------- Estimate linear model to use for initial values & transformed series
+  init_control <- list(const = TRUE, getSE = FALSE)
+  init_mdl <- VARXmdl(Y, p = p, Z = Z, control = init_control)
+  init_mdl$msmu <- con$msmu
+  init_mdl$msvar <- con$msvar
+  if (is.null(con$init_theta)==TRUE){
+    if (con$method=="EM"){
+      # ----- Estimate using 'use_diff_init' different initial values
+      for (xi in 1:con$use_diff_init){
+        init_used <- 0
+        converge_check <- FALSE
+        while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
+          # ----- Initial values
+          theta_0 <- initVals_MSVARXmdl(init_mdl, k)
+          # ----- Estimate using EM algorithm and initial values provided
+          output_tmp <- MSVARXmdl_em(theta_0, init_mdl, k, optim_options)
+          # ----- Convergence check
+          logLike_tmp <- output_tmp$logLike
+          theta_tmp <- output_tmp$theta
+          converge_check <- ((is.finite(output_tmp$logLike)) & (all(is.finite(output_tmp$theta))))
+          init_used <- init_used + 1
+        }
+        output_tmp$theta_0 <- theta_0
+        max_loglik[xi] <- output_tmp$logLike
+        output_tmp$init_used <- init_used
+        output_all[[xi]] <- output_tmp
+      }
+    }else if (con$method=="MLE"){
+      optim_options$mle_theta_low <- con$mle_theta_low
+      optim_options$mle_theta_upp <- con$mle_theta_upp
+      init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
+      init_mdl$mle_variance_constraint <- con$mle_variance_constraint
+      # ----- Estimate using 'use_diff_init' different initial values
+      for (xi in 1:con$use_diff_init){
+        init_used <- 0
+        converge_check <- FALSE
+        while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
+          # ----- Initial values
+          theta_0 <- initVals_MSVARXmdl(init_mdl, k)
+          # ----- Estimate using roptim and initial values provided 
+          output_tmp <- NULL
+          try(
+            output_tmp <- MSVARmdl_mle(theta_0, init_mdl, k, optim_options)  
+          )
+          # ----- Convergence check
+          if (is.null(output_tmp)==FALSE){
+            converge_check <- TRUE
+          }else{
+            converge_check <- FALSE
+          }
+          init_used = init_used + 1
+        }
+        output_tmp$theta_0 <- theta_0
+        max_loglik[xi] <- output_tmp$logLike
+        output_tmp$init_used <- init_used
+        output_all[[xi]] <- output_tmp
+      }
+    }
+    if (con$use_diff_init==1){
+      output = output_tmp
+    }else{
+      xl = which.max(max_loglik)
+      if (length(xl)==0){
+        warning("Model(s) did not converge. Use higher 'use_diff_init' or 'maxit_converge'.")
+        output <- output_all[[1]] 
+      }else{
+        output <- output_all[[xl]] 
+      }
+    }
+  }else{
+    if (con$method=="EM"){
+      # ----- Estimate using EM algorithm and initial values provided
+      output <- MSVARmdl_em(con$init_theta, init_mdl, k, optim_options)
+      output$theta_0 <- con$init_theta
+      output$init_used <- 1  
+    }else if (con$method=="MLE"){
+      optim_options$lower <- con$lower
+      optim_options$upper <- con$upper
+      init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
+      init_mdl$mle_variance_constraint <- con$mle_variance_constraint
+      # ----- Estimate using roptim and initial values provided 
+      output <- MSVARmdl_mle(con$init_theta, init_mdl, k, optim_options)  
+      output$theta_0 <- con$init_theta
+      output$init_used <- 1  
+    }
+  }
+  q <- ncol(Y)
+  output$Fmat    <- companionMat(output$phi, p, q)
+  inter <- matrix(0,k,q)
+  beta <- list()
+  stdev <- list()
+  for(xk in 1:k){
+    nu_tmp <- (diag(q*p)-output$Fmat)%*%as.matrix(c(output$mu[xk,],rep(0,q*(p-1))))
+    inter[xk,] <- nu_tmp[(1:(q))]
+    beta[[xk]] <- rbind(inter[xk,],t(output$phi),output$betaZ)
+    stdev[[xk]] = diag(sqrt(diag(output$sigma[[xk]])))
+  }
+  betaZ <- output$betaZ
+  # theta indicators
+  Nsig <- (q*(q+1))/2
+  phi_len <- q*p*q 
+  theta_beta_ind  <- c(rep(1, length(output$theta) - (Nsig + Nsig*(con$msvar*(k-1)) + k*k)), rep(0,Nsig + Nsig*(con$msvar*(k-1)) + k*k))
+  theta_mu_ind    <- c(rep(1, q + q*(k-1)*con$msmu), rep(0, length(output$theta) - (q + q*(k-1)*con$msmu)))
+  theta_phi_ind   <- c(rep(0, q + q*(k-1)*con$msmu), rep(1,phi_len), rep(0, length(betaZ) + k*k + Nsig + Nsig*(con$msvar*(k-1))))
+  theta_x_ind     <- c(rep(0, q + q*(k-1)*con$msmu + phi_len) , rep(1, length(betaZ)),rep(0, k*k + Nsig + Nsig*(con$msvar*(k-1))))
+  theta_sig_ind   <- c(rep(0, q + q*(k-1)*con$msmu + phi_len + length(betaZ)), rep(1, Nsig + Nsig*(k-1)*con$msvar), rep(0, k*k))
+  theta_var_ind   <- c(rep(0, q + q*(k-1)*con$msmu + phi_len + length(betaZ)), rep(t(covar_vech(diag(q))), 1+(k-1)*con$msvar), rep(0, k*k))
+  theta_P_ind     <- c(rep(0, length(output$theta) - k*k) , rep(1, k*k))
+  if (con$msmu==FALSE){
+    output$mu     <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
+  }
+  stationary <- NULL
+  try(
+    stationary    <- all(eigen(output$Fmat)$values<1)  
+  )
+  # ----- Output
+  out <- list(y = init_mdl$y, X = init_mdl$X, x = init_mdl$x, resid = output$resid, 
+              mu = output$mu, intercept = inter, phi = output$phi, betaZ = betaZ, beta = beta,
+              stdev = stdev, sigma = output$sigma, theta = output$theta, 
+              theta_mu_ind = theta_mu_ind, theta_phi_ind = theta_phi_ind, theta_x_ind = theta_x_ind, theta_beta_ind = theta_beta_ind,
+              theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind, 
+              stationary = stationary, n = init_mdl$n, q = q, p = p, k = k, control = con,
+              P = output$P, pinf = output$pinf, St = output$St, logLike = output$logLike,  
+              deltath = output$deltath, iterations = output$iterations, theta_0 = output$theta_0,
+              init_used = output$init_used, msmu = con$msmu, msvar = con$msvar)
+  # Define class
+  class(out) <- "MSVARmdl"
+  # other output
+  out$Fmat    <- output$Fmat
+  out$fitted  <- stats::fitted(out)
+  out$AIC     <- stats::AIC(out)
+  out$BIC     <- stats::BIC(out)
+  # names
+  phi_n_tmp <- expand.grid((1:q),(1:p),(1:q))
+  mu_n_tmp <- expand.grid((1:q),(1:k))
+  betaZ_n_tmp <- expand.grid(1:ncol(Z),1:q)
+  sig_n_tmp <- expand.grid(covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q))),(1:k))
+  names(out$theta) <- c(if (con$msmu==TRUE) paste0("mu_",mu_n_tmp[,1],",",mu_n_tmp[,2]) else  paste0("mu_",(1:q)),
+                        paste0("phi_",paste0(phi_n_tmp[,2],",",phi_n_tmp[,3],phi_n_tmp[,1])),
+                        paste0("x_",paste0(betaZ_n_tmp[,1],",",betaZ_n_tmp[,2])),
+                        if (con$msvar==TRUE) paste0("sig_",sig_n_tmp[,1],",",sig_n_tmp[,2]) else paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))),
                         paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
   if (con$getSE==TRUE){
     out <- thetaSE(out)

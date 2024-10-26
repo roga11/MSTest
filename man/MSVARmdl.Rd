@@ -36,9 +36,11 @@ List of class \code{MSVARmdl} (\code{S3} object) with model attributes including
   \item y: a \code{(T-p x q)} matrix of observations.
   \item X: a \code{(T-p x p*q + const)} matrix of lagged observations with a leading column of \code{1}s.
   \item x: a \code{(T-p x p*q)} matrix of lagged observations.
+  \item fitted: a \code{(T x q)} matrix of fitted values.
   \item resid: a \code{(T-p x q)} matrix of residuals.
-  \item inter: a \code{(k x q)} matrix of estimated intercepts of each process.
+  \item intercept: a \code{(k x q)} matrix of estimated intercepts of each process.
   \item mu: a \code{(k x q)} matrix of estimated means of each process.
+  \item beta: a list containing \code{k} separate \code{((1 + p) x q)} matrix of estimated coefficients for each regime.  
   \item phi: estimates of autoregressive coefficients.
   \item Fmat: Companion matrix containing autoregressive coefficients.
   \item stdev: List with \code{k} \code{(q x q)} matrices with estimated standard deviation on the diagonal.
@@ -107,7 +109,7 @@ control <- list(msmu   = TRUE,
                 
 # Estimate model
 \donttest{
-  y_msvar_mdl <- MSVARmdl(y_msvar_simu$y, p = 2, k = 2, control)
+  y_msvar_mdl <- MSVARmdl(y_msvar_simu$y, p = 1, k = 2, control = control)
   summary(y_msvar_mdl)
 }
 }

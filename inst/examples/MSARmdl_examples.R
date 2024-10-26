@@ -20,7 +20,7 @@ control <- list(msmu   = TRUE,
 
 # Estimate model
 \donttest{
-  ms_mdl <- MSARmdl(y_ms_simu$y, p = 1, k = 2, control)
+  ms_mdl <- MSARmdl(y_ms_simu$y, p = 1, k = 2, control = control)
   summary(ms_mdl)
 }
 

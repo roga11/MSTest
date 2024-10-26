@@ -11,7 +11,7 @@ VARXmdl(Y, p, Z, control = list())
 
 \item{p}{integer determining the number of autoregressive lags.}
 
-\item{Z}{exogenous regressors.}
+\item{Z}{a \code{(T x qz)} matrix of exogenous regressors.}
 
 \item{control}{List with model options including:
 \itemize{
@@ -27,9 +27,9 @@ List of class \code{VARmdl} (\code{S3} object) with model attributes including:
   \item x: a \code{(T-p x p*q)} matrix of lagged observations.
   \item fitted: a \code{(T-p x q)} matrix of fitted values.
   \item resid: a \code{(T-p x q)} matrix of residuals.
-  \item inter: a \code{(1 x q)} vector of estimated intercepts of each process.
   \item mu: a \code{(1 x q)} vector of estimated means of each process.
-  \item coef: coefficient estimates. First row are the intercept (i.e., not \code{mu}) if \code{const=TRUE}. This is the same as \code{t(phi)} if \code{const=FALSE}.
+  \item beta: a \code{((1 + p + qz) x q)} matrix of estimated coefficients. 
+  \item betaZ: a \code{(qz x q)} matrix of estimated exogenous regressor coefficients.
   \item intercept: estimate of intercepts.
   \item phi: a \code{(q x p*q)} matrix of estimated autoregressive coefficients.
   \item Fmat: Companion matrix containing autoregressive coefficients.
@@ -80,7 +80,7 @@ control <- list(const  = TRUE,
                 getSE  = TRUE)
 
 # Estimate model
-y_var_mdl <- VARmdl(y_simu$y, p = 2, control)
+y_var_mdl <- VARmdl(y_simu$y, p = 2, control = control)
 summary(y_var_mdl)
 }
 \seealso{

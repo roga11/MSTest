@@ -38,8 +38,9 @@ List of class \code{MSARmdl} (\code{S3} object) with model attributes including:
   \item x: a \code{(T-p x p)} matrix of lagged observations.
   \item fitted: a \code{(T x 1)} matrix of fitted values.
   \item resid: a \code{(T x 1)} matrix of residuals.
-  \item inter: a \code{(k x 1)} vector of estimated intercepts of each process.
+  \item intercept: a \code{(k x 1)} vector of estimated intercepts of each process.
   \item mu: a \code{(k x 1)} vector of estimated means of each process.
+  \item beta: a \code{((1 + p) x k)} matrix of estimated coefficients. 
   \item phi: estimates of autoregressive coefficients.
   \item stdev: a \code{(k x 1)} vector of estimated standard deviation of each process.
   \item sigma: a \code{(k x 1)} estimated covariance matrix.
@@ -99,7 +100,7 @@ control <- list(msmu   = TRUE,
 
 # Estimate model
 \donttest{
-  ms_mdl <- MSARmdl(y_ms_simu$y, p = 1, k = 2, control)
+  ms_mdl <- MSARmdl(y_ms_simu$y, p = 1, k = 2, control = control)
   summary(ms_mdl)
 }
 

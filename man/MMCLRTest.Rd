@@ -38,7 +38,7 @@ MMCLRTest(Y, p, k0, k1, Z = NULL, control = list())
   \item mdl_h0_control: List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
   \item mdl_h1_control: List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
   \item use_diff_init_sim: Value which determines the number of initial values to use when estimating models for null distribution. Default is set to use the same as specified in \code{mdl_h0_control} and \code{mdl_h1_control}.
-  \item type_control: List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is to set \code{list(maxit = 200)} so that maximum number of iterations is \code{200}.
+  \item optim_control: List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is to set \code{list(maxit = 200)} so that maximum number of iterations is \code{200}.
 }}
 }
 \value{
@@ -89,10 +89,9 @@ mmc_control = list(N = 19,
                                          msvar  = TRUE,
                                          getSE  = TRUE,
                                          method = "EM",
-                                         maxit  = 300,
                                          use_diff_init = 1))
 \donttest{
-  MMCtest <- MMCLRTest(y_ms_simu$y, p = 1 , k0 = 1 , k1 = 2, mmc_control)
+  MMCtest <- MMCLRTest(y_ms_simu$y, p = 1 , k0 = 1 , k1 = 2, control = mmc_control)
   summary(MMCtest)
 }
 

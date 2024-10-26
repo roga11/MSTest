@@ -14,8 +14,8 @@ simuARX_cpp(mdl_h0, burnin = 100L)
   \item sigma: variance of process.
   \item phi: Vector of autoregressive coefficients.
   \item eps: An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.
-  \item X: exogenous regressors (must be provided).
-  \item beta0: true coefficients on exogenous regressors
+  \item Z: A (\code{T x qz}) matrix with exogenous regressors (Optional) and where qz is the number of exogenous variables.
+  \item betaZ: A (\code{qz x 1}) matrix  true coefficients on exogenous regressors (Optional) and where qz is the number of exogenous variables.
 }}
 
 \item{burnin}{Number of simulated observations to remove from beginning. Default is \code{100}.}

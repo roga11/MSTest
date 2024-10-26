@@ -224,14 +224,13 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,bool msvar){
 //' 
 //' @return Bootstrap critical values
 //' 
-//' @keywords internal
 //' 
 //' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
 //' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 //' 
 //' @export
 // [[Rcpp::export]]
-arma::mat bootCV(List mdl, double rho_b, int N, bool msvar){
+arma::mat CHPbootCV(List mdl, double rho_b, int N, bool msvar){
   // calling required R functions 
   Function simuAR("simuAR");
   Function ARmdl("ARmdl");

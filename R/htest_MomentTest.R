@@ -182,7 +182,8 @@ DLMMC_bounds <- function(mdl_h0, con){
 #'   \item optim_type: String determining type of numerical optimization algorithm to use. Available options are: "\code{\link{pso}}", ""\code{\link{GenSA}}", "\code{\link{GA}}". Default is "\code{\link{GenSA}}".
 #'   \item silence: Boolean indicator determining if optimization updates should be silenced if \code{TRUE} or not if \code{FALSE}. Default is \code{FALSE}.
 #'   \item threshold_stop: Numeric value determining the maximum possible p-value attainable. Default is \code{1}.
-#'   \item type_control: List containing other optimization options specific to the numerical optimization algorithm used. This includes maximum number of iterations which is \code{200} b y default. For other options see documentation of numerical algorithm chosen.
+#'   \item maxit: Int determining the maximum number of function evaluations. Default is \code{1000}.
+#'   \item optim_control: List containing other optimization options specific to the numerical optimization algorithm used. For other options see documentation of numerical algorithm chosen.
 #' }
 #' 
 #' @return List of class \code{DLMCTest} (\code{S3} object) with attributes including: 
@@ -226,7 +227,8 @@ DLMMCTest <- function(Y, p, control = list()){
               optim_type = "GenSA",
               silence = FALSE,
               threshold_stop = 1,
-              type_control = list(maxit = 200))
+              maxit = 1000,
+              optim_control = list())
   # Perform some checks for controls
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
@@ -261,16 +263,17 @@ DLMMCTest <- function(Y, p, control = list()){
   # ----- Search for Max p-value within bounds
   if(con$optim_type=="pso"){
     # Set PSO specific controls
-    con$type_control$trace.stats <- TRUE
-    con$type_control$trace <- as.numeric(con$silence==FALSE)
-    con$type_control$abstol <- -con$threshold_stop
+    con$optim_control$trace.stats <- TRUE
+    con$optim_control$trace <- as.numeric(con$silence==FALSE)
+    con$optim_control$abstol <- -con$threshold_stop
+    con$optim_control$maxf <- con$maxit
     # begin optimization
     mmc_min_out <- pso::psoptim(par = theta_0, fn = DLMMCpval_fun_min, lower = theta_low, upper = theta_upp, 
-                                gr = NULL, control = con$type_control,
+                                gr = NULL, control = con$optim_control,
                                 y = y, x = x, params = params, sim_stats = Fmin_sim, 
                                 pval_type = "min", stationary_ind = con$stationary_ind, lambda = con$lambda)
     mmc_prd_out <- pso::psoptim(par = theta_0, fn = DLMMCpval_fun_min, lower = theta_low, upper = theta_upp, 
-                                gr = NULL, control = con$type_control,
+                                gr = NULL, control = con$optim_control,
                                 y = y, x = x, params = params, sim_stats = Fprd_sim, 
                                 pval_type = "prod", stationary_ind = con$stationary_ind, lambda = con$lambda)
     theta_min   <- as.matrix(mmc_min_out$par)
@@ -279,14 +282,16 @@ DLMMCTest <- function(Y, p, control = list()){
     pval_prod   <- -mmc_prd_out$value
   }else if(con$optim_type=="GenSA"){
     # Set GenSA specific controls
-    con$type_control$verbose <- con$silence==FALSE
-    con$type_control$threshold.stop <- -con$threshold_stop
+    con$optim_control$trace.mat <- TRUE
+    con$optim_control$verbose <- con$silence==FALSE
+    con$optim_control$threshold.stop <- -con$threshold_stop
+    con$optim_control$max.call <- con$maxit
     mmc_min_out <- GenSA::GenSA(par = theta_0, fn = DLMMCpval_fun_min, lower = theta_low, upper = theta_upp, 
-                                control = con$type_control,
+                                control = con$optim_control,
                                 y = y, x = x, params = params, sim_stats = Fmin_sim, 
                                 pval_type = "min", stationary_ind = con$stationary_ind, lambda = con$lambda)
     mmc_prd_out <- GenSA::GenSA(par = theta_0, fn = DLMMCpval_fun_min, lower = theta_low, upper = theta_upp, 
-                                control = con$type_control,
+                                control = con$optim_control,
                                 y = y, x = x, params = params, sim_stats = Fprd_sim, 
                                 pval_type = "prod", stationary_ind = con$stationary_ind, lambda = con$lambda)
     theta_min   <- as.matrix(mmc_min_out$par)
@@ -298,13 +303,13 @@ DLMMCTest <- function(Y, p, control = list()){
                           y = y, x = x, params = params, sim_stats = Fmin_sim, 
                           pval_type = "min", stationary_ind = con$stationary_ind, lambda = con$lambda,
                           lower = theta_low, upper = theta_upp, 
-                          maxiter = con$type_control$maxit, maxFitness = con$threshold_stop, 
+                          maxiter = con$maxit, maxFitness = con$threshold_stop, 
                           monitor = (con$silence==FALSE), suggestions = t(theta_0))
     mmc_prd_out <- GA::ga(type = "real-valued", fitness = DLMMCpval_fun, 
                           y = y, x = x, params = params, sim_stats = Fprd_sim, 
                           pval_type = "prod", stationary_ind = con$stationary_ind, lambda = con$lambda,
                           lower = theta_low, upper = theta_upp, 
-                          maxiter = con$type_control$maxit, maxFitness = con$threshold_stop, 
+                          maxiter = con$maxit, maxFitness = con$threshold_stop, 
                           monitor = (con$silence==FALSE), suggestions = t(theta_0))
     theta_min <- as.matrix(mmc_min_out@solution[1,])  # keeps on the first set that gives optim output
     theta_prod <- as.matrix(mmc_prd_out@solution[1,]) # keeps on the first set that gives optim output

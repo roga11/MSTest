@@ -220,6 +220,7 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   # ----- Define function environment
   HMmdl_mle_env <- rlang::env()
   # set environment variables
+  HMmdl_mle_env$mdl_in <- mdl_in
   HMmdl_mle_env$k <- k
   HMmdl_mle_env$q <- mdl_in$q
   HMmdl_mle_env$msmu <- mdl_in$msmu
@@ -249,9 +250,6 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     Pvec <- theta[(length(theta)-k*k+1):(length(theta))]
     ineq_constraint <- c(Pvec, 1-Pvec)
     if (mle_variance_constraint>=0){
-      # variances (lower bound is 1% of single regime variance)
-      #vars <- theta[c(rep(0, 1 + (k-1)*msmu), rep(1, 1 + (k-1)*msvar), rep(0, k*k))==1] - mle_variance_constraint*var_k1
-      #ineq_constraint <- c(vars, ineq_constraint)
       Nsig <- (q*(q+1))/2
       eigen_vals <- c()
       sig <- theta[c(rep(0, q + q*(k-1)*msmu), rep(1, Nsig + Nsig*(k-1)*msvar))==1]
@@ -269,18 +267,21 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     }
     return(ineq_constraint)
   }
+  loglike_wrapper <- function(theta) {
+    k <- get("k", envir = HMmdl_mle_env)
+    mdl_in <- get("mdl_in", envir = HMmdl_mle_env)
+    logLike_HMmdl_min(theta, mdl_in, k) 
+  }
   # use nloptr optimization to minimize (maximize) likelihood
   res <- nloptr::slsqp(x0 = theta_0,
-                       fn = logLike_HMmdl_min,
+                       fn = loglike_wrapper,
                        gr = NULL,
                        lower = optim_options$mle_theta_low,
                        upper = optim_options$mle_theta_upp,
                        hin = loglik_const_ineq_HMmdl,
                        heq = loglik_const_eq_HMmdl,
                        nl.info = FALSE,
-                       control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
-                       mdl = mdl_in,
-                       k = k) 
+                       control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol)) 
   output <- ExpectationM_HMmdl(res$par, mdl_in, k)
   output$iterations <- res$iter
   output$St <- output$xi_t_T
@@ -411,11 +412,13 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   # ---------- Define function environment
   MSVARmdl_mle_env <- rlang::env()
   # set environment variables
+  MSVARmdl_mle_env$mdl_in <- mdl_in
   MSVARmdl_mle_env$p <- mdl_in$p
   MSVARmdl_mle_env$k <- k
   MSVARmdl_mle_env$q <- mdl_in$q
   MSVARmdl_mle_env$msmu <- mdl_in$msmu
   MSVARmdl_mle_env$msvar <- mdl_in$msvar
+  MSVARmdl_mle_env$betaZ   <- mdl_in$betaZ
   MSVARmdl_mle_env$mle_stationary_constraint <- mdl_in$mle_stationary_constraint
   MSVARmdl_mle_env$mle_variance_constraint <- mdl_in$mle_variance_constraint
   # ---------- MSVARmdl_mle equality constraint functions
@@ -435,6 +438,7 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     q <- get("q", envir = MSVARmdl_mle_env)
     msmu <- get("msmu", envir = MSVARmdl_mle_env)
     msvar <- get("msvar", envir = MSVARmdl_mle_env)
+    betaZ   <- get("betaZ", envir = MSVARmdl_mle_env)
     mle_stationary_constraint <- get("mle_stationary_constraint", envir = MSVARmdl_mle_env)
     mle_variance_constraint <- get("mle_variance_constraint", envir = MSVARmdl_mle_env)
     Nsig <- (q*(q+1))/2
@@ -444,7 +448,7 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     ineq_constraint = c(Pvec, 1-Pvec)
     if (mle_stationary_constraint==TRUE){
       # eigen values of companion matrix
-      phi <- t(matrix(theta[c(rep(0, q + q*(k-1)*msmu + Nsig + Nsig*(k-1)*msvar), rep(1, phi_len), rep(0, k*k))==1], q*p, q))
+      phi <- t(matrix(theta[c(rep(0, q + q*(k-1)*msmu), rep(1, phi_len), rep(0, length(theta) - (q + q*(k-1)*msmu)-phi_len))==1], q*p, q))
       Fmat <- companionMat(phi,p,q)
       stationary  <- abs(Mod(eigen(Fmat)[[1]]) - 1)
       ineq_constraint = c(stationary, 1-stationary, ineq_constraint)
@@ -452,7 +456,7 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     if (mle_variance_constraint>=0){
       # eigen values of covariance matrices
       eigen_vals <- c()
-      sig <- theta[c(rep(0, q + q*(k-1)*msmu), rep(1, Nsig + Nsig*(k-1)*msvar), rep(0, phi_len + k*k))==1]
+      sig <- theta[c(rep(0, q + q*(k-1)*msmu + phi_len + length(betaZ)), rep(1, Nsig + Nsig*(k-1)*msvar), rep(0, k*k))==1]
       if (msvar==TRUE){
         for (xk in  1:k){
           sig_tmp <- sig[(Nsig*(xk-1)+1):(Nsig*(xk-1)+Nsig)]
@@ -467,19 +471,31 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     }
     return(ineq_constraint)
   }
+  # Wrapper for log-likelihood with additional arguments
+  loglike_wrapper <- function(theta) {
+    k <- get("k", envir = MSVARmdl_mle_env)
+    mdl_in <- get("mdl_in", envir = MSVARmdl_mle_env)
+    if (length(mdl_in$betaZ)>0){
+      logLike_MSVARXmdl_min(theta, mdl_in, k) 
+    }else{
+      logLike_MSVARmdl_min(theta, mdl_in, k) 
+    }
+  }
   # use nloptr optimization to minimize (maximize) likelihood
   res <- nloptr::slsqp(x0 = theta_0,
-                       fn = logLike_MSVARmdl_min,
+                       fn = loglike_wrapper,
                        gr = NULL,
                        lower = optim_options$mle_theta_low,
                        upper = optim_options$mle_theta_upp,
                        hin = loglik_const_ineq_MSVARmdl,
                        heq = loglik_const_eq_MSVARmdl,
                        nl.info = FALSE,
-                       control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
-                       mdl = mdl_in,
-                       k = k) 
-  output <- ExpectationM_MSVARmdl(res$par, mdl_in, k)
+                       control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol)) 
+  if (length(mdl_in$betaZ)>0){
+    output <- ExpectationM_MSVARXmdl(res$par, mdl_in, k)
+  }else{
+    output <- ExpectationM_MSVARmdl(res$par, mdl_in, k)
+  }
   output$iterations <- res$iter
   output$St <- output$xi_t_T
   return(output)

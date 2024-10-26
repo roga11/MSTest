@@ -52,9 +52,9 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// bootCV
-arma::mat bootCV(List mdl, double rho_b, int N, bool msvar);
-RcppExport SEXP _MSTest_bootCV(SEXP mdlSEXP, SEXP rho_bSEXP, SEXP NSEXP, SEXP msvarSEXP) {
+// CHPbootCV
+arma::mat CHPbootCV(List mdl, double rho_b, int N, bool msvar);
+RcppExport SEXP _MSTest_CHPbootCV(SEXP mdlSEXP, SEXP rho_bSEXP, SEXP NSEXP, SEXP msvarSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -62,7 +62,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type rho_b(rho_bSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< bool >::type msvar(msvarSEXP);
-    rcpp_result_gen = Rcpp::wrap(bootCV(mdl, rho_b, N, msvar));
+    rcpp_result_gen = Rcpp::wrap(CHPbootCV(mdl, rho_b, N, msvar));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -378,6 +378,23 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// paramList_MSVARXmdl
+List paramList_MSVARXmdl(arma::vec theta, int q, int p, int k, int qz, bool msmu, bool msvar);
+RcppExport SEXP _MSTest_paramList_MSVARXmdl(SEXP thetaSEXP, SEXP qSEXP, SEXP pSEXP, SEXP kSEXP, SEXP qzSEXP, SEXP msmuSEXP, SEXP msvarSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< int >::type q(qSEXP);
+    Rcpp::traits::input_parameter< int >::type p(pSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< int >::type qz(qzSEXP);
+    Rcpp::traits::input_parameter< bool >::type msmu(msmuSEXP);
+    Rcpp::traits::input_parameter< bool >::type msvar(msvarSEXP);
+    rcpp_result_gen = Rcpp::wrap(paramList_MSVARXmdl(theta, q, p, k, qz, msmu, msvar));
+    return rcpp_result_gen;
+END_RCPP
+}
 // calcResid_MSARmdl
 arma::mat calcResid_MSARmdl(List mdl, arma::mat mu, int k);
 RcppExport SEXP _MSTest_calcResid_MSARmdl(SEXP mdlSEXP, SEXP muSEXP, SEXP kSEXP) {
@@ -414,6 +431,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type mu(muSEXP);
     Rcpp::traits::input_parameter< int >::type k(kSEXP);
     rcpp_result_gen = Rcpp::wrap(calcResid_MSVARmdl(mdl, mu, k));
+    return rcpp_result_gen;
+END_RCPP
+}
+// calcResid_MSVARXmdl
+List calcResid_MSVARXmdl(List mdl, List mu, int k);
+RcppExport SEXP _MSTest_calcResid_MSVARXmdl(SEXP mdlSEXP, SEXP muSEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type mdl(mdlSEXP);
+    Rcpp::traits::input_parameter< List >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(calcResid_MSVARXmdl(mdl, mu, k));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -462,6 +492,18 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type mdl(mdlSEXP);
     Rcpp::traits::input_parameter< int >::type k(kSEXP);
     rcpp_result_gen = Rcpp::wrap(initVals_MSVARmdl(mdl, k));
+    return rcpp_result_gen;
+END_RCPP
+}
+// initVals_MSVARXmdl
+arma::vec initVals_MSVARXmdl(List mdl, int k);
+RcppExport SEXP _MSTest_initVals_MSVARXmdl(SEXP mdlSEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type mdl(mdlSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(initVals_MSVARXmdl(mdl, k));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -587,26 +629,28 @@ BEGIN_RCPP
 END_RCPP
 }
 // simuNorm_cpp
-List simuNorm_cpp(List mdl_h0, int burnin);
-RcppExport SEXP _MSTest_simuNorm_cpp(SEXP mdl_h0SEXP, SEXP burninSEXP) {
+List simuNorm_cpp(List mdl_h0, int burnin, bool exog);
+RcppExport SEXP _MSTest_simuNorm_cpp(SEXP mdl_h0SEXP, SEXP burninSEXP, SEXP exogSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< List >::type mdl_h0(mdl_h0SEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    rcpp_result_gen = Rcpp::wrap(simuNorm_cpp(mdl_h0, burnin));
+    Rcpp::traits::input_parameter< bool >::type exog(exogSEXP);
+    rcpp_result_gen = Rcpp::wrap(simuNorm_cpp(mdl_h0, burnin, exog));
     return rcpp_result_gen;
 END_RCPP
 }
 // simuHMM_cpp
-List simuHMM_cpp(List mdl_h0, int burnin);
-RcppExport SEXP _MSTest_simuHMM_cpp(SEXP mdl_h0SEXP, SEXP burninSEXP) {
+List simuHMM_cpp(List mdl_h0, int burnin, bool exog);
+RcppExport SEXP _MSTest_simuHMM_cpp(SEXP mdl_h0SEXP, SEXP burninSEXP, SEXP exogSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< List >::type mdl_h0(mdl_h0SEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
-    rcpp_result_gen = Rcpp::wrap(simuHMM_cpp(mdl_h0, burnin));
+    Rcpp::traits::input_parameter< bool >::type exog(exogSEXP);
+    rcpp_result_gen = Rcpp::wrap(simuHMM_cpp(mdl_h0, burnin, exog));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -852,6 +896,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// ExpectationM_MSVARXmdl
+List ExpectationM_MSVARXmdl(arma::vec theta, List mdl, int k);
+RcppExport SEXP _MSTest_ExpectationM_MSVARXmdl(SEXP thetaSEXP, SEXP mdlSEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< List >::type mdl(mdlSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(ExpectationM_MSVARXmdl(theta, mdl, k));
+    return rcpp_result_gen;
+END_RCPP
+}
 // EMaximization_HMmdl
 List EMaximization_HMmdl(arma::vec theta, List mdl, List MSloglik_output, int k);
 RcppExport SEXP _MSTest_EMaximization_HMmdl(SEXP thetaSEXP, SEXP mdlSEXP, SEXP MSloglik_outputSEXP, SEXP kSEXP) {
@@ -908,6 +965,20 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// EMaximization_MSVARXmdl
+List EMaximization_MSVARXmdl(arma::vec theta, List mdl, List MSloglik_output, int k);
+RcppExport SEXP _MSTest_EMaximization_MSVARXmdl(SEXP thetaSEXP, SEXP mdlSEXP, SEXP MSloglik_outputSEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type theta(thetaSEXP);
+    Rcpp::traits::input_parameter< List >::type mdl(mdlSEXP);
+    Rcpp::traits::input_parameter< List >::type MSloglik_output(MSloglik_outputSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(EMaximization_MSVARXmdl(theta, mdl, MSloglik_output, k));
+    return rcpp_result_gen;
+END_RCPP
+}
 // EMiter_HMmdl
 List EMiter_HMmdl(List mdl, List EMest_output, int k);
 RcppExport SEXP _MSTest_EMiter_HMmdl(SEXP mdlSEXP, SEXP EMest_outputSEXP, SEXP kSEXP) {
@@ -957,6 +1028,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< List >::type EMest_output(EMest_outputSEXP);
     Rcpp::traits::input_parameter< int >::type k(kSEXP);
     rcpp_result_gen = Rcpp::wrap(EMiter_MSVARmdl(mdl, EMest_output, k));
+    return rcpp_result_gen;
+END_RCPP
+}
+// EMiter_MSVARXmdl
+List EMiter_MSVARXmdl(List mdl, List EMest_output, int k);
+RcppExport SEXP _MSTest_EMiter_MSVARXmdl(SEXP mdlSEXP, SEXP EMest_outputSEXP, SEXP kSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< List >::type mdl(mdlSEXP);
+    Rcpp::traits::input_parameter< List >::type EMest_output(EMest_outputSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    rcpp_result_gen = Rcpp::wrap(EMiter_MSVARXmdl(mdl, EMest_output, k));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1016,12 +1100,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// MSVARXmdl_em
+List MSVARXmdl_em(arma::vec theta_0, List mdl, int k, List optim_options);
+RcppExport SEXP _MSTest_MSVARXmdl_em(SEXP theta_0SEXP, SEXP mdlSEXP, SEXP kSEXP, SEXP optim_optionsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type theta_0(theta_0SEXP);
+    Rcpp::traits::input_parameter< List >::type mdl(mdlSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< List >::type optim_options(optim_optionsSEXP);
+    rcpp_result_gen = Rcpp::wrap(MSVARXmdl_em(theta_0, mdl, k, optim_options));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_calc_mu2t_mv", (DL_FUNC) &_MSTest_calc_mu2t_mv, 4},
     {"_MSTest_calc_mu2t", (DL_FUNC) &_MSTest_calc_mu2t, 3},
     {"_MSTest_chpStat", (DL_FUNC) &_MSTest_chpStat, 4},
-    {"_MSTest_bootCV", (DL_FUNC) &_MSTest_bootCV, 4},
+    {"_MSTest_CHPbootCV", (DL_FUNC) &_MSTest_CHPbootCV, 4},
     {"_MSTest_simuMdl", (DL_FUNC) &_MSTest_simuMdl, 6},
     {"_MSTest_mdledit", (DL_FUNC) &_MSTest_mdledit, 6},
     {"_MSTest_compu_tstat", (DL_FUNC) &_MSTest_compu_tstat, 7},
@@ -1043,13 +1141,16 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_paramList_MSARmdl", (DL_FUNC) &_MSTest_paramList_MSARmdl, 5},
     {"_MSTest_paramList_MSARXmdl", (DL_FUNC) &_MSTest_paramList_MSARXmdl, 6},
     {"_MSTest_paramList_MSVARmdl", (DL_FUNC) &_MSTest_paramList_MSVARmdl, 6},
+    {"_MSTest_paramList_MSVARXmdl", (DL_FUNC) &_MSTest_paramList_MSVARXmdl, 7},
     {"_MSTest_calcResid_MSARmdl", (DL_FUNC) &_MSTest_calcResid_MSARmdl, 3},
     {"_MSTest_calcResid_MSARXmdl", (DL_FUNC) &_MSTest_calcResid_MSARXmdl, 3},
     {"_MSTest_calcResid_MSVARmdl", (DL_FUNC) &_MSTest_calcResid_MSVARmdl, 3},
+    {"_MSTest_calcResid_MSVARXmdl", (DL_FUNC) &_MSTest_calcResid_MSVARXmdl, 3},
     {"_MSTest_initVals_HMmdl", (DL_FUNC) &_MSTest_initVals_HMmdl, 2},
     {"_MSTest_initVals_MSARmdl", (DL_FUNC) &_MSTest_initVals_MSARmdl, 2},
     {"_MSTest_initVals_MSARXmdl", (DL_FUNC) &_MSTest_initVals_MSARXmdl, 2},
     {"_MSTest_initVals_MSVARmdl", (DL_FUNC) &_MSTest_initVals_MSVARmdl, 2},
+    {"_MSTest_initVals_MSVARXmdl", (DL_FUNC) &_MSTest_initVals_MSVARXmdl, 2},
     {"_MSTest_MCpval", (DL_FUNC) &_MSTest_MCpval, 3},
     {"_MSTest_randSN", (DL_FUNC) &_MSTest_randSN, 2},
     {"_MSTest_simuAR_cpp", (DL_FUNC) &_MSTest_simuAR_cpp, 2},
@@ -1060,8 +1161,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_simuVARX_cpp", (DL_FUNC) &_MSTest_simuVARX_cpp, 2},
     {"_MSTest_simuMSVAR_cpp", (DL_FUNC) &_MSTest_simuMSVAR_cpp, 2},
     {"_MSTest_simuMSVARX_cpp", (DL_FUNC) &_MSTest_simuMSVARX_cpp, 2},
-    {"_MSTest_simuNorm_cpp", (DL_FUNC) &_MSTest_simuNorm_cpp, 2},
-    {"_MSTest_simuHMM_cpp", (DL_FUNC) &_MSTest_simuHMM_cpp, 2},
+    {"_MSTest_simuNorm_cpp", (DL_FUNC) &_MSTest_simuNorm_cpp, 3},
+    {"_MSTest_simuHMM_cpp", (DL_FUNC) &_MSTest_simuHMM_cpp, 3},
     {"_MSTest_logLike_Nmdl", (DL_FUNC) &_MSTest_logLike_Nmdl, 2},
     {"_MSTest_logLike_ARmdl", (DL_FUNC) &_MSTest_logLike_ARmdl, 2},
     {"_MSTest_logLike_ARXmdl", (DL_FUNC) &_MSTest_logLike_ARXmdl, 2},
@@ -1081,18 +1182,22 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_ExpectationM_MSARmdl", (DL_FUNC) &_MSTest_ExpectationM_MSARmdl, 3},
     {"_MSTest_ExpectationM_MSARXmdl", (DL_FUNC) &_MSTest_ExpectationM_MSARXmdl, 3},
     {"_MSTest_ExpectationM_MSVARmdl", (DL_FUNC) &_MSTest_ExpectationM_MSVARmdl, 3},
+    {"_MSTest_ExpectationM_MSVARXmdl", (DL_FUNC) &_MSTest_ExpectationM_MSVARXmdl, 3},
     {"_MSTest_EMaximization_HMmdl", (DL_FUNC) &_MSTest_EMaximization_HMmdl, 4},
     {"_MSTest_EMaximization_MSARmdl", (DL_FUNC) &_MSTest_EMaximization_MSARmdl, 4},
     {"_MSTest_EMaximization_MSARXmdl", (DL_FUNC) &_MSTest_EMaximization_MSARXmdl, 4},
     {"_MSTest_EMaximization_MSVARmdl", (DL_FUNC) &_MSTest_EMaximization_MSVARmdl, 4},
+    {"_MSTest_EMaximization_MSVARXmdl", (DL_FUNC) &_MSTest_EMaximization_MSVARXmdl, 4},
     {"_MSTest_EMiter_HMmdl", (DL_FUNC) &_MSTest_EMiter_HMmdl, 3},
     {"_MSTest_EMiter_MSARmdl", (DL_FUNC) &_MSTest_EMiter_MSARmdl, 3},
     {"_MSTest_EMiter_MSARXmdl", (DL_FUNC) &_MSTest_EMiter_MSARXmdl, 3},
     {"_MSTest_EMiter_MSVARmdl", (DL_FUNC) &_MSTest_EMiter_MSVARmdl, 3},
+    {"_MSTest_EMiter_MSVARXmdl", (DL_FUNC) &_MSTest_EMiter_MSVARXmdl, 3},
     {"_MSTest_HMmdl_em", (DL_FUNC) &_MSTest_HMmdl_em, 4},
     {"_MSTest_MSARmdl_em", (DL_FUNC) &_MSTest_MSARmdl_em, 4},
     {"_MSTest_MSARXmdl_em", (DL_FUNC) &_MSTest_MSARXmdl_em, 4},
     {"_MSTest_MSVARmdl_em", (DL_FUNC) &_MSTest_MSVARmdl_em, 4},
+    {"_MSTest_MSVARXmdl_em", (DL_FUNC) &_MSTest_MSVARXmdl_em, 4},
     {NULL, NULL, 0}
 };
 

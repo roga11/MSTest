@@ -14,6 +14,8 @@ simuNorm(mdl_h0, burnin = 0)
   \item sigma: A (\code{q x q}) covariance matrix.
   \item q: Number of series.
   \item eps: An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.
+  \item Z: A (\code{T x qz}) matrix with exogenous regressors (Optional) and where qz is the number of exogenous variables.
+  \item betaZ: A (\code{qz x q}) matrix  true coefficients on exogenous regressors (Optional) and where qz is the number of exogenous variables.
   }}
 
 \item{burnin}{Number of simulated observations to remove from beginning. Default is \code{100}.}

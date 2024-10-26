@@ -20,7 +20,7 @@ control <- list(msmu   = TRUE,
                 use_diff_init = 1)
 
 # Estimate model
-y_hmm_mdl <- HMmdl(y_hmm_simu$y, k = 2, control)
+y_hmm_mdl <- HMmdl(y_hmm_simu$y, k = 2, control = control)
 summary(y_hmm_mdl)
 
 
@@ -49,6 +49,6 @@ control <- list(msmu   = TRUE,
 
 # Estimate model
 \donttest{
-  y_hmm_mdl <- HMmdl(y_hmm_simu$y, k = 2, control)
+  y_hmm_mdl <- HMmdl(y_hmm_simu$y, k = 2, control = control)
   summary(y_hmm_mdl)
 }

@@ -23,10 +23,9 @@ lmc_control = list(N = 19,
                                          msvar  = TRUE,
                                          getSE  = TRUE,
                                          method = "EM",
-                                         maxit  = 300,
                                          use_diff_init = 1))
 
 \donttest{
-  lmctest <- LMCLRTest(y_ms_simu$y, p = 1, k0 = 1 , k1 = 2, lmc_control)
+  lmctest <- LMCLRTest(y_ms_simu$y, p = 1, k0 = 1 , k1 = 2, control = lmc_control)
   summary(lmctest)
 }

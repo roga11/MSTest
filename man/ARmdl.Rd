@@ -25,9 +25,8 @@ List of class \code{ARmdl} (\code{S3} object) with model attributes including:
   \item x: a \code{(T-p x p)} matrix of lagged observations.
   \item fitted: a \code{(T-p x 1)} matrix of fitted values.
   \item resid: a \code{(T-p x 1)} matrix of residuals.
-  \item inter: estimated intercept of the process.
   \item mu: estimated mean of the process.
-  \item coef: coefficient estimates. First value is the intercept (i.e., not \code{mu}) if \code{const=TRUE}. This is the same as \code{phi} if \code{const=FALSE}.
+  \item beta: a \code{((1 + p) x 1)} matrix of estimated coefficients. 
   \item intercept: estimate of intercept.
   \item phi: estimates of autoregressive coefficients.
   \item stdev: estimated standard deviation of the process.

@@ -13,9 +13,10 @@ mdl_ms2 <- list(n     = 200,
 y_ms_simu <- simuMSAR(mdl_ms2)
 
 hlrt_control  <- list(ix          = 1, 
-                      gridsize    = 5,
-                      p_gridsize  = 9,
-                      p_stepsize  = 0.1,
+                      gridsize    = 7,
+                      pgrid_from  = 0.05,
+                      pgrid_by    = 0.05,
+                      pgrid_to    = 0.95,
                       mugrid_from = 0,
                       mugrid_by   = 1)
 

@@ -7,13 +7,13 @@
 MSARXmdl(Y, p, k, Z, control = list())
 }
 \arguments{
-\item{Y}{(T x 1) vector with observational data.}
+\item{Y}{a \code{(T x 1)} vector with observational data.}
 
 \item{p}{integer for the number of lags to use in estimation. Must be greater than or equal to \code{1}.}
 
 \item{k}{integer for the number of regimes to use in estimation. Must be greater than or equal to \code{2}.}
 
-\item{Z}{exogenous regressors.}
+\item{Z}{a \code{(T x qz)} matrix of exogenous regressors.}
 
 \item{control}{List with model options including:
 \itemize{
@@ -40,8 +40,10 @@ List of class \code{MSARmdl} (\code{S3} object) with model attributes including:
   \item x: a \code{(T-p x p)} matrix of lagged observations.
   \item fitted: a \code{(T x 1)} matrix of fitted values.
   \item resid: a \code{(T x 1)} matrix of residuals.
-  \item inter: a \code{(k x 1)} vector of estimated intercepts of each process.
+  \item intercept: a \code{(k x 1)} vector of estimated intercepts of each process.
   \item mu: a \code{(k x 1)} vector of estimated means of each process.
+  \item beta: a \code{((1 + p + qz) x k)} matrix of estimated coefficients. 
+  \item betaZ: a \code{(qz x q)} matrix of estimated exogenous regressor coefficients.
   \item phi: estimates of autoregressive coefficients.
   \item stdev: a \code{(k x 1)} vector of estimated standard deviation of each process.
   \item sigma: a \code{(k x 1)} estimated covariance matrix.
@@ -101,7 +103,7 @@ control <- list(msmu   = TRUE,
 
 # Estimate model
 \donttest{
-  ms_mdl <- MSARmdl(y_ms_simu$y, p = 1, k = 2, control)
+  ms_mdl <- MSARmdl(y_ms_simu$y, p = 1, k = 2, control = control)
   summary(ms_mdl)
 }
 

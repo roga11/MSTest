@@ -75,10 +75,10 @@ HLRTest <- function(Y, p, control = list()){
     stop("Value for 'p' must be an integer >=0.")
   }
   if(is.null(con$theta_null_low)){
-    con$theta_null_low <- c(rep(-Inf, length(mdl_h0$coef)),0.01)
+    con$theta_null_low <- c(rep(-Inf, length(mdl_h0$beta)),0.01)
   }
   if(is.null(con$theta_null_upp)){
-    con$theta_null_upp <- c(rep(Inf, length(mdl_h0$coef)+1))
+    con$theta_null_upp <- c(rep(Inf, length(mdl_h0$beta)+1))
   }
   # Optimization values
   HLR_opt_ls <- con
@@ -99,7 +99,7 @@ HLRTest <- function(Y, p, control = list()){
   gx    <- do.call(expand.grid, as.data.frame(cbind(gmu, gar, gsig)))
   # ---------- Calculation Under null # Regression 
   # LR from Null 
-  b <- c(mdl_h0$coef,mdl_h0$stdev)
+  b <- c(mdl_h0$beta,mdl_h0$stdev)
   null <- clike(b, HLR_opt_ls)
   # ---------- Perform Test
   out <- HLRparamSearch(gx, gp, gq, b, null, HLR_opt_ls)
@@ -208,6 +208,7 @@ HLRparamSearch <- function(gx, gp, gq, b, null, HLR_opt_ls){
             optlst <- stats::optim(bs, mclike, dmclike, HLR_opt_ls = HLR_opt_ls_tmp, method = 'L-BFGS-B', lower = lowb, upper = uppb)   
           )
           if (is.null(optlst)){
+            message("Trying with 'nloptr::slsqp' instead.")
             optlst  <- nloptr::slsqp(bs, fn = mclike, gr = dmclike, lower = lowb, upper = uppb, HLR_opt_ls = HLR_opt_ls_tmp)  
           }
         }else if(HLR_opt_ls$optim_method == "nl-optim"){

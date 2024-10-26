@@ -150,7 +150,7 @@ fitted.VARmdl <- function(object, ...){
 fitted.HMmdl <- function(object, ...){
   fittedvals <- matrix(0,object$n,object$q)
   for( xk in 1:object$k){
-    fittedvals <- fittedvals + object$St[,xk] * matrix(1, object$n, 1)%*%t(as.matrix(object$mu[xk,]))
+    fittedvals <- fittedvals + object$St[,xk] * matrix(1, object$n, 1)%*%t(as.matrix(object$mu[xk,]))  
   }
   return(fittedvals)
 }
@@ -840,7 +840,11 @@ getHessian.MSARmdl <- function(mdl){
 #' 
 #' @export
 getHessian.MSVARmdl <- function(mdl){
-  hess <- numDeriv::hessian(logLike_MSVARmdl, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
+  if (is.null(mdl$control$Z)){
+    hess <- numDeriv::hessian(logLike_MSVARmdl, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
+  }else{
+    hess <- numDeriv::hessian(logLike_MSVARXmdl, mdl$theta, method = "Richardson", mdl = mdl, k = mdl$k) 
+  }
   return(hess)
 }
 
@@ -1831,6 +1835,22 @@ plot.simuAR <- function(x, ...){
                     xlab ="Time", main = "Time series of simulated process")   
 }
 
+#' @title Plot of a \code{simuARX} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{simuAR}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{simuARX} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.simuARX <- function(x, ...){
+  graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated process", 
+                    xlab ="Time", main = "Time series of simulated process")   
+}
+
 
 #' @title Plot of a \code{simuVAR} object
 #'
@@ -1844,6 +1864,22 @@ plot.simuAR <- function(x, ...){
 #' 
 #' @export
 plot.simuVAR <- function(x, ...){
+  graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated processes", 
+                    xlab ="Time", main = "Time series of simulated processes")   
+}
+
+#' @title Plot of a \code{simuVARX} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{simuVAR}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{simuVARX} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.simuVARX <- function(x, ...){
   graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated processes", 
                     xlab ="Time", main = "Time series of simulated processes")   
 }
@@ -1898,6 +1934,26 @@ plot.simuMSAR <- function(x, ...){
 }
 
 
+#' @title Plot of a \code{simuMSARX} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{simuMSAR}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{simuMSARX} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.simuMSARX <- function(x, ...){
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar)) 
+  graphics::par(mfrow=c(2,1))
+  graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated process", 
+                    xlab ="Time", main = "Time series of simulated process")   
+  graphics::matplot(1:x$n, x$St+1, type = "l", ylab = "State (St)", xlab ="Time",)
+}
+
 #' @title Plot of a \code{simuMSVAR} object
 #'
 #' @description This is a method for the function \code{plot()} for objects of the class \code{simuMSVAR}.
@@ -1918,6 +1974,25 @@ plot.simuMSVAR <- function(x, ...){
   graphics::matplot(1:x$n, x$St+1, type = "l", ylab = "State (St)", xlab ="Time",)
 }
 
+#' @title Plot of a \code{simuMSVARX} object
+#'
+#' @description This is a method for the function \code{plot()} for objects of the class \code{simuMSVAR}.
+#' 
+#' @inheritParams base::plot
+#'
+#' @return The \code{simuMSVARX} object is returned invisibly.
+#' 
+#' @keywords internal
+#' 
+#' @export
+plot.simuMSVARX <- function(x, ...){
+  oldpar <- graphics::par(no.readonly = TRUE)
+  on.exit(graphics::par(oldpar)) 
+  graphics::par(mfrow=c(2,1))
+  graphics::matplot(1:x$n, x$y, type = "l", ylab = "Simulated processes", 
+                    xlab ="Time", main = "Time series of simulated processes")   
+  graphics::matplot(1:x$n, x$St+1, type = "l", ylab = "State (St)", xlab ="Time",)
+}
 
 
 

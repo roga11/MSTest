@@ -25,7 +25,8 @@ DLMMCTest(Y, p, control = list())
   \item optim_type: String determining type of numerical optimization algorithm to use. Available options are: "\code{\link{pso}}", ""\code{\link{GenSA}}", "\code{\link{GA}}". Default is "\code{\link{GenSA}}".
   \item silence: Boolean indicator determining if optimization updates should be silenced if \code{TRUE} or not if \code{FALSE}. Default is \code{FALSE}.
   \item threshold_stop: Numeric value determining the maximum possible p-value attainable. Default is \code{1}.
-  \item type_control: List containing other optimization options specific to the numerical optimization algorithm used. This includes maximum number of iterations which is \code{200} b y default. For other options see documentation of numerical algorithm chosen.
+  \item maxit: Int determining the maximum number of function evaluations. Default is \code{1000}.
+  \item optim_control: List containing other optimization options specific to the numerical optimization algorithm used. For other options see documentation of numerical algorithm chosen.
 }}
 }
 \value{
@@ -58,21 +59,21 @@ Markov switching autoregressive models proposed in Dufour & Luger (2017).
 \examples{
 set.seed(1234)
 # load data used in Hamilton 1989 and extended data used in CHP 2014 
-y84 <- as.matrix(hamilton84GNP$GNP_logdiff)
-y10 <- as.matrix(chp10GNP$GNP_logdiff)
+y84 <- as.matrix(hamilton84GNP$GNP_gr)
+y10 <- as.matrix(chp10GNP$GNP_gr)
 
 # Set test procedure options
 mmc_control <- list(N = 99,
                     simdist_N = 10000,
                     getSE = TRUE,
-                    eps = 0.0000001, 
+                    eps = 0, 
                     CI_union = TRUE,
                     lambda = 100,
                     stationary_ind = TRUE,
                     optim_type = "GenSA",
                     silence = FALSE,
                     threshold_stop = 1,
-                    type_control = list(maxit = 200))
+                    maxit = 200)
 
 
 # perform test on Hamilton 1989 data

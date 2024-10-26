@@ -1,5 +1,5 @@
 # load data used in Hamilton 1989 
-y84 <- as.matrix(hamilton84GNP$GNP_logdiff)
+y84 <- as.matrix(hamilton84GNP$GNP_gr)
 
 
 # Set test procedure options
