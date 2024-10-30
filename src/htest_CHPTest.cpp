@@ -224,7 +224,6 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,bool msvar){
 //' 
 //' @return Bootstrap critical values
 //' 
-//' 
 //' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
 //' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 //' 

@@ -7,7 +7,7 @@
 MMCLRTest(Y, p, k0, k1, Z = NULL, control = list())
 }
 \arguments{
-\item{Y}{Series to be tested. Must be a (\code{T x q}) matrix.}
+\item{Y}{Series to be tested. Must be a (\code{T x q}) matrix  where T is the number of time observations and q is the number of variables.}
 
 \item{p}{Number of autoregressive lags. Must be greater than or equal to 0.}
 
@@ -15,7 +15,7 @@ MMCLRTest(Y, p, k0, k1, Z = NULL, control = list())
 
 \item{k1}{Number of regimes under alternative hypothesis. Must be greater than \code{k0}.}
 
-\item{Z}{Exogenous regressors. Default is NULL.}
+\item{Z}{Exogenous regressors. Optional input and default is NULL. When used, it should be a (\code{T x qz}) matrix where T is the number of time observations and q is the number of exogenous variables.}
 
 \item{control}{List with test procedure options including: 
 \itemize{
@@ -44,18 +44,18 @@ MMCLRTest(Y, p, k0, k1, Z = NULL, control = list())
 \value{
 List of class \code{LMCLRTest} (\code{S3} object) with attributes including: 
 \itemize{
-  \item mdl_h0: List with restricted model attributes. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.
-  \item mdl_h0: List with unrestricted model attributes. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.
+  \item mdl_h0: List with restricted model attributes. 
+  \item mdl_h1: List with unrestricted model attributes. 
   \item LRT_0: Value of test statistic from observed data.
   \item LRN: A (\code{N x 1}) vector of test statistics from data simulated under the null hypothesis.
   \item pval: P-value of Local Monte Carlo Likelihood Ratio Test.
-  \item LRN_cv: Vector with 90\%, 95\%, and 99\% Monte Carlo critical values (from vector \code{LRN}).
+  \item LRN_cv: Vector with 90\%, 95\%, and 99\% Monte Carlo simulated critical values (from vector \code{LRN}). These are not asymptotic critical values. 
   \item control: List with test procedure options used.
 }
 }
 \description{
 This function performs the Maximized Monte Carlo likelihood ratio 
-test (MMC-LRT) proposed in Rodriguez-Rondon & Dufour (2022).
+test (MMC-LRT) proposed in Rodriguez-Rondon & Dufour (2024).
 }
 \examples{
 
@@ -101,5 +101,5 @@ mmc_control = list(N = 19,
 \references{
 Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
 
-Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2023. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2024. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 }

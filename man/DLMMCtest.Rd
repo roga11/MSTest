@@ -22,7 +22,7 @@ DLMMCTest(Y, p, control = list())
   \item stationary_ind: Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.
   \item phi_low: Vector with lower bound for autoregressive parameters when optimizing. Default is \code{NULL}.
   \item phi_upp: Vector with upper bound for autoregressive parameters when optimizing. Default is \code{NULL}.
-  \item optim_type: String determining type of numerical optimization algorithm to use. Available options are: "\code{\link{pso}}", ""\code{\link{GenSA}}", "\code{\link{GA}}". Default is "\code{\link{GenSA}}".
+  \item optim_type: String determining type of numerical optimization algorithm to use. Available options are: \code{\link[pso]{pso}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{GA}}. Default is \code{\link[pso]{pso}}.
   \item silence: Boolean indicator determining if optimization updates should be silenced if \code{TRUE} or not if \code{FALSE}. Default is \code{FALSE}.
   \item threshold_stop: Numeric value determining the maximum possible p-value attainable. Default is \code{1}.
   \item maxit: Int determining the maximum number of function evaluations. Default is \code{1000}.

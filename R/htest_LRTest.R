@@ -112,13 +112,15 @@ estimMdl <- function(Y, p, q, k, Z = NULL, control = list()){
 #' @title Monte Carlo Likelihood Ratio Test
 #' 
 #' @description This function performs the Local Monte Carlo likelihood ratio 
-#' test (LMC-LRT) proposed in Rodriguez-Rondon & Dufour (2022).
+#' test (LMC-LRT) proposed in Rodriguez-Rondon & Dufour (2024). As discussed in 
+#' their work, this test can be applied in very general settings and can be used 
+#' to compare varioous regimes under the null and under the alternative. 
 #' 
-#' @param Y  Series to be tested. Must be a (\code{T x q}) matrix.
+#' @param Y  Series to be tested. Must be a (\code{T x q}) matrix where T is the number of time observations and q is the number of variables.
 #' @param p  Number of autoregressive lags. Must be greater than or equal to 0. 
 #' @param k0 Number of regimes under null hypothesis. Must be greater than or equal to 1.
 #' @param k1 Number of regimes under alternative hypothesis. Must be greater than \code{k0}.
-#' @param Z Exogenous regressors. Default is NULL.
+#' @param Z Exogenous regressors. Optional input and default is NULL. When used, it should be a (\code{T x qz}) matrix where T is the number of time observations and q is the number of exogenous variables.
 #' @param control List with test procedure options including: 
 #' \itemize{
 #'   \item N: Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.
@@ -132,17 +134,17 @@ estimMdl <- function(Y, p, q, k, Z = NULL, control = list()){
 #'
 #' @return List of class \code{LMCLRTest} (\code{S3} object) with attributes including: 
 #' \itemize{
-#'   \item mdl_h0: List with restricted model attributes. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.
-#'   \item mdl_h0: List with unrestricted model attributes. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.
+#'   \item mdl_h0: List with restricted model attributes. 
+#'   \item mdl_h1: List with unrestricted model attributes. 
 #'   \item LRT_0: Value of test statistic from observed data.
 #'   \item LRN: A (\code{N x 1}) vector of test statistics from data simulated under the null hypothesis.
 #'   \item pval: P-value of Local Monte Carlo Likelihood Ratio Test.
-#'   \item LRN_cv: Vector with 90\%, 95\%, and 99\% Monte Carlo critical values (from vector \code{LRN}).
+#'   \item LRN_cv: Vector with 90\%, 95\%, and 99\% Monte Carlo simulated critical values (from vector \code{LRN}). These are not asymptotic critical values. 
 #'   \item control: List with test procedure options used.
 #' }
 #'
 #' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2023. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2024. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #' @example /inst/examples/LMCLRTest_examples.R
 #' @export
 LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
@@ -240,7 +242,7 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
 #' @keywords internal
 #' 
 #' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2023. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2024. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #' 
 #' @export
 MMC_bounds <- function(mdl_h0, con){
@@ -287,13 +289,13 @@ MMC_bounds <- function(mdl_h0, con){
 #' @title Maximized Monte Carlo Likelihood Ratio Test
 #'
 #' @description This function performs the Maximized Monte Carlo likelihood ratio 
-#' test (MMC-LRT) proposed in Rodriguez-Rondon & Dufour (2022).
+#' test (MMC-LRT) proposed in Rodriguez-Rondon & Dufour (2024).
 #' 
-#' @param Y  Series to be tested. Must be a (\code{T x q}) matrix.
+#' @param Y  Series to be tested. Must be a (\code{T x q}) matrix  where T is the number of time observations and q is the number of variables.
 #' @param p  Number of autoregressive lags. Must be greater than or equal to 0. 
 #' @param k0 Number of regimes under null hypothesis. Must be greater than or equal to 1.
 #' @param k1 Number of regimes under alternative hypothesis. Must be greater than \code{k0}.
-#' @param Z  Exogenous regressors. Default is NULL.
+#' @param Z  Exogenous regressors. Optional input and default is NULL. When used, it should be a (\code{T x qz}) matrix where T is the number of time observations and q is the number of exogenous variables.
 #' @param control List with test procedure options including: 
 #' \itemize{
 #'   \item N: Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.
@@ -320,17 +322,17 @@ MMC_bounds <- function(mdl_h0, con){
 #'
 #' @return List of class \code{LMCLRTest} (\code{S3} object) with attributes including: 
 #' \itemize{
-#'   \item mdl_h0: List with restricted model attributes. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.
-#'   \item mdl_h0: List with unrestricted model attributes. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for return values.
+#'   \item mdl_h0: List with restricted model attributes. 
+#'   \item mdl_h1: List with unrestricted model attributes. 
 #'   \item LRT_0: Value of test statistic from observed data.
 #'   \item LRN: A (\code{N x 1}) vector of test statistics from data simulated under the null hypothesis.
 #'   \item pval: P-value of Local Monte Carlo Likelihood Ratio Test.
-#'   \item LRN_cv: Vector with 90\%, 95\%, and 99\% Monte Carlo critical values (from vector \code{LRN}).
+#'   \item LRN_cv: Vector with 90\%, 95\%, and 99\% Monte Carlo simulated critical values (from vector \code{LRN}). These are not asymptotic critical values. 
 #'   \item control: List with test procedure options used.
 #' }
 #'
 #' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2023. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2024. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #' @example /inst/examples/MMCLRTest_examples.R
 #' @export
 MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
@@ -453,32 +455,33 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     theta     <- as.matrix(mmc_out@solution[1,])
     pval      <- mmc_out@fitnessValue
   }else if(con$type=="gridSearch"){
-    LT_h1 <- mdl_h1$logLike
-    LRT_0s <- matrix(0,con$maxit,1)
-    mmc_params_h0 <- matrix(0,con$maxit,length(theta_0))
-    for (xp in 1:length(theta_0)){
-      mmc_params_h0[,xp] <- runif(con$maxit,min = theta_low[xp], max = theta_upp[xp])  
-    }
-    # Need to write soemthing that will make sure process is stationary, P has columns that sum to 1
-    mmc_pval_mat <- matrix(0,con$maxit,1)
-    LRN_ls <- list()
-    for (xs in 1:nrow(mmc_params_h0)){
-       mdl_h0_tmp <- mdledit(mdl_h0,mmc_params_h0[xs,],p,q,k0,exog)
-       LRT_0s[xs,]  <- compu_tstat(mmc_params_h0[xs,], mdl_h0_tmp, LT_h1, p, q, k0, exog)
-       if (con$workers>0){
-         LRN <- LR_samp_dist_par(mdl_h0_tmp, k1, con$N, con$burnin, Zsim, mdl_h0_null_cont, mdl_h1_null_cont, con$workers)
-       }else{
-         LRN <- LR_samp_dist(mdl_h0, k1, con$N, con$burnin, Zsim, mdl_h0_null_cont, mdl_h1_null_cont) 
-       }
-       LRN_ls[[xs]] <- LRN
-       mmc_pval_mat[xs,] <- MCpval(LRT_0s[xs,],LRN)
-       if (mmc_pval_mat[xs,]>con$threshold_stop){
-         break
-       }
-    }
-    pval <- mmc_pval_mat[which.max(mmc_pval_mat)[1],]
-    theta <- mmc_params_h0[which.max(mmc_pval_mat)[1],]
-    LRT_0 <- LRT_0s[which.max(mmc_pval_mat)[1],]
+    stop("Optim method 'gridSearch' is not available yet. Please use 'pso', 'GenSA', or 'GA' for 'type' in control List. ")
+    # LT_h1 <- mdl_h1$logLike
+    # LRT_0s <- matrix(0,con$maxit,1)
+    # mmc_params_h0 <- matrix(0,con$maxit,length(theta_0))
+    # for (xp in 1:length(theta_0)){
+    #   mmc_params_h0[,xp] <- runif(con$maxit,min = theta_low[xp], max = theta_upp[xp])  
+    # }
+    # # Need to write soemthing that will make sure process is stationary, P has columns that sum to 1
+    # mmc_pval_mat <- matrix(0,con$maxit,1)
+    # LRN_ls <- list()
+    # for (xs in 1:nrow(mmc_params_h0)){
+    #    mdl_h0_tmp <- mdledit(mdl_h0,mmc_params_h0[xs,],p,q,k0,exog)
+    #    LRT_0s[xs,]  <- compu_tstat(mmc_params_h0[xs,], mdl_h0_tmp, LT_h1, p, q, k0, exog)
+    #    if (con$workers>0){
+    #      LRN <- LR_samp_dist_par(mdl_h0_tmp, k1, con$N, con$burnin, Zsim, mdl_h0_null_cont, mdl_h1_null_cont, con$workers)
+    #    }else{
+    #      LRN <- LR_samp_dist(mdl_h0, k1, con$N, con$burnin, Zsim, mdl_h0_null_cont, mdl_h1_null_cont) 
+    #    }
+    #    LRN_ls[[xs]] <- LRN
+    #    mmc_pval_mat[xs,] <- MCpval(LRT_0s[xs,],LRN)
+    #    if (mmc_pval_mat[xs,]>con$threshold_stop){
+    #      break
+    #    }
+    # }
+    # pval <- mmc_pval_mat[which.max(mmc_pval_mat)[1],]
+    # theta <- mmc_params_h0[which.max(mmc_pval_mat)[1],]
+    # LRT_0 <- LRT_0s[which.max(mmc_pval_mat)[1],]
   }
   # ----- get test output using optimization output params
   theta_h0 <- theta

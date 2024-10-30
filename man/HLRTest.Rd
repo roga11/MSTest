@@ -28,7 +28,7 @@ HLRTest(Y, p, control = list())
   \item nwband: Integer determining maximum bandwidth in Bartlett kernel. Critical values and p-values are returned for each bandwidth from \code{0:nwband} as suggested in Hansen (1996). Default is \code{4}.
   \item theta_null_low: Vector determining lower bound on parameters under the null hypothesis. Length of vector should be number of model coefficients + 1 for variance. Default is to only bound variance at \code{0.01}.
   \item theta_null_upp: Vector determining upper bound on parameters under the null hypothesis. Length of vector should be number of model coefficients + 1 for variance. Default is to no bounds (i.e. \code{Inf}).
-  \item optim_method: String determining the type of optimization procedure used. Allowed options are "gp-optim" for general purpose optimization using \code{\link{optim}} from \code{\link{stats}} or "nl-optim" using \code{\link{slsqp}} from \code{\link{nloptr}}. Default is "gp-optim".
+  \item optim_method: String determining the type of optimization procedure used. Allowed options are "gp-optim" for general purpose optimization using \code{\link[stats]{optim}} from  or \code{\link[nloptr]{slsqp}}. Default is "gp-optim".
 }}
 }
 \value{

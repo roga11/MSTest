@@ -1,8 +1,8 @@
 Package: MSTest
 Type: Package
 Title: Hypothesis Testing for Markov Switching Models
-Date: 2024-05-22
-Version: 0.1.3.9000
+Date: 2024-10-29
+Version: 0.1.4.9000
 Authors@R:
   c(person(given = "Gabriel", 
            family = "Rodriguez Rondon", 
@@ -13,7 +13,7 @@ Authors@R:
            role = c("aut"),
            email = "jean-marie.dufour@mcgill.ca"))
 Maintainer: Gabriel Rodriguez Rondon <gabriel.rodriguezrondon@mail.mcgill.ca>
-Description: Implementation of hypothesis testing procedures described in Hansen (1992) <doi:10.1002/jae.3950070506>, Carrasco, Hu, & Ploberger (2014) <doi:10.3982/ECTA8609>, Dufour & Luger (2017) <doi:10.1080/07474938.2017.1307548>, and Rodriguez Rondon & Dufour (2022) <https://grodriguezrondon.com/files/RodriguezRondon_Dufour_MonteCarlo_LikelihoodRatioTest_MarkovSwitchingModels.pdf> that can be used to identify the number of regimes in Markov switching models.
+Description: Implementation of hypothesis testing procedures described in Hansen (1992) <doi:10.1002/jae.3950070506>, Carrasco, Hu, & Ploberger (2014) <doi:10.3982/ECTA8609>, Dufour & Luger (2017) <doi:10.1080/07474938.2017.1307548>, and Rodriguez Rondon & Dufour (2024) <https://grodriguezrondon.com/files/RodriguezRondon_Dufour_2024_MonteCarlo_LikelihoodRatioTest_MarkovSwitchingModels_20241015.pdf> that can be used to identify the number of regimes in Markov switching models.
 License: GPL(>= 2)
 LazyData: TRUE
 RoxygenNote: 7.3.1
