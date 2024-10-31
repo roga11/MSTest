@@ -1,0 +1,538 @@
+## Install Package
+
+# CRAN version
+#install.packages("MSTest")
+
+# DEV version
+#library(devtools)
+#devtools::install_github("roga11/MSTest")
+
+
+## Package and options
+library("MSTest")
+library("foreach")
+library("doParallel")
+options(prompt = "R> ", continue = "+  ", width = 70,
+        useFancyQuotes = FALSE)
+
+seed <- 250493
+
+# =========================================================== #
+## ----- Data ----- 
+# =========================================================== #
+data("hamilton84GNP", package = "MSTest")
+data("chp10GNP", package = "MSTest")
+data("USGNP", package = "MSTest")
+data("USRGDP", package = "MSTest")
+# =========================================================== #
+## ----- Simulation ----- 
+# =========================================================== #
+
+set.seed(seed)
+
+### ----- Simulate Multivariate Normal process ----- 
+# Define DGP of multivariate normal process
+mdl_norm <- list(n     = 500, 
+                 q     = 2,
+                 mu    = c(5, -2),
+                 sigma = rbind(c(5.0, 1.5),
+                               c(1.5, 1.0)))
+# Simulate process 
+simu_norm <- simuNorm(mdl_norm)
+
+### ----- Simulate Autoregressive process ----- 
+# Define DGP of AR(2) process
+mdl_ar <- list(n     = 500, 
+               mu    = 5,
+               sigma = 1,
+               phi   = c(0.75))
+# Simulate process 
+simu_ar <- simuAR(mdl_ar)
+
+### ----- Simulate Vector Autoregressive process ----- 
+# Define DGP of VAR(2) process
+mdl_var <- list(n     = 500, 
+                p     = 1,
+                q     = 2,
+                mu    = c(5, -2),
+                sigma = rbind(c(5.0, 1.5),
+                              c(1.5, 1.0)),
+                phi   = rbind(c(0.50, 0.30),
+                              c(0.20, 0.70)))
+# Simulate process 
+simu_var <- simuVAR(mdl_var)
+
+
+### ----- Simulate Hidden Markov process ----- 
+# Define DGP of HMM
+mdl_hmm <- list(n     = 500, 
+                q     = 2,
+                mu    = rbind(c(5, -2),
+                              c(10, 2)),
+                sigma = list(rbind(c(5.0, 1.5),
+                                   c(1.5, 1.0)),
+                             rbind(c(7.0, 3.0),
+                                   c(3.0, 2.0))),
+                k     = 2,
+                P     = rbind(c(0.95, 0.10),
+                              c(0.05, 0.90)))
+# Simulate process 
+simu_hmm <- simuHMM(mdl_hmm)
+
+### ----- Simulate Markov switching Autoregressive process ----- 
+# Define DGP of MS AR process
+mdl_ms <- list(n     = 500, 
+               mu    = c(5,10),
+               sigma = c(1,2),
+               phi   = c(0.75),
+               k     = 2,
+               P     = rbind(c(0.95, 0.10),
+                             c(0.05, 0.90)))
+# Simulate process 
+simu_msar <- simuMSAR(mdl_ms)
+
+### ----- Simulate Markov switching Vector Autoregressive process ----- 
+# Define DGP of MS VAR process
+mdl_msvar <- list(n     = 500, 
+                  p     = 1,
+                  q     = 2,
+                  mu    = rbind(c(5, -2),
+                                c(10, 2)),
+                  sigma = list(rbind(c(5.0, 1.5),
+                                     c(1.5, 1.0)),
+                               rbind(c(7.0, 3.0),
+                                     c(3.0, 2.0))),
+                  phi   = rbind(c(0.50, 0.30),
+                                c(0.20, 0.70)),
+                  k     = 2,
+                  P     = rbind(c(0.95, 0.10),
+                                c(0.05, 0.90)))
+# Simulate process
+simu_msvar <- simuMSVAR(mdl_msvar)
+
+
+pdf(file = "simulations.pdf")
+par(mfrow=c(3,2))
+matplot(simu_norm$y, type = "l", ylab = "", main = "Multivariate normal process",cex.main=1)
+matplot(simu_hmm$y, type = "l", ylab = "", main = "Hidden Markov process",cex.main=1)
+plot(simu_ar$y, type = "l", ylab = "", main = "Autoregressive process",cex.main=1)
+plot(simu_msar$y, type = "l", ylab = "", main = "Markov switching autoregressive process",cex.main=1)
+matplot(simu_var$y, type = "l", ylab = "", main = "Vector autoregressive process",cex.main=1)
+matplot(simu_msvar$y, type = "l", ylab = "", main = "Markov switching vector autoregressive process",cex.main=1)
+dev.off()
+
+
+# =========================================================== #
+## ----- Model Estimation ----- 
+# =========================================================== #
+set.seed(seed)
+### ----- Estimate Hidden Markov model ----- 
+# Set options for model estimation
+control <- list(msmu   = TRUE, 
+                msvar  = TRUE,
+                method = "EM",
+                use_diff_init = 30)
+# Estimate model
+mdl_est_hmm <- HMmdl(simu_hmm[["y"]], k = 2, control = control)
+summary(mdl_est_hmm)
+
+
+set.seed(seed)
+### ----- Estimate Markov switching autoregressive model ----- 
+# Set options for model estimation
+control <- list(msmu   = TRUE, 
+                msvar  = TRUE, 
+                method = "EM",
+                use_diff_init = 30)
+# Estimate model
+mdl_est_msar <- MSARmdl(simu_msar[["y"]], p = 1, k = 2, control = control)
+summary(mdl_est_msar)
+
+
+set.seed(seed)
+### ----- Estimate Markov switching vector autoregressive model ----- 
+# Set options for model estimation
+control <- list(msmu   = TRUE, 
+                msvar  = TRUE,
+                method = "EM",
+                use_diff_init = 30)
+# Estimate model
+mdl_est_msvar <- MSVARmdl(simu_msvar[["y"]], p = 1, k = 2, control = control)
+summary(mdl_est_msvar)
+
+
+# plot simulated process, true regime states and model estimated smoothed probabilities
+pdf(file = "MSestim_smoothedprobs.pdf")
+par(mfrow=c(3,1))
+plot(simu_hmm$y[,1], type = "l", ylab = "", main = "Hidden Markov process",cex.main=1)
+par(new = TRUE)
+lines(simu_hmm$y[,2], type = "l", ylab = "", col = "blue")
+par(new = TRUE)
+plot(mdl_est_hmm$St[,1], type = "l", ylab = "", col = "green3", lty="dashed", axes = FALSE)
+par(new = TRUE)
+plot(simu_hmm$St, type = "l", ylab = "", col = "red", lty="dashed", axes = FALSE)
+axis(side = 4, at = pretty(range(0,1)))
+
+plot(simu_msar$y[,1], type = "l", ylab = "", main = "Markov switching autoregressive process",cex.main=1)
+par(new = TRUE)
+plot(mdl_est_msar$St[,1], type = "l", ylab = "", col = "green3", lty="dashed", axes = FALSE)
+par(new = TRUE)
+plot(simu_msar$St, type = "l", ylab = "", col = "red", lty="dashed", axes = FALSE)
+axis(side = 4, at = pretty(range(0,1)))
+
+plot(simu_msvar$y[,1], type = "l", ylab = "", main = "Markov switching vector autoregressive process",cex.main=1)
+par(new = TRUE)
+lines(simu_msvar$y[,2], type = "l", ylab = "", col = "blue")
+par(new = TRUE)
+plot(mdl_est_msvar$St[,2], type = "l", ylab = "", col = "green3", lty="dashed", axes = FALSE)
+par(new = TRUE)
+plot(simu_msvar$St, type = "l", ylab = "", col = "red", lty="dashed", axes = FALSE)
+axis(side = 4, at = pretty(range(0,1)))
+dev.off()
+
+
+# =========================================================== #
+## ----- Hypothesis Testing ----- 
+# =========================================================== #
+### ----- Test Markov switching autoregressive process using Rodriguez-Rondon & Dufour (2024) LMC-LRT ----- 
+set.seed(seed)
+# Set options for testing procedure
+lmc_control = list(N = 99,
+                   mdl_h0_control = list(const  = TRUE, 
+                                         getSE  = FALSE),
+                   mdl_h1_control = list(msmu   = TRUE, 
+                                         msvar  = TRUE,
+                                         getSE  = FALSE,
+                                         method = "EM",
+                                         use_diff_init = 5))
+# Perform Rodriguez-Rondon & Dufour (2024) LMC-LRT
+lmclrt <- LMCLRTest(simu_msar[["y"]], p = 1, k0 = 1 , k1 = 2, control = lmc_control)
+summary(lmclrt)
+
+
+
+### ----- Test autoregressive process using Rodriguez-Rondon & Dufour (2024) MMC-LRT ----- 
+set.seed(seed)
+# Set options for testing procedure
+mmc_control = list(N = 99,
+                   eps = 0.3,
+                   threshold_stop = 0.05 + 1e-6, 
+                   type = "pso",
+                   workers  = 8,
+                   CI_union = FALSE,
+                   mdl_h0_control = list(const  = TRUE, 
+                                         getSE  = FALSE),
+                   mdl_h1_control = list(msmu   = TRUE, 
+                                         msvar  = TRUE,
+                                         getSE  = FALSE,
+                                         method = "EM"),
+                   maxit  = 100)
+# start cluster 
+doParallel::registerDoParallel(mmc_control[["workers"]])
+# Perform Rodriguez-Rondon & Dufour (2024) MMC-LRT
+mmclrt <- MMCLRTest(simu_ar[["y"]], p = 1, k0 = 1 , k1 = 2, control = mmc_control)
+summary(mmclrt)
+# stop cluster
+doParallel::stopImplicitCluster()
+
+
+### ----- Test Markov switching autoregressive process using Dufour & Luger (2017) LMC test ----- 
+set.seed(seed)
+# Set options for testing procedure
+lmc_control = list(N = 99,
+                   simdist_N = 10000,
+                   getSE = TRUE)
+# Perform Dufour & Luger (2017) LMC test 
+lmcmoment <- DLMCTest(simu_msar[["y"]], p = 1, control = lmc_control)
+summary(lmcmoment)
+
+
+### ----- Test Markov switching autoregressive process using Dufour & Luger (2017) MMC test ----- 
+set.seed(seed)
+# Set options for testing procedure
+mmc_control <- list(N = 99,
+                    getSE = TRUE,
+                    eps = 1e-9, 
+                    CI_union = TRUE,
+                    optim_type = "GenSA",
+                    threshold_stop = 0.05 + 1e-6, 
+                    maxit = 100)
+# Perform Dufour & Luger (2017) MMC test 
+mmcmoment <- DLMMCTest(simu_msar[["y"]], p = 1, control = mmc_control)
+summary(mmcmoment)
+
+
+### ----- Test autoregressive process using Carrasco, Hu, & Ploberger (2014) test ----- 
+set.seed(seed)
+# Set options for testing procedure
+chp_control = list(N = 1000, 
+                   rho_b = 0.7, 
+                   msvar = TRUE)
+# Perform Carrasco, Hu, & Ploberger (2014) test
+pstabilitytest <- CHPTest(simu_ar[["y"]], p = 1, control = chp_control)
+summary(pstabilitytest)
+
+
+### ----- Test Markov switching autoregressive process using Hansen (1992) LRT ----- 
+set.seed(seed)
+# Set options for testing procedure
+hlrt_control  <- list(msvar          = TRUE,
+                      gridsize       = 20,
+                      mugrid_from    = 0,
+                      mugrid_by      = 1,
+                      siggrid_from   = 0.5,
+                      siggrid_by     = 0.1,
+                      theta_null_low = c(0,-0.99,0.01),
+                      theta_null_upp = c(20,0.99,20))
+# Perform Hansen (1992) likelihood ratio test
+hlrt <- HLRTest(simu_msar[["y"]], p = 1, control = hlrt_control)
+summary(hlrt)
+
+# =========================================================== #
+##  ----- Empirical examples ----- 
+# =========================================================== #
+set.seed(seed)
+
+
+lmclrt_control = list(N = 99,
+                      mdl_h0_control = list(const  = TRUE, 
+                                            getSE  = FALSE),
+                      mdl_h1_control = list(msmu   = TRUE, 
+                                            getSE  = FALSE,
+                                            method = "EM",
+                                            use_diff_init = 10))
+
+mmclrt_control = list(N = 99,
+                      eps = 0,
+                      threshold_stop = 1, 
+                      type = "pso",
+                      workers  = 11,
+                      CI_union = TRUE,
+                      mdl_h0_control = list(const  = TRUE, 
+                                            getSE  = FALSE),
+                      mdl_h1_control = list(msmu   = TRUE, 
+                                            getSE  = FALSE,
+                                            method = "EM",
+                                            use_diff_init = 10),
+                      maxit  = 50)
+
+
+lmc_control = list(N = 99,
+                   simdist_N = 10000,
+                   getSE = TRUE)
+
+mmc_control <- list(N = 99,
+                    getSE = TRUE,
+                    eps = 0, 
+                    CI_union = TRUE,
+                    optim_type = "GenSA",
+                    threshold_stop = 1,
+                    type_control = list(maxit = 50))
+
+chp_control = list(N = 1000, 
+                   rho_b = 0.7)
+
+hlrt_control  <- list(pgrid_from = 0.1,pgrid_by = 0.075,pgrid_to = 0.925)
+
+
+### ----- First sample - hamilton84GNP (US GNP growth 1951Q2 - 1984Q4) -----  
+Y <- as.matrix(hamilton84GNP[["GNP_gr"]])
+
+# LMC-LRT 
+lmclrt_control$mdl_h1_control$msvar <- FALSE
+set.seed(250493)
+lmclrt_pa_s1 <- LMCLRTest(Y, p = 4, k0 = 1, k1 = 2, control = lmclrt_control)
+
+lmclrt_control$mdl_h1_control$msvar <- TRUE
+set.seed(250493)
+lmclrt_pb_s1 <- LMCLRTest(Y, p = 4, k0 = 1, k1 = 2, control = lmclrt_control)
+
+# MMC-LRT 
+mmclrt_control$mdl_h1_control$msvar <- FALSE
+set.seed(250493)
+doParallel::registerDoParallel(mmclrt_control[["workers"]])
+mmclrt_pa_s1 <- MMCLRTest(Y, p = 4, k0 = 1 , k1 = 2, control = mmclrt_control)
+doParallel::stopImplicitCluster()
+
+mmclrt_control$mdl_h1_control$msvar <- TRUE
+set.seed(250493)
+doParallel::registerDoParallel(mmclrt_control[["workers"]])
+mmclrt_pb_s1 <- MMCLRTest(Y, p = 4, k0 = 1 , k1 = 2, control = mmclrt_control)
+doParallel::stopImplicitCluster()
+
+# DLMCTest
+set.seed(250493)
+lmcmoment_pb_s1 <- DLMCTest(Y, p = 4, control = lmc_control)
+
+# DLMMCTest
+set.seed(250493)
+mmcmoment_pb_s1 <- DLMMCTest(Y, p = 4, control = mmc_control)
+
+# CHP Test
+chp_control$msvar <- FALSE
+set.seed(250493)
+pstabilitytest_pa_s1 <- CHPTest(Y, p = 4, control = chp_control)
+
+chp_control$msvar <- TRUE
+set.seed(250493)
+pstabilitytest_pb_s1 <- CHPTest(Y, p = 4, control = chp_control)
+
+# H-LRT
+hlrt_control$msvar <- FALSE
+set.seed(250493)
+hlrt_pa_s1 <- HLRTest(Y, p = 4, control = hlrt_control)
+
+
+hlrt_control$msvar <- TRUE
+set.seed(250493)
+hlrt_pb_s1 <- HLRTest(Y, p = 4, control = hlrt_control)
+
+
+### -----  Second sample - hamilton84GNP (US GNP growth 1951Q2 - 2010Q4) ----- 
+Y <- as.matrix(chp10GNP[["GNP_gr"]])
+
+# LMC-LRT 
+lmclrt_control$mdl_h1_control$msvar <- FALSE
+set.seed(250493)
+lmclrt_pa_s2 <- LMCLRTest(Y, p = 4, k0 = 1, k1 = 2, control = lmclrt_control)
+
+lmclrt_control$mdl_h1_control$msvar <- TRUE
+set.seed(250493)
+lmclrt_pb_s2 <- LMCLRTest(Y, p = 4, k0 = 1, k1 = 2, control = lmclrt_control)
+
+# MMC-LRT 
+mmclrt_control$mdl_h1_control$msvar <- FALSE
+set.seed(250493)
+doParallel::registerDoParallel(mmclrt_control[["workers"]])
+mmclrt_pa_s2 <- MMCLRTest(Y, p = 4, k0 = 1 , k1 = 2, control = mmclrt_control)
+doParallel::stopImplicitCluster()
+
+mmclrt_control$mdl_h1_control$msvar <- TRUE
+set.seed(250493)
+doParallel::registerDoParallel(mmclrt_control[["workers"]])
+mmclrt_pb_s2 <- MMCLRTest(Y, p = 4, k0 = 1 , k1 = 2, control = mmclrt_control)
+doParallel::stopImplicitCluster()
+
+# DLMCTest
+set.seed(250493)
+lmcmoment_pb_s2 <- DLMCTest(Y, p = 4, control = lmc_control)
+
+# DLMMCTest
+set.seed(250493)
+mmcmoment_pb_s2 <- DLMMCTest(Y, p = 4, control = mmc_control)
+
+# CHP Test
+chp_control$msvar <- FALSE
+set.seed(250493)
+pstabilitytest_pa_s2 <- CHPTest(Y, p = 4, control = chp_control)
+
+chp_control$msvar <- TRUE
+set.seed(250493)
+pstabilitytest_pb_s2 <- CHPTest(Y, p = 4, control = chp_control)
+
+# H-LRT
+hlrt_control$msvar <- FALSE
+set.seed(250493)
+hlrt_pa_s2 <- HLRTest(Y, p = 4, control = hlrt_control)
+
+
+hlrt_control$msvar <- TRUE
+set.seed(250493)
+hlrt_pb_s2 <- HLRTest(Y, p = 4, control = hlrt_control)
+
+### ----- Third sample -  (US GNP growth 1951Q2 - 2022Q3) ----- 
+Y <- as.matrix(USGNP[["GNP_gr"]])
+
+
+# LMC-LRT 
+lmclrt_control$mdl_h1_control$msvar <- FALSE
+set.seed(250493)
+lmclrt_pa_s3 <- LMCLRTest(Y, p = 4, k0 = 1, k1 = 2, control = lmclrt_control)
+
+lmclrt_control$mdl_h1_control$msvar <- TRUE
+set.seed(250493)
+lmclrt_pb_s3 <- LMCLRTest(Y, p = 4, k0 = 1, k1 = 2, control = lmclrt_control)
+
+# MMC-LRT 
+mmclrt_control$mdl_h1_control$msvar <- FALSE
+set.seed(250493)
+doParallel::registerDoParallel(mmclrt_control[["workers"]])
+mmclrt_pa_s3 <- MMCLRTest(Y, p = 4, k0 = 1 , k1 = 2, control = mmclrt_control)
+doParallel::stopImplicitCluster()
+
+mmclrt_control$mdl_h1_control$msvar <- TRUE
+set.seed(250493)
+doParallel::registerDoParallel(mmclrt_control[["workers"]])
+mmclrt_pb_s3 <- MMCLRTest(Y, p = 4, k0 = 1 , k1 = 2, control = mmclrt_control)
+doParallel::stopImplicitCluster()
+
+# DLMCTest
+set.seed(250493)
+lmcmoment_pb_s3 <- DLMCTest(Y, p = 4, control = lmc_control)
+
+# DLMMCTest
+set.seed(250493)
+mmcmoment_pb_s3 <- DLMMCTest(Y, p = 4, control = mmc_control)
+
+# CHP Test
+chp_control$msvar <- FALSE
+set.seed(250493)
+pstabilitytest_pa_s3 <- CHPTest(Y, p = 4, control = chp_control)
+
+chp_control$msvar <- TRUE
+set.seed(250493)
+pstabilitytest_pb_s3 <- CHPTest(Y, p = 4, control = chp_control)
+
+# H-LRT
+hlrt_control$msvar <- FALSE
+set.seed(250493)
+hlrt_pa_s3 <- HLRTest(Y, p = 4, control = hlrt_control)
+
+hlrt_control$msvar <- TRUE
+set.seed(250493)
+hlrt_pb_s3 <- HLRTest(Y, p = 4, control = hlrt_control)
+
+
+# ----- Create tables ----- #
+
+# Panel A: change in mean only
+panelA <- rbind(c(lmclrt_pa_s1$LRT_0, lmclrt_pa_s1$pval, lmclrt_pa_s2$LRT_0, lmclrt_pa_s2$pval, lmclrt_pa_s3$LRT_0, lmclrt_pa_s3$pval),
+                c(mmclrt_pa_s1$LRT_0, mmclrt_pa_s1$pval, mmclrt_pa_s2$LRT_0, mmclrt_pa_s2$pval,mmclrt_pa_s3$LRT_0, mmclrt_pa_s3$pval),
+                c(pstabilitytest_pa_s1$supTS, pstabilitytest_pa_s1$pval_supTS, pstabilitytest_pa_s2$supTS, pstabilitytest_pa_s2$pval_supTS, pstabilitytest_pa_s3$supTS, pstabilitytest_pa_s3$pval_supTS),
+                c(pstabilitytest_pa_s1$expTS, pstabilitytest_pa_s1$pval_expTS, pstabilitytest_pa_s2$expTS, pstabilitytest_pa_s2$pval_expTS, pstabilitytest_pa_s3$expTS, pstabilitytest_pa_s3$pval_expTS),
+                c(hlrt_pa_s1$LR0, hlrt_pa_s1$pval[4,], hlrt_pa_s2$LR0, hlrt_pa_s2$pval[4,], hlrt_pa_s3$LR0, hlrt_pa_s3$pval[4,]))
+
+
+
+# Panel B: change in mean and variance
+panelB <- rbind(c(lmclrt_pb_s1$LRT_0, lmclrt_pb_s1$pval, lmclrt_pb_s2$LRT_0, lmclrt_pb_s2$pval, lmclrt_pb_s3$LRT_0, lmclrt_pb_s3$pval),
+                c(mmclrt_pb_s1$LRT_0, mmclrt_pb_s1$pval, mmclrt_pb_s2$LRT_0, mmclrt_pb_s2$pval,mmclrt_pb_s3$LRT_0, mmclrt_pb_s3$pval),
+                c(lmcmoment_pb_s1$F0_min, lmcmoment_pb_s1$pval_min, lmcmoment_pb_s2$F0_min, lmcmoment_pb_s2$pval_min, lmcmoment_pb_s3$F0_min, lmcmoment_pb_s3$pval_min),
+                c(lmcmoment_pb_s1$F0_prod, lmcmoment_pb_s1$pval_prod, lmcmoment_pb_s2$F0_prod, lmcmoment_pb_s2$pval_prod, lmcmoment_pb_s3$F0_prod, lmcmoment_pb_s3$pval_prod),
+                c(mmcmoment_pb_s1$F0_min, mmcmoment_pb_s1$pval_min, mmcmoment_pb_s2$F0_min, mmcmoment_pb_s2$pval_min, mmcmoment_pb_s3$F0_min, mmcmoment_pb_s3$pval_min),
+                c(mmcmoment_pb_s1$F0_prod, mmcmoment_pb_s1$pval_prod, mmcmoment_pb_s2$F0_prod, mmcmoment_pb_s2$pval_prod, mmcmoment_pb_s3$F0_prod, mmcmoment_pb_s3$pval_prod),
+                c(pstabilitytest_pb_s1$supTS, pstabilitytest_pb_s1$pval_supTS, pstabilitytest_pb_s2$supTS, pstabilitytest_pb_s2$pval_supTS, pstabilitytest_pb_s3$supTS, pstabilitytest_pb_s3$pval_supTS),
+                c(pstabilitytest_pb_s1$expTS, pstabilitytest_pb_s1$pval_expTS, pstabilitytest_pb_s2$expTS, pstabilitytest_pb_s2$pval_expTS, pstabilitytest_pb_s3$expTS, pstabilitytest_pb_s3$pval_expTS),
+                c(hlrt_pb_s1$LR0,hlrt_pb_s1$pval[4,], hlrt_pb_s2$LR0,hlrt_pb_s2$pval[4,], hlrt_pb_s3$LR0,hlrt_pb_s3$pval[4,]))
+
+panelA <- format(round(panelA,2),nsmall=2)
+panelB <- round(panelB,2)
+
+rownames(panelA) <- c("LMC-LRT","MMC-LRT","supTS","expTS","H-LRT")
+rownames(panelB) <- c("LMC-LRT","MMC-LRT","LMC$_\text{min}$","LMC$_\text{prod}$","MMC$_\text{min}$","MMC$_\text{prod}$","supTS","expTS","H-LRT")
+
+colnames(panelA) <- NULL
+colnames(panelB) <- NULL
+
+
+# prepare in Latex table format
+panelA <- data.frame(panelA)
+panelA$skip <- "&"
+panelA$end <- "\\"
+panelA <- panelA[,c("skip","X1","skip","X2","skip","X3","skip","X4","skip","X5","skip","X6","end")]
+
+panelB <- data.frame(panelB)
+panelB$skip <- "&"
+panelB$end <- "\\"
+panelB <- panelB[,c("skip","X1","skip","X2","skip","X3","skip","X4","skip","X5","skip","X6","end")]
+
