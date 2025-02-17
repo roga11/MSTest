@@ -1963,7 +1963,7 @@ double logLike_ARXmdl(arma::vec theta, List mdl){
   arma::mat repmu(Tsize, phi.n_elem,arma::fill::ones);
   arma::mat repzb(Tsize, 1,arma::fill::ones);
   arma::vec resid = (y - mu) - (x-(mu*repmu))*phi - (z-(repzb*zbar))*betaZ;
-  logLike = as_scalar(sum(log((1/sqrt(2*pi*sigma))*exp(-pow(resid,2)/(2*sigma)))));
+  logLike = arma::as_scalar(sum(log((1/sqrt(2*pi*sigma))*exp(-pow(resid,2)/(2*sigma)))));
   return(logLike);
 }
 // ==============================================================================
