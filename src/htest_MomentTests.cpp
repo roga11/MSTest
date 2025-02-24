@@ -199,9 +199,9 @@ double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x,
     arma::mat S0 = trans(calc_DLmoments(eps));
     // combine moment stats
     if (pval_type=="prod"){
-      F0 = as_scalar(combine_stat(S0, params, "prod"));
+      F0 = arma::as_scalar(combine_stat(S0, params, "prod"));
     }else if (pval_type=="min"){
-      F0 = as_scalar(combine_stat(S0, params, "min"));   
+      F0 = arma::as_scalar(combine_stat(S0, params, "min"));   
     }else{
       Rcerr << "type must be: 'min' or 'prod'.\n";
     }

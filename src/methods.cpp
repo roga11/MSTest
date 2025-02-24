@@ -1000,7 +1000,7 @@ List simuAR_cpp(List mdl_h0, int burnin = 100){
   Y.subvec(0, p-1) = mu + eps_corr.subvec(0, p-1);
   for (int xt = p; xt<(Tsize+burnin); xt++){
     arma::vec ytmp = flipud(Y.subvec((xt-p),(xt-1)));
-    Y(xt) = as_scalar(intercept + trans(ytmp)*phi + eps_corr(xt));
+    Y(xt) = arma::as_scalar(intercept + trans(ytmp)*phi + eps_corr(xt));
   }
   // ----- Output
   arma::vec Y_out = Y.subvec(burnin, Tsize+burnin-1);
@@ -1064,9 +1064,9 @@ List simuARX_cpp(List mdl_h0, int burnin = 100){
   Y.subvec(0, p-1) = mu + eps_corr.subvec(0, p-1);
   for (int xt = p; xt<(Tsize+burnin); xt++){
     arma::vec ytmp = flipud(Y.subvec((xt-p),(xt-1)));
-    Y(xt) = as_scalar(intercept + trans(ytmp)*phi + eps_corr(xt));
+    Y(xt) = arma::as_scalar(intercept + trans(ytmp)*phi + eps_corr(xt));
     if (xt>=burnin){
-      Y(xt) = Y(xt) + as_scalar(Xdm.row(xt-burnin)*beta0);
+      Y(xt) = Y(xt) + arma::as_scalar(Xdm.row(xt-burnin)*beta0);
     }
   }
   // ----- Output
@@ -1152,14 +1152,14 @@ List simuMSAR_cpp(List mdl_h0, int burnin = 100){
     // Get new state
     arma::vec w_temp = P.col(state);
     arma::vec state_mat = cumsum(w_temp);
-    state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
+    state = arma::as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
     state_series(xt) = state;
     // generate new obs
     arma::vec ytmp = flipud(Y.subvec((xt-p),(xt-1)));
     arma::vec mu_lag = flipud(mu_t.subvec((xt-p),(xt-1))); 
     arma::vec eps_corr_k = epsLs[state];
     resid(xt) = eps_corr_k(xt);
-    Y(xt) = as_scalar(mu(state) + (trans(ytmp-mu_lag))*phi + resid(xt));
+    Y(xt) = arma::as_scalar(mu(state) + (trans(ytmp-mu_lag))*phi + resid(xt));
     mu_t(xt) = mu(state);
     stdev_t(xt) = stdev(state);
   }
@@ -1259,16 +1259,16 @@ List simuMSARX_cpp(List mdl_h0, int burnin = 100){
     // Get new state
     arma::vec w_temp     = P.col(state);
     arma::vec state_mat  = cumsum(w_temp);
-    state                = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
+    state                = arma::as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
     state_series(xt)     = state;
     // generate new obs
     arma::vec ytmp       = flipud(Y.subvec((xt-p),(xt-1)));
     arma::vec mu_lag     = flipud(mu_t.subvec((xt-p),(xt-1))); 
     arma::vec eps_corr_k = epsLs[state];
     resid(xt)            = eps_corr_k(xt);
-    Y(xt)    = as_scalar(mu(state) + (trans(ytmp-mu_lag))*phi + resid(xt));
+    Y(xt)    = arma::as_scalar(mu(state) + (trans(ytmp-mu_lag))*phi + resid(xt));
     if (xt>=burnin){
-      Y(xt)  = Y(xt) + as_scalar(Xdm.row(xt-burnin)*beta0);
+      Y(xt)  = Y(xt) + arma::as_scalar(Xdm.row(xt-burnin)*beta0);
     }
     mu_t(xt)     = mu(state);
     stdev_t(xt)  = stdev(state);
@@ -1520,7 +1520,7 @@ List simuMSVAR_cpp(List mdl_h0, int burnin = 100){
     // Get new state
     arma::vec w_temp = P.col(state);
     arma::vec state_mat = cumsum(w_temp);
-    state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
+    state = arma::as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
     state_series(xt) = state;
     arma::mat eps_corr_k = epsLs[state];
     arma::mat Ytmp = flipud(Y.rows((xt-p),(xt-1)));
@@ -1642,7 +1642,7 @@ List simuMSVARX_cpp(List mdl_h0, int burnin = 100){
      // Get new state
      arma::vec w_temp = P.col(state);
      arma::vec state_mat = cumsum(w_temp);
-     state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
+     state = arma::as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
      state_series(xt) = state;
      arma::mat eps_corr_k = epsLs[state];
      arma::mat Ytmp = flipud(Y.rows((xt-p),(xt-1)));
@@ -1818,7 +1818,7 @@ List simuHMM_cpp(List mdl_h0, int burnin = 100, bool exog = false){
     // Get new state
     arma::vec w_temp = P.col(state);
     arma::vec state_mat = cumsum(w_temp);
-    state = as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
+    state = arma::as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
     state_series(xt) = state;
     arma::mat eps_corr_k = epsLs[state];
     resid.row(xt) = eps_corr_k.row(xt);
@@ -1881,7 +1881,7 @@ double logLike_Nmdl(arma::vec theta, List mdl){
   double pi = arma::datum::pi;
   arma::vec f_t(Tsize, arma::fill::zeros);
   for (int xt = 0; xt<Tsize; xt++){
-    f_t(xt) = as_scalar((1/sqrt(det(sigma)*pow(2*pi,q)))*
+    f_t(xt) = arma::as_scalar((1/sqrt(det(sigma)*pow(2*pi,q)))*
       exp(-0.5*(resid.row(xt)*inv(sigma)*trans(resid.row(xt)))));
   }
   double logLike = sum(log(f_t));
@@ -1910,9 +1910,9 @@ double logLike_ARmdl(arma::vec theta, List mdl){
   arma::uvec mu_ind   = arma::find(as<arma::uvec>(mdl["theta_mu_ind"])==1);
   arma::uvec phi_ind  = arma::find(as<arma::uvec>(mdl["theta_phi_ind"])==1);
   arma::uvec sig_ind  = arma::find(as<arma::uvec>(mdl["theta_sig_ind"])==1);
-  double mu     = as_scalar(theta.elem(mu_ind));
+  double mu     = arma::as_scalar(theta.elem(mu_ind));
   arma::vec phi = theta.elem(phi_ind);
-  double sigma  = as_scalar(theta.elem(sig_ind));
+  double sigma  = arma::as_scalar(theta.elem(sig_ind));
   int Tsize     = y.n_elem;
   // ---------- Compute log-likehood
   double logLike;
@@ -1950,10 +1950,10 @@ double logLike_ARXmdl(arma::vec theta, List mdl){
   arma::uvec phi_ind    = arma::find(as<arma::uvec>(mdl["theta_phi_ind"])==1);
   arma::uvec betaZ_ind  = arma::find(as<arma::uvec>(mdl["theta_x_ind"])==1);
   arma::uvec sig_ind    = arma::find(as<arma::uvec>(mdl["theta_sig_ind"])==1);
-  double mu         = as_scalar(theta.elem(mu_ind));
+  double mu         = arma::as_scalar(theta.elem(mu_ind));
   arma::vec phi     = theta.elem(phi_ind);
   arma::vec betaZ   = theta.elem(betaZ_ind);
-  double sigma      = as_scalar(theta.elem(sig_ind));
+  double sigma      = arma::as_scalar(theta.elem(sig_ind));
   int Tsize         = y.n_elem;
   z = z.rows(phi.n_elem,Tsize+phi.n_elem-1);
   arma::rowvec zbar = arma::mean(z,0);
@@ -1963,7 +1963,7 @@ double logLike_ARXmdl(arma::vec theta, List mdl){
   arma::mat repmu(Tsize, phi.n_elem,arma::fill::ones);
   arma::mat repzb(Tsize, 1,arma::fill::ones);
   arma::vec resid = (y - mu) - (x-(mu*repmu))*phi - (z-(repzb*zbar))*betaZ;
-  logLike = as_scalar(sum(log((1/sqrt(2*pi*sigma))*exp(-pow(resid,2)/(2*sigma)))));
+  logLike = arma::as_scalar(sum(log((1/sqrt(2*pi*sigma))*exp(-pow(resid,2)/(2*sigma)))));
   return(logLike);
 }
 // ==============================================================================
@@ -2007,7 +2007,7 @@ double logLike_VARmdl(arma::vec theta, List mdl){
   double pi = arma::datum::pi;
   arma::vec f_t(Tsize, arma::fill::zeros);
   for (int xt = 0; xt<Tsize; xt++){
-    f_t(xt) = as_scalar((1/sqrt(det(sigma)*pow(2*pi,q)))*
+    f_t(xt) = arma::as_scalar((1/sqrt(det(sigma)*pow(2*pi,q)))*
       exp(-0.5*(resid.row(xt)*inv(sigma)*trans(resid.row(xt)))));
   }
   double logLike = sum(log(f_t));
@@ -2062,7 +2062,7 @@ double logLike_VARXmdl(arma::vec theta, List mdl){
    double pi = arma::datum::pi;
    arma::vec f_t(Tsize, arma::fill::zeros);
    for (int xt = 0; xt<Tsize; xt++){
-     f_t(xt) = as_scalar((1/sqrt(det(sigma)*pow(2*pi,q)))*
+     f_t(xt) = arma::as_scalar((1/sqrt(det(sigma)*pow(2*pi,q)))*
        exp(-0.5*(resid.row(xt)*inv(sigma)*trans(resid.row(xt)))));
    }
    double logLike = sum(log(f_t));
@@ -2153,8 +2153,8 @@ double logLike_HMmdl(arma::vec theta, List mdl, int k){
     for (int xk = 0; xk<k; xk++){
       arma::mat eps_k = eps[xk];
       arma::mat sigma_k = sigma[xk];
-      //eta(xt,xk) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*inv(sigma_k)*trans(eps_k.row(xt)))));
-      eta(xt,xk) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*solve(sigma_k,trans(eps_k.row(xt)), arma::solve_opts::allow_ugly))));
+      //eta(xt,xk) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*inv(sigma_k)*trans(eps_k.row(xt)))));
+      eta(xt,xk) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*solve(sigma_k,trans(eps_k.row(xt)), arma::solve_opts::allow_ugly))));
     }
     arma::vec xi_eta = xi_t_tm1%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
@@ -2498,8 +2498,8 @@ double logLike_MSVARmdl(arma::vec theta, List mdl, int k){
     for (int xm = 0; xm<M; xm++){
       arma::mat eps_m = eps[xm];
       arma::mat sigma_m = sigAR[xm];
-      //eta(xt,xm) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*inv(sigma_m)*trans(eps_m.row(xt)))));
-      eta(xt,xm) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt)), arma::solve_opts::allow_ugly))));
+      //eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*inv(sigma_m)*trans(eps_m.row(xt)))));
+      eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt)), arma::solve_opts::allow_ugly))));
     }
     arma::vec xi_eta = xi_t_tm1_AR%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
@@ -2625,8 +2625,8 @@ double logLike_MSVARXmdl(arma::vec theta, List mdl, int k){
     for (int xm = 0; xm<M; xm++){
       arma::mat eps_m = eps[xm];
       arma::mat sigma_m = sigAR[xm];
-      //eta(xt,xm) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*inv(sigma_m)*trans(eps_m.row(xt)))));
-      eta(xt,xm) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt)), arma::solve_opts::allow_ugly))));
+      //eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*inv(sigma_m)*trans(eps_m.row(xt)))));
+      eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt)), arma::solve_opts::allow_ugly))));
     } 
     arma::vec xi_eta = xi_t_tm1_AR%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
@@ -2772,8 +2772,8 @@ List ExpectationM_HMmdl(arma::vec theta, List mdl, int k){
     for (int xk = 0; xk<k; xk++){
       arma::mat eps_k = eps[xk];
       arma::mat sigma_k = sigma[xk];
-      //eta(xt,xk) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*inv(sigma_k)*trans(eps_k.row(xt)))));
-      eta(xt,xk) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*solve(sigma_k,trans(eps_k.row(xt)), arma::solve_opts::allow_ugly))));
+      //eta(xt,xk) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*inv(sigma_k)*trans(eps_k.row(xt)))));
+      eta(xt,xk) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*solve(sigma_k,trans(eps_k.row(xt)), arma::solve_opts::allow_ugly))));
     }
     arma::vec xi_eta = xi_t_tm1%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
@@ -3103,8 +3103,8 @@ List ExpectationM_MSVARmdl(arma::vec theta, List mdl, int k){
     for (int xm = 0; xm<M; xm++){
       arma::mat eps_m = eps[xm];
       arma::mat sigma_m = sigAR[xm];
-      //eta(xt,xm) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*inv(sigma_m)*trans(eps_m.row(xt)))));
-      eta(xt,xm) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt)), arma::solve_opts::allow_ugly))));
+      //eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*inv(sigma_m)*trans(eps_m.row(xt)))));
+      eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt)), arma::solve_opts::allow_ugly))));
     }
     arma::vec xi_eta = xi_t_tm1_AR%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
@@ -3225,8 +3225,8 @@ List ExpectationM_MSVARXmdl(arma::vec theta, List mdl, int k){
     for (int xm = 0; xm<M; xm++){
       arma::mat eps_m = eps[xm];
       arma::mat sigma_m = sigAR[xm];
-      //eta(xt,xm) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*inv(sigma_m)*trans(eps_m.row(xt)))));
-      eta(xt,xm) = as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt)), arma::solve_opts::allow_ugly))));
+      //eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*inv(sigma_m)*trans(eps_m.row(xt)))));
+      eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt)), arma::solve_opts::allow_ugly))));
     }
     arma::vec xi_eta = xi_t_tm1_AR%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
@@ -3509,7 +3509,7 @@ List EMaximization_MSARmdl(arma::vec theta, List mdl, List MSloglik_output, int 
       sum_tmp(xk) = sum(xi_t_T_AR.col(xk));
     }
     for (int xk = 1; xk<=k;xk++){
-      mu(xk-1) = as_scalar(sum(mu_tmp.rows(find(state_ind==xk)))/sum(sum_tmp.rows(find(state_ind==xk))));
+      mu(xk-1) = arma::as_scalar(sum(mu_tmp.rows(find(state_ind==xk)))/sum(sum_tmp.rows(find(state_ind==xk))));
     }
   }else{
     for (int xk = 0 ; xk<M; xk++){
@@ -3548,7 +3548,7 @@ List EMaximization_MSARmdl(arma::vec theta, List mdl, List MSloglik_output, int 
       sum_tmp(xk) = sum(xi_t_T_AR.col(xk)); 
     }
     for (int xk = 1; xk<=k;xk++){
-      sigma(xk-1) = as_scalar(sum(sigma_tmp.rows(find(state_ind==xk)))/sum(sum_tmp.rows(find(state_ind==xk))));
+      sigma(xk-1) = arma::as_scalar(sum(sigma_tmp.rows(find(state_ind==xk)))/sum(sum_tmp.rows(find(state_ind==xk))));
     }
   }else{
     sigma = arma::sum(arma::sum(eps%eps%xi_t_T_AR,0),1)/Tsize;
@@ -3654,7 +3654,7 @@ List EMaximization_MSARXmdl(arma::vec theta, List mdl, List MSloglik_output, int
       sum_tmp(xk) = sum(xi_t_T_AR.col(xk));
     }
     for (int xk = 1; xk<=k;xk++){
-      mu(xk-1)    = as_scalar(sum(mu_tmp.rows(find(state_ind==xk)))/sum(sum_tmp.rows(find(state_ind==xk))));
+      mu(xk-1)    = arma::as_scalar(sum(mu_tmp.rows(find(state_ind==xk)))/sum(sum_tmp.rows(find(state_ind==xk))));
     }
   }else{
     for (int xk = 0 ; xk<M; xk++){
@@ -3697,7 +3697,7 @@ List EMaximization_MSARXmdl(arma::vec theta, List mdl, List MSloglik_output, int
       sum_tmp(xk)   = sum(xi_t_T_AR.col(xk));
     }
     for (int xk = 1; xk<=k;xk++){
-      sigma(xk-1)   = as_scalar(sum(sigma_tmp.rows(find(state_ind==xk)))/sum(sum_tmp.rows(find(state_ind==xk))));
+      sigma(xk-1)   = arma::as_scalar(sum(sigma_tmp.rows(find(state_ind==xk)))/sum(sum_tmp.rows(find(state_ind==xk))));
     }
   }else{
     sigma = arma::sum(arma::sum(eps%eps%xi_t_T_AR,0),1)/Tsize;
