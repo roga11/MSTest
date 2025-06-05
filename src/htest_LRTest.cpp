@@ -98,6 +98,8 @@ List mdledit(List mdl_h0, arma::vec theta_h0, int p, int q, int k0, bool exog){
   arma::vec theta_mu_h0 = theta_h0.elem(find(theta_mu_ind_h0));
   arma::vec theta_sig_ind_h0 = mdl_h0["theta_sig_ind"];
   arma::vec theta_sig_h0 = theta_h0.elem(find(theta_sig_ind_h0));
+  bool msmu  = Rcpp::as<bool>(mdl_h0["msmu"]);
+  bool msvar = Rcpp::as<bool>(mdl_h0["msvar"]);
   if (exog==TRUE){
     arma::mat Z = mdl_h0["Z"];
     int qz = Z.n_cols;
@@ -107,27 +109,63 @@ List mdledit(List mdl_h0, arma::vec theta_h0, int p, int q, int k0, bool exog){
   }
   // edit simulation list params with values from theta_0
   if (q==1){
-    mdl_h0_tmp["mu"] = theta_mu_h0;
-    mdl_h0_tmp["stdev"] = sqrt(theta_sig_h0);
-    mdl_h0_tmp["sigma"] = theta_sig_h0;
+    if (k0==1){
+      mdl_h0_tmp["mu"] = theta_mu_h0;
+      mdl_h0_tmp["stdev"] = sqrt(theta_sig_h0);
+      mdl_h0_tmp["sigma"] = theta_sig_h0;
+    }else if (k0>1){
+      if (msmu) {
+        mdl_h0_tmp["mu"] = theta_mu_h0;
+      } else {
+        mdl_h0_tmp["mu"] = arma::vec(k0).fill(theta_mu_h0[0]);
+      }  
+      if (msvar) {
+        mdl_h0_tmp["sigma"] = theta_sig_h0;
+        mdl_h0_tmp["stdev"] = sqrt(theta_sig_h0);
+      } else {
+        double sig_scalar = theta_sig_h0[0];
+        mdl_h0_tmp["sigma"] = arma::vec(k0).fill(sig_scalar);
+        mdl_h0_tmp["stdev"] = arma::vec(k0).fill(std::sqrt(sig_scalar));
+      }
+    }
     if (p>0){
       arma::vec theta_phi_ind_h0 = mdl_h0["theta_phi_ind"];
       arma::vec phi_new = theta_h0.elem(find(theta_phi_ind_h0));
       mdl_h0_tmp["phi"] = phi_new;
     }
   }else if (q>1){
-    arma::mat mu_new = trans(reshape(theta_mu_h0,q,k0));
-    mdl_h0_tmp["mu"] = mu_new;
     if (k0==1){
+      arma::mat mu_new = trans(reshape(theta_mu_h0,q,k0));
+      mdl_h0_tmp["mu"] = mu_new;
       mdl_h0_tmp["sigma"] = covar_unvech(theta_sig_h0,q);
     }else if (k0>1){
-      arma::mat sig_new_tmp = trans(reshape(theta_sig_h0, (q*(q+1))/2, k0));
-      List sig_new(k0);
-      for (int xk = 0; xk<k0; xk++){
-        arma::vec sig_tmp_k = trans(sig_new_tmp.row(xk));
-        sig_new[xk] = covar_unvech(sig_tmp_k, q);
+      if (msmu) {
+        arma::mat mu_new = trans(reshape(theta_mu_h0,q,k0));
+        mdl_h0_tmp["mu"] = mu_new;
+      }else{
+        arma::mat mu_new(q, k0);
+        for (int j = 0; j < k0; ++j) {
+          mu_new.col(j) = theta_mu_h0;
+        }
+        mu_new = mu_new.t();
+        mdl_h0_tmp["mu"] = mu_new;
       }
-      mdl_h0_tmp["sigma"] = sig_new;
+      if (msvar) {
+        arma::mat sig_new_tmp = trans(reshape(theta_sig_h0, (q*(q+1))/2, k0));
+        List sig_new(k0);
+        for (int xk = 0; xk<k0; xk++){
+          arma::vec sig_tmp_k = trans(sig_new_tmp.row(xk));
+          sig_new[xk] = covar_unvech(sig_tmp_k, q);
+        }
+        mdl_h0_tmp["sigma"] = sig_new;}
+      else{
+        arma::mat tmp_sig = covar_unvech(theta_sig_h0, q);
+        List sig_new(k0);
+        for (int xk = 0; xk < k0; xk++) {
+          sig_new[xk] = tmp_sig;
+        }
+        mdl_h0_tmp["sigma"] = sig_new;
+      }
     } 
     if (p>0){
       arma::vec theta_phi_ind_h0 = mdl_h0["theta_phi_ind"];

@@ -1916,6 +1916,9 @@ MSVARmdl <- function(Y, p, k, control = list()){
     }
   }
   q <- ncol(Y)
+  if (con$msmu==FALSE){
+    output$mu     <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
+  }
   output$Fmat    <- companionMat(output$phi, p, q)
   inter <- matrix(0,k,q)
   beta <- list()
@@ -1937,9 +1940,6 @@ MSVARmdl <- function(Y, p, k, control = list()){
   theta_sig_ind   <- c(rep(0, q + q*(k-1)*con$msmu + phi_len), rep(1, Nsig + Nsig*(k-1)*con$msvar), rep(0, k*k))
   theta_var_ind   <- c(rep(0, q + q*(k-1)*con$msmu + phi_len), rep(t(covar_vech(diag(q))), 1+(k-1)*con$msvar), rep(0, k*k))
   theta_P_ind     <- c(rep(0, q + q*(k-1)*con$msmu + phi_len + Nsig + Nsig*(k-1)*con$msvar), rep(1, k*k))
-  if (con$msmu==FALSE){
-    output$mu     <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
-  }
   stationary <- NULL
   try(
     stationary    <- all(eigen(output$Fmat)$values<1)  
@@ -2176,6 +2176,9 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
     }
   }
   q <- ncol(Y)
+  if (con$msmu==FALSE){
+    output$mu     <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
+  }
   output$Fmat    <- companionMat(output$phi, p, q)
   inter <- matrix(0,k,q)
   beta <- list()
@@ -2197,9 +2200,6 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
   theta_sig_ind   <- c(rep(0, q + q*(k-1)*con$msmu + phi_len + length(betaZ)), rep(1, Nsig + Nsig*(k-1)*con$msvar), rep(0, k*k))
   theta_var_ind   <- c(rep(0, q + q*(k-1)*con$msmu + phi_len + length(betaZ)), rep(t(covar_vech(diag(q))), 1+(k-1)*con$msvar), rep(0, k*k))
   theta_P_ind     <- c(rep(0, length(output$theta) - k*k) , rep(1, k*k))
-  if (con$msmu==FALSE){
-    output$mu     <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
-  }
   stationary <- NULL
   try(
     stationary    <- all(eigen(output$Fmat)$values<1)  
