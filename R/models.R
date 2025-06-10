@@ -1193,7 +1193,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
               stdev = stdev, sigma = output$sigma, theta = output$theta, 
               theta_mu_ind = theta_mu_ind, theta_x_ind = theta_x_ind, theta_beta_ind = theta_beta_ind,
               theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind, 
-              n = init_mdl$n, q = q, k = k, control = con,
+              n = init_mdl$n, q = q, p = 0, k = k, control = con,
               P = output$P, pinf = output$pinf, St = output$St, logLike = output$logLike,  
               deltath = output$deltath, iterations = output$iterations, theta_0 = output$theta_0,
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, exog = (!is.null(Z)))
