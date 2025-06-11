@@ -1079,12 +1079,20 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
           # ----- Initial values
           theta_0 <- initVals_HMmdl(init_mdl, k)
           # ----- Estimate using EM algorithm and initial values provided
-          output_tmp <- HMmdl_em(theta_0, init_mdl, k, optim_options)
+          output_tmp <- NULL
+          try(
+            output_tmp <- HMmdl_em(theta_0, init_mdl, k, optim_options)
+          )
           # ----- Convergence check
-          logLike_tmp <- output_tmp$logLike
-          theta_tmp <- output_tmp$theta
-          converge_check <- ((is.finite(output_tmp$logLike)) & (all(is.finite(output_tmp$theta))))
-          init_used <- init_used + 1
+          if (is.null(output_tmp)==FALSE){
+            logLike_tmp <- output_tmp$logLike
+            theta_tmp <- output_tmp$theta
+            converge_check <- ((is.finite(output_tmp$logLike)) & (all(is.finite(output_tmp$theta))))
+            init_used <- init_used + 1
+          }else{
+            converge_check <- FALSE
+            init_used <- init_used + 1
+          }
         }
         if (is.null(Z)){
           output_tmp$betaZ <- NULL    
@@ -1844,12 +1852,20 @@ MSVARmdl <- function(Y, p, k, control = list()){
           # ----- Initial values
           theta_0 <- initVals_MSVARmdl(init_mdl, k)
           # ----- Estimate using EM algorithm and initial values provided
-          output_tmp <- MSVARmdl_em(theta_0, init_mdl, k, optim_options)
+          output_tmp <- NULL
+          try(
+            output_tmp <- MSVARmdl_em(theta_0, init_mdl, k, optim_options)
+          )
           # ----- Convergence check
-          logLike_tmp <- output_tmp$logLike
-          theta_tmp <- output_tmp$theta
-          converge_check <- ((is.finite(output_tmp$logLike)) & (all(is.finite(output_tmp$theta))))
-          init_used <- init_used + 1
+          if (is.null(output_tmp)==FALSE){
+            logLike_tmp <- output_tmp$logLike
+            theta_tmp <- output_tmp$theta
+            converge_check <- ((is.finite(output_tmp$logLike)) & (all(is.finite(output_tmp$theta))))
+            init_used <- init_used + 1
+          }else{
+            converge_check <- FALSE
+            init_used <- init_used + 1
+          }
         }
         output_tmp$theta_0 <- theta_0
         max_loglik[xi] <- output_tmp$logLike
@@ -2104,12 +2120,20 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
           # ----- Initial values
           theta_0 <- initVals_MSVARXmdl(init_mdl, k)
           # ----- Estimate using EM algorithm and initial values provided
-          output_tmp <- MSVARXmdl_em(theta_0, init_mdl, k, optim_options)
+          output_tmp <- NULL
+          try(
+            output_tmp <- MSVARXmdl_em(theta_0, init_mdl, k, optim_options)
+          )
           # ----- Convergence check
-          logLike_tmp <- output_tmp$logLike
-          theta_tmp <- output_tmp$theta
-          converge_check <- ((is.finite(output_tmp$logLike)) & (all(is.finite(output_tmp$theta))))
-          init_used <- init_used + 1
+          if (is.null(output_tmp)==FALSE){
+            logLike_tmp <- output_tmp$logLike
+            theta_tmp <- output_tmp$theta
+            converge_check <- ((is.finite(output_tmp$logLike)) & (all(is.finite(output_tmp$theta))))
+            init_used <- init_used + 1
+          }else{
+            converge_check <- FALSE
+            init_used <- init_used + 1
+          }
         }
         output_tmp$theta_0 <- theta_0
         max_loglik[xi] <- output_tmp$logLike
