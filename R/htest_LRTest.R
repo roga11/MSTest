@@ -144,7 +144,7 @@ estimMdl <- function(Y, p, q, k, Z = NULL, control = list()){
 #' }
 #'
 #' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2024. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2025. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #' @example /inst/examples/LMCLRTest_examples.R
 #' @export
 LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
@@ -242,7 +242,7 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
 #' @keywords internal
 #' 
 #' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2024. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2025. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #' 
 #' @export
 MMC_bounds <- function(mdl_h0, con){
@@ -332,7 +332,7 @@ MMC_bounds <- function(mdl_h0, con){
 #' }
 #'
 #' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2024. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+#' @references Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2025. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 #' @example /inst/examples/MMCLRTest_examples.R
 #' @export
 MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){

@@ -1092,7 +1092,7 @@ print.DLMMCTest <- function(x, digits = getOption("digits"), ...){
 #' 
 #' @export
 print.LMCLRTest <- function(x, digits = getOption("digits"), ...){
-  cat("\nRodriguez-Rondon & Dufour (2024) Local Monte Carlo Likelihood Ratio Test\n")
+  cat("\nRodriguez-Rondon & Dufour (2025) Local Monte Carlo Likelihood Ratio Test\n")
   out <- data.frame(t(as.matrix(c(x$LRT_0, x$LRN_cv, x$pval))))
   colnames(out) <- c(names(x$LRT_0), names(x$LRN_cv), "p-value")
   rownames(out) <- "LMC_LRT"
@@ -1114,7 +1114,7 @@ print.LMCLRTest <- function(x, digits = getOption("digits"), ...){
 #' 
 #' @export
 print.MMCLRTest <- function(x, digits = getOption("digits"), ...){
-  cat("\nRodriguez-Rondon & Dufour (2024) Maximized Monte Carlo Likelihood Ratio Test\n")
+  cat("\nRodriguez-Rondon & Dufour (2025) Maximized Monte Carlo Likelihood Ratio Test\n")
   out <- data.frame(t(as.matrix(c(x$LRT_0, x$pval))))
   colnames(out) <- c(names(x$LRT_0), "p-value")
   rownames(out) <- "MMC_LRT"
@@ -1525,7 +1525,7 @@ summary.LMCLRTest <- function(object, digits = getOption("digits"), ...){
   cat(paste("\nAIC = "),object$mdl_h1$AIC)
   cat(paste("\nBIC = "),object$mdl_h1$BIC)
   cat("\n")
-  cat("\nRodriguez-Rondon & Dufour (2023) Local Monte Carlo Likelihood Ratio Test\n")
+  cat("\nRodriguez-Rondon & Dufour (2025) Local Monte Carlo Likelihood Ratio Test\n")
   out <- data.frame(t(as.matrix(c(object$LRT_0, object$LRN_cv, object$pval))))
   colnames(out) <- c(names(object$LRT_0), names(object$LRN_cv), "p-value")
   rownames(out) <- "LMC_LRT"
@@ -1569,7 +1569,7 @@ summary.MMCLRTest <- function(object, digits = getOption("digits"), ...){
   cat(paste("\nAIC = "),object$mdl_h1$AIC)
   cat(paste("\nBIC = "),object$mdl_h1$BIC)
   cat("\n")
-  cat("\nRodriguez-Rondon & Dufour (2023) Maximized Monte Carlo Likelihood Ratio Test\n")
+  cat("\nRodriguez-Rondon & Dufour (2025) Maximized Monte Carlo Likelihood Ratio Test\n")
   out <- data.frame(t(as.matrix(c(object$LRT_0, object$pval))))
   colnames(out) <- c(names(object$LRT_0), "p-value")
   rownames(out) <- "MMC_LRT"

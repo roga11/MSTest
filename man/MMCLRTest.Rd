@@ -82,7 +82,7 @@ mmc_control = list(N = 19,
                    silence = FALSE,
                    threshold_stop = 0.05 + 1e-6,
                    type = "pso",
-                   maxit = 100,
+                   maxit = 50,
                    mdl_h0_control = list(const  = TRUE, 
                                          getSE  = TRUE),
                    mdl_h1_control = list(msmu   = TRUE, 
@@ -91,7 +91,7 @@ mmc_control = list(N = 19,
                                          method = "EM",
                                          use_diff_init = 1))
 \donttest{
-  MMCtest <- MMCLRTest(y_ms_simu$y, p = 1 , k0 = 1 , k1 = 2, control = mmc_control)
+  MMCtest <- MMCLRTest(y_ms_simu$y, p = 1 , k0 = 1, k1 = 2, control = mmc_control)
   summary(MMCtest)
 }
 
@@ -101,5 +101,5 @@ mmc_control = list(N = 19,
 \references{
 Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
 
-Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2024. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2025. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
 }

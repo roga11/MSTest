@@ -299,7 +299,8 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
       double l_1      = mdl_h1_tmp["logLike"];
       LRT_i = -2*(l_0 - l_1);
       // verify test stat (i.e. not NaN nor <0)
-      LRT_finite = ((arma::is_finite(LRT_i)) and (LRT_i>=0));
+      // LRT_finite = ((arma::is_finite(LRT_i)) and (LRT_i>=0));
+      LRT_finite = ((std::isfinite(LRT_i)) and (LRT_i>=0));
     }
     LRT_N(xn) = LRT_i;
   }

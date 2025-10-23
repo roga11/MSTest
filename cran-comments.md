@@ -1,7 +1,9 @@
 ## Submission
 This is a resubmission. In this version I have:
-* Fixed bug in MMC when null>1 - matrix out of bound error in simulation under null due to 'mdledit' not taking into account if msmu (msvar) are false or not. 
-* Fixed bug in estimation of MSVAR and MSVARX when msmu=FALSE due to intercept - correction for repeating output$mu by k had to come before defining inter
+* Fixed bug in MMC when null==1 - msmu and msvar undefined in 'mdledit'. result of previous edit when null>1.  
+* Updated MLE estimation following deprecation of hin>=0 (inequality constraint direction) in slsqr
+* Changed OLS unbiased estimates of models with k=1 to be consistent with MLE estimates. Package is for testing more than estimation so comparison with MLE-based tetsing is prioritized. 
+* Changed use of arma::is_finite(X) to std::isfinite(X) because former is now deprecated.
 
 ## Test environments
 * 

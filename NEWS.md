@@ -3,6 +3,12 @@ output:
   pdf_document: default
   html_document: default
 ---
+# MSTest 0.1.6
+* Updated MLE estimation following deprecation of hin>=0 (inequality constraint direction) in slsqr
+* Changed OLS unbiased estimates of models with k=1 to be consistent with MLE estimates. Package is for testing more than estimation so comparison with MLE-based tetsing is prioritized. 
+* Changed use of arma::is_finite(X) to std::isfinite(X) because former is now deprecated.
+
+
 # MSTest 0.1.5
 * patch to compile following (Rcpp) Armadillo update (i.e., added proper namespace scopeas_scalar).
 
