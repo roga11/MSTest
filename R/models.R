@@ -381,7 +381,8 @@ Nmdl <- function(Y, Z = NULL, control = list()){
   # ----- Obtain variables of interest
   fitted      <- zz%*%beta
   resid       <- Y - fitted
-  sigma       <- crossprod(resid)/(n-q)
+  # sigma       <- crossprod(resid)/(n-q)
+  sigma       <- crossprod(resid)/n # consistent with MLE estimation in other functions
   stdev       <- sqrt(diag(sigma))
   theta       <- c(c(t(beta)), covar_vech(sigma))
   # theta indicators
@@ -519,7 +520,8 @@ ARmdl <- function(Y, p, control = list()){
   # ----- Obtain variables of interest
   fitted  <- zz%*%beta
   resid   <- y - fitted
-  stdev   <- sqrt((crossprod(resid))/(n-npar))
+  # stdev   <- sqrt((crossprod(resid))/(n-npar))
+  stdev   <- sqrt(crossprod(resid)/n)  # consistent with MLE estimation in other functions
   sigma   <- stdev^2
   theta   <- as.matrix(c(mu,phi,betaZ,sigma))
   #theta   <- as.matrix(c(mu,sigma,phi)) # old format (before adding exog regressors)
@@ -651,7 +653,8 @@ ARXmdl <- function(Y, p, Z, control = list()){
   # ----- Obtain variables of interest
   fitted  <- zz%*%beta
   resid   <- y - fitted
-  stdev   <- sqrt((crossprod(resid))/(n-npar))
+  # stdev   <- sqrt((crossprod(resid))/(n-npar))
+  stdev   <- sqrt(crossprod(resid)/n)  # consistent with MLE estimation in other functions
   sigma   <- stdev^2
   theta   <- as.matrix(c(mu,phi,betaZ,sigma))
   #theta   <- as.matrix(c(mu,sigma,phi)) # old format (before adding exog regressors)
@@ -783,7 +786,8 @@ VARmdl <- function(Y, p, control = list()){
   # ----- Obtain variables of interest
   fitted  <- zz%*%beta
   resid   <- y - fitted
-  sigma   <- (crossprod(resid))/(n-npar)
+  # sigma   <- (crossprod(resid))/(n-npar)
+  sigma   <- crossprod(resid)/n # consistent with MLE estimation in other functions
   stdev   <- sqrt(diag(sigma))
   theta <- c(mu,c(t(phi)),covar_vech(sigma))
   # theta indicators
@@ -924,7 +928,8 @@ VARXmdl <- function(Y, p, Z, control = list()){
   # ----- Obtain variables of interest
   fitted  <- zz%*%beta
   resid   <- y - fitted
-  sigma   <- (crossprod(resid))/(n-npar)
+  # sigma   <- (crossprod(resid))/(n-npar)
+  sigma   <- crossprod(resid)/n # consistent with MLE estimation in other functions
   stdev   <- sqrt(diag(sigma))
   theta <- c(mu,c(t(phi)), c(betaZ),covar_vech(sigma))  
   # theta indicators
