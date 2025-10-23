@@ -19,9 +19,11 @@ control <- list(msmu   = TRUE,
                 method = "EM",
                 use_diff_init = 1)
 
+
 # Estimate model
 y_hmm_mdl <- HMmdl(y_hmm_simu$y, k = 2, control = control)
 summary(y_hmm_mdl)
+
 
 
 # ----- Multivariate normal process ----- #
@@ -52,3 +54,4 @@ control <- list(msmu   = TRUE,
   y_hmm_mdl <- HMmdl(y_hmm_simu$y, k = 2, control = control)
   summary(y_hmm_mdl)
 }
+

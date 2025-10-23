@@ -33,8 +33,8 @@ The MSTest package includes 3 datasets that can be used as examples. The three d
 They can be loaded using the following code. 
 ```{r}
 GNPdata <- USGNP # this can be hamilton82GNP, chp10GNP or USGNP
-Y       <- as.matrix(GNPdata$GNP_logdiff)
-date    <- as.Date(GNPdata$DATE)
+Y       <- as.matrix(GNPdata$GNP_gr)
+date    <- as.Date(GNPdata$Date)
 plot(date,Y,xlab='Time',ylab='GNP - log difference',type = 'l')
 ```
 
@@ -50,7 +50,7 @@ This first example uses the US GNP growth data from 1951Q2-1984Q4 considered in 
 
 ```r
 set.seed(123) # for initial values
-y_gnp_gw_84 <- as.matrix(hamilton84GNP$GNP_logdiff)
+y_gnp_gw_84 <- as.matrix(hamilton84GNP$GNP_gr)
 
 
 # Set options for model estimation
@@ -167,7 +167,7 @@ lmc_control = list(N = 99,
                                          use_diff_init = 1))
 
 
-lmc_lrt <- LMCLRTest(y_ms_simu$y, p = 1 , k0 = 1 , k1 = 2, lmc_control)
+lmc_lrt <- LMCLRTest(y_ms_simu$y, p = 1 , k0 = 1 , k1 = 2, control = lmc_control)
 summary(lmc_lrt)
 ```
 
@@ -209,8 +209,8 @@ The package also makes available the Maximized Monte Carlo versions of both thes
 
 **Rodriguez-Rondon, Gabriel and Jean-Marie Dufour (2022).** Simulation-Based Inference for Markov Switching Models, _JSM Proceedings, Business and Economic Statistics Section: American Statistical Association_.
 
-**Rodriguez-Rondon, Gabriel and Jean-Marie Dufour (2024a).** Monte Carlo Likelihood Ratio Tests for Markov Switching Models, _Manuscript, McGill University Economics Department_.
+**Rodriguez-Rondon, Gabriel and Jean-Marie Dufour (2025).** Monte Carlo Likelihood Ratio Tests for Markov Switching Models, _Manuscript, McGill University Economics Department_.
 
-**Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. (2024b).** MSTest: An R-package for Testing Markov-Switching Models, _Manuscript, McGill University Economics Department_.
+**Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. (2024).** MSTest: An R-package for Testing Markov-Switching Models, _Manuscript, McGill University Economics Department_.
 
 **Qu, Zhongjun, and Fan Zhuo. (2021).** Likelihood Ratio-Based Tests for Markov Regime Switching, _The Review of Economic Studies_ 88 (2): 937–968. [https://doi.org/10.1093/restud/rdaa035](https://doi.org/10.1093/restud/rdaa035)

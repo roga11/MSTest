@@ -265,13 +265,9 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
       }
       ineq_constraint = c(eigen_vals-mle_variance_constraint, ineq_constraint)
     }
-    return(ineq_constraint)
+    return(-ineq_constraint)
   }
-  loglike_wrapper <- function(theta) {
-    k <- get("k", envir = HMmdl_mle_env)
-    mdl_in <- get("mdl_in", envir = HMmdl_mle_env)
-    logLike_HMmdl_min(theta, mdl_in, k) 
-  }
+  loglike_wrapper <- function(theta) logLike_HMmdl_min(theta, mdl_in, k)
   # use nloptr optimization to minimize (maximize) likelihood
   res <- nloptr::slsqp(x0 = theta_0,
                        fn = loglike_wrapper,
@@ -281,7 +277,8 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
                        hin = loglik_const_ineq_HMmdl,
                        heq = loglik_const_eq_HMmdl,
                        nl.info = FALSE,
-                       control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol)) 
+                       control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
+                       deprecatedBehavior = FALSE) 
   output <- ExpectationM_HMmdl(res$par, mdl_in, k)
   output$iterations <- res$iter
   output$St <- output$xi_t_T
@@ -354,34 +351,32 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
       vars <- theta[c(rep(0, 1+(k-1)*msmu+p+length(betaZ)), rep(1, 1 + (k-1)*msvar), rep(0, k*k))==1] - c(mle_variance_constraint*var_k1)
       ineq_constraint <- c(vars, ineq_constraint)
     }
-    return(ineq_constraint)
+    return(-ineq_constraint)
+  }
+  
+  loglike_wrapper <- function(theta) {
+    k <- get("k", envir = MSARmdl_mle_env)
+    mdl_in <- get("mdl_in", envir = MSARmdl_mle_env)
+    if (length(mdl_in$betaZ)>0){
+      logLike_MSARXmdl_min(theta, mdl_in, k) 
+    }else{
+      logLike_MSARmdl_min(theta, mdl_in, k) 
+    }
   }
   # use nloptr optimization to minimize (maximize) likelihood
+  res <- nloptr::slsqp(x0 = theta_0,
+                       fn = loglike_wrapper,
+                       gr = NULL,
+                       lower = optim_options$mle_theta_low,
+                       upper = optim_options$mle_theta_upp,
+                       hin = loglik_const_ineq_MSARmdl,
+                       heq = loglik_const_eq_MSARmdl,
+                       nl.info = FALSE,
+                       control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
+                       deprecatedBehavior = FALSE) 
   if (length(mdl_in$betaZ)>0){
-    res <- nloptr::slsqp(x0 = theta_0,
-                         fn = logLike_MSARXmdl_min,
-                         gr = NULL,
-                         lower = optim_options$mle_theta_low,
-                         upper = optim_options$mle_theta_upp,
-                         hin = loglik_const_ineq_MSARmdl,
-                         heq = loglik_const_eq_MSARmdl,
-                         nl.info = FALSE,
-                         control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
-                         mdl = mdl_in,
-                         k = k) 
     output <- ExpectationM_MSARXmdl(res$par, mdl_in, k)
   }else{
-    res <- nloptr::slsqp(x0 = theta_0,
-                         fn = logLike_MSARmdl_min,
-                         gr = NULL,
-                         lower = optim_options$mle_theta_low,
-                         upper = optim_options$mle_theta_upp,
-                         hin = loglik_const_ineq_MSARmdl,
-                         heq = loglik_const_eq_MSARmdl,
-                         nl.info = FALSE,
-                         control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
-                         mdl = mdl_in,
-                         k = k) 
     output <- ExpectationM_MSARmdl(res$par, mdl_in, k)
   }
   output$iterations <- res$iter
@@ -469,7 +464,7 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
       }
       ineq_constraint = c(eigen_vals-mle_variance_constraint, ineq_constraint)
     }
-    return(ineq_constraint)
+    return(-ineq_constraint)
   }
   # Wrapper for log-likelihood with additional arguments
   loglike_wrapper <- function(theta) {
