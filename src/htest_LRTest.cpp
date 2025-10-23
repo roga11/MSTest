@@ -98,8 +98,12 @@ List mdledit(List mdl_h0, arma::vec theta_h0, int p, int q, int k0, bool exog){
   arma::vec theta_mu_h0 = theta_h0.elem(find(theta_mu_ind_h0));
   arma::vec theta_sig_ind_h0 = mdl_h0["theta_sig_ind"];
   arma::vec theta_sig_h0 = theta_h0.elem(find(theta_sig_ind_h0));
-  bool msmu  = Rcpp::as<bool>(mdl_h0["msmu"]);
-  bool msvar = Rcpp::as<bool>(mdl_h0["msvar"]);
+  bool msmu  = FALSE;
+  bool msvar = FALSE;
+  if (k0>1){
+    msmu  = Rcpp::as<bool>(mdl_h0["msmu"]);
+    msvar = Rcpp::as<bool>(mdl_h0["msvar"]);
+  }
   if (exog==TRUE){
     arma::mat Z = mdl_h0["Z"];
     int qz = Z.n_cols;

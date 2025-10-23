@@ -22,7 +22,7 @@ mmc_control = list(N = 19,
                    silence = FALSE,
                    threshold_stop = 0.05 + 1e-6,
                    type = "pso",
-                   maxit = 100,
+                   maxit = 50,
                    mdl_h0_control = list(const  = TRUE, 
                                          getSE  = TRUE),
                    mdl_h1_control = list(msmu   = TRUE, 
@@ -31,7 +31,7 @@ mmc_control = list(N = 19,
                                          method = "EM",
                                          use_diff_init = 1))
 \donttest{
-  MMCtest <- MMCLRTest(y_ms_simu$y, p = 1 , k0 = 1 , k1 = 2, control = mmc_control)
+  MMCtest <- MMCLRTest(y_ms_simu$y, p = 1 , k0 = 1, k1 = 2, control = mmc_control)
   summary(MMCtest)
 }
 
