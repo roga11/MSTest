@@ -165,8 +165,7 @@ summary(mdl_est_msvar)
 # plot simulated process, true regime states and model estimated smoothed probabilities
 # pdf(file = "MSestim_smoothedprobs.pdf")
 par(mfrow=c(3,1))
-plot(simu_hmm$y[,1], type = "l", ylab = "", main = "Hidden Markov process",cex.main=1)
-par(new = TRUE)
+matplot(simu_hmm$y, type = "l", ylab = "", main = "Hidden Markov process",cex.main=1, col = c("black", "blue"))
 lines(simu_hmm$y[,2], type = "l", ylab = "", col = "blue")
 par(new = TRUE)
 plot(mdl_est_hmm$St[,2], type = "l", ylab = "", col = "green3", lty="dashed", axes = FALSE)
@@ -181,9 +180,7 @@ par(new = TRUE)
 plot(simu_msar$St, type = "l", ylab = "", col = "red", lty="dashed", axes = FALSE)
 axis(side = 4, at = pretty(range(0,1)))
 
-plot(simu_msvar$y[,1], type = "l", ylab = "", main = "Markov switching vector autoregressive process",cex.main=1)
-par(new = TRUE)
-lines(simu_msvar$y[,2], type = "l", ylab = "", col = "blue")
+matplot(simu_msvar$y, type = "l", ylab = "", main = "Markov switching vector autoregressive process",cex.main=1, col = c("black", "blue"))
 par(new = TRUE)
 plot(mdl_est_msvar$St[,1], type = "l", ylab = "", col = "green3", lty="dashed", axes = FALSE)
 par(new = TRUE)
@@ -227,13 +224,9 @@ mmc_control = list(N = 19,
                                          getSE  = FALSE,
                                          method = "EM"),
                    maxit  = 100)
-# start cluster 
-# doParallel::registerDoParallel(mmc_control[["workers"]])
 # Perform Rodriguez-Rondon & Dufour (2025) MMC-LRT
 mmclrt <- MMCLRTest(simu_norm[["y"]], p = 0, k0 = 1 , k1 = 2, control = mmc_control)
 summary(mmclrt)
-# stop cluster
-# doParallel::stopImplicitCluster()
 
 
 ### ----- Test Markov switching autoregressive process using Dufour & Luger (2017) LMC test ----- 
@@ -244,6 +237,9 @@ lmc_control = list(N = 99,
                    getSE = TRUE)
 # Perform Dufour & Luger (2017) LMC test 
 lmcmoment <- DLMCTest(simu_msar[["y"]], p = 1, control = lmc_control)
+colnames(lmcmoment$S0) <- c("M(eps)","V(eps)","S(eps)","K(eps)")
+colnames(lmcmoment$F0_min) <- "F(eps)"
+colnames(lmcmoment$F0_prod) <- "F(eps)"
 summary(lmcmoment)
 
 
@@ -259,6 +255,10 @@ mmc_control <- list(N = 99,
                     maxit = 100)
 # Perform Dufour & Luger (2017) MMC test 
 mmcmoment <- DLMMCTest(simu_msar[["y"]], p = 1, control = mmc_control)
+colnames(mmcmoment$S0_min) <- c("M(eps)","V(eps)","S(eps)","K(eps)")
+colnames(mmcmoment$S0_prod) <- c("M(eps)","V(eps)","S(eps)","K(eps)")
+colnames(mmcmoment$F0_min) <- "F(eps)"
+colnames(mmcmoment$F0_prod) <- "F(eps)"
 summary(mmcmoment)
 
 

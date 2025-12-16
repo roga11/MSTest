@@ -2073,12 +2073,12 @@ plot.VARmdl <- function(x, ...){
 #' 
 #' @inheritParams base::plot
 #'
-#' @return The \code{Hmmdl} object is returned invisibly.
+#' @return The \code{HMmdl} object is returned invisibly.
 #' 
 #' @keywords internal
 #' 
 #' @export
-plot.Hmmdl <- function(x, ...){
+plot.HMmdl <- function(x, ...){
   oldpar <- graphics::par(no.readonly = TRUE)
   on.exit(graphics::par(oldpar)) 
   graphics::par(mfrow=c(3,1))
