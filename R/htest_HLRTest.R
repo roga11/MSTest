@@ -204,11 +204,23 @@ HLRparamSearch <- function(gx, gp, gq, b, null, HLR_opt_ls){
         #optlst <- stats::optim(bs, mclike, dmclike, HLR_opt_ls = HLR_opt_ls_tmp, method = 'BFGS')
         if (HLR_opt_ls$optim_method == "gp-optim"){
           optlst <- NULL
-          try(
-            optlst <- stats::optim(bs, mclike, dmclike, HLR_opt_ls = HLR_opt_ls_tmp, method = 'L-BFGS-B', lower = lowb, upper = uppb)   
+          # try(
+          #   optlst <- stats::optim(bs, mclike, dmclike, HLR_opt_ls = HLR_opt_ls_tmp, method = 'L-BFGS-B', lower = lowb, upper = uppb)   
+          # )
+          
+          optlst <- tryCatch(
+            stats::optim(
+              bs, mclike, dmclike,
+              HLR_opt_ls = HLR_opt_ls_tmp,
+              method = "L-BFGS-B",
+              lower = lowb,
+              upper = uppb
+            ),
+            error = function(e) NULL
           )
+          
           if (is.null(optlst)){
-            message("Trying with 'nloptr::slsqp' instead.")
+            message("'stats::optim' with 'L-BFGS-B' failed; trying with 'nloptr::slsqp' instead.")
             optlst  <- nloptr::slsqp(bs, fn = mclike, gr = dmclike, lower = lowb, upper = uppb, HLR_opt_ls = HLR_opt_ls_tmp)  
           }
         }else if(HLR_opt_ls$optim_method == "nl-optim"){
