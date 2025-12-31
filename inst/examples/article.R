@@ -11,10 +11,6 @@ start <- proc.time()
 
 ## Package and options
 library("MSTest")
-library("foreach")
-library("doParallel")
-options(prompt = "R> ", continue = "+  ", width = 70,
-        useFancyQuotes = FALSE)
 
 seed <- 12345
 
@@ -248,7 +244,7 @@ set.seed(seed)
 # Set options for testing procedure
 mmc_control <- list(N = 99,
                     getSE = TRUE,
-                    eps = 1e-9, 
+                    eps = 0, 
                     CI_union = TRUE,
                     optim_type = "GenSA",
                     threshold_stop = 0.05 + 1e-6, 
