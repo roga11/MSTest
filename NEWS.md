@@ -3,6 +3,11 @@ output:
   pdf_document: default
   html_document: default
 ---
+# MSTest 0.1.7
+* Made change in trycatch error message for HLRTest() to better describe optimization issues. 
+* Made minor changes to article.R example file
+
+
 # MSTest 0.1.6
 * Updated MLE estimation following deprecation of hin>=0 (inequality constraint direction) in slsqr
 * Changed OLS unbiased estimates of models with k=1 to be consistent with MLE estimates. Package is for testing more than estimation so comparison with MLE-based tetsing is prioritized. 
