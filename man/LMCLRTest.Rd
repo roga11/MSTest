@@ -67,17 +67,16 @@ lmc_control = list(N = 19,
                    burnin = 100,
                    converge_check = NULL,
                    mdl_h0_control = list(const  = TRUE, 
-                                         getSE  = TRUE),
+                                         getSE  = FALSE),
                    mdl_h1_control = list(msmu   = TRUE, 
                                          msvar  = TRUE,
-                                         getSE  = TRUE,
+                                         getSE  = FALSE,
                                          method = "EM",
                                          use_diff_init = 1))
 
-\donttest{
-  lmctest <- LMCLRTest(y_ms_simu$y, p = 1, k0 = 1 , k1 = 2, control = lmc_control)
-  summary(lmctest)
-}
+
+# lmctest <- LMCLRTest(y_ms_simu$y, p = 1, k0 = 1 , k1 = 2, control = lmc_control)
+# summary(lmctest)
 }
 \references{
 Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.

@@ -1,7 +1,7 @@
 # --------------------------- Use simulated process ----------------------------
 set.seed(1234)
 # Define DGP of MS AR process
-mdl_ms2 <- list(n     = 200, 
+mdl_ms2 <- list(n     = 500, 
                 mu    = c(5,10),
                 sigma = c(1,4),
                 phi   = c(0.5),

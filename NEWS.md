@@ -3,9 +3,12 @@ output:
   pdf_document: default
   html_document: default
 ---
+# MSTest 0.1.8
+* made changes to some function examples.
+
 # MSTest 0.1.7
 * Made change in trycatch error message for HLRTest() to better describe optimization issues. 
-* Made minor changes to article.R example file
+* Made minor changes to article.R example file.
 
 
 # MSTest 0.1.6

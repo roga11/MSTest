@@ -90,10 +90,10 @@ mmc_control = list(N = 19,
                                          getSE  = TRUE,
                                          method = "EM",
                                          use_diff_init = 1))
-\donttest{
-  MMCtest <- MMCLRTest(y_ms_simu$y, p = 1 , k0 = 1, k1 = 2, control = mmc_control)
-  summary(MMCtest)
-}
+  
+# MMCtest <- MMCLRTest(y_ms_simu$y, p = 1 , k0 = 1, k1 = 2, control = mmc_control)
+# summary(MMCtest)
+
 
 
 
