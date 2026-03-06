@@ -1,7 +1,0 @@
-{
-    "installOptions": {
-        "installFromRepository": true,
-        "libraryPath": "/Users/grodriguezrondon/Library/R/x86_64/4.2/library",
-        "installDependencies": true
-    }
-}
