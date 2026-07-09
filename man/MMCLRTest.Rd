@@ -22,7 +22,8 @@ MMCLRTest(Y, p, k0, k1, Z = NULL, control = list())
   \item N: Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.
   \item burnin: Number of simulated observations to remove from beginning. Default is \code{100}.
   \item converge_check: String of NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.
-  \item workers: Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open. Default is \code{0}.
+  \item workers: Integer determining the number of workers to use for parallel computing. Default is \code{0} (sequential). If \code{workers > N}, the effective count is capped at \code{N} and an informational message is printed (unless \code{silence = TRUE}).
+  \item mc_seed: Integer seed for reproducible Monte Carlo simulations and fixed-error MMC (Dufour 2006, Prop. 4.2). When set, seeds the RNG before observed-data estimation, pre-draws innovations once and holds them fixed across all optimizer evaluations, ensuring full reproducibility (including the observed LRT statistic) and theoretical size control. Default is \code{NULL} (non-reproducible).
   \item type: String that determines the type of optimization algorithm used. Arguments allowed are: \code{"pso"}, \code{"GenSA"}, and \code{"GA"}. Default is \code{"pso"}.
   \item eps: Double determining the constant value that defines a consistent set for search. Default is \code{0.1}.
   \item CI_union: Boolean determining if union of set determined by \code{eps} and confidence set should be used to define consistent set for search. Default is \code{TRUE}.
@@ -55,7 +56,7 @@ List of class \code{LMCLRTest} (\code{S3} object) with attributes including:
 }
 \description{
 This function performs the Maximized Monte Carlo likelihood ratio 
-test (MMC-LRT) proposed in Rodriguez-Rondon & Dufour (2024).
+test (MMC-LRT) proposed in Rodriguez-Rondon & Dufour (2026a).
 }
 \examples{
 
@@ -99,7 +100,5 @@ mmc_control = list(N = 19,
 
 }
 \references{
-Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-
-Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2025. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+Rodriguez-Rondon, G., & Dufour, J.-M. 2026a. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-23. doi: 10.34989/swp-2026-23.
 }

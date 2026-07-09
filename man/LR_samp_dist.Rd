@@ -4,7 +4,17 @@
 \alias{LR_samp_dist}
 \title{Likelihood Ratio Test Statistic Sample Distribution}
 \usage{
-LR_samp_dist(mdl_h0, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control)
+LR_samp_dist(
+  mdl_h0,
+  k1,
+  N,
+  burnin,
+  Z,
+  mdl_h0_control,
+  mdl_h1_control,
+  predrawn_eps = NULL,
+  predrawn_state_rand = NULL
+)
 }
 \arguments{
 \item{mdl_h0}{List with restricted model properties.}
@@ -18,16 +28,25 @@ LR_samp_dist(mdl_h0, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control)
 \item{mdl_h0_control}{List with controls/options used to estimate restricted model.}
 
 \item{mdl_h1_control}{List with controls/options used to estimate unrestricted model.}
+
+\item{predrawn_eps}{Optional list of pre-drawn standard normal matrices for fixed-error simulation.
+Each element is a \code{(T+burnin) x q} matrix. Default is \code{NULL} (generate fresh draws).}
+
+\item{predrawn_state_rand}{Optional \code{(T+burnin) x N_buffer} matrix of pre-drawn U[0,1] values
+for state transitions (only used when null model has k > 1). Default is \code{NULL}.}
 }
 \value{
 vector of simulated LRT statistics
 }
 \description{
 This function simulates the sample distribution under the null hypothesis.
+When pre-drawn innovations are provided (for fixed-error MMC per Dufour 2006, Prop. 4.2),
+uses a buffer loop where each innovation is tried once; failed draws skip to the next slot.
+Falls back to fresh random draws if the buffer is exhausted.
 }
 \references{
-Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
+Rodriguez-Rondon, G., & Dufour, J.-M. 2026a. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-23. doi: 10.34989/swp-2026-23.
 
-Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+Dufour, Jean-Marie. 2006. "Monte Carlo Tests with Nuisance Parameters: A General Approach to Finite-Sample Inference and Nonstandard Asymptotics." \emph{Journal of Econometrics} 133(2): 443-477.
 }
 \keyword{internal}

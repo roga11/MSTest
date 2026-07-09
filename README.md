@@ -1,11 +1,11 @@
 # MSTest
 [![CRAN](https://www.r-pkg.org/badges/version/MSTest)](https://cran.r-project.org/package=MSTest)[![Downloads](https://cranlogs.r-pkg.org/badges/MSTest)](https://cran.r-project.org/package=MSTest) [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/MSTest)](https://cran.r-project.org/package=MSTest)
 
-This package implements hypothesis testing procedures that can be used to identify the number of regimes in a Markov switching model. It includes the Monte Carlo moment-based test of Dufour & Luger (2017), the parametric bootstrap test described in Qu & Zhuo (2021) and Kasahara & Shimotsu (2018), the Monte Carlo Likelihood ratio tests of Rodriguez-Rondon & Dufour (2025), the optimal test for regime switching of Carrasco, Hu, & Ploberger (2014), and the likelihood ratio test described in Hansen (1992).
+This package implements hypothesis testing procedures that can be used to identify the number of regimes in a Markov switching model. It includes the Monte Carlo moment-based test of Dufour & Luger (2017), the parametric bootstrap test described in Qu & Zhuo (2021) and Kasahara & Shimotsu (2018), the Monte Carlo Likelihood ratio tests of Rodriguez-Rondon & Dufour (2026a), the optimal test for regime switching of Carrasco, Hu, & Ploberger (2014), and the likelihood ratio test described in Hansen (1992).
 
 In addition to testing procedures, the package also includes datasets and functions that can be used to simulate: autoregressive, vector autoregressive, Markov switching autoregressive, and Markov switching vector autoregressive processes among others. Model estimation procedures are also available.
 
-For a more detailed description of this package see Rodriguez-Rondon & Dufour (2024).
+For a more detailed description of this package see Rodriguez-Rondon & Dufour (2026b).
 
 ## Installation
 
@@ -138,7 +138,7 @@ plot(y_msvar_mdl)
 
 The main contribution of this r package is the hypothesis testing procedures it makes available. 
 
-Here we use The LMC-LRT procedure proposed in Rodriguez Rondon & Dufour (2022a; 2022b).
+Here we use The LMC-LRT procedure proposed in Rodriguez-Rondon & Dufour (2026a).
 ```r
 set.seed(123)
 
@@ -207,10 +207,9 @@ The package also makes available the Maximized Monte Carlo versions of both thes
 
 **Hansen, Bruce E. (1992).** The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP, _Journal of applied Econometrics_ 7 (S1): S61–S82. [https://doi.org/10.1002/jae.3950070506](https://doi.org/10.1002/jae.3950070506)
 
-**Rodriguez-Rondon, Gabriel and Jean-Marie Dufour (2022).** Simulation-Based Inference for Markov Switching Models, _JSM Proceedings, Business and Economic Statistics Section: American Statistical Association_.
 
-**Rodriguez-Rondon, Gabriel and Jean-Marie Dufour (2025).** Monte Carlo Likelihood Ratio Tests for Markov Switching Models, _Manuscript, McGill University Economics Department_.
+**Rodriguez-Rondon, G., & Dufour, J.-M. (2026a).** Monte Carlo Likelihood-Ratio Tests for Markov Switching Models, _Bank of Canada Staff Working Paper_, No. 2026-23. doi: 10.34989/swp-2026-23.
 
-**Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. (2024).** MSTest: An R-package for Testing Markov-Switching Models, _Manuscript, McGill University Economics Department_.
+**Rodriguez-Rondon, G., & Dufour, J.-M. (2026b).** MSTest: An R-Package for Testing Markov Switching Models, _Bank of Canada Staff Working Paper_, No. 2026-7. doi: 10.34989/swp-2026-7.
 
 **Qu, Zhongjun, and Fan Zhuo. (2021).** Likelihood Ratio-Based Tests for Markov Regime Switching, _The Review of Economic Studies_ 88 (2): 937–968. [https://doi.org/10.1093/restud/rdaa035](https://doi.org/10.1093/restud/rdaa035)

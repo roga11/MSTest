@@ -14,5 +14,11 @@ List provided as input with additional attributes \code{HESS},\code{theta_se}, \
 }
 \description{
 This function computes the standard errors of the parameters in vector theta. This is done using an approximation of the Hessian matrix (using \code{\link[numDeriv]{hessian}} and \code{nearPD} if \code{info_mat} is not PD).
+
+For Markov switching models (k > 1), a reduced parameterization is used for the
+transition matrix P to avoid rank deficiency. The k x k transition matrix has k
+column-sum constraints, so only k(k-1) entries are free. The Hessian is computed
+w.r.t. these free entries, and SEs for the constrained entries are obtained via the
+delta method. See Krolzig (1997, Sections 6.3.2 and 6.6).
 }
 \keyword{internal}

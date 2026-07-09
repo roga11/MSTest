@@ -151,78 +151,91 @@ compu_tstat <- function(theta_h0, mdl_h0, LT_h1, p, q, k0, exog) {
 }
 
 #' @title Likelihood Ratio Test Statistic Sample Distribution
-#' 
+#'
 #' @description This function simulates the sample distribution under the null hypothesis.
-#' 
+#' When pre-drawn innovations are provided (for fixed-error MMC per Dufour 2006, Prop. 4.2),
+#' uses a buffer loop where each innovation is tried once; failed draws skip to the next slot.
+#' Falls back to fresh random draws if the buffer is exhausted.
+#'
 #' @param mdl_h0 List with restricted model properties.
 #' @param k1 integer specifying the number of regimes under the alternative hypothesis.
 #' @param N integer specifying the number of replications.
 #' @param burnin integer specifying the number of observations to drop from beginning of simulation.
 #' @param mdl_h0_control List with controls/options used to estimate restricted model.
 #' @param mdl_h1_control List with controls/options used to estimate unrestricted model.
-#' 
+#' @param predrawn_eps Optional list of pre-drawn standard normal matrices for fixed-error simulation.
+#'   Each element is a \code{(T+burnin) x q} matrix. Default is \code{NULL} (generate fresh draws).
+#' @param predrawn_state_rand Optional \code{(T+burnin) x N_buffer} matrix of pre-drawn U[0,1] values
+#'   for state transitions (only used when null model has k > 1). Default is \code{NULL}.
+#'
 #' @return vector of simulated LRT statistics
-#' 
+#'
 #' @keywords internal
-#' 
-#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-#' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
-#' 
+#'
+#' @references Rodriguez-Rondon, G., & Dufour, J.-M. 2026a. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-23. doi: 10.34989/swp-2026-23.
+#' @references Dufour, Jean-Marie. 2006. "Monte Carlo Tests with Nuisance Parameters: A General Approach to Finite-Sample Inference and Nonstandard Asymptotics." \emph{Journal of Econometrics} 133(2): 443-477.
+#'
 #' @export
-LR_samp_dist <- function(mdl_h0, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control) {
-    .Call(`_MSTest_LR_samp_dist`, mdl_h0, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control)
+LR_samp_dist <- function(mdl_h0, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control, predrawn_eps = NULL, predrawn_state_rand = NULL) {
+    .Call(`_MSTest_LR_samp_dist`, mdl_h0, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control, predrawn_eps, predrawn_state_rand)
 }
 
-#' @title Monte Carlo Likelihood Ratio Test P-value Function 
-#' 
+#' @title Monte Carlo Likelihood Ratio Test P-value Function
+#'
 #' @description This function computes the Maximum Monte Carlo P-value.
-#' 
+#' When pre-drawn innovations are provided, the same fixed draws are used
+#' for every theta evaluation (Dufour 2006, Proposition 4.2).
+#'
 #' @param theta_h0 vector of parameter values under the null being considered.
 #' @param mdl_h0 List with restricted model properties.
 #' @param k1 integer determining the number of regimes under the alternative.
-#' @param LT_h1 double specifying maximum log likelihood under alternative.
+#' @param LRT_0 double specifying the fixed observed likelihood ratio test statistic.
 #' @param N integer specifying the number of replications.
 #' @param burnin integer specifying the number of observations to drop from beginning of simulation.
-#' @param workers Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open.
+#' @param workers Integer determining the number of workers to use for parallel computing.
 #' @param lambda Double determining penalty on nonlinear constraint.
 #' @param stationary_constraint Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}).
 #' @param thtol double determining the convergence criterion used during estimation.
 #' @param mdl_h0_control List with controls/options used to estimate restricted model.
 #' @param mdl_h1_control List with controls/options used to estimate unrestricted model.
-#' 
+#' @param predrawn_eps Optional list of pre-drawn standard normal matrices (fixed across theta evaluations).
+#' @param predrawn_state_rand Optional matrix of pre-drawn U[0,1] for state transitions.
+#'
 #' @return MMC p-value
-#' 
+#'
 #' @keywords internal
-#' 
+#'
 #' @export
-MMCLRpval_fun <- function(theta_h0, mdl_h0, k1, LT_h1, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control) {
-    .Call(`_MSTest_MMCLRpval_fun`, theta_h0, mdl_h0, k1, LT_h1, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control)
+MMCLRpval_fun <- function(theta_h0, mdl_h0, k1, LRT_0, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control, predrawn_eps = NULL, predrawn_state_rand = NULL) {
+    .Call(`_MSTest_MMCLRpval_fun`, theta_h0, mdl_h0, k1, LRT_0, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control, predrawn_eps, predrawn_state_rand)
 }
 
-#' @title Monte Carlo Likelihood Ratio Test P-value Function 
-#' 
+#' @title Monte Carlo Likelihood Ratio Test P-value Function
+#'
 #' @description This function computes the (negative) Maximum Monte Carlo P-value.
-#' 
+#'
 #' @param theta vector of parameter values being considered.
 #' @param mdl_h0 List with restricted model properties.
 #' @param k1 integer determining the number of regimes under the alternative.
-#' @param LT_h1 double specifying maximum log likelihood under alternative.
+#' @param LRT_0 double specifying the fixed observed likelihood ratio test statistic.
 #' @param N integer specifying the number of replications.
 #' @param burnin integer specifying the number of observations to drop from beginning of simulation.
-#' @param workers Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open.
+#' @param workers Integer determining the number of workers to use for parallel computing.
 #' @param lambda Double determining penalty on nonlinear constraint.
 #' @param stationary_constraint Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}).
 #' @param thtol double determining the convergence criterion used during estimation.
 #' @param mdl_h0_control List with controls/options used to estimate restricted model.
 #' @param mdl_h1_control List with controls/options used to estimate unrestricted model.
-#' 
+#' @param predrawn_eps Optional list of pre-drawn standard normal matrices (fixed across theta evaluations).
+#' @param predrawn_state_rand Optional matrix of pre-drawn U[0,1] for state transitions.
+#'
 #' @return negative MMC p-value
-#' 
+#'
 #' @keywords internal
-#' 
+#'
 #' @export
-MMCLRpval_fun_min <- function(theta, mdl_h0, k1, LT_h1, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control) {
-    .Call(`_MSTest_MMCLRpval_fun_min`, theta, mdl_h0, k1, LT_h1, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control)
+MMCLRpval_fun_min <- function(theta, mdl_h0, k1, LRT_0, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control, predrawn_eps = NULL, predrawn_state_rand = NULL) {
+    .Call(`_MSTest_MMCLRpval_fun_min`, theta, mdl_h0, k1, LRT_0, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control, predrawn_eps, predrawn_state_rand)
 }
 
 #' @title Moment-based test statistics 
@@ -269,7 +282,7 @@ sim_DLmoments <- function(Tsize, N) {
 #' @param stats A (\code{l x 4}) matrix where \code{l} is the number of moment-based test statistics.
 #' @param params A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
 #' @param type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
-#' is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
+#' is used as in Tippett 1931 and Wilkinson 1951. If set to "prod" the product of p-values is used as in Fisher 1932 and Pearson 1933.
 #' 
 #' @return A (\code{N x 1}) vector with test statistics. The last element is the test statistic from observed data.
 #' 
@@ -315,7 +328,7 @@ approx_dist_loop <- function(SN2) {
 #' @param x lagged values of series.
 #' @param params A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
 #' @param sim_stats A (\code{N x 1}) vector with test statistics. The last element is the test statistic from observed data.
-#' @param pval_type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
+#' @param pval_type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Tippett 1931 and Wilkinson 1951. If set to "prod" the product of p-values is used as in Fisher 1932 and Pearson 1933.
 #' @param stationary_ind Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.
 #' @param lambda Numeric value for penalty on stationary constraint not being met. Default is \code{100}.
 #' 
@@ -340,7 +353,7 @@ DLMMCpval_fun <- function(theta, y, x, params, sim_stats, pval_type, stationary_
 #' @param x lagged values of series.
 #' @param params A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
 #' @param sim_stats A (\code{N x 1}) vector with test statistics. The last element is the test statistic from observed data.
-#' @param pval_type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
+#' @param pval_type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Tippett 1931 and Wilkinson 1951. If set to "prod" the product of p-values is used as in Fisher 1932 and Pearson 1933.
 #' @param stationary_ind Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.
 #' @param lambda Numeric value for penalty on stationary constraint not being met. Default is \code{100}.
 #'
@@ -718,7 +731,7 @@ initVals_MSVARXmdl <- function(mdl, k) {
 #' 
 #' @param test_stat Test statistic under the alternative (e.g. \code{S_0}).
 #' @param null_vec A (\code{N x 1}) vector with test statistic under the null hypothesis.
-#' @param type String determining type of test. options are: "geq" for right-tail test, "leq" for left-tail test, "abs" for absolute value test and "two-tail" for two-tail test.
+#' @param type String determining the type of test. Options are \code{"geq"} (right/upper-tail test; the default), \code{"leq"} (left/lower-tail test), \code{"two-tailed"} (or \code{"two-tail"}; two-sided test), and \code{"absolute"} (or \code{"abs"}; the upper-tail rule, intended for non-negative statistics). An unrecognized value raises an error.
 #' 
 #' @return MC p-value of test
 #' 
@@ -1518,7 +1531,7 @@ EMiter_MSVARXmdl <- function(mdl, EMest_output, k) {
     .Call(`_MSTest_EMiter_MSVARXmdl`, mdl, EMest_output, k)
 }
 
-#' @title Estimation of Hidden Markov model by EM Algorithm 
+#' @title Estimation of Hidden Markov model by EM Algorithm
 #' 
 #' @description Estimate Hidden Markov model by EM algorithm. This function is used by \code{\link{HMmdl}} which organizes the output and takes raw data as input.
 #' 

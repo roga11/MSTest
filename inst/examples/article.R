@@ -109,13 +109,17 @@ simu_msvar <- simuMSVAR(mdl_msvar)
 
 
 # pdf(file = "simulations.pdf")
-par(mfrow=c(3,2))
-matplot(simu_norm$y, type = "l", ylab = "", main = "Multivariate normal process",cex.main=1)
-matplot(simu_hmm$y, type = "l", ylab = "", main = "Hidden Markov process",cex.main=1)
-plot(simu_ar$y, type = "l", ylab = "", main = "Autoregressive process",cex.main=1)
-plot(simu_msar$y, type = "l", ylab = "", main = "Markov switching autoregressive process",cex.main=1)
-matplot(simu_var$y, type = "l", ylab = "", main = "Vector autoregressive process",cex.main=1)
-matplot(simu_msvar$y, type = "l", ylab = "", main = "Markov switching vector autoregressive process",cex.main=1)
+# bottom row made taller so all panels share the same plot height (it holds the shared x-axis)
+d <- 2 * 0.66 * par("csi") / par("din")[2]; a <- (1 - d) / 3  # 0.66 = R's margin shrink for 3-row layouts (see ?par)
+layout(matrix(1:6, 3, 2, byrow = TRUE), heights = c(a, a, a + d))
+par(mar=c(0.5, 4, 1.8, 1))
+matplot(simu_norm$y, type = "l", xlab = "", ylab = "", main = "Multivariate normal process",cex.main=1, col = c("black", "blue"), xaxt = "n")
+matplot(simu_hmm$y, type = "l", xlab = "", ylab = "", main = "Hidden Markov process",cex.main=1, col = c("black", "blue"), xaxt = "n")
+plot(simu_ar$y, type = "l", xlab = "", ylab = "", main = "Autoregressive process",cex.main=1, xaxt = "n")
+plot(simu_msar$y, type = "l", xlab = "", ylab = "", main = "Markov switching autoregressive process",cex.main=1, xaxt = "n")
+par(mar=c(2.5, 4, 1.8, 1))
+matplot(simu_var$y, type = "l", xlab = "", ylab = "", main = "Vector autoregressive process",cex.main=1, col = c("black", "blue"))
+matplot(simu_msvar$y, type = "l", xlab = "", ylab = "", main = "Markov switching vector autoregressive process",cex.main=1, col = c("black", "blue"))
 # dev.off()
 
 
@@ -160,27 +164,30 @@ summary(mdl_est_msvar)
 
 # plot simulated process, true regime states and model estimated smoothed probabilities
 # pdf(file = "MSestim_smoothedprobs.pdf")
-par(mfrow=c(3,1))
-matplot(simu_hmm$y, type = "l", ylab = "", main = "Hidden Markov process",cex.main=1, col = c("black", "blue"))
-lines(simu_hmm$y[,2], type = "l", ylab = "", col = "blue")
+# bottom row made taller so all panels share the same plot height (it holds the shared x-axis)
+d <- 2 * 0.66 * par("csi") / par("din")[2]; a <- (1 - d) / 3  # 0.66 = R's margin shrink for 3-row layouts (see ?par)
+layout(matrix(1:3, 3, 1), heights = c(a, a, a + d))
+par(mar=c(0.5, 4, 1.8, 3))
+matplot(simu_hmm$y, type = "l", xlab = "", ylab = "", main = "Hidden Markov process",cex.main=1, col = c("black", "blue"), xaxt = "n")
 par(new = TRUE)
-plot(mdl_est_hmm$St[,2], type = "l", ylab = "", col = "green3", lty="dashed", axes = FALSE)
+plot(mdl_est_hmm$St[,2], type = "l", xlab = "", ylab = "", col = "green3", axes = FALSE)
 par(new = TRUE)
-plot(simu_hmm$St, type = "l", ylab = "", col = "red", lty="dashed", axes = FALSE)
+plot(simu_hmm$St, type = "l", xlab = "", ylab = "", col = "red", lty="dashed", axes = FALSE)
 axis(side = 4, at = pretty(range(0,1)))
 
-plot(simu_msar$y[,1], type = "l", ylab = "", main = "Markov switching autoregressive process",cex.main=1)
+plot(simu_msar$y[,1], type = "l", xlab = "", ylab = "", main = "Markov switching autoregressive process",cex.main=1, xaxt = "n")
 par(new = TRUE)
-plot(mdl_est_msar$St[,1], type = "l", ylab = "", col = "green3", lty="dashed", axes = FALSE)
+plot(mdl_est_msar$St[,2], type = "l", xlab = "", ylab = "", col = "green3", axes = FALSE)
 par(new = TRUE)
-plot(simu_msar$St, type = "l", ylab = "", col = "red", lty="dashed", axes = FALSE)
+plot(simu_msar$St, type = "l", xlab = "", ylab = "", col = "red", lty="dashed", axes = FALSE)
 axis(side = 4, at = pretty(range(0,1)))
 
-matplot(simu_msvar$y, type = "l", ylab = "", main = "Markov switching vector autoregressive process",cex.main=1, col = c("black", "blue"))
+par(mar=c(2.5, 4, 1.8, 3))
+matplot(simu_msvar$y, type = "l", xlab = "", ylab = "", main = "Markov switching vector autoregressive process",cex.main=1, col = c("black", "blue"))
 par(new = TRUE)
-plot(mdl_est_msvar$St[,1], type = "l", ylab = "", col = "green3", lty="dashed", axes = FALSE)
+plot(mdl_est_msvar$St[,2], type = "l", xlab = "", ylab = "", col = "green3", axes = FALSE)
 par(new = TRUE)
-plot(simu_msvar$St, type = "l", ylab = "", col = "red", lty="dashed", axes = FALSE)
+plot(simu_msvar$St, type = "l", xlab = "", ylab = "", col = "red", lty="dashed", axes = FALSE)
 axis(side = 4, at = pretty(range(0,1)))
 # dev.off()
 
@@ -188,7 +195,7 @@ axis(side = 4, at = pretty(range(0,1)))
 # =========================================================== #
 ## ----- Hypothesis Testing ----- 
 # =========================================================== #
-### ----- Test Markov switching autoregressive process using Rodriguez-Rondon & Dufour (2025) LMC-LRT ----- 
+### ----- Test Markov switching autoregressive process using Rodriguez-Rondon & Dufour (2026a) LMC-LRT ----- 
 set.seed(seed)
 # Set options for testing procedure
 lmc_control = list(N = 19,
@@ -199,13 +206,13 @@ lmc_control = list(N = 19,
                                          getSE  = FALSE,
                                          method = "EM",
                                          use_diff_init = 1))
-# Perform Rodriguez-Rondon & Dufour (2025) LMC-LRT
+# Perform Rodriguez-Rondon & Dufour (2026a) LMC-LRT
 lmclrt <- LMCLRTest(simu_msvar[["y"]], p = 1, k0 = 1 , k1 = 2, control = lmc_control)
 summary(lmclrt)
 
 
 
-### ----- Test autoregressive process using Rodriguez-Rondon & Dufour (2025) MMC-LRT ----- 
+### ----- Test autoregressive process using Rodriguez-Rondon & Dufour (2026a) MMC-LRT ----- 
 set.seed(seed)
 # Set options for testing procedure
 mmc_control = list(N = 19,
@@ -220,7 +227,7 @@ mmc_control = list(N = 19,
                                          getSE  = FALSE,
                                          method = "EM"),
                    maxit  = 100)
-# Perform Rodriguez-Rondon & Dufour (2025) MMC-LRT
+# Perform Rodriguez-Rondon & Dufour (2026a) MMC-LRT
 mmclrt <- MMCLRTest(simu_norm[["y"]], p = 0, k0 = 1 , k1 = 2, control = mmc_control)
 summary(mmclrt)
 

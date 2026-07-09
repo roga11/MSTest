@@ -59,7 +59,7 @@ arma::vec calc_mu2t_mv(List mdl, double rho, List ltmt, arma::vec hv){
     m.submat(lst,lst,lst,lst) = mtsig2(xi);
     
     arma::mat lx = arma::trans(ltmx.row(xi)) * ltmx.row(xi);
-    mu2t(xi) = arma::as_scalar(mu2t(xi) + arma::trans(hv) * (m + lx) * hv) / 2;
+    mu2t(xi) = arma::as_scalar(mu2t(xi) + arma::trans(hv) * (m + lx) * hv) / 2.0;
     
     if (xi > 2){
       xs.row(xi) = rho * (xs.row(xi- 1) + ltmx.row(xi- 1));
@@ -101,7 +101,7 @@ arma::vec calc_mu2t(List mdl, double rho, List ltmt){
     xs(xi) = rho * (xs(xi- 1) + ltmu(xi- 1));
     mu2t(xi) = ltmu(xi) * xs(xi);
   }
-  mu2t = (mtmu+pow(ltmu,2))/2+mu2t;
+  mu2t = (mtmu+pow(ltmu,2.0))/2.0+mu2t;
   return(mu2t);
 }
 
@@ -143,21 +143,22 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,bool msvar){
       double gamma_e = sum(mu2t)/sqrt(tt);
       // error from mu2t - projection of mu2t on lt1
       arma::mat tmp = arma::trans(ltmx) * ltmx;
-      arma::vec epsilont = mu2t - (ltmx * arma::inv(tmp) * arma::trans(ltmx) * mu2t);
+      arma::vec sol = arma::solve(tmp, arma::trans(ltmx) * mu2t, arma::solve_opts::allow_ugly);
+      arma::vec epsilont = mu2t - ltmx * sol;
       double esqe = mean(arma::square(epsilont));
       double tspe = gamma_e/sqrt(esqe);
       double tol = 0.00001; 
       if (esqe<tol){
-        cv(ir) = 0;
-        cv2(ir) = 1;
+        cv(ir) = 0.0;
+        cv2(ir) = 1.0;
       }else {
         // supTS test statistic 
         arma::vec tspetmp(2,arma::fill::zeros);
         tspetmp(0) = tspe;
-        cv(ir) = pow(max(tspetmp),2)/2;
+        cv(ir) = pow(max(tspetmp),2.0)/2.0;
         // expTS test statistic  
-        double tspetmp2 = tspe - 1;
-        cv2(ir) = sqrt(2*arma::datum::pi)*exp(pow(tspetmp2,2)/2)*arma::normcdf(tspetmp2);
+        double tspetmp2 = tspe - 1.0;
+        cv2(ir) = sqrt(2.0*arma::datum::pi)*exp(pow(tspetmp2,2.0)/2.0)*arma::normcdf(tspetmp2);
       }
       chps(0) = arma::as_scalar(max(cv));
       chps(1) = arma::as_scalar(mean(cv2));
@@ -175,6 +176,7 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,bool msvar){
     for (int ih=0; ih<100; ih++){
       arma::vec hv((nar + 2),arma::fill::zeros);
       arma::mat h2 = h.row(ih)%h.row(ih);
+      if (!arma::all(arma::vectorise(h2) > 1e-10)) continue;  // degenerate h: skip
       arma::mat hu = h.row(ih) / h2;   // h-vector uniformly over the unit sphere
       hv(0) = hu(0,0);
       hv(nar + 1) = hu(0,1);
@@ -190,16 +192,16 @@ arma::vec chpStat(List mdl, double rho_b, List ltmt,bool msvar){
         double tspe = gamma_e/sqrt(esqe);
         double tol = 0.00001; 
         if (esqe<tol){
-          cv(ir,ih) = 0;
-          cv2(ir,ih) = 1;
+          cv(ir,ih) = 0.0;
+          cv2(ir,ih) = 1.0;
         }else {
           // supTS test statistic 
           arma::vec tspetmp(2,arma::fill::zeros);
           tspetmp(0) = tspe;
-          cv(ir,ih) = pow(max(tspetmp),2)/2;
+          cv(ir,ih) = pow(max(tspetmp),2.0)/2.0;
           // expTS test statistic  
-          double tspetmp2 = tspe - 1;
-          cv2(ir,ih) = sqrt(2*arma::datum::pi)*exp(pow(tspetmp2,2)/2)*arma::normcdf(tspetmp2);
+          double tspetmp2 = tspe - 1.0;
+          cv2(ir,ih) = sqrt(2.0*arma::datum::pi)*exp(pow(tspetmp2,2.0)/2.0)*arma::normcdf(tspetmp2);
         }
       }
     }

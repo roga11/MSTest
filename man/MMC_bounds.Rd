@@ -18,8 +18,6 @@ List with \code{theta_low}, vector of parameter lower bounds, and \code{theta_up
 This function is used to determine the lower and upper bounds for the MMC LRT parameter search.
 }
 \references{
-Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-
-Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2025. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+Rodriguez-Rondon, G., & Dufour, J.-M. 2026a. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-23. doi: 10.34989/swp-2026-23.
 }
 \keyword{internal}

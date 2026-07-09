@@ -134,29 +134,521 @@ argrid_MSVARmdl <- function(mu, sigma, k, ar, msmu, msvar){
 
 
 #' @title Theta standard errors
-#' 
+#'
 #' @description This function computes the standard errors of the parameters in vector theta. This is done using an approximation of the Hessian matrix (using \code{\link[numDeriv]{hessian}} and \code{nearPD} if \code{info_mat} is not PD).
+#'
+#' For Markov switching models (k > 1), a reduced parameterization is used for the
+#' transition matrix P to avoid rank deficiency. The k x k transition matrix has k
+#' column-sum constraints, so only k(k-1) entries are free. The Hessian is computed
+#' w.r.t. these free entries, and SEs for the constrained entries are obtained via the
+#' delta method. See Krolzig (1997, Sections 6.3.2 and 6.6).
 #'
 #' @param mdl List with model properties
 #'
 #' @return List provided as input with additional attributes \code{HESS},\code{theta_se}, \code{info_mat}, and \code{nearPD_used}.
-#' 
+#'
 #' @keywords internal
-#' 
+#'
 #' @export
 thetaSE <- function(mdl){
+  k <- if (!is.null(mdl$k)) mdl$k else 1L
+  if (k > 1L && inherits(mdl, c("HMmdl", "MSARmdl", "MSVARmdl"))) {
+    return(.thetaSE_reduced(mdl))
+  }
   Hess <- getHessian(mdl)
-  info_mat <- solve(-Hess)
   nearPD_used <- FALSE
-  if ((all(is.na(Hess)==FALSE)) & (any(diag(info_mat)<0))){
-    info_mat <- pracma::nearest_spd(info_mat)
+  if (any(!is.finite(Hess))) {
+    warning("Hessian contains non-finite values; standard errors cannot be computed.")
+    mdl$Hess <- Hess
+    mdl$theta_se <- rep(NA_real_, length(mdl$theta))
+    mdl$info_mat <- matrix(NA_real_, nrow(Hess), ncol(Hess))
+    mdl$nearPD_used <- nearPD_used
+    return(mdl)
+  }
+  cond_num <- tryCatch(kappa(-Hess, exact = FALSE), error = function(e) Inf)
+  if (cond_num > 1e10)
+    warning("Ill-conditioned Hessian (cond. number approx. ", format(cond_num, scientific = TRUE, digits = 2),
+            "); standard errors may be unreliable.")
+  info_mat <- tryCatch(solve(-Hess),
+                       error = function(e) matrix(NA_real_, nrow(Hess), ncol(Hess)))
+  if (any(!is.finite(info_mat)) || any(diag(info_mat) < 0)) {
+    info_mat <- tryCatch(solve(pracma::nearest_spd(-Hess)),
+                         error = function(e) matrix(NA_real_, nrow(Hess), ncol(Hess)))
     nearPD_used <- TRUE
   }
   mdl$Hess <- Hess
-  mdl$theta_se <- sqrt(diag(info_mat))
+  mdl$theta_se <- sqrt(pmax(diag(info_mat), 0))
   mdl$info_mat <- info_mat
-  mdl$nearPD_used <- nearPD_used 
+  mdl$nearPD_used <- nearPD_used
   return(mdl)
+}
+
+# ==============================================================================
+# Reduced parameterization helpers for transition matrix P (Krolzig 1997, Sec. 6.3.2)
+# ==============================================================================
+#
+# The k x k transition matrix P is column-stochastic (columns sum to 1). This means
+# only k(k-1) of the k^2 entries are free. Computing the Hessian w.r.t. all k^2
+# entries produces a rank-deficient matrix. The fix: project the full Hessian to the
+# k(k-1)-dimensional free parameter space, invert there, then expand back.
+#
+# Since theta_full = J * theta_free + b is a LINEAR mapping, the chain rule gives
+# H_reduced = J' H_full J (exact, no approximation). SEs for constrained entries
+# are recovered via V_full = J V_free J' (delta method, exact for linear constraints).
+# See Krolzig (1997, Sec. 6.6.1-6.6.2).
+#
+# Drop pattern (preserves all diagonal/persistence entries as free):
+#   Columns 1 to k-1: drop P[k, j] (last row)
+#   Column k: drop P[1, k] (first row)
+# ==============================================================================
+
+# Compute the reduced parameterization setup: Jacobian J and index mappings
+.reduced_P_setup <- function(k, npar) {
+  P_start <- npar - k * k + 1L
+  # P[i,j] at block position (j-1)*k + i (column-major)
+  drop_block <- sort(c(
+    seq_len(k - 1L) * k,     # P[k, 1], ..., P[k, k-1]
+    (k - 1L) * k + 1L        # P[1, k]
+  ))
+  free_block <- setdiff(seq_len(k * k), drop_block)
+  drop_theta <- P_start + drop_block - 1L
+  free_theta <- setdiff(seq_len(npar), drop_theta)
+  nfree      <- length(free_theta)
+  # Per-column info for Jacobian construction
+  drop_col_info <- lapply(seq_len(k), function(j) {
+    col_block  <- ((j - 1L) * k + 1L):(j * k)
+    col_theta  <- P_start + col_block - 1L
+    list(
+      constrained_pos   = intersect(drop_theta, col_theta),
+      free_pos_in_theta = setdiff(col_theta, drop_theta)
+    )
+  })
+  # Build Jacobian J (npar x nfree): theta_full = J * theta_free + b
+  J <- matrix(0, npar, nfree)
+  for (idx in seq_len(nfree))
+    J[free_theta[idx], idx] <- 1
+  for (j in seq_along(drop_col_info)) {
+    ci <- drop_col_info[[j]]
+    free_in_col_idx <- match(ci$free_pos_in_theta, free_theta)
+    J[ci$constrained_pos, free_in_col_idx] <- -1
+  }
+  list(
+    J          = J,
+    free_theta = free_theta,
+    drop_theta = drop_theta,
+    nfree      = nfree,
+    drop_col_info = drop_col_info
+  )
+}
+
+# thetaSE with reduced parameterization for MS models
+# Projects the full Hessian to the free-parameter subspace via J' H J
+.thetaSE_reduced <- function(mdl) {
+  theta <- mdl$theta
+  npar  <- length(theta)
+  k     <- mdl$k
+  nearPD_used <- FALSE
+  # 1. Compute full Hessian (same code path as linear models)
+  Hess_full <- getHessian(mdl)
+  if (any(!is.finite(Hess_full))) {
+    warning("Hessian contains non-finite values; standard errors cannot be computed.")
+    mdl$Hess      <- Hess_full
+    mdl$theta_se  <- rep(NA_real_, npar)
+    mdl$info_mat  <- matrix(NA_real_, npar, npar)
+    mdl$nearPD_used <- FALSE
+    return(mdl)
+  }
+  # 2. Project to reduced space: H_reduced = J' H_full J
+  setup      <- .reduced_P_setup(k, npar)
+  J          <- setup$J
+  Hess_free  <- t(J) %*% Hess_full %*% J
+  # 3. Check conditioning
+  cond_num <- tryCatch(kappa(-Hess_free, exact = FALSE), error = function(e) Inf)
+  if (cond_num > 1e10)
+    warning("Ill-conditioned Hessian (cond. number approx. ",
+            format(cond_num, scientific = TRUE, digits = 2),
+            "); standard errors may be unreliable.")
+  # 4. Invert in reduced space
+  V_free <- tryCatch(solve(-Hess_free),
+                     error = function(e) matrix(NA_real_, setup$nfree, setup$nfree))
+  if (any(!is.finite(V_free)) || any(diag(V_free) < 0)) {
+    V_free <- tryCatch(solve(pracma::nearest_spd(-Hess_free)),
+                       error = function(e) matrix(NA_real_, setup$nfree, setup$nfree))
+    nearPD_used <- TRUE
+  }
+  # 5. Expand back: V_full = J V_free J'
+  V_full <- J %*% V_free %*% t(J)
+  mdl$Hess        <- Hess_free
+  mdl$theta_se    <- sqrt(pmax(diag(V_full), 0))
+  mdl$info_mat    <- V_full
+  mdl$nearPD_used <- nearPD_used
+  return(mdl)
+}
+
+#' @title Louis (1982) standard errors for Markov-switching models
+#'
+#' @description Computes standard errors using the expected complete-data information
+#' matrix \code{B} from Louis (1982). \code{B = -Hessian(Q)}, where \code{Q(theta)}
+#' is the expected complete-data log-likelihood (the EM Q-function), evaluated at the
+#' converged parameter values with smoothed state probabilities held fixed.
+#'
+#' The complete-data information \code{B} is typically better conditioned than the
+#' observed-data Hessian. Since \code{I_obs = B - M} where \code{M >= 0} is the
+#' missing information, \code{B >= I_obs} (PSD), so \code{B^{-1}} slightly
+#' underestimates the true variance. The SEs are therefore slightly optimistic but
+#' numerically more stable, especially for weakly identified models.
+#'
+#' @param mdl List with model properties (output from an MS model constructor).
+#'   Must contain \code{theta}, \code{St} (smoothed probabilities), and model-specific fields.
+#'
+#' @return List provided as input with additional attributes \code{theta_se}, \code{info_mat},
+#'   and \code{louis_used = TRUE}.
+#'
+#' @keywords internal
+#'
+#' @references Louis, T. A. (1982). "Finding the Observed Information Matrix
+#'   When Using the EM Algorithm." \emph{Journal of the Royal Statistical Society,
+#'   Series B}, 44(2), 226-233.
+#'
+#' @export
+thetaSE_louis <- function(mdl) {
+  theta  <- mdl$theta
+  npar   <- length(theta)
+  k      <- mdl$k
+
+  # --- Recover extended-state smoothed probabilities ---
+  # mdl$St is always T x k (marginal). For MSAR/MSVAR models with extended states
+
+  # (M = k^(p+1)), we re-run the forward-backward pass to get T x M probabilities.
+  xi   <- NULL
+  exog <- FALSE
+
+  if (inherits(mdl, "HMmdl")) {
+    xi   <- mdl$St  # T x k (no extended state for HMM)
+    exog <- isTRUE(mdl$exog)
+  } else if (inherits(mdl, "MSARmdl")) {
+    exog  <- !is.null(mdl$control$Z)
+    em_fn <- if (exog) ExpectationM_MSARXmdl else ExpectationM_MSARmdl
+    em_out <- tryCatch(em_fn(theta, mdl, k), error = function(e) NULL)
+    if (!is.null(em_out)) xi <- em_out$xi_t_T_AR  # T x M
+  } else if (inherits(mdl, "MSVARmdl")) {
+    exog  <- !is.null(mdl$control$Z)
+    em_fn <- if (exog) ExpectationM_MSVARXmdl else ExpectationM_MSVARmdl
+    em_out <- tryCatch(em_fn(theta, mdl, k), error = function(e) NULL)
+    if (!is.null(em_out)) xi <- em_out$xi_t_T_AR  # T x M
+  }
+
+  if (is.null(xi)) {
+    warning("thetaSE_louis: could not recover smoothed probabilities; falling back to Hessian-based SEs.")
+    return(thetaSE(mdl))
+  }
+
+  # --- Build Q function (expected complete-data log-likelihood) ---
+  Q_fn <- tryCatch(.louis_build_Q(mdl, xi), error = function(e) {
+    warning("thetaSE_louis: Q function build failed: ", e$message)
+    NULL
+  })
+  if (is.null(Q_fn)) return(thetaSE(mdl))
+
+  # --- Compute full Q-function Hessian, then project to reduced space ---
+  # The Q function has the same P column-sum constraints as the observed-data
+  # loglikelihood. Project via H_reduced = J' H_full J (exact for linear constraints).
+  Q_Hess_full <- tryCatch(
+    numDeriv::hessian(Q_fn, theta, method = "Richardson"),
+    error = function(e) {
+      warning("Louis (1982): Hessian computation failed: ", e$message)
+      matrix(NA_real_, npar, npar)
+    }
+  )
+
+  if (any(!is.finite(Q_Hess_full))) {
+    warning("Louis (1982): Q-function Hessian contains non-finite values; standard errors cannot be computed.")
+    mdl$theta_se    <- rep(NA_real_, npar)
+    mdl$info_mat    <- matrix(NA_real_, npar, npar)
+    mdl$louis_used  <- TRUE
+    return(mdl)
+  }
+
+  # Project to reduced space
+  setup  <- .reduced_P_setup(k, npar)
+  J      <- setup$J
+  nfree  <- setup$nfree
+  Q_Hess <- t(J) %*% Q_Hess_full %*% J
+  B      <- -Q_Hess  # expected complete-data information (positive semi-definite)
+
+  # --- Eigenvalue decomposition for robust inversion ---
+  # Standard solve() fails silently when B is near-singular (cond >> 1e16).
+  # Use spectral decomposition: B = V D V', invert only well-conditioned directions.
+  # Parameters in the null space of B are unidentifiable -- their SEs are set to NA.
+  eig <- tryCatch(eigen(B, symmetric = TRUE), error = function(e) NULL)
+  if (is.null(eig) || !all(is.finite(eig$values))) {
+    warning("Louis (1982): Eigendecomposition of B failed; standard errors cannot be computed.")
+    mdl$theta_se   <- rep(NA_real_, npar)
+    mdl$info_mat   <- matrix(NA_real_, npar, npar)
+    mdl$louis_used <- TRUE
+    return(mdl)
+  }
+
+  eig_max <- max(eig$values)
+  tol     <- nfree * .Machine$double.eps * eig_max
+  good    <- eig$values > tol
+
+  cond_num <- if (any(good)) eig_max / min(eig$values[good]) else Inf
+  if (cond_num > 1e10)
+    warning("Louis (1982): Ill-conditioned complete-data information (cond. number approx. ",
+            format(cond_num, scientific = TRUE, digits = 2),
+            "); standard errors may be unreliable.")
+
+  if (!any(good)) {
+    warning("Louis (1982): B matrix has no positive eigenvalues; standard errors cannot be computed.")
+    mdl$theta_se   <- rep(NA_real_, npar)
+    mdl$info_mat   <- matrix(NA_real_, npar, npar)
+    mdl$louis_used <- TRUE
+    return(mdl)
+  }
+
+  # Pseudoinverse using well-conditioned eigenvalues only
+  V_eig    <- eig$vectors[, good, drop = FALSE]
+  d_inv    <- 1 / eig$values[good]
+  V_free   <- V_eig %*% (d_inv * t(V_eig))
+
+  # Expand to full dimension via Jacobian (delta method for constrained P entries)
+  V_full   <- J %*% V_free %*% t(J)
+
+  # Compute SEs; set to NA for parameters whose variance is non-positive
+  se_vec  <- rep(NA_real_, npar)
+  d_ii    <- diag(V_full)
+  ok      <- is.finite(d_ii) & (d_ii > 0)
+  se_vec[ok] <- sqrt(d_ii[ok])
+
+  mdl$Hess        <- Q_Hess
+  mdl$theta_se    <- se_vec
+  mdl$info_mat    <- V_full
+  mdl$louis_used  <- TRUE
+  return(mdl)
+}
+
+# ==============================================================================
+# Louis (1982) Q-function builders (internal)
+# ==============================================================================
+
+# Dispatcher: build Q(theta) closure for the appropriate model class
+.louis_build_Q <- function(mdl, xi) {
+  exog <- if (inherits(mdl, "HMmdl")) isTRUE(mdl$exog) else !is.null(mdl$control$Z)
+  if (inherits(mdl, "HMmdl"))    return(.louis_Q_HM(mdl, xi, exog))
+  if (inherits(mdl, "MSARmdl"))  return(.louis_Q_MSAR(mdl, xi, exog))
+  if (inherits(mdl, "MSVARmdl")) return(.louis_Q_MSVAR(mdl, xi, exog))
+  stop("Unsupported model class: ", class(mdl)[1])
+}
+
+# Q-function for HMmdl (no AR dynamics, k regimes, optional exogenous)
+# Q(theta) = sum_t sum_k xi_{t|T}(k) * log N(y_t - mu_k - Z*beta; 0, Sigma_k)
+#           + sum_{i,j} n_hat(j,i) * log P(j,i)
+.louis_Q_HM <- function(mdl, xi, exog) {
+  y     <- as.matrix(mdl$y)
+  k     <- mdl$k
+  q     <- ncol(y)
+  Tsize <- nrow(y)
+  msmu  <- mdl$msmu
+  msvar <- mdl$msvar
+  Zdm   <- NULL; qz <- 0L
+  if (exog) {
+    Z   <- as.matrix(mdl$Z)
+    qz  <- ncol(Z)
+    Zdm <- sweep(Z, 2, colMeans(Z))
+  }
+  # Expected transition counts (exact at EM convergence)
+  xi_sum <- colSums(xi[seq_len(Tsize - 1L), , drop = FALSE])
+  n_hat  <- mdl$P * matrix(xi_sum, k, k, byrow = TRUE)
+  sigN   <- as.integer(q * (q + 1) / 2)
+
+  function(th) {
+    mu_end <- q + q * msmu * (k - 1)
+    mu_vec <- th[1:mu_end]
+    mu_k   <- matrix(0, k, q)
+    if (msmu) {
+      for (xk in seq_len(k)) mu_k[xk, ] <- mu_vec[((xk-1)*q + 1):(xk*q)]
+    } else {
+      for (xk in seq_len(k)) mu_k[xk, ] <- mu_vec[1:q]
+    }
+    pos <- mu_end + 1L
+    betaZ_mat <- NULL
+    if (exog) {
+      betaZ_mat <- matrix(th[pos:(pos + qz*q - 1L)], qz, q)
+      pos <- pos + qz*q
+    }
+    n_sig   <- sigN + sigN * msvar * (k - 1)
+    sig_vec <- th[pos:(pos + n_sig - 1L)]
+    pos     <- pos + n_sig
+    P       <- matrix(th[pos:(pos + k*k - 1L)], k, k)
+
+    Q_obs <- 0
+    for (xk in seq_len(k)) {
+      eps <- sweep(y, 2, mu_k[xk, ])
+      if (exog) eps <- eps - Zdm %*% betaZ_mat
+      sig_idx <- if (msvar) ((xk-1)*sigN + 1):(xk*sigN) else 1:sigN
+      sigma_k <- covar_unvech(sig_vec[sig_idx], q)
+      # Floor eigenvalues to keep sigma PD for numDeriv perturbations
+      eig_s <- eigen(sigma_k, symmetric = TRUE)
+      eig_s$values <- pmax(eig_s$values, 1e-10)
+      sigma_k <- eig_s$vectors %*% diag(eig_s$values, nrow = q) %*% t(eig_s$vectors)
+      ch <- tryCatch(chol(sigma_k), error = function(e) NULL)
+      if (is.null(ch)) return(-Inf)
+      log_det <- 2 * sum(log(diag(ch)))
+      eps_std <- backsolve(ch, t(eps), transpose = TRUE)
+      maha    <- colSums(eps_std^2)
+      Q_obs   <- Q_obs + sum(xi[, xk] * (-0.5 * (q * log(2*pi) + log_det + maha)))
+    }
+    Q_obs + sum(n_hat * log(pmax(P, 1e-300)))
+  }
+}
+
+# Q-function for MSARmdl / MSARXmdl (univariate, extended states M = k^(p+1))
+# Uses T x M smoothed probabilities from ExpectationM.
+# For extended state n = (i_0, ..., i_p), the observation density is:
+#   N(y_t; mu_{i_0} + sum_j phi_j*(y_{t-j} - mu_{i_j}) + Z*beta, sigma^2_{i_0})
+.louis_Q_MSAR <- function(mdl, xi, exog) {
+  y     <- as.vector(mdl$y)
+  x     <- as.matrix(mdl$x)
+  k     <- mdl$k
+  p     <- mdl$p
+  M     <- k^(p + 1)
+  Tsize <- length(y)
+  msmu  <- mdl$msmu
+  msvar <- mdl$msvar
+  # Extended state grid (expand.grid: first index = current regime, varies fastest)
+  lx <- replicate(p + 1, seq_len(k), simplify = FALSE)
+  sg <- as.matrix(expand.grid(lx))  # M x (p+1), 1-indexed
+  Zdm <- NULL; qz <- 0L
+  if (exog) {
+    Z_orig <- as.matrix(mdl$control$Z)
+    qz     <- ncol(Z_orig)
+    Z      <- Z_orig[(p + 1):(Tsize + p), , drop = FALSE]
+    Zdm    <- sweep(Z, 2, colMeans(Z))
+  }
+  # Expected transition counts from extended states
+  n_hat <- matrix(0, k, k)
+  for (n in seq_len(M)) {
+    n_hat[sg[n, 1], sg[n, 2]] <- n_hat[sg[n, 1], sg[n, 2]] + sum(xi[, n])
+  }
+
+  function(th) {
+    n_mu <- 1L + msmu * (k - 1L)
+    mu   <- th[1:n_mu]
+    phi  <- th[(n_mu + 1L):(n_mu + p)]
+    pos  <- n_mu + p + 1L
+    betaZ_v <- NULL
+    if (exog) {
+      betaZ_v <- th[pos:(pos + qz - 1L)]
+      pos <- pos + qz
+    }
+    n_sig <- 1L + msvar * (k - 1L)
+    sig   <- th[pos:(pos + n_sig - 1L)]
+    pos   <- pos + n_sig
+    P     <- matrix(th[pos:(pos + k*k - 1L)], k, k)
+    if (!msmu)  mu  <- rep(mu, k)
+    if (!msvar) sig <- rep(sig, k)
+    zdm_eff <- if (exog) as.vector(Zdm %*% betaZ_v) else 0
+
+    Q_obs <- 0
+    for (n in seq_len(M)) {
+      reg  <- sg[n, ]
+      z    <- y - mu[reg[1]] - zdm_eff
+      xz   <- rep(0, Tsize)
+      for (j in seq_len(p)) xz <- xz + phi[j] * (x[, j] - mu[reg[j + 1]])
+      eps_n <- z - xz
+      s2    <- max(sig[reg[1]], 1e-10)
+      Q_obs <- Q_obs + sum(xi[, n] * (-0.5 * (log(2*pi) + log(s2) + eps_n^2/s2)))
+    }
+    Q_obs + sum(n_hat * log(pmax(P, 1e-300)))
+  }
+}
+
+# Q-function for MSVARmdl / MSVARXmdl (multivariate, extended states M = k^(ar+1))
+# Uses T x M smoothed probabilities from ExpectationM.
+# For extended state n = (i_0, ..., i_ar), the observation density is:
+#   N(y_t; mu_{i_0} + sum_j A_j*(y_{t-j} - mu_{i_j}) + Z*beta, Sigma_{i_0})
+.louis_Q_MSVAR <- function(mdl, xi, exog) {
+  y     <- as.matrix(mdl$y)
+  x     <- as.matrix(mdl$x)
+  k     <- mdl$k
+  ar    <- mdl$p
+  q     <- ncol(y)
+  M     <- k^(ar + 1)
+  Tsize <- nrow(y)
+  msmu  <- mdl$msmu
+  msvar <- mdl$msvar
+  lx <- replicate(ar + 1, seq_len(k), simplify = FALSE)
+  sg <- as.matrix(expand.grid(lx))
+  Zdm <- NULL; qz <- 0L
+  if (exog) {
+    Z_orig <- as.matrix(mdl$control$Z)
+    qz     <- ncol(Z_orig)
+    Z      <- Z_orig[(ar + 1):(Tsize + ar), , drop = FALSE]
+    Zdm    <- sweep(Z, 2, colMeans(Z))
+  }
+  n_hat <- matrix(0, k, k)
+  for (n in seq_len(M)) {
+    n_hat[sg[n, 1], sg[n, 2]] <- n_hat[sg[n, 1], sg[n, 2]] + sum(xi[, n])
+  }
+  sigN <- as.integer(q * (q + 1) / 2)
+
+  function(th) {
+    n_mu   <- q + q * msmu * (k - 1)
+    mu_vec <- th[1:n_mu]
+    mu_k   <- matrix(0, k, q)
+    if (msmu) {
+      for (xk in seq_len(k)) mu_k[xk, ] <- mu_vec[((xk-1)*q + 1):(xk*q)]
+    } else {
+      for (xk in seq_len(k)) mu_k[xk, ] <- mu_vec[1:q]
+    }
+    pos     <- n_mu + 1L
+    phi_vec <- th[pos:(pos + q*q*ar - 1L)]
+    phi     <- t(matrix(phi_vec, q*ar, q))  # q x (q*ar), matches C++ convention
+    pos     <- pos + q*q*ar
+    betaZ_mat <- NULL
+    if (exog) {
+      betaZ_mat <- matrix(th[pos:(pos + qz*q - 1L)], qz, q)
+      pos <- pos + qz*q
+    }
+    n_sig   <- sigN + sigN * msvar * (k - 1)
+    sig_vec <- th[pos:(pos + n_sig - 1L)]
+    pos     <- pos + n_sig
+    P       <- matrix(th[pos:(pos + k*k - 1L)], k, k)
+    # Pre-compute Cholesky per regime
+    chol_list  <- vector("list", k)
+    logdet_vec <- numeric(k)
+    for (xk in seq_len(k)) {
+      sig_idx <- if (msvar) ((xk-1)*sigN + 1):(xk*sigN) else 1:sigN
+      sigma_k <- covar_unvech(sig_vec[sig_idx], q)
+      # Floor eigenvalues to keep sigma PD for numDeriv perturbations
+      eig_s <- eigen(sigma_k, symmetric = TRUE)
+      eig_s$values <- pmax(eig_s$values, 1e-10)
+      sigma_k <- eig_s$vectors %*% diag(eig_s$values, nrow = q) %*% t(eig_s$vectors)
+      ch <- tryCatch(chol(sigma_k), error = function(e) NULL)
+      if (is.null(ch)) return(-Inf)
+      chol_list[[xk]]  <- ch
+      logdet_vec[xk]   <- 2 * sum(log(diag(ch)))
+    }
+    zdm_eff <- if (exog) Zdm %*% betaZ_mat else matrix(0, Tsize, q)
+
+    Q_obs <- 0
+    for (n in seq_len(M)) {
+      reg    <- sg[n, ]
+      y_tild <- sweep(y, 2, mu_k[reg[1], ]) - zdm_eff
+      xz     <- matrix(0, Tsize, q*ar)
+      for (j in seq_len(ar)) {
+        cols <- ((j-1)*q + 1):(j*q)
+        xz[, cols] <- sweep(x[, cols], 2, mu_k[reg[j+1], ])
+      }
+      eps_n   <- y_tild - xz %*% t(phi)
+      xk      <- reg[1]
+      eps_std <- backsolve(chol_list[[xk]], t(eps_n), transpose = TRUE)
+      maha    <- colSums(eps_std^2)
+      Q_obs   <- Q_obs + sum(xi[, n] * (-0.5 * (q * log(2*pi) + logdet_vec[xk] + maha)))
+    }
+    Q_obs + sum(n_hat * log(pmax(P, 1e-300)))
+  }
 }
 
 #' @title Intercept from mu for MSARmdl
@@ -279,7 +771,14 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
                        nl.info = FALSE,
                        control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
                        deprecatedBehavior = FALSE) 
-  output <- ExpectationM_HMmdl(res$par, mdl_in, k)
+  if (!isTRUE(res$status >= 0) || any(!is.finite(res$par))) {
+    warning("HMmdl MLE optimization failed (status=", res$status, "). Using initial values.")
+    par_use <- theta_0
+  } else {
+    par_use <- res$par
+  }
+  output <- tryCatch(ExpectationM_HMmdl(par_use, mdl_in, k), error=function(e) NULL)
+  if (is.null(output)) return(NULL)
   output$iterations <- res$iter
   output$St <- output$xi_t_T
   return(output)
@@ -343,6 +842,7 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
       # roots of characteristic function
       n_p <- 2 + msmu*(k-1)
       poly_fun <- c(1,-theta[n_p:(n_p+p-1)])
+      if (any(!is.finite(poly_fun))) return(rep(Inf, length(poly_fun) - 1))
       roots <- Mod(polyroot(poly_fun))
       ineq_constraint = c((roots-1), ineq_constraint)
     }
@@ -374,11 +874,20 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
                        nl.info = FALSE,
                        control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
                        deprecatedBehavior = FALSE) 
-  if (length(mdl_in$betaZ)>0){
-    output <- ExpectationM_MSARXmdl(res$par, mdl_in, k)
-  }else{
-    output <- ExpectationM_MSARmdl(res$par, mdl_in, k)
+  if (!isTRUE(res$status >= 0) || any(!is.finite(res$par))) {
+    warning("MSARmdl MLE optimization failed (status=", res$status, "). Using initial values.")
+    par_use <- theta_0
+  } else {
+    par_use <- res$par
   }
+  if (length(mdl_in$betaZ)>0){
+    output <- tryCatch(ExpectationM_MSARXmdl(par_use, mdl_in, k),
+                       error=function(e) NULL)
+  }else{
+    output <- tryCatch(ExpectationM_MSARmdl(par_use, mdl_in, k),
+                       error=function(e) NULL)
+  }
+  if (is.null(output)) return(NULL)
   output$iterations <- res$iter
   output$St <- output$xi_t_T
   return(output)
@@ -486,11 +995,18 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
                        heq = loglik_const_eq_MSVARmdl,
                        nl.info = FALSE,
                        control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol)) 
-  if (length(mdl_in$betaZ)>0){
-    output <- ExpectationM_MSVARXmdl(res$par, mdl_in, k)
-  }else{
-    output <- ExpectationM_MSVARmdl(res$par, mdl_in, k)
+  if (!isTRUE(res$status >= 0) || any(!is.finite(res$par))) {
+    warning("MSVARmdl MLE optimization failed (status=", res$status, "). Using initial values.")
+    par_use <- theta_0
+  } else {
+    par_use <- res$par
   }
+  if (length(mdl_in$betaZ)>0){
+    output <- tryCatch(ExpectationM_MSVARXmdl(par_use, mdl_in, k), error=function(e) NULL)
+  }else{
+    output <- tryCatch(ExpectationM_MSVARmdl(par_use, mdl_in, k), error=function(e) NULL)
+  }
+  if (is.null(output)) return(NULL)
   output$iterations <- res$iter
   output$St <- output$xi_t_T
   return(output)

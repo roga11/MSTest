@@ -11,7 +11,7 @@ MCpval(test_stat, null_vec, type = "geq")
 
 \item{null_vec}{A (\code{N x 1}) vector with test statistic under the null hypothesis.}
 
-\item{type}{String determining type of test. options are: "geq" for right-tail test, "leq" for left-tail test, "abs" for absolute value test and "two-tail" for two-tail test.}
+\item{type}{String determining the type of test. Options are \code{"geq"} (right/upper-tail test; the default), \code{"leq"} (left/lower-tail test), \code{"two-tailed"} (or \code{"two-tail"}; two-sided test), and \code{"absolute"} (or \code{"abs"}; the upper-tail rule, intended for non-negative statistics). An unrecognized value raises an error.}
 }
 \value{
 MC p-value of test

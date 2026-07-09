@@ -1,8 +1,8 @@
 Package: MSTest
 Type: Package
 Title: Hypothesis Testing for Markov Switching Models
-Date: 2026-01-08
-Version: 0.1.8
+Date: 2026-06-30
+Version: 0.1.9
 Authors@R:
   c(person(given = "Gabriel", 
            family = "Rodriguez Rondon", 
@@ -14,28 +14,33 @@ Authors@R:
            role = c("aut"),
            email = "jean-marie.dufour@mcgill.ca"))
 Maintainer: Gabriel Rodriguez Rondon <gabriel.rodriguezrondon@mail.mcgill.ca>
-Description: Implementation of hypothesis testing procedures described in Hansen (1992) <doi:10.1002/jae.3950070506>, Carrasco, Hu, & Ploberger (2014) <doi:10.3982/ECTA8609>, Dufour & Luger (2017) <doi:10.1080/07474938.2017.1307548>, and Rodriguez Rondon & Dufour (2024) <https://grodriguezrondon.com/files/RodriguezRondon_Dufour_2025_MonteCarlo_LikelihoodRatioTest_MarkovSwitchingModels_20251014.pdf> that can be used to identify the number of regimes in Markov switching models.
+Description: Implementation of hypothesis testing procedures described in Hansen (1992) <doi:10.1002/jae.3950070506>, Carrasco, Hu, & Ploberger (2014) <doi:10.3982/ECTA8609>, Dufour & Luger (2017) <doi:10.1080/07474938.2017.1307548>, and Rodriguez-Rondon & Dufour (2026a) <doi:10.34989/swp-2026-23> that can be used to identify the number of regimes in Markov switching models. For a detailed description of the package, see Rodriguez-Rondon & Dufour (2026b) <doi:10.34989/swp-2026-7>.
 License: GPL(>= 2)
 LazyData: TRUE
-RoxygenNote: 7.3.1
+RoxygenNote: 7.3.3
 Encoding: UTF-8
 URL: https://github.com/roga11/MSTest
 BugReports: https://github.com/roga11/MSTest/issues
-Imports: 
+Imports:
   stats,
   rlang,
   nloptr,
-  Rcpp (>= 1.0.1), 
-  numDeriv, 
-  pracma, 
-  foreach,
-  GenSA, 
-  pso, 
+  Rcpp (>= 1.0.1),
+  numDeriv,
+  pracma,
+  GenSA,
+  pso,
   GA,
   graphics
 LinkingTo: 
   Rcpp, 
   RcppArmadillo
-Depends: 
+Depends:
   R (>= 4.0.0)
+Suggests:
+  testthat (>= 3.0.0),
+  knitr,
+  rmarkdown
+VignetteBuilder: knitr
+Config/testthat/edition: 3
 SystemRequirements: C++17

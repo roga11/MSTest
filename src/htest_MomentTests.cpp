@@ -23,24 +23,35 @@ arma::vec calc_DLmoments(arma::vec ehat){
   // Mean Moment  
   arma::vec idx1 = ehat.elem(find(ehat < 0));
   arma::vec idx2 = ehat.elem(find(ehat > 0));
+  if (idx1.n_elem == 0 || idx2.n_elem == 0) {
+    stats.fill(R_NaN);
+    Rcpp::warning("calc_DLmoments: all residuals have the same sign; moment statistics undefined.");
+    return(stats);
+  }
   double m1 = sum(idx1)/idx1.n_elem;
   double m2 = sum(idx2)/idx2.n_elem;
   double s1 = sum( (idx1 - m1) % (idx1 - m1) )/ idx1.n_elem;
   double s2 = sum( (idx2 - m2) % (idx2 - m2) )/ idx2.n_elem;
-  stats(0) = std::abs(m2 - m1)/sqrt(s2 + s1);
-  // Variance Moment 
+  double denom_s = sqrt(s2 + s1);
+  stats(0) = (denom_s > 1e-14) ? std::abs(m2 - m1)/denom_s : R_NaN;
+  // Variance Moment
   arma::vec ehat2 = ehat % ehat;
   double var = mean(ehat2);
+  if (var < 1e-14) {
+    stats(1) = R_NaN; stats(2) = R_NaN; stats(3) = R_NaN;
+    Rcpp::warning("calc_DLmoments: near-zero residual variance; higher moments undefined.");
+    return(stats);
+  }
   arma::vec idx3 = ehat2(find(ehat2 < var));
   arma::vec idx4 = ehat2(find(ehat2 > var));
-  double v1 = sum(idx3)/idx3.n_elem;
-  double v2 = sum(idx4)/idx4.n_elem;
-  stats(1) = v2/v1;
-  // Skewness Moment 
+  double v1 = (idx3.n_elem > 0) ? sum(idx3)/idx3.n_elem : R_NaN;
+  double v2 = (idx4.n_elem > 0) ? sum(idx4)/idx4.n_elem : R_NaN;
+  stats(1) = (std::isfinite(v1) && v1 > 1e-14) ? v2/v1 : R_NaN;
+  // Skewness Moment
   arma::vec z = ehat/sqrt(var);
   stats(2) = std::abs( mean(z % z % z) ) ;
   // Kurtosis Moment
-  stats(3) = std::abs( mean(z % z % z % z) - 3);
+  stats(3) = std::abs( mean(z % z % z % z) - 3.0);
   // output 
   return(stats);
 }
@@ -81,7 +92,7 @@ arma::mat sim_DLmoments(int Tsize, int N){
 //' @param stats A (\code{l x 4}) matrix where \code{l} is the number of moment-based test statistics.
 //' @param params A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
 //' @param type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values 
-//' is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
+//' is used as in Tippett 1931 and Wilkinson 1951. If set to "prod" the product of p-values is used as in Fisher 1932 and Pearson 1933.
 //' 
 //' @return A (\code{N x 1}) vector with test statistics. The last element is the test statistic from observed data.
 //' 
@@ -158,7 +169,7 @@ arma::mat approx_dist_loop(arma::mat SN2){
 //' @param x lagged values of series.
 //' @param params A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
 //' @param sim_stats A (\code{N x 1}) vector with test statistics. The last element is the test statistic from observed data.
-//' @param pval_type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
+//' @param pval_type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Tippett 1931 and Wilkinson 1951. If set to "prod" the product of p-values is used as in Fisher 1932 and Pearson 1933.
 //' @param stationary_ind Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.
 //' @param lambda Numeric value for penalty on stationary constraint not being met. Default is \code{100}.
 //' 
@@ -175,12 +186,13 @@ double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x,
                      arma::mat params, arma::vec sim_stats,
                      Rcpp::String pval_type, bool stationary_ind, double lambda){
   bool stationary_constraint = FALSE;
-  double F0 = 0;
+  double F0 = 0.0;
   double pval;
   // ----- Stationary constraint (i.e., only consider theta that result in stationary process) 
   if (stationary_ind==TRUE){
-    Rcpp::Function polyroot("polyroot");  
-    Rcpp::Function Mod("Mod");  
+    if (!theta.is_finite()) return(-lambda);  // NaN theta: treat as non-stationary (negative penalty repels optimizer; see MMCLRpval_fun)
+    Rcpp::Function polyroot("polyroot");
+    Rcpp::Function Mod("Mod");
     int ar = theta.n_elem;
     arma::vec poly_fun(ar+1, arma::fill::ones);
     poly_fun.subvec(1,ar) = -theta;
@@ -188,8 +200,10 @@ double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x,
     stationary_constraint = roots.min()<=1;
   }
   if (stationary_constraint){
-    // If stationary_ind == TRUE AND ineq_constraint == TRUE (i.e. non-stationary process), then pval = constraint
-    pval = lambda*stationary_constraint;
+    // Non-stationary theta: return a negative penalty so it is the worst (not best)
+    // candidate for both the minimizer (pso/GenSA on -pval) and the maximizer (GA on pval).
+    // Matches the convention in MMCLRpval_fun: pval = -(lambda*...).
+    pval = -(lambda*stationary_constraint);
   }else{
     // If stationary_ind == FALSE OR ineq_constraint == FALSE (i.e. non-stationary process), then pval = -pval
     // ----- Transform data
@@ -221,7 +235,7 @@ double DLMMCpval_fun(arma::vec theta, arma::vec y, arma::mat x,
 //' @param x lagged values of series.
 //' @param params A (\code{2 x 4}) matrix with parameters to combine test statistics. See \code{\link{approxDistDL}}.
 //' @param sim_stats A (\code{N x 1}) vector with test statistics. The last element is the test statistic from observed data.
-//' @param pval_type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Fisher 1932 and Pearson 1933. If set to "prod" the product of p-values is used as in Tippett 1931 and Wilkinson 1951.
+//' @param pval_type String determining the type of method used to combine p-values. If set to "min" the min method of combining p-values is used as in Tippett 1931 and Wilkinson 1951. If set to "prod" the product of p-values is used as in Fisher 1932 and Pearson 1933.
 //' @param stationary_ind Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.
 //' @param lambda Numeric value for penalty on stationary constraint not being met. Default is \code{100}.
 //'

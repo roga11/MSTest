@@ -240,7 +240,7 @@ double compu_tstat(arma::vec theta_h0, List mdl_h0, double LT_h1, int p, int q, 
   }else{
     stop("Verify number of regimes under null and alternative");
   }
-  double LRT_0 = -2*(logL0-LT_h1);
+  double LRT_0 = -2.0*(logL0-LT_h1);
   return(LRT_0);
 }
 
@@ -248,27 +248,36 @@ double compu_tstat(arma::vec theta_h0, List mdl_h0, double LT_h1, int p, int q, 
 
 
 //' @title Likelihood Ratio Test Statistic Sample Distribution
-//' 
+//'
 //' @description This function simulates the sample distribution under the null hypothesis.
-//' 
+//' When pre-drawn innovations are provided (for fixed-error MMC per Dufour 2006, Prop. 4.2),
+//' uses a buffer loop where each innovation is tried once; failed draws skip to the next slot.
+//' Falls back to fresh random draws if the buffer is exhausted.
+//'
 //' @param mdl_h0 List with restricted model properties.
 //' @param k1 integer specifying the number of regimes under the alternative hypothesis.
 //' @param N integer specifying the number of replications.
 //' @param burnin integer specifying the number of observations to drop from beginning of simulation.
 //' @param mdl_h0_control List with controls/options used to estimate restricted model.
 //' @param mdl_h1_control List with controls/options used to estimate unrestricted model.
-//' 
+//' @param predrawn_eps Optional list of pre-drawn standard normal matrices for fixed-error simulation.
+//'   Each element is a \code{(T+burnin) x q} matrix. Default is \code{NULL} (generate fresh draws).
+//' @param predrawn_state_rand Optional \code{(T+burnin) x N_buffer} matrix of pre-drawn U[0,1] values
+//'   for state transitions (only used when null model has k > 1). Default is \code{NULL}.
+//'
 //' @return vector of simulated LRT statistics
-//' 
+//'
 //' @keywords internal
-//' 
-//' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-//' @references Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
-//' 
+//'
+//' @references Rodriguez-Rondon, G., & Dufour, J.-M. 2026a. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-23. doi: 10.34989/swp-2026-23.
+//' @references Dufour, Jean-Marie. 2006. "Monte Carlo Tests with Nuisance Parameters: A General Approach to Finite-Sample Inference and Nonstandard Asymptotics." \emph{Journal of Econometrics} 133(2): 443-477.
+//'
 //' @export
 // [[Rcpp::export]]
-arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin, 
-                       Rcpp::Nullable<arma::mat> Z, List mdl_h0_control, List mdl_h1_control){
+arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
+                       Rcpp::Nullable<arma::mat> Z, List mdl_h0_control, List mdl_h1_control,
+                       Rcpp::Nullable<List> predrawn_eps = R_NilValue,
+                       Rcpp::Nullable<Rcpp::NumericMatrix> predrawn_state_rand = R_NilValue){
   // ---------- Load R functions
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function estimMdl = mstest["estimMdl"];
@@ -283,57 +292,132 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
   List mdl_h1_control_tmp = clone(mdl_h1_control);
   mdl_h0_control_tmp["getSE"] = getSE;
   mdl_h1_control_tmp["getSE"] = getSE;
+  // ---------- Setup pre-drawn innovations (Dufour 2006, Prop. 4.2)
+  int N_buffer = 0;
+  bool has_predrawn = predrawn_eps.isNotNull();
+  bool has_predrawn_sr = predrawn_state_rand.isNotNull();
+  List eps_list;
+  arma::mat sr_mat;
+  if (has_predrawn) {
+    eps_list = List(predrawn_eps);
+    N_buffer = eps_list.size();
+    if (has_predrawn_sr) {
+      sr_mat = Rcpp::as<arma::mat>(Rcpp::NumericMatrix(predrawn_state_rand));
+    }
+  }
+  // Clone mdl_h0 ONCE for innovation injection (not per-iteration).
+  // simuMdl clones internally for output, so mdl_h0_sim is never mutated.
+  List mdl_h0_sim;
+  if (has_predrawn) {
+    mdl_h0_sim = clone(mdl_h0);
+  }
   // ---------- Simulate test statistic under null hypothesis
   double LRT_i;
   List mdl_h0_tmp;
   List mdl_h1_tmp;
-  arma::vec LRT_N(N,arma::fill::zeros);
-  for (int xn = 0; xn<N; xn++){
-    bool LRT_finite   = FALSE;
-    while (LRT_finite==FALSE){
-      List simu_mdl   = simuMdl(mdl_h0, p, q, k0, burnin, exog);
-      arma::mat y0    = simu_mdl["y"];
+  arma::vec LRT_N(N, arma::fill::zeros);
+  int total_na = 0;
+  int xn = 0;  // valid draw counter
+  int b = 0;   // buffer index (pre-drawn mode)
+  // ---------- Pre-drawn mode: buffer loop (matches wARMASVp pattern)
+  // Each innovation used exactly once. Failed draws skip to next buffer slot.
+  // The buffer (1.5*N) IS the retry budget.
+  while (has_predrawn && xn < N && b < N_buffer) {
+    mdl_h0_sim["eps"] = eps_list[b];
+    if (has_predrawn_sr) {
+      mdl_h0_sim["state_rand"] = sr_mat.col(b);
+    }
+    b++;
+    bool LRT_finite = FALSE;
+    try {
+      List simu_mdl = simuMdl(mdl_h0_sim, p, q, k0, burnin, exog);
+      arma::mat y0 = simu_mdl["y"];
       mdl_h0_tmp = estimMdl(y0, p, q, k0, Z, mdl_h0_control_tmp);
       mdl_h1_tmp = estimMdl(y0, p, q, k1, Z, mdl_h1_control_tmp);
-      double l_0      = mdl_h0_tmp["logLike"];
-      double l_1      = mdl_h1_tmp["logLike"];
-      LRT_i = -2*(l_0 - l_1);
-      // verify test stat (i.e. not NaN nor <0)
-      // LRT_finite = ((arma::is_finite(LRT_i)) and (LRT_i>=0));
-      LRT_finite = ((std::isfinite(LRT_i)) and (LRT_i>=0));
+      double l_0 = mdl_h0_tmp["logLike"];
+      double l_1 = mdl_h1_tmp["logLike"];
+      LRT_i = -2.0*(l_0 - l_1);
+      LRT_finite = ((std::isfinite(LRT_i)) and (LRT_i >= 0));
+    } catch (...) {
+      LRT_finite = FALSE;
     }
-    LRT_N(xn) = LRT_i;
+    if (LRT_finite) {
+      LRT_N(xn) = LRT_i;
+      xn++;
+    }
+    // Failed: skip to next buffer slot (no retry -- each innovation used once)
+  }
+  if (has_predrawn && xn < N) {
+    Rcpp::warning("LR_samp_dist: pre-drawn buffer exhausted at draw %d/%d. Remaining %d draws use fresh randomness.", xn+1, N, N - xn);
+  }
+  // ---------- Fresh-draw mode: existing per-draw retry loop (unchanged from original)
+  // Handles: (a) no pre-drawn provided, or (b) buffer exhausted, remaining draws needed
+  for (int xi = xn; xi < N; xi++){
+    bool LRT_finite = FALSE;
+    int max_retries = 200;
+    int retries = 0;
+    while (LRT_finite==FALSE && retries < max_retries){
+      try {
+        List simu_mdl = simuMdl(mdl_h0, p, q, k0, burnin, exog);
+        arma::mat y0 = simu_mdl["y"];
+        mdl_h0_tmp = estimMdl(y0, p, q, k0, Z, mdl_h0_control_tmp);
+        mdl_h1_tmp = estimMdl(y0, p, q, k1, Z, mdl_h1_control_tmp);
+        double l_0 = mdl_h0_tmp["logLike"];
+        double l_1 = mdl_h1_tmp["logLike"];
+        LRT_i = -2.0*(l_0 - l_1);
+        LRT_finite = ((std::isfinite(LRT_i)) and (LRT_i >= 0));
+      } catch (...) {
+        LRT_finite = FALSE;
+      }
+      retries++;
+    }
+    if (!LRT_finite) {
+      Rcpp::warning("LR_samp_dist: draw %d failed to produce a finite LRT statistic after %d attempts. Storing NA.", xi+1, max_retries);
+      LRT_N(xi) = R_NaN;
+      total_na++;
+    } else {
+      LRT_N(xi) = LRT_i;
+    }
+  }
+  if (total_na > N * 0.05) {
+    Rcpp::warning("LR_samp_dist: %.1f%% of MC draws produced non-finite LRT statistics. Null distribution may be unreliable.", 100.0*total_na/N);
   }
   return(LRT_N);
 }
 
-//' @title Monte Carlo Likelihood Ratio Test P-value Function 
-//' 
+//' @title Monte Carlo Likelihood Ratio Test P-value Function
+//'
 //' @description This function computes the Maximum Monte Carlo P-value.
-//' 
+//' When pre-drawn innovations are provided, the same fixed draws are used
+//' for every theta evaluation (Dufour 2006, Proposition 4.2).
+//'
 //' @param theta_h0 vector of parameter values under the null being considered.
 //' @param mdl_h0 List with restricted model properties.
 //' @param k1 integer determining the number of regimes under the alternative.
-//' @param LT_h1 double specifying maximum log likelihood under alternative.
+//' @param LRT_0 double specifying the fixed observed likelihood ratio test statistic.
 //' @param N integer specifying the number of replications.
 //' @param burnin integer specifying the number of observations to drop from beginning of simulation.
-//' @param workers Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open.
+//' @param workers Integer determining the number of workers to use for parallel computing.
 //' @param lambda Double determining penalty on nonlinear constraint.
 //' @param stationary_constraint Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}).
 //' @param thtol double determining the convergence criterion used during estimation.
 //' @param mdl_h0_control List with controls/options used to estimate restricted model.
 //' @param mdl_h1_control List with controls/options used to estimate unrestricted model.
-//' 
+//' @param predrawn_eps Optional list of pre-drawn standard normal matrices (fixed across theta evaluations).
+//' @param predrawn_state_rand Optional matrix of pre-drawn U[0,1] for state transitions.
+//'
 //' @return MMC p-value
-//' 
+//'
 //' @keywords internal
-//' 
+//'
 //' @export
 // [[Rcpp::export]]
-double MMCLRpval_fun(arma::vec theta_h0, List mdl_h0, int k1, double LT_h1,
-                     int N, int burnin, int workers, double lambda, 
-                     bool stationary_constraint, double thtol,   
-                     Rcpp::Nullable<arma::mat> Z, bool exog, List mdl_h0_control, List mdl_h1_control){
+double MMCLRpval_fun(arma::vec theta_h0, List mdl_h0, int k1, double LRT_0,
+                     int N, int burnin, int workers, double lambda,
+                     bool stationary_constraint, double thtol,
+                     Rcpp::Nullable<arma::mat> Z, bool exog, List mdl_h0_control, List mdl_h1_control,
+                     Rcpp::Nullable<List> predrawn_eps = R_NilValue,
+                     Rcpp::Nullable<Rcpp::NumericMatrix> predrawn_state_rand = R_NilValue){
   Rcpp::Environment mstest("package:MSTest");
   Rcpp::Function LR_samp_dist_par = mstest["LR_samp_dist_par"];
   Rcpp::Function estimMdl = mstest["estimMdl"];
@@ -341,22 +425,22 @@ double MMCLRpval_fun(arma::vec theta_h0, List mdl_h0, int k1, double LT_h1,
   int k0 = mdl_h0["k"];
   int q = mdl_h0["q"];
   int p = mdl_h0["p"];
-  // ----- initialize variables 
+  // ----- initialize variables
   double pval;
   arma::mat P_h0;
   bool non_stationary_const = FALSE;
   bool P_h0_colsum_const = FALSE;
-  // ----- Stationary constraint (i.e., only consider theta that result in stationary process) 
+  // ----- Stationary constraint (i.e., only consider theta that result in stationary process)
   if ((stationary_constraint==TRUE) and (p>0) and (q==1)){
-    Rcpp::Function polyroot("polyroot");  
-    Rcpp::Function Mod("Mod");  
+    Rcpp::Function polyroot("polyroot");
+    Rcpp::Function Mod("Mod");
     arma::vec theta_phi_h0 = mdl_h0["theta_phi_ind"];
     arma::vec poly_fun_h0(p+1, arma::fill::ones);
     poly_fun_h0.subvec(1,p) =  -theta_h0(find(theta_phi_h0==1));
     arma::vec roots_h0 = as<arma::vec>(Mod(wrap(as<ComplexVector>(polyroot(wrap(poly_fun_h0))))));
     non_stationary_const = (roots_h0.min()<=1);
   }else if ((stationary_constraint==TRUE) and (p>0) and (q>1)){
-    Rcpp::Function Mod("Mod");  
+    Rcpp::Function Mod("Mod");
     // phi indicators
     arma::vec theta_phi_ind_h0 = mdl_h0["theta_phi_ind"];
     // phi vectors
@@ -379,56 +463,89 @@ double MMCLRpval_fun(arma::vec theta_h0, List mdl_h0, int k1, double LT_h1,
     arma::vec theta_P_ind_h0 = mdl_h0["theta_P_ind"];
     arma::vec P_vec_h0 = theta_h0.elem(find(theta_P_ind_h0));
     P_h0 = reshape(P_vec_h0, k0, k0);
-    P_h0_colsum_const = any(abs(arma::sum(P_h0,0)-1)>thtol); 
+    P_h0_colsum_const = any(abs(arma::sum(P_h0,0)-1)>thtol);
   }
-  // ----- Compute pval 
-  if ((P_h0_colsum_const==TRUE) or (non_stationary_const==TRUE)){  
+  // ----- Compute pval
+  if ((P_h0_colsum_const==TRUE) or (non_stationary_const==TRUE)){
     // If either transition matrix columns do not sum to 1 OR (stationary_constraint == TRUE AND non_stationary_const == TRUE), pval is a negative constant
     pval = -(lambda*(P_h0_colsum_const + non_stationary_const));
   }else{
     // If constraints are met, compute pvalue
     List mdl_h0_simu  = mdledit(mdl_h0, theta_h0, p, q, k0, exog);
-    double LRT_0 = compu_tstat(theta_h0, mdl_h0_simu, LT_h1, p, q, k0, exog); // Can certain value of theta_h0 lead to negative or non finite LRT_0? Check this.
-    // simulate under null hypothesis
+    // Dufour (2006, eq. 4.22): the observed test statistic LRT_0 is held FIXED across all
+    // theta_h0 (passed in from the observed-data fits); only the simulated null distribution
+    // below varies with the candidate theta_h0. Do NOT recompute LRT_0 from the candidate.
+    // simulate under null hypothesis using SAME pre-drawn innovations for all theta (Dufour 2006)
     arma::vec LRN_tmp;
     if(workers>0){
-      LRN_tmp = as<arma::vec>(LR_samp_dist_par(mdl_h0_simu, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control, workers));
+      LRN_tmp = as<arma::vec>(LR_samp_dist_par(mdl_h0_simu, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control, workers,
+                                                R_NilValue, predrawn_eps, predrawn_state_rand));
     }else{
-      LRN_tmp = LR_samp_dist(mdl_h0_simu, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control);
+      LRN_tmp = LR_samp_dist(mdl_h0_simu, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control,
+                              predrawn_eps, predrawn_state_rand);
     }
-    pval = MCpval(LRT_0, LRN_tmp, "geq");
+    // ----- (Y) Degenerate-candidate guard. LRN_tmp can contain a non-finite entry ONLY if the
+    //       per-draw safety in LR_samp_dist (1.5*N pre-drawn buffer skips + 200 fresh retries) was
+    //       EXHAUSTED for that draw, i.e. this candidate theta_h0 is essentially unsimulable. Any
+    //       non-finite draw therefore flags a degenerate candidate, so we penalize it (repel the
+    //       optimizer) -- EXCEPT the seed theta_hat_0 (= mdl_h0["theta"], the LMC point), which is
+    //       exempted so that sup_theta p(theta) >= p(theta_hat_0) (~ the LMC p-value over the
+    //       surviving draws) is preserved (Dufour 2006). Penalizing on ANY non-finite draw (rather
+    //       than a fraction) keeps every NON-seed candidate on a fixed full-N null distribution or
+    //       penalized -- no variable-denominator p-values across the search. A warning is emitted
+    //       either way so the user can see the issue.
+    arma::uvec finite_idx = arma::find_finite(LRN_tmp);
+    int n_bad = (int)LRN_tmp.n_elem - (int)finite_idx.n_elem;
+    if (n_bad > 0) {
+      arma::vec theta_hat_0 = mdl_h0["theta"];
+      bool is_seed = arma::approx_equal(theta_h0, theta_hat_0, "absdiff", 1e-10);
+      if (is_seed) {
+        Rcpp::warning("MMCLRTest: the initial-value (theta_0) null distribution had %d of %d draws fail even after the re-draw safety; the p-value uses the surviving draws and MMC>=LMC may be affected. Increase use_diff_init or inspect the fit.", n_bad, N);
+        pval = MCpval(LRT_0, LRN_tmp, "geq");   // exempt seed: compute over survivors (MCpval drops non-finite)
+      } else {
+        Rcpp::warning("MMCLRTest: a candidate parameter value produced an unsimulable null distribution (%d of %d draws failed even after the re-draw safety) and was penalized during the search.", n_bad, N);
+        pval = -(lambda);                        // repel optimizer (same sign as the stationarity penalty above)
+      }
+    } else {
+      pval = MCpval(LRT_0, LRN_tmp, "geq");
+    }
   }
   return(pval);
 }
 
 
-//' @title Monte Carlo Likelihood Ratio Test P-value Function 
-//' 
+//' @title Monte Carlo Likelihood Ratio Test P-value Function
+//'
 //' @description This function computes the (negative) Maximum Monte Carlo P-value.
-//' 
+//'
 //' @param theta vector of parameter values being considered.
 //' @param mdl_h0 List with restricted model properties.
 //' @param k1 integer determining the number of regimes under the alternative.
-//' @param LT_h1 double specifying maximum log likelihood under alternative.
+//' @param LRT_0 double specifying the fixed observed likelihood ratio test statistic.
 //' @param N integer specifying the number of replications.
 //' @param burnin integer specifying the number of observations to drop from beginning of simulation.
-//' @param workers Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open.
+//' @param workers Integer determining the number of workers to use for parallel computing.
 //' @param lambda Double determining penalty on nonlinear constraint.
 //' @param stationary_constraint Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}).
 //' @param thtol double determining the convergence criterion used during estimation.
 //' @param mdl_h0_control List with controls/options used to estimate restricted model.
 //' @param mdl_h1_control List with controls/options used to estimate unrestricted model.
-//' 
+//' @param predrawn_eps Optional list of pre-drawn standard normal matrices (fixed across theta evaluations).
+//' @param predrawn_state_rand Optional matrix of pre-drawn U[0,1] for state transitions.
+//'
 //' @return negative MMC p-value
-//' 
+//'
 //' @keywords internal
-//' 
+//'
 //' @export
 // [[Rcpp::export]]
-double MMCLRpval_fun_min(arma::vec theta, List mdl_h0, int k1, double LT_h1, int N, int burnin, int workers, 
-                         double lambda, bool stationary_constraint, double thtol,   
-                         Rcpp::Nullable<arma::mat> Z, bool exog, List mdl_h0_control, List mdl_h1_control){
-  double pval = -MMCLRpval_fun(theta, mdl_h0, k1, LT_h1, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control);     
+double MMCLRpval_fun_min(arma::vec theta, List mdl_h0, int k1, double LRT_0, int N, int burnin, int workers,
+                         double lambda, bool stationary_constraint, double thtol,
+                         Rcpp::Nullable<arma::mat> Z, bool exog, List mdl_h0_control, List mdl_h1_control,
+                         Rcpp::Nullable<List> predrawn_eps = R_NilValue,
+                         Rcpp::Nullable<Rcpp::NumericMatrix> predrawn_state_rand = R_NilValue){
+  double pval = -MMCLRpval_fun(theta, mdl_h0, k1, LRT_0, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control,
+                               predrawn_eps, predrawn_state_rand);
   return(pval);
 }
 

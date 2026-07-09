@@ -30,11 +30,9 @@ Hamilton, James D. 1994. "Time series analysis". \emph{Princeton university pres
 
 Hansen, Bruce E. 1992. “The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP.” \emph{Journal of applied Econometrics} 7 (S1): S61–S82.
 
-Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
+Rodriguez-Rondon, G., & Dufour, J.-M. 2026a. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-23. doi: 10.34989/swp-2026-23.
 
-Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
-
-Rodriguez Rondon, Gabriel and Jean-Marie Dufour. 2022. “MSTest: An R-package for Testing Markov-Switching Models.” \emph{Unpublished manuscript}.
+Rodriguez-Rondon, G., & Dufour, J.-M. 2026b. "MSTest: An R-Package for Testing Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-7. doi: 10.34989/swp-2026-7.
 
 Qu, Zhongjun, and Fan Zhuo. 2021. “Likelihood Ratio-Based Tests for Markov Regime Switching.” \emph{The Review of Economic Studies} 88 (2): 937–968.
 

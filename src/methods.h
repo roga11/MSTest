@@ -14,6 +14,10 @@ arma::mat randP(int k);
 
 arma::vec limP(arma::mat P);
 
+arma::vec predict_fast(const arma::vec& xi, const arma::mat& P, int k, int ar);
+
+arma::vec smooth_fast(const arma::vec& w, const arma::mat& P, int k, int ar);
+
 List ts_lagged(arma::mat Y, int ar);
 
 List paramList_MSARmdl(arma::vec theta, int p, int k, bool msmu, bool msvar);

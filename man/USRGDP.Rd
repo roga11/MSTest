@@ -5,7 +5,7 @@
 \alias{USRGDP}
 \title{US Real GDP data 1947Q2 - 2024Q2}
 \format{
-\describe{This data is used in Rodriguez-Rondon & Dufour (2024). The series ranges from 
+\describe{This data is used in Rodriguez-Rondon & Dufour (2026a). The series ranges from 
 1947Q2 to 2024Q2.
   \item{Date}{Vector of dates}
   \item{RGDP}{US Real GDP series}
@@ -24,6 +24,6 @@ US Real GDP data 1947Q2 - 2024Q2
 \references{
 U.S. Bureau of Economic Analysis, Real Gross Domestic Product [GDPC1], retrieved from FRED, Federal Reserve Bank of St. Louis; \emph{\url{https://fred.stlouisfed.org/series/GDPC1}}, September, 2024.
 
-Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2024. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+Rodriguez-Rondon, G., & Dufour, J.-M. 2026a. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-23. doi: 10.34989/swp-2026-23.
 }
 \keyword{datasets}

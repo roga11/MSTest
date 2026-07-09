@@ -18,7 +18,8 @@ using namespace Rcpp;
 //' @export
 // [[Rcpp::export]]
 arma::mat cov2corr(arma::mat cov_mat){
-  arma::mat corr_mat = inv(diagmat(sqrt(cov_mat)))*cov_mat*inv(diagmat(sqrt(cov_mat)));
+  arma::vec diag_inv = 1.0 / sqrt(cov_mat.diag());
+  arma::mat corr_mat = diagmat(diag_inv) * cov_mat * diagmat(diag_inv);
   return(corr_mat);
 }
 
@@ -116,18 +117,91 @@ arma::vec limP(arma::mat P){
   int nr = P.n_rows;
   int nc = P.n_cols;
   if (nc==nr){
+    // Guard: if P is not finite, return uniform ergodic distribution
+    if (!P.is_finite()) {
+      arma::vec pinf_unif(nr, arma::fill::ones);
+      return (pinf_unif / nr);
+    }
     arma::mat onevec(1, nr, arma::fill::ones);
     arma::mat ep(1, nr+1, arma::fill::zeros);
-    ep(0,nr) = 1;
+    ep(0,nr) = 1.0;
     arma::mat Atmp = join_cols(arma::eye(nr,nr)-P,onevec);
     arma::vec pinf = solve(trans(Atmp)*Atmp,trans(Atmp), arma::solve_opts::allow_ugly)*trans(ep);
+    // If solve returned non-finite (degenerate P), fall back to uniform
+    if (!pinf.is_finite()) {
+      pinf.fill(1.0 / nr);
+    }
     return (pinf);
   }else{
     stop("Input must be a square matrix");
   }
 }
 
+// ==============================================================================
+// O(M) forward prediction: computes P_AR * xi without forming the M×M matrix.
+//
+// Extended state n = i_0 + i_1*k + ... + i_p*k^p where i_j in {0,...,k-1}.
+// P_AR(n', n) = P(j_0, j_1) * I[j_1=i_0] * I[j_2=i_1] * ... * I[j_p=i_{p-1}].
+//
+// Identity: [P_AR * xi](n') = P(j_0, j_1) * marginal(base)
+//   where base = j_1 + j_2*k + ... + j_p*k^(p-1)  (k^p possible values)
+//         n' = j_0 + k*base
+//         j_1 = base % k
+//         marginal(base) = sum_{i_p=0}^{k-1} xi(base + i_p * k^p)
+//
+// Cost: O(k^p * k) + O(k^(p+1)) = O(M).
+arma::vec predict_fast(const arma::vec& xi, const arma::mat& P, int k, int ar) {
+  int M = xi.n_elem;       // k^(ar+1)
+  int kp = M / k;          // k^ar = number of "base" values
+  // Step 1: marginalize over i_p (the highest-order component)
+  arma::vec marginal(kp, arma::fill::zeros);
+  for (int base = 0; base < kp; base++) {
+    for (int ip = 0; ip < k; ip++) {
+      marginal(base) += xi(base + ip * kp);
+    }
+  }
+  // Step 2: multiply by transition probability
+  arma::vec result(M);
+  for (int base = 0; base < kp; base++) {
+    int j1 = base % k;  // regime at lag 1 in the destination state
+    for (int j0 = 0; j0 < k; j0++) {
+      result(j0 + k * base) = P(j0, j1) * marginal(base);
+    }
+  }
+  return result;
+}
 
+// ==============================================================================
+// O(M) smoother step: computes P_AR' * w without forming the M×M matrix.
+//
+// Identity: [P_AR' * w](n) = sum_{j_0=0}^{k-1} P(j_0, i_0) * w(j_0 + i_0*k + i_1*k^2 + ... + i_{p-1}*k^p)
+// The result is independent of i_p, so we compute per "tail base" and broadcast.
+//
+// For state n = i_0 + i_1*k + ... + i_p*k^p:
+//   tail_base = i_0 + i_1*k + ... + i_{p-1}*k^(p-1)  (= n % k^p)
+//   w_index = j_0 + k * (i_0 + i_1*k + ... + i_{p-1}*k^(p-1)) = j_0 + k*tail_base
+//
+// Cost: O(k^p * k) + O(M) = O(M).
+arma::vec smooth_fast(const arma::vec& w, const arma::mat& P, int k, int ar) {
+  int M = w.n_elem;        // k^(ar+1)
+  int kp = M / k;          // k^ar
+  // Step 1: compute sum for each tail_base
+  arma::vec tail_sum(kp, arma::fill::zeros);
+  for (int tb = 0; tb < kp; tb++) {
+    int i0 = tb % k;  // regime at lag 0 (i_0)
+    for (int j0 = 0; j0 < k; j0++) {
+      tail_sum(tb) += P(j0, i0) * w(j0 + k * tb);
+    }
+  }
+  // Step 2: broadcast — result is independent of i_p
+  arma::vec result(M);
+  for (int tb = 0; tb < kp; tb++) {
+    for (int ip = 0; ip < k; ip++) {
+      result(tb + ip * kp) = tail_sum(tb);
+    }
+  }
+  return result;
+}
 
 // ==============================================================================
 //' @title Lagged Time Series Data
@@ -636,12 +710,12 @@ arma::vec initVals_HMmdl(List mdl, int k){
   // initial values for stdev around linear model stdev when switch
   if (msvar==TRUE){
     arma::vec sigma_vec_tmp = covar_vech(sigma);
-    arma::mat sig_mat_tmp = covar_unvech((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
+    arma::mat sig_mat_tmp = covar_unvech((sigma_vec_tmp*0.1) + ((2.0*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
     sig_mat_tmp = sig_mat_tmp*trans(sig_mat_tmp);
     sig_mat_tmp = sig_mat_tmp + q*arma::speye(q,q);
     sigma_0.row(0) = trans(covar_vech(sig_mat_tmp));
     for (int xk = 1; xk<k; xk++){
-      arma::mat sig_mat_tmp = covar_unvech((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
+      arma::mat sig_mat_tmp = covar_unvech((sigma_vec_tmp*0.1) + ((2.0*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
       sig_mat_tmp = sig_mat_tmp*trans(sig_mat_tmp);
       sig_mat_tmp = sig_mat_tmp + q*arma::speye(q,q);
       sigma_0.row(xk) = trans(covar_vech(sig_mat_tmp));
@@ -694,7 +768,7 @@ arma::vec initVals_MSARmdl(List mdl, int k){
   arma::vec sig_0(1+msvar*(k-1), arma::fill::zeros);
   // Set initial values using linear model if no switch
   mu_0(0) = mu;
-  sig_0(0) = pow(stdev,2);
+  sig_0(0) = pow(stdev,2.0);
   // initial values for mu around linear model mu when switch
   if (msmu==TRUE){
     mu_0 = mu + (3*stdev)*arma::randn<arma::vec>(k);
@@ -746,7 +820,7 @@ arma::vec initVals_MSARXmdl(List mdl, int k){
   arma::vec sig_0(1+msvar*(k-1), arma::fill::zeros);
   // Set initial values using linear model if no switch
   mu_0(0) = mu;
-  sig_0(0) = pow(stdev,2);
+  sig_0(0) = pow(stdev,2.0);
   // initial values for mu around linear model mu when switch
   if (msmu==TRUE){
     mu_0 = mu + (3*stdev)*arma::randn<arma::vec>(k);
@@ -808,12 +882,12 @@ arma::vec initVals_MSVARmdl(List mdl, int k){
   // initial values for stdev around linear model stdev when switch
   if (msvar==TRUE){
     arma::vec sigma_vec_tmp = covar_vech(sigma);
-    arma::mat sig_mat_tmp = covar_unvech((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
+    arma::mat sig_mat_tmp = covar_unvech((sigma_vec_tmp*0.1) + ((2.0*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
     sig_mat_tmp = sig_mat_tmp*trans(sig_mat_tmp);
     sig_mat_tmp = sig_mat_tmp + q*arma::speye(q,q);
     sigma_0.row(0) = trans(covar_vech(sig_mat_tmp));
     for (int xk = 1; xk<k; xk++){
-      arma::mat sig_mat_tmp = covar_unvech((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
+      arma::mat sig_mat_tmp = covar_unvech((sigma_vec_tmp*0.1) + ((2.0*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
       sig_mat_tmp = sig_mat_tmp*trans(sig_mat_tmp);
       sig_mat_tmp = sig_mat_tmp + q*arma::speye(q,q);
       sigma_0.row(xk) = trans(covar_vech(sig_mat_tmp));
@@ -874,12 +948,12 @@ arma::vec initVals_MSVARXmdl(List mdl, int k){
   // initial values for stdev around linear model stdev when switch
   if (msvar==TRUE){
     arma::vec sigma_vec_tmp = covar_vech(sigma);
-    arma::mat sig_mat_tmp = covar_unvech((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
+    arma::mat sig_mat_tmp = covar_unvech((sigma_vec_tmp*0.1) + ((2.0*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
     sig_mat_tmp = sig_mat_tmp*trans(sig_mat_tmp);
     sig_mat_tmp = sig_mat_tmp + q*arma::speye(q,q);
     sigma_0.row(0) = trans(covar_vech(sig_mat_tmp));
     for (int xk = 1; xk<k; xk++){
-      arma::mat sig_mat_tmp = covar_unvech((sigma_vec_tmp*0.1) + ((2*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
+      arma::mat sig_mat_tmp = covar_unvech((sigma_vec_tmp*0.1) + ((2.0*sigma_vec_tmp)-(sigma_vec_tmp*0.1))%arma::randu<arma::vec>(sigN), q);
       sig_mat_tmp = sig_mat_tmp*trans(sig_mat_tmp);
       sig_mat_tmp = sig_mat_tmp + q*arma::speye(q,q);
       sigma_0.row(xk) = trans(covar_vech(sig_mat_tmp));
@@ -903,7 +977,7 @@ arma::vec initVals_MSVARXmdl(List mdl, int k){
 //' 
 //' @param test_stat Test statistic under the alternative (e.g. \code{S_0}).
 //' @param null_vec A (\code{N x 1}) vector with test statistic under the null hypothesis.
-//' @param type String determining type of test. options are: "geq" for right-tail test, "leq" for left-tail test, "abs" for absolute value test and "two-tail" for two-tail test.
+//' @param type String determining the type of test. Options are \code{"geq"} (right/upper-tail test; the default), \code{"leq"} (left/lower-tail test), \code{"two-tailed"} (or \code{"two-tail"}; two-sided test), and \code{"absolute"} (or \code{"abs"}; the upper-tail rule, intended for non-negative statistics). An unrecognized value raises an error.
 //' 
 //' @return MC p-value of test
 //' 
@@ -913,23 +987,32 @@ arma::vec initVals_MSVARXmdl(List mdl, int k){
 //' @export
 // [[Rcpp::export]]
 double MCpval(double test_stat, arma::vec null_vec, Rcpp::String type = "geq"){
+  null_vec = null_vec.elem(arma::find_finite(null_vec)); // drop non-finite draws (NaN/Inf) before ranking
   int N = null_vec.n_elem;
+  if (N == 0) {
+    Rcpp::warning("MCpval: no finite null draws available; returning NA.");
+    return R_NaN;
+  }
   arma::vec u   = arma::randu(1 + sum(null_vec == test_stat)); 
   double test_rank  = sum(test_stat > null_vec) + sum(u <= u(0));
   // negative p-value can occur two-tailed test
   double survival_pval = ((N + 1 - test_rank)/ N);
-  // Compute the p-value
-  double pval = 999; // This will be returned if allowed type isnt specified. 
-  if (type == "absolute" || type == "geq") {
+  // Compute the p-value. Accepted 'type' values (long and short spellings):
+  //   "geq"                         upper-tail (reject for large statistic; the default)
+  //   "absolute" / "abs"            same upper-tail rule (for non-negative statistics)
+  //   "leq"                         lower-tail
+  //   "two-tailed" / "two-tail"     two-sided
+  double pval;
+  if (type == "geq" || type == "absolute" || type == "abs") {
     pval = (N * survival_pval + 1)/(N + 1);
   }else if (type == "leq") {
     pval = (N * (1 - survival_pval) + 1)/(N + 1);
-  }else if (type == "two-tailed") {
+  }else if (type == "two-tailed" || type == "two-tail") {
     pval = 2 * std::min((N * (1 - survival_pval) + 1)/(N + 1),(N * survival_pval + 1)/(N + 1));
   } else{
-    Rcerr << "type must be one of the following: geq, leq, two-tailed or absolute\n";
+    Rcpp::stop("MCpval: 'type' must be one of 'geq', 'leq', 'two-tailed'/'two-tail', or 'absolute'/'abs'.");
   }
-  return(pval); 
+  return(pval);
 }
 
 // ==============================================================================
@@ -947,11 +1030,9 @@ double MCpval(double test_stat, arma::vec null_vec, Rcpp::String type = "geq"){
 //' @export
 // [[Rcpp::export]]
 arma::mat randSN(int n, int q){
-  double pi = arma::datum::pi;
-  arma::mat U1(n, q, arma::fill::randu);
-  arma::mat U2(n, q, arma::fill::randu);
-  arma::mat eps = trans(trans(sqrt(-2*log(U1))%cos(2*pi*U2)));
-  return(eps);
+  // Use arma::randn: respects R's set.seed(), avoids log(0) risk from U1=0,
+  // and is ~3-5x faster than Box-Muller.
+  return arma::randn(n, q);
 }
 
 
@@ -1117,7 +1198,13 @@ List simuMSAR_cpp(List mdl_h0, int burnin = 100){
   if(mdl_h0.containsElementNamed("eps") ){
     eps = as<arma::mat>(mdl_h0["eps"]);
   } else {
-    eps = randSN(Tsize+burnin, 1); 
+    eps = randSN(Tsize+burnin, 1);
+  }
+  // Pre-drawn state transition uniforms (for fixed-error MMC, Dufour 2006)
+  arma::vec state_rand_vec;
+  bool use_predrawn_states = mdl_h0.containsElementNamed("state_rand");
+  if (use_predrawn_states) {
+    state_rand_vec = as<arma::vec>(mdl_h0["state_rand"]);
   }
   // ----- Perform checks on DGP
   arma::vec check_Pcolsum = trans(arma::sum(P,0));
@@ -1146,13 +1233,14 @@ List simuMSAR_cpp(List mdl_h0, int burnin = 100){
   arma::vec eps_corr_k = epsLs[state];
   Y.rows(0,p-1) = mu_t.rows(0,p-1) + eps_corr_k.rows(0,p-1);
   // simulate process
-  arma::vec repk(k,arma::fill::ones);
-  arma::vec state_ind = cumsum(repk)-1;
   for (int xt = p; xt<(Tsize+burnin); xt++){
     // Get new state
-    arma::vec w_temp = P.col(state);
-    arma::vec state_mat = cumsum(w_temp);
-    state = arma::as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
+    // Inverse CDF state selection (faster than find())
+    double u_state = use_predrawn_states ? state_rand_vec(xt) : arma::randu<double>();
+    int new_state = 0;
+    double cum_p = P(0, state);
+    while (u_state > cum_p && new_state < k - 1) { new_state++; cum_p += P(new_state, state); }
+    state = new_state;
     state_series(xt) = state;
     // generate new obs
     arma::vec ytmp = flipud(Y.subvec((xt-p),(xt-1)));
@@ -1224,7 +1312,13 @@ List simuMSARX_cpp(List mdl_h0, int burnin = 100){
   if(mdl_h0.containsElementNamed("eps") ){
     eps = as<arma::mat>(mdl_h0["eps"]);
   }else{
-    eps = randSN(Tsize+burnin, 1); 
+    eps = randSN(Tsize+burnin, 1);
+  }
+  // Pre-drawn state transition uniforms (for fixed-error MMC, Dufour 2006)
+  arma::vec state_rand_vec;
+  bool use_predrawn_states = mdl_h0.containsElementNamed("state_rand");
+  if (use_predrawn_states) {
+    state_rand_vec = as<arma::vec>(mdl_h0["state_rand"]);
   }
   // ----- Perform checks on DGP
   arma::vec check_Pcolsum = trans(arma::sum(P,0));
@@ -1253,13 +1347,14 @@ List simuMSARX_cpp(List mdl_h0, int burnin = 100){
   arma::vec eps_corr_k = epsLs[state];
   Y.rows(0,p-1)        = mu_t.rows(0,p-1) + eps_corr_k.rows(0,p-1);
   // simulate process
-  arma::vec repk(k,arma::fill::ones);
-  arma::vec state_ind  = cumsum(repk)-1;
   for (int xt = p; xt<(Tsize+burnin); xt++){
     // Get new state
-    arma::vec w_temp     = P.col(state);
-    arma::vec state_mat  = cumsum(w_temp);
-    state                = arma::as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
+    // Inverse CDF state selection (faster than find())
+    double u_state = use_predrawn_states ? state_rand_vec(xt) : arma::randu<double>();
+    int new_state = 0;
+    double cum_p = P(0, state);
+    while (u_state > cum_p && new_state < k - 1) { new_state++; cum_p += P(new_state, state); }
+    state = new_state;
     state_series(xt)     = state;
     // generate new obs
     arma::vec ytmp       = flipud(Y.subvec((xt-p),(xt-1)));
@@ -1407,8 +1502,9 @@ List simuVARX_cpp(List mdl_h0, int burnin = 100){
   arma::mat diagzero(q*(p-1),q,arma::fill::zeros);
   arma::mat Mn = join_rows(diagmat,diagzero);
   arma::mat F = join_cols(phimat,Mn);
-  // constant vec
-  arma::vec mu_tmp = vectorise(trans(repmu*trans(mu)));
+  // constant vec (need p-element ones vector, not the T-element repmu used for X demeaning)
+  arma::vec repmu_p(p, arma::fill::ones);
+  arma::vec mu_tmp = vectorise(trans(repmu_p*trans(mu)));
   arma::vec nu_tmp = (arma::eye(q*p,q*p) - F)*mu_tmp;
   arma::vec nu = nu_tmp.subvec(0,q-1);
   // ----- Simulate VAR process
@@ -1417,7 +1513,7 @@ List simuVARX_cpp(List mdl_h0, int burnin = 100){
   arma::mat eps_corr = trans(C*trans(eps));
   // simulate process
   arma::mat Y(Tsize+burnin, q, arma::fill::zeros);
-  Y.rows(0,p-1) = repmu*trans(nu) + eps_corr.rows(0,p-1);
+  Y.rows(0,p-1) = repmu_p*trans(nu) + eps_corr.rows(0,p-1);
   for (int xt = p; xt<(Tsize+burnin); xt++){
     arma::mat Ytmp = flipud(Y.rows((xt-p),(xt-1)));
     Y.row(xt) = trans(nu) + trans(vectorise(trans(Ytmp)))*trans(phimat) + eps_corr.row(xt);
@@ -1476,7 +1572,13 @@ List simuMSVAR_cpp(List mdl_h0, int burnin = 100){
   if(mdl_h0.containsElementNamed("eps") ){
     eps = as<arma::mat>(mdl_h0["eps"]);
   } else {
-    eps = randSN(Tsize+burnin, q); 
+    eps = randSN(Tsize+burnin, q);
+  }
+  // Pre-drawn state transition uniforms (for fixed-error MMC, Dufour 2006)
+  arma::vec state_rand_vec;
+  bool use_predrawn_states = mdl_h0.containsElementNamed("state_rand");
+  if (use_predrawn_states) {
+    state_rand_vec = as<arma::vec>(mdl_h0["state_rand"]);
   }
   // companion form matrix
   arma::mat diagmat = arma::eye(q*(p-1), q*(p-1));
@@ -1512,15 +1614,16 @@ List simuMSVAR_cpp(List mdl_h0, int burnin = 100){
   Y.rows(0,p-1) = mu_t.rows(0,p-1) + eps_corr_k.rows(0,p-1);
   for (int xp = 0; xp<p; xp++){
     sigma_t[xp] = cov_matLs[state];
-  } 
+  }
   // simulate process
-  arma::vec repk(k,arma::fill::ones);
-  arma::vec state_ind = cumsum(repk)-1;
   for (int xt = p; xt<(Tsize+burnin); xt++){
     // Get new state
-    arma::vec w_temp = P.col(state);
-    arma::vec state_mat = cumsum(w_temp);
-    state = arma::as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
+    // Inverse CDF state selection (faster than find())
+    double u_state = use_predrawn_states ? state_rand_vec(xt) : arma::randu<double>();
+    int new_state = 0;
+    double cum_p = P(0, state);
+    while (u_state > cum_p && new_state < k - 1) { new_state++; cum_p += P(new_state, state); }
+    state = new_state;
     state_series(xt) = state;
     arma::mat eps_corr_k = epsLs[state];
     arma::mat Ytmp = flipud(Y.rows((xt-p),(xt-1)));
@@ -1600,6 +1703,12 @@ List simuMSVARX_cpp(List mdl_h0, int burnin = 100){
    } else {
      eps = randSN(Tsize+burnin, q);
    }
+   // Pre-drawn state transition uniforms (for fixed-error MMC, Dufour 2006)
+   arma::vec state_rand_vec;
+   bool use_predrawn_states = mdl_h0.containsElementNamed("state_rand");
+   if (use_predrawn_states) {
+     state_rand_vec = as<arma::vec>(mdl_h0["state_rand"]);
+   }
    // companion form matrix
    arma::mat diagmat = arma::eye(q*(p-1), q*(p-1));
    arma::mat diagzero(q*(p-1), q, arma::fill::zeros);
@@ -1636,13 +1745,14 @@ List simuMSVARX_cpp(List mdl_h0, int burnin = 100){
      sigma_t[xp] = cov_matLs[state];
    }
    // simulate process
-   arma::vec repk(k,arma::fill::ones);
-   arma::vec state_ind = cumsum(repk)-1;
    for (int xt = p; xt<(Tsize+burnin); xt++){
      // Get new state
-     arma::vec w_temp = P.col(state);
-     arma::vec state_mat = cumsum(w_temp);
-     state = arma::as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
+     // Inverse CDF state selection (faster than find())
+     double u_state = use_predrawn_states ? state_rand_vec(xt) : arma::randu<double>();
+     int new_state = 0;
+     double cum_p = P(0, state);
+     while (u_state > cum_p && new_state < k - 1) { new_state++; cum_p += P(new_state, state); }
+     state = new_state;
      state_series(xt) = state;
      arma::mat eps_corr_k = epsLs[state];
      arma::mat Ytmp = flipud(Y.rows((xt-p),(xt-1)));
@@ -1786,7 +1896,13 @@ List simuHMM_cpp(List mdl_h0, int burnin = 100, bool exog = false){
   if(mdl_h0.containsElementNamed("eps") ){
     eps = as<arma::mat>(mdl_h0["eps"]);
   } else {
-    eps = randSN(Tsize+burnin, q); 
+    eps = randSN(Tsize+burnin, q);
+  }
+  // Pre-drawn state transition uniforms (for fixed-error MMC, Dufour 2006)
+  arma::vec state_rand_vec;
+  bool use_predrawn_states = mdl_h0.containsElementNamed("state_rand");
+  if (use_predrawn_states) {
+    state_rand_vec = as<arma::vec>(mdl_h0["state_rand"]);
   }
   // ----- Perform checks on DGP
   arma::vec check_Pcolsum = trans(arma::sum(P,0));
@@ -1812,13 +1928,14 @@ List simuHMM_cpp(List mdl_h0, int burnin = 100, bool exog = false){
   // initialize assuming series begins in state 1 (use burnin to reduce dependence on this assumption)
   int state = 0;
   // simulate process
-  arma::vec repk(k,arma::fill::ones);
-  arma::vec state_ind = cumsum(repk)-1;
   for (int xt = 0; xt<(Tsize+burnin); xt++){
     // Get new state
-    arma::vec w_temp = P.col(state);
-    arma::vec state_mat = cumsum(w_temp);
-    state = arma::as_scalar(state_ind(find(arma::randu() < state_mat, 1, "first")));
+    // Inverse CDF state selection (faster than find())
+    double u_state = use_predrawn_states ? state_rand_vec(xt) : arma::randu<double>();
+    int new_state = 0;
+    double cum_p = P(0, state);
+    while (u_state > cum_p && new_state < k - 1) { new_state++; cum_p += P(new_state, state); }
+    state = new_state;
     state_series(xt) = state;
     arma::mat eps_corr_k = epsLs[state];
     resid.row(xt) = eps_corr_k.row(xt);
@@ -1881,7 +1998,7 @@ double logLike_Nmdl(arma::vec theta, List mdl){
   double pi = arma::datum::pi;
   arma::vec f_t(Tsize, arma::fill::zeros);
   for (int xt = 0; xt<Tsize; xt++){
-    f_t(xt) = arma::as_scalar((1/sqrt(det(sigma)*pow(2*pi,q)))*
+    f_t(xt) = arma::as_scalar((1.0/sqrt(det(sigma)*pow(2.0*pi,q)))*
       exp(-0.5*(resid.row(xt)*inv(sigma)*trans(resid.row(xt)))));
   }
   double logLike = sum(log(f_t));
@@ -1918,8 +2035,8 @@ double logLike_ARmdl(arma::vec theta, List mdl){
   double logLike;
   double pi = arma::datum::pi;
   arma::mat repmu(Tsize, phi.n_elem,arma::fill::ones);
-  logLike = sum(log((1/sqrt(2*pi*sigma))*
-    exp(-pow((y - mu) - (x-(mu*repmu))*phi,2)/(2*sigma))));
+  logLike = sum(log((1.0/sqrt(2.0*pi*sigma))*
+    exp(-pow((y - mu) - (x-(mu*repmu))*phi,2.0)/(2.0*sigma))));
   return(logLike);
 }
 
@@ -1963,7 +2080,7 @@ double logLike_ARXmdl(arma::vec theta, List mdl){
   arma::mat repmu(Tsize, phi.n_elem,arma::fill::ones);
   arma::mat repzb(Tsize, 1,arma::fill::ones);
   arma::vec resid = (y - mu) - (x-(mu*repmu))*phi - (z-(repzb*zbar))*betaZ;
-  logLike = arma::as_scalar(sum(log((1/sqrt(2*pi*sigma))*exp(-pow(resid,2)/(2*sigma)))));
+  logLike = arma::as_scalar(sum(log((1.0/sqrt(2.0*pi*sigma))*exp(-pow(resid,2.0)/(2.0*sigma)))));
   return(logLike);
 }
 // ==============================================================================
@@ -2007,7 +2124,7 @@ double logLike_VARmdl(arma::vec theta, List mdl){
   double pi = arma::datum::pi;
   arma::vec f_t(Tsize, arma::fill::zeros);
   for (int xt = 0; xt<Tsize; xt++){
-    f_t(xt) = arma::as_scalar((1/sqrt(det(sigma)*pow(2*pi,q)))*
+    f_t(xt) = arma::as_scalar((1.0/sqrt(det(sigma)*pow(2.0*pi,q)))*
       exp(-0.5*(resid.row(xt)*inv(sigma)*trans(resid.row(xt)))));
   }
   double logLike = sum(log(f_t));
@@ -2062,7 +2179,7 @@ double logLike_VARXmdl(arma::vec theta, List mdl){
    double pi = arma::datum::pi;
    arma::vec f_t(Tsize, arma::fill::zeros);
    for (int xt = 0; xt<Tsize; xt++){
-     f_t(xt) = arma::as_scalar((1/sqrt(det(sigma)*pow(2*pi,q)))*
+     f_t(xt) = arma::as_scalar((1.0/sqrt(det(sigma)*pow(2.0*pi,q)))*
        exp(-0.5*(resid.row(xt)*inv(sigma)*trans(resid.row(xt)))));
    }
    double logLike = sum(log(f_t));
@@ -2153,14 +2270,22 @@ double logLike_HMmdl(arma::vec theta, List mdl, int k){
     for (int xk = 0; xk<k; xk++){
       arma::mat eps_k = eps[xk];
       arma::mat sigma_k = sigma[xk];
-      //eta(xt,xk) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*inv(sigma_k)*trans(eps_k.row(xt)))));
-      eta(xt,xk) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*solve(sigma_k,trans(eps_k.row(xt)), arma::solve_opts::allow_ugly))));
+      //eta(xt,xk) = arma::as_scalar((1.0/(sqrt(pow(2.0*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*inv(sigma_k)*trans(eps_k.row(xt)))));
+      eta(xt,xk) = arma::as_scalar((1.0/(sqrt(pow(2.0*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*solve(sigma_k,trans(eps_k.row(xt)), arma::solve_opts::allow_ugly))));
     }
     arma::vec xi_eta = xi_t_tm1%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
     double f_tmp = sum(xi_eta);
-    xi_t_t.row(xt) = trans(xi_eta/f_tmp);
-    xi_t_tm1 = P*trans(xi_t_t.row(xt));
+    if (f_tmp > 0 && std::isfinite(f_tmp)) {
+      xi_t_t.row(xt) = trans(xi_eta/f_tmp);
+      xi_t_tm1 = P*trans(xi_t_t.row(xt));
+    } else {
+      // Underflow: all regime densities collapsed to zero.
+      // Reset to ergodic distribution to break NaN cascade.
+      // f_t stores true 0; log(0)=-Inf makes logL=-Inf (theta ruled out).
+      xi_t_t.row(xt) = trans(pinf);
+      xi_t_tm1 = pinf;
+    }
     xi_tp1_t.row(xt) = trans(xi_t_tm1);
   }
   // ----- log-Likelihood
@@ -2255,12 +2380,20 @@ double logLike_MSARmdl(arma::vec theta, List mdl, int k){
   double pi = arma::datum::pi;
   arma::vec xi_t_tm1 = pinf_AR;
   for (int xt = 0; xt<Tsize; xt++){
-    eta.row(xt) = trans(1/sqrt(2*pi*(sigAR)))%exp((pow(eps.row(xt),2)%trans(-1/(2*sigAR))));
+    eta.row(xt) = trans(1.0/sqrt(2.0*pi*(sigAR)))%exp((pow(eps.row(xt),2.0)%trans(-1.0/(2.0*sigAR))));
     arma::vec xi_eta = xi_t_tm1%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
     double f_tmp = sum(xi_eta);
-    xi_t_t.row(xt) = trans(xi_eta/f_tmp);
-    xi_t_tm1 = P_AR * trans(xi_t_t.row(xt));
+    if (f_tmp > 0 && std::isfinite(f_tmp)) {
+      xi_t_t.row(xt) = trans(xi_eta/f_tmp);
+      xi_t_tm1 = predict_fast(trans(xi_t_t.row(xt)), P, k, ar);
+    } else {
+      // Underflow: all regime densities collapsed to zero.
+      // Reset to ergodic distribution to break NaN cascade.
+      // f_t stores true 0; log(0)=-Inf makes logL=-Inf (theta ruled out).
+      xi_t_t.row(xt) = trans(pinf_AR);
+      xi_t_tm1 = pinf_AR;
+    }
     xi_tp1_t.row(xt) = trans(xi_t_tm1);
   }
   // log-Likelihood
@@ -2342,12 +2475,20 @@ double logLike_MSARXmdl(arma::vec theta, List mdl, int k){
   double pi = arma::datum::pi;
   arma::vec xi_t_tm1 = pinf_AR;
   for (int xt = 0; xt<Tsize; xt++){
-    eta.row(xt) = trans(1/sqrt(2*pi*(sigAR)))%exp((pow(eps.row(xt),2)%trans(-1/(2*sigAR))));
+    eta.row(xt) = trans(1.0/sqrt(2.0*pi*(sigAR)))%exp((pow(eps.row(xt),2.0)%trans(-1.0/(2.0*sigAR))));
     arma::vec xi_eta = xi_t_tm1%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
     double f_tmp = sum(xi_eta);
-    xi_t_t.row(xt) = trans(xi_eta/f_tmp);
-    xi_t_tm1 = P_AR * trans(xi_t_t.row(xt));
+    if (f_tmp > 0 && std::isfinite(f_tmp)) {
+      xi_t_t.row(xt) = trans(xi_eta/f_tmp);
+      xi_t_tm1 = predict_fast(trans(xi_t_t.row(xt)), P, k, ar);
+    } else {
+      // Underflow: all regime densities collapsed to zero.
+      // Reset to ergodic distribution to break NaN cascade.
+      // f_t stores true 0; log(0)=-Inf makes logL=-Inf (theta ruled out).
+      xi_t_t.row(xt) = trans(pinf_AR);
+      xi_t_tm1 = pinf_AR;
+    }
     xi_tp1_t.row(xt) = trans(xi_t_tm1);
   }
   // log-Likelihood
@@ -2492,24 +2633,41 @@ double logLike_MSVARmdl(arma::vec theta, List mdl, int k){
   arma::mat xi_tp1_t(Tsize, k, arma::fill::zeros);  // [eq. 22.4.6]
   arma::mat xi_tp1_t_tmp(Tsize, M, arma::fill::zeros);  
   double pi = arma::datum::pi;
+  // Pre-compute per-regime density constants (sigAR constant during T-loop)
+  std::vector<arma::mat> inv_sigma_precomp(M);
+  arma::vec norm_const_precomp(M);
+  for (int xm_pre = 0; xm_pre < M; xm_pre++) {
+    arma::mat sm = sigAR[xm_pre];
+    double det_val = arma::det(sm);
+    norm_const_precomp(xm_pre) = (det_val > 0) ? 1.0 / sqrt(pow(2.0*pi, q) * det_val) : 0.0;
+    arma::mat inv_sm;
+    bool ok = arma::inv(inv_sm, sm);
+    inv_sigma_precomp[xm_pre] = ok ? inv_sm : arma::zeros<arma::mat>(q, q);
+  }
   arma::vec xi_t_tm1_AR = pinfAR;
   arma::vec xi_t_tm1 = pinf;
   for (int xt = 0; xt<Tsize; xt++){
     for (int xm = 0; xm<M; xm++){
       arma::mat eps_m = eps[xm];
-      arma::mat sigma_m = sigAR[xm];
-      //eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*inv(sigma_m)*trans(eps_m.row(xt)))));
-      eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt)), arma::solve_opts::allow_ugly))));
+      arma::vec e_vec = trans(eps_m.row(xt));
+      eta(xt,xm) = norm_const_precomp(xm) * exp(-0.5 * arma::dot(e_vec, inv_sigma_precomp[xm] * e_vec));
     }
     arma::vec xi_eta = xi_t_tm1_AR%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
     double f_tmp = sum(xi_eta);
-    xi_t_t_tmp.row(xt) = trans(xi_eta/f_tmp);
+    if (f_tmp > 0 && std::isfinite(f_tmp)) {
+      xi_t_t_tmp.row(xt) = trans(xi_eta/f_tmp);
+    } else {
+      // Underflow: all regime densities collapsed to zero.
+      // Reset to ergodic distribution to break NaN cascade.
+      // f_t stores true 0; log(0)=-Inf makes logL=-Inf (theta ruled out).
+      xi_t_t_tmp.row(xt) = trans(pinfAR);
+    }
     for (int xk = 1; xk<=k; xk++){
       arma::vec xi_t_t_row = trans(xi_t_t_tmp.row(xt));
       xi_t_t.submat(xt,xk-1,xt,xk-1) = sum(xi_t_t_row.rows(find(state_ind==xk)));
     }
-    xi_t_tm1_AR = PAR*trans(xi_t_t_tmp.row(xt));
+    xi_t_tm1_AR = predict_fast(trans(xi_t_t_tmp.row(xt)), P, k, ar);
     xi_t_tm1 = P*trans(xi_t_t.row(xt));
     xi_tp1_t_tmp.row(xt) = trans(xi_t_tm1_AR);
     xi_tp1_t.row(xt) = trans(xi_t_tm1);
@@ -2619,24 +2777,41 @@ double logLike_MSVARXmdl(arma::vec theta, List mdl, int k){
   arma::mat xi_tp1_t(Tsize, k, arma::fill::zeros);  // [eq. 22.4.6]
   arma::mat xi_tp1_t_tmp(Tsize, M, arma::fill::zeros);  
   double pi = arma::datum::pi;
+  // Pre-compute per-regime density constants (sigAR constant during T-loop)
+  std::vector<arma::mat> inv_sigma_precomp(M);
+  arma::vec norm_const_precomp(M);
+  for (int xm_pre = 0; xm_pre < M; xm_pre++) {
+    arma::mat sm = sigAR[xm_pre];
+    double det_val = arma::det(sm);
+    norm_const_precomp(xm_pre) = (det_val > 0) ? 1.0 / sqrt(pow(2.0*pi, q) * det_val) : 0.0;
+    arma::mat inv_sm;
+    bool ok = arma::inv(inv_sm, sm);
+    inv_sigma_precomp[xm_pre] = ok ? inv_sm : arma::zeros<arma::mat>(q, q);
+  }
   arma::vec xi_t_tm1_AR = pinfAR;
   arma::vec xi_t_tm1 = pinf;
   for (int xt = 0; xt<Tsize; xt++){
     for (int xm = 0; xm<M; xm++){
       arma::mat eps_m = eps[xm];
-      arma::mat sigma_m = sigAR[xm];
-      //eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*inv(sigma_m)*trans(eps_m.row(xt)))));
-      eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt)), arma::solve_opts::allow_ugly))));
+      arma::vec e_vec = trans(eps_m.row(xt));
+      eta(xt,xm) = norm_const_precomp(xm) * exp(-0.5 * arma::dot(e_vec, inv_sigma_precomp[xm] * e_vec));
     } 
     arma::vec xi_eta = xi_t_tm1_AR%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
     double f_tmp = sum(xi_eta);
-    xi_t_t_tmp.row(xt) = trans(xi_eta/f_tmp);
+    if (f_tmp > 0 && std::isfinite(f_tmp)) {
+      xi_t_t_tmp.row(xt) = trans(xi_eta/f_tmp);
+    } else {
+      // Underflow: all regime densities collapsed to zero.
+      // Reset to ergodic distribution to break NaN cascade.
+      // f_t stores true 0; log(0)=-Inf makes logL=-Inf (theta ruled out).
+      xi_t_t_tmp.row(xt) = trans(pinfAR);
+    }
     for (int xk = 1; xk<=k; xk++){
       arma::vec xi_t_t_row = trans(xi_t_t_tmp.row(xt));
       xi_t_t.submat(xt,xk-1,xt,xk-1) = sum(xi_t_t_row.rows(find(state_ind==xk)));
     } 
-    xi_t_tm1_AR = PAR*trans(xi_t_t_tmp.row(xt));
+    xi_t_tm1_AR = predict_fast(trans(xi_t_t_tmp.row(xt)), P, k, ar);
     xi_t_tm1 = P*trans(xi_t_t.row(xt));
     xi_tp1_t_tmp.row(xt) = trans(xi_t_tm1_AR);
     xi_tp1_t.row(xt) = trans(xi_t_tm1);
@@ -2772,14 +2947,22 @@ List ExpectationM_HMmdl(arma::vec theta, List mdl, int k){
     for (int xk = 0; xk<k; xk++){
       arma::mat eps_k = eps[xk];
       arma::mat sigma_k = sigma[xk];
-      //eta(xt,xk) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*inv(sigma_k)*trans(eps_k.row(xt)))));
-      eta(xt,xk) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*solve(sigma_k,trans(eps_k.row(xt)), arma::solve_opts::allow_ugly))));
+      //eta(xt,xk) = arma::as_scalar((1.0/(sqrt(pow(2.0*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*inv(sigma_k)*trans(eps_k.row(xt)))));
+      eta(xt,xk) = arma::as_scalar((1.0/(sqrt(pow(2.0*pi,q)*det(sigma_k))))*exp(-0.5*(eps_k.row(xt)*solve(sigma_k,trans(eps_k.row(xt)), arma::solve_opts::allow_ugly))));
     }
     arma::vec xi_eta = xi_t_tm1%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
     double f_tmp = sum(xi_eta);
-    xi_t_t.row(xt) = trans(xi_eta/f_tmp);
-    xi_t_tm1 = P*trans(xi_t_t.row(xt));
+    if (f_tmp > 0 && std::isfinite(f_tmp)) {
+      xi_t_t.row(xt) = trans(xi_eta/f_tmp);
+      xi_t_tm1 = P*trans(xi_t_t.row(xt));
+    } else {
+      // Underflow: all regime densities collapsed to zero.
+      // Reset to ergodic distribution to break NaN cascade.
+      // f_t stores true 0; log(0)=-Inf makes logL=-Inf (theta ruled out).
+      xi_t_t.row(xt) = trans(pinf);
+      xi_t_tm1 = pinf;
+    }
     xi_tp1_t.row(xt) = trans(xi_t_tm1);
   }
   // ----- log-Likelihood
@@ -2790,10 +2973,16 @@ List ExpectationM_HMmdl(arma::vec theta, List mdl, int k){
   arma::mat xi_t_T(Tsize, k, arma::fill::zeros); // [eq. 22.4.14]
   xi_t_T.row(Tsize-1)  = xi_t_t.row(Tsize-1);
   for (int xT = Tsize-2; xT>=0; xT--){
-    xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_t.row(xT)));
+    arma::rowvec xi_tp1_safe = xi_tp1_t.row(xT);
+    xi_tp1_safe.clamp(1e-300, 1.0);  // guard against exact-zero denominator
+    xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_safe));
+    // Non-finite guard: if smoother fails (should never happen for k-state), use filtered.
+    if (!xi_t_T.row(xT).is_finite()) {
+      xi_t_T.row(xT) = xi_t_t.row(xT);
+    }
   }
-  // ----- Compute model residuals 
-  arma::mat residuals(Tsize, q, arma::fill::zeros); 
+  // ----- Compute model residuals
+  arma::mat residuals(Tsize, q, arma::fill::zeros);
   arma::mat repq(1, q, arma::fill::ones);
   for (int xk = 0; xk<k;xk++){
     arma::mat eps_tmp = eps[xk];
@@ -2862,23 +3051,30 @@ List ExpectationM_MSARmdl(arma::vec theta, List mdl, int k){
   arma::mat eta(Tsize, M, arma::fill::zeros);       // [eq. 22.4.2]
   arma::mat f_t(Tsize, 1, arma::fill::zeros);       // [eq. 22.4.8]
   arma::mat xi_t_t(Tsize, k, arma::fill::zeros);    // [eq. 22.4.5]
-  arma::mat xi_t_t_tmp(Tsize, M, arma::fill::zeros);    
+  arma::mat xi_t_t_tmp(Tsize, M, arma::fill::zeros);
   arma::mat xi_tp1_t(Tsize, k, arma::fill::zeros);  // [eq. 22.4.6]
-  arma::mat xi_tp1_t_tmp(Tsize, M, arma::fill::zeros);  
+  arma::mat xi_tp1_t_tmp(Tsize, M, arma::fill::zeros);
   double pi = arma::datum::pi;
   arma::vec xi_t_tm1_AR = pinfAR;
   arma::vec xi_t_tm1 = pinf;
   for (int xt = 0; xt<Tsize; xt++){
-    eta.row(xt) = trans(1/sqrt(2*pi*(sigAR)))%exp((pow(eps.row(xt),2)%trans(-1/(2*sigAR))));
+    eta.row(xt) = trans(1.0/sqrt(2.0*pi*(sigAR)))%exp((pow(eps.row(xt),2.0)%trans(-1.0/(2.0*sigAR))));
     arma::vec xi_eta = xi_t_tm1_AR%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
     double f_tmp = sum(xi_eta);
-    xi_t_t_tmp.row(xt) = trans(xi_eta/f_tmp);
+    if (f_tmp > 0 && std::isfinite(f_tmp)) {
+      xi_t_t_tmp.row(xt) = trans(xi_eta/f_tmp);
+    } else {
+      // Underflow: all regime densities collapsed to zero.
+      // Reset to ergodic distribution to break NaN cascade.
+      // f_t stores true 0; log(0)=-Inf makes logL=-Inf (theta ruled out).
+      xi_t_t_tmp.row(xt) = trans(pinfAR);
+    }
     for (int xk = 1; xk<=k; xk++){
       arma::vec xi_t_t_row = trans(xi_t_t_tmp.row(xt));
       xi_t_t.submat(xt,xk-1,xt,xk-1) = sum(xi_t_t_row.rows(find(state_ind==xk)));
     }
-    xi_t_tm1_AR = PAR*trans(xi_t_t_tmp.row(xt));
+    xi_t_tm1_AR = predict_fast(trans(xi_t_t_tmp.row(xt)), P, k, p);
     xi_t_tm1 = P*trans(xi_t_t.row(xt));
     xi_tp1_t_tmp.row(xt) = trans(xi_t_tm1_AR);
     xi_tp1_t.row(xt) = trans(xi_t_tm1);
@@ -2893,11 +3089,28 @@ List ExpectationM_MSARmdl(arma::vec theta, List mdl, int k){
   xi_t_T_tmp.row(Tsize-1)  = xi_t_t_tmp.row(Tsize-1);
   xi_t_T.row(Tsize-1)  = xi_t_t.row(Tsize-1);
   for (int xT = Tsize-2; xT>=0; xT--){
-    xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT)%trans(trans(PAR)*trans(xi_t_T_tmp.row(xT+1)/xi_tp1_t_tmp.row(xT)));
-    xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_t.row(xT)));
+    arma::rowvec xi_tp1_tmp_safe = xi_tp1_t_tmp.row(xT);
+    xi_tp1_tmp_safe.clamp(1e-300, 1.0);  // guard against exact-zero denominator
+    arma::rowvec xi_tp1_safe = xi_tp1_t.row(xT);
+    xi_tp1_safe.clamp(1e-300, 1.0);
+    xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT)%trans(smooth_fast(trans(xi_t_T_tmp.row(xT+1)/xi_tp1_tmp_safe), P, k, p));
+    double row_sum_M = accu(xi_t_T_tmp.row(xT));
+    if (row_sum_M > 0 && std::isfinite(row_sum_M)) {
+      xi_t_T_tmp.row(xT) = xi_t_T_tmp.row(xT) / row_sum_M;
+    } else {
+      xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT);
+    }
+    // k-state smoother: do NOT renormalize. Sum-to-1 is an algebraic invariant of the
+    // Kim (1994) recursion (Krolzig 1997, eq. 5.13). Renormalization introduces time-varying
+    // scaling that breaks the P update identity (eq. 6.14): sum_j P_new(j,i) != 1.
+    xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_safe));
+    // Non-finite guard: if smoother fails (should never happen for k-state), use filtered.
+    if (!xi_t_T.row(xT).is_finite()) {
+      xi_t_T.row(xT) = xi_t_t.row(xT);
+    }
   }
-  // ----- Compute model residuals 
-  arma::mat residuals_tmp = eps%xi_t_T_tmp; 
+  // ----- Compute model residuals
+  arma::mat residuals_tmp = eps%xi_t_T_tmp;
   arma::mat residuals(Tsize, k);
   for (int xk = 1; xk<=k;xk++){
     residuals.col(xk-1) = arma::sum(residuals_tmp.cols(find(state_ind==xk)), 1);
@@ -2979,23 +3192,30 @@ List ExpectationM_MSARXmdl(arma::vec theta, List mdl, int k){
   arma::mat eta(Tsize, M, arma::fill::zeros);       // [eq. 22.4.2]
   arma::mat f_t(Tsize, 1, arma::fill::zeros);       // [eq. 22.4.8]
   arma::mat xi_t_t(Tsize, k, arma::fill::zeros);    // [eq. 22.4.5]
-  arma::mat xi_t_t_tmp(Tsize, M, arma::fill::zeros);    
+  arma::mat xi_t_t_tmp(Tsize, M, arma::fill::zeros);
   arma::mat xi_tp1_t(Tsize, k, arma::fill::zeros);  // [eq. 22.4.6]
-  arma::mat xi_tp1_t_tmp(Tsize, M, arma::fill::zeros);  
+  arma::mat xi_tp1_t_tmp(Tsize, M, arma::fill::zeros);
   double pi = arma::datum::pi;
   arma::vec xi_t_tm1_AR = pinfAR;
   arma::vec xi_t_tm1 = pinf;
   for (int xt = 0; xt<Tsize; xt++){
-    eta.row(xt) = trans(1/sqrt(2*pi*(sigAR)))%exp((pow(eps.row(xt),2)%trans(-1/(2*sigAR))));
+    eta.row(xt) = trans(1.0/sqrt(2.0*pi*(sigAR)))%exp((pow(eps.row(xt),2.0)%trans(-1.0/(2.0*sigAR))));
     arma::vec xi_eta = xi_t_tm1_AR%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
     double f_tmp = sum(xi_eta);
-    xi_t_t_tmp.row(xt) = trans(xi_eta/f_tmp);
+    if (f_tmp > 0 && std::isfinite(f_tmp)) {
+      xi_t_t_tmp.row(xt) = trans(xi_eta/f_tmp);
+    } else {
+      // Underflow: all regime densities collapsed to zero.
+      // Reset to ergodic distribution to break NaN cascade.
+      // f_t stores true 0; log(0)=-Inf makes logL=-Inf (theta ruled out).
+      xi_t_t_tmp.row(xt) = trans(pinfAR);
+    }
     for (int xk = 1; xk<=k; xk++){
       arma::vec xi_t_t_row = trans(xi_t_t_tmp.row(xt));
       xi_t_t.submat(xt,xk-1,xt,xk-1) = sum(xi_t_t_row.rows(find(state_ind==xk)));
     }
-    xi_t_tm1_AR = PAR*trans(xi_t_t_tmp.row(xt));
+    xi_t_tm1_AR = predict_fast(trans(xi_t_t_tmp.row(xt)), P, k, p);
     xi_t_tm1 = P*trans(xi_t_t.row(xt));
     xi_tp1_t_tmp.row(xt) = trans(xi_t_tm1_AR);
     xi_tp1_t.row(xt) = trans(xi_t_tm1);
@@ -3010,11 +3230,28 @@ List ExpectationM_MSARXmdl(arma::vec theta, List mdl, int k){
   xi_t_T_tmp.row(Tsize-1)  = xi_t_t_tmp.row(Tsize-1);
   xi_t_T.row(Tsize-1)  = xi_t_t.row(Tsize-1);
   for (int xT = Tsize-2; xT>=0; xT--){
-    xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT)%trans(trans(PAR)*trans(xi_t_T_tmp.row(xT+1)/xi_tp1_t_tmp.row(xT)));
-    xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_t.row(xT)));
+    arma::rowvec xi_tp1_tmp_safe = xi_tp1_t_tmp.row(xT);
+    xi_tp1_tmp_safe.clamp(1e-300, 1.0);  // guard against exact-zero denominator
+    arma::rowvec xi_tp1_safe = xi_tp1_t.row(xT);
+    xi_tp1_safe.clamp(1e-300, 1.0);
+    xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT)%trans(smooth_fast(trans(xi_t_T_tmp.row(xT+1)/xi_tp1_tmp_safe), P, k, p));
+    double row_sum_M = accu(xi_t_T_tmp.row(xT));
+    if (row_sum_M > 0 && std::isfinite(row_sum_M)) {
+      xi_t_T_tmp.row(xT) = xi_t_T_tmp.row(xT) / row_sum_M;
+    } else {
+      xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT);
+    }
+    // k-state smoother: do NOT renormalize. Sum-to-1 is an algebraic invariant of the
+    // Kim (1994) recursion (Krolzig 1997, eq. 5.13). Renormalization introduces time-varying
+    // scaling that breaks the P update identity (eq. 6.14): sum_j P_new(j,i) != 1.
+    xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_safe));
+    // Non-finite guard: if smoother fails (should never happen for k-state), use filtered.
+    if (!xi_t_T.row(xT).is_finite()) {
+      xi_t_T.row(xT) = xi_t_t.row(xT);
+    }
   }
-  // ----- Compute model residuals 
-  arma::mat residuals_tmp = eps%xi_t_T_tmp; 
+  // ----- Compute model residuals
+  arma::mat residuals_tmp = eps%xi_t_T_tmp;
   arma::mat residuals(Tsize, k);
   for (int xk = 1; xk<=k;xk++){
     residuals.col(xk-1) = arma::sum(residuals_tmp.cols(find(state_ind==xk)), 1);
@@ -3097,24 +3334,41 @@ List ExpectationM_MSVARmdl(arma::vec theta, List mdl, int k){
   arma::mat xi_tp1_t(Tsize, k, arma::fill::zeros);  // [eq. 22.4.6]
   arma::mat xi_tp1_t_tmp(Tsize, M, arma::fill::zeros);  
   double pi = arma::datum::pi;
+  // Pre-compute per-regime density constants (sigAR constant during T-loop)
+  std::vector<arma::mat> inv_sigma_precomp(M);
+  arma::vec norm_const_precomp(M);
+  for (int xm_pre = 0; xm_pre < M; xm_pre++) {
+    arma::mat sm = sigAR[xm_pre];
+    double det_val = arma::det(sm);
+    norm_const_precomp(xm_pre) = (det_val > 0) ? 1.0 / sqrt(pow(2.0*pi, q) * det_val) : 0.0;
+    arma::mat inv_sm;
+    bool ok = arma::inv(inv_sm, sm);
+    inv_sigma_precomp[xm_pre] = ok ? inv_sm : arma::zeros<arma::mat>(q, q);
+  }
   arma::vec xi_t_tm1_AR = pinfAR;
   arma::vec xi_t_tm1 = pinf;
   for (int xt = 0; xt<Tsize; xt++){
     for (int xm = 0; xm<M; xm++){
       arma::mat eps_m = eps[xm];
-      arma::mat sigma_m = sigAR[xm];
-      //eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*inv(sigma_m)*trans(eps_m.row(xt)))));
-      eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt)), arma::solve_opts::allow_ugly))));
+      arma::vec e_vec = trans(eps_m.row(xt));
+      eta(xt,xm) = norm_const_precomp(xm) * exp(-0.5 * arma::dot(e_vec, inv_sigma_precomp[xm] * e_vec));
     }
     arma::vec xi_eta = xi_t_tm1_AR%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
     double f_tmp = sum(xi_eta);
-    xi_t_t_tmp.row(xt) = trans(xi_eta/f_tmp);
+    if (f_tmp > 0 && std::isfinite(f_tmp)) {
+      xi_t_t_tmp.row(xt) = trans(xi_eta/f_tmp);
+    } else {
+      // Underflow: all regime densities collapsed to zero.
+      // Reset to ergodic distribution to break NaN cascade.
+      // f_t stores true 0; log(0)=-Inf makes logL=-Inf (theta ruled out).
+      xi_t_t_tmp.row(xt) = trans(pinfAR);
+    }
     for (int xk = 1; xk<=k; xk++){
       arma::vec xi_t_t_row = trans(xi_t_t_tmp.row(xt));
       xi_t_t.submat(xt,xk-1,xt,xk-1) = sum(xi_t_t_row.rows(find(state_ind==xk)));
     }
-    xi_t_tm1_AR = PAR*trans(xi_t_t_tmp.row(xt));
+    xi_t_tm1_AR = predict_fast(trans(xi_t_t_tmp.row(xt)), P, k, ar);
     xi_t_tm1 = P*trans(xi_t_t.row(xt));
     xi_tp1_t_tmp.row(xt) = trans(xi_t_tm1_AR);
     xi_tp1_t.row(xt) = trans(xi_t_tm1);
@@ -3129,11 +3383,28 @@ List ExpectationM_MSVARmdl(arma::vec theta, List mdl, int k){
   xi_t_T_tmp.row(Tsize-1)  = xi_t_t_tmp.row(Tsize-1);
   xi_t_T.row(Tsize-1)  = xi_t_t.row(Tsize-1);
   for (int xT = Tsize-2; xT>=0; xT--){
-    xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT)%trans(trans(PAR)*trans(xi_t_T_tmp.row(xT+1)/xi_tp1_t_tmp.row(xT)));
-    xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_t.row(xT)));
+    arma::rowvec xi_tp1_tmp_safe = xi_tp1_t_tmp.row(xT);
+    xi_tp1_tmp_safe.clamp(1e-300, 1.0);  // guard against exact-zero denominator
+    arma::rowvec xi_tp1_safe = xi_tp1_t.row(xT);
+    xi_tp1_safe.clamp(1e-300, 1.0);
+    xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT)%trans(smooth_fast(trans(xi_t_T_tmp.row(xT+1)/xi_tp1_tmp_safe), P, k, ar));
+    double row_sum_M = accu(xi_t_T_tmp.row(xT));
+    if (row_sum_M > 0 && std::isfinite(row_sum_M)) {
+      xi_t_T_tmp.row(xT) = xi_t_T_tmp.row(xT) / row_sum_M;
+    } else {
+      xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT);
+    }
+    // k-state smoother: do NOT renormalize. Sum-to-1 is an algebraic invariant of the
+    // Kim (1994) recursion (Krolzig 1997, eq. 5.13). Renormalization introduces time-varying
+    // scaling that breaks the P update identity (eq. 6.14): sum_j P_new(j,i) != 1.
+    xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_safe));
+    // Non-finite guard: if smoother fails (should never happen for k-state), use filtered.
+    if (!xi_t_T.row(xT).is_finite()) {
+      xi_t_T.row(xT) = xi_t_t.row(xT);
+    }
   }
-  // ----- Compute model residuals 
-  arma::mat residuals(Tsize, q, arma::fill::zeros); 
+  // ----- Compute model residuals
+  arma::mat residuals(Tsize, q, arma::fill::zeros);
   arma::mat repq(1, q, arma::fill::ones);
   for (int xk = 0; xk<M;xk++){
     arma::mat eps_tmp = eps[xk];
@@ -3219,24 +3490,41 @@ List ExpectationM_MSVARXmdl(arma::vec theta, List mdl, int k){
   arma::mat xi_tp1_t(Tsize, k, arma::fill::zeros);  // [eq. 22.4.6]
   arma::mat xi_tp1_t_tmp(Tsize, M, arma::fill::zeros);  
   double pi = arma::datum::pi;
+  // Pre-compute per-regime density constants (sigAR constant during T-loop)
+  std::vector<arma::mat> inv_sigma_precomp(M);
+  arma::vec norm_const_precomp(M);
+  for (int xm_pre = 0; xm_pre < M; xm_pre++) {
+    arma::mat sm = sigAR[xm_pre];
+    double det_val = arma::det(sm);
+    norm_const_precomp(xm_pre) = (det_val > 0) ? 1.0 / sqrt(pow(2.0*pi, q) * det_val) : 0.0;
+    arma::mat inv_sm;
+    bool ok = arma::inv(inv_sm, sm);
+    inv_sigma_precomp[xm_pre] = ok ? inv_sm : arma::zeros<arma::mat>(q, q);
+  }
   arma::vec xi_t_tm1_AR = pinfAR;
   arma::vec xi_t_tm1 = pinf;
   for (int xt = 0; xt<Tsize; xt++){
     for (int xm = 0; xm<M; xm++){
       arma::mat eps_m = eps[xm];
-      arma::mat sigma_m = sigAR[xm];
-      //eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*inv(sigma_m)*trans(eps_m.row(xt)))));
-      eta(xt,xm) = arma::as_scalar((1/(sqrt(pow(2*pi,q)*det(sigma_m))))*exp(-0.5*(eps_m.row(xt)*solve(sigma_m,trans(eps_m.row(xt)), arma::solve_opts::allow_ugly))));
+      arma::vec e_vec = trans(eps_m.row(xt));
+      eta(xt,xm) = norm_const_precomp(xm) * exp(-0.5 * arma::dot(e_vec, inv_sigma_precomp[xm] * e_vec));
     }
     arma::vec xi_eta = xi_t_tm1_AR%trans(eta.row(xt));
     f_t.row(xt) = sum(xi_eta);
     double f_tmp = sum(xi_eta);
-    xi_t_t_tmp.row(xt) = trans(xi_eta/f_tmp);
+    if (f_tmp > 0 && std::isfinite(f_tmp)) {
+      xi_t_t_tmp.row(xt) = trans(xi_eta/f_tmp);
+    } else {
+      // Underflow: all regime densities collapsed to zero.
+      // Reset to ergodic distribution to break NaN cascade.
+      // f_t stores true 0; log(0)=-Inf makes logL=-Inf (theta ruled out).
+      xi_t_t_tmp.row(xt) = trans(pinfAR);
+    }
     for (int xk = 1; xk<=k; xk++){
       arma::vec xi_t_t_row = trans(xi_t_t_tmp.row(xt));
       xi_t_t.submat(xt,xk-1,xt,xk-1) = sum(xi_t_t_row.rows(find(state_ind==xk)));
     }
-    xi_t_tm1_AR = PAR*trans(xi_t_t_tmp.row(xt));
+    xi_t_tm1_AR = predict_fast(trans(xi_t_t_tmp.row(xt)), P, k, ar);
     xi_t_tm1 = P*trans(xi_t_t.row(xt));
     xi_tp1_t_tmp.row(xt) = trans(xi_t_tm1_AR);
     xi_tp1_t.row(xt) = trans(xi_t_tm1);
@@ -3251,11 +3539,28 @@ List ExpectationM_MSVARXmdl(arma::vec theta, List mdl, int k){
   xi_t_T_tmp.row(Tsize-1)  = xi_t_t_tmp.row(Tsize-1);
   xi_t_T.row(Tsize-1)  = xi_t_t.row(Tsize-1);
   for (int xT = Tsize-2; xT>=0; xT--){
-    xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT)%trans(trans(PAR)*trans(xi_t_T_tmp.row(xT+1)/xi_tp1_t_tmp.row(xT)));
-    xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_t.row(xT)));
+    arma::rowvec xi_tp1_tmp_safe = xi_tp1_t_tmp.row(xT);
+    xi_tp1_tmp_safe.clamp(1e-300, 1.0);  // guard against exact-zero denominator
+    arma::rowvec xi_tp1_safe = xi_tp1_t.row(xT);
+    xi_tp1_safe.clamp(1e-300, 1.0);
+    xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT)%trans(smooth_fast(trans(xi_t_T_tmp.row(xT+1)/xi_tp1_tmp_safe), P, k, ar));
+    double row_sum_M = accu(xi_t_T_tmp.row(xT));
+    if (row_sum_M > 0 && std::isfinite(row_sum_M)) {
+      xi_t_T_tmp.row(xT) = xi_t_T_tmp.row(xT) / row_sum_M;
+    } else {
+      xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT);
+    }
+    // k-state smoother: do NOT renormalize. Sum-to-1 is an algebraic invariant of the
+    // Kim (1994) recursion (Krolzig 1997, eq. 5.13). Renormalization introduces time-varying
+    // scaling that breaks the P update identity (eq. 6.14): sum_j P_new(j,i) != 1.
+    xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_safe));
+    // Non-finite guard: if smoother fails (should never happen for k-state), use filtered.
+    if (!xi_t_T.row(xT).is_finite()) {
+      xi_t_T.row(xT) = xi_t_t.row(xT);
+    }
   }
-  // ----- Compute model residuals 
-  arma::mat residuals(Tsize, q, arma::fill::zeros); 
+  // ----- Compute model residuals
+  arma::mat residuals(Tsize, q, arma::fill::zeros);
   arma::mat repq(1, q, arma::fill::ones);
   for (int xk = 0; xk<M;xk++){
     arma::mat eps_tmp = eps[xk];
@@ -3328,29 +3633,49 @@ List EMaximization_HMmdl(arma::vec theta, List mdl, List MSloglik_output, int k)
   // ----- Estimate Transition probs for k-state Markov-chain [eq. 22.4.16]
   arma::mat xi_t_T_tmp    = xi_t_T.rows(1,Tsize-1);
   arma::mat xi_t_t_tmp    = xi_t_t.rows(0,Tsize-2);
-  arma::mat xi_tp1_t_tmp  = xi_tp1_t.rows(0,Tsize-2);
+  arma::mat xi_tp1_t_safe = arma::clamp(xi_tp1_t.rows(0,Tsize-2), 1e-300, 1.0);
   arma::mat p_ij(Tsize-1, k*k, arma::fill::zeros);
   for (int xk = 0; xk<k; xk++){
-    p_ij.submat(0,xk*k,Tsize-2,xk*k+k-1) = (xi_t_T_tmp%trans(P.col(xk)*trans(xi_t_t_tmp.col(xk))))/xi_tp1_t_tmp;
+    p_ij.submat(0,xk*k,Tsize-2,xk*k+k-1) = (xi_t_T_tmp%trans(P.col(xk)*trans(xi_t_t_tmp.col(xk))))/xi_tp1_t_safe;
   }
-  arma::mat P_new(k, k, arma::fill::zeros);
+  arma::mat P_new = trans(P);  // Initialize from previous P; degenerate regimes keep their column
   arma::mat p_ij_sums     = arma::sum(p_ij,0);
   for (int xk = 0 ; xk<k; xk++){
     arma::vec regime_prob = xi_t_T.submat(0,xk,(Tsize-2),xk);
     double regimesum      = sum(regime_prob);
+    if (regimesum < 1e-6 * Tsize) continue;  // degenerate: keep previous P column
     P_new.row(xk)         = p_ij_sums.submat(0,(xk*k),0,(xk*k+(k-1)))/regimesum;
   }
   P_new = trans(P_new);
+  // Guard against NaN in P_new (can occur when p_ij numerator is also 0)
+  for (int xk = 0; xk < k; xk++) {
+    if (!P_new.col(xk).is_finite()) P_new.col(xk) = P.col(xk);  // keep previous
+  }
+  // Enforce valid transition probabilities: clamp to [0,1] and normalize columns to sum to 1.
+  // In exact arithmetic, P_new is already in [0,1] with unit column sums (Krolzig 1997, eq. 6.14).
+  // This guard defends against floating-point drift only.
+  P_new = arma::clamp(P_new, 0.0, 1.0);
+  for (int xk = 0; xk < k; xk++) {
+    double colsum = arma::accu(P_new.col(xk));
+    if (colsum > 0) {
+      P_new.col(xk) /= colsum;
+    } else {
+      P_new.col(xk) = P.col(xk);  // fallback: keep previous
+    }
+  }
   // Get limiting probabilities implied by transition matrix P_0
   arma::vec pinf = limP(P_new);
   // --------------- Update estimates for mu
-  // ----- Obtain state indicators
-  arma::mat mu(1+msmu*(k-1), q, arma::fill::zeros);
+  // Initialize from previous theta (used as fallback for degenerate regimes)
+  int mu_len = q * (1 + msmu*(k-1));
+  arma::mat mu = arma::reshape(theta.head(mu_len), q, 1 + msmu*(k-1)).t();
   arma::mat mu_k(k, q, arma::fill::zeros);
   // ----- Compute updated mu
   if (msmu == TRUE){
     for (int xk = 0 ; xk<k; xk++){
-      mu.row(xk) = arma::sum(y%(xi_t_T.col(xk)*repq),0)/sum(xi_t_T.col(xk));
+      double mu_denom = sum(xi_t_T.col(xk));
+      if (mu_denom < 1e-6 * Tsize) continue;  // degenerate: keep previous mu
+      mu.row(xk) = arma::sum(y%(xi_t_T.col(xk)*repq),0)/mu_denom;
     }
     mu_k = mu;
   }else{
@@ -3370,35 +3695,54 @@ List EMaximization_HMmdl(arma::vec theta, List mdl, List MSloglik_output, int k)
   if (exog==TRUE){
     arma::mat Z = as<arma::mat>(mdl["Z"]);
     qz = Z.n_cols;
+    // Initialize betaZ_new from previous theta (fallback for solve failure)
+    betaZ_new = reshape(theta.subvec(mu_len, mu_len + qz*q - 1), qz, q);
     arma::rowvec zbar  = arma::mean(Z,0);
     Zdm = Z - (repmu*zbar);
     arma::mat denom(q*qz, q*qz, arma::fill::zeros);
     arma::mat num(q*qz, 1, arma::fill::zeros);
     for (int xk = 0; xk<k; xk++){
-      arma::mat mu_tmp = mu_k.row(xk); 
+      arma::mat mu_tmp = mu_k.row(xk);
       arma::mat y_tmp = y - repmu*mu_tmp;
       arma::mat sigma_m = sig[xk];
-      denom = denom + kron(inv(sigma_m),trans(Zdm)*diagmat(xi_t_T.col(xk))*Zdm);
-      num = num + kron(inv(sigma_m),trans(Zdm)*diagmat(xi_t_T.col(xk)))*vectorise(y_tmp);
+      arma::mat sigma_m_inv = arma::solve(sigma_m, arma::eye(q,q), arma::solve_opts::allow_ugly);
+      denom = denom + kron(sigma_m_inv,trans(Zdm)*diagmat(xi_t_T.col(xk))*Zdm);
+      num = num + kron(sigma_m_inv,trans(Zdm)*diagmat(xi_t_T.col(xk)))*vectorise(y_tmp);
     }
-    betaZ_new = reshape(inv(denom)*num, qz, q);   
+    try {
+      arma::vec bz_vec = arma::solve(denom, num, arma::solve_opts::allow_ugly);
+      if (bz_vec.is_finite()) {
+        betaZ_new = reshape(bz_vec, qz, q);
+      }
+      // else: keep betaZ_new from previous theta
+    } catch (...) {
+      // keep betaZ_new from previous theta
+    }
   }
   // --------------- Update estimates for variance
   // ----- Compute Residuals
-  List eps(k); 
+  List eps(k);
   for (int xk = 0; xk<k; xk++){
     arma::mat eps_tmp = y - repmu*mu_k.row(xk) - Zdm*betaZ_new;
     eps[xk] =  eps_tmp;
   } 
   // // ----- Compute updated sigma
   List sigma(k);
+  int sigN = (q * (q + 1)) / 2;
   arma::vec sigma_out;
   if (msvar == TRUE){
+    sigma_out.set_size(sigN * k);
     for (int xk = 0 ; xk<k; xk++){
       arma::mat U = eps[xk];
-      arma::mat sigma_m_tmp = (trans(U)*diagmat(xi_t_T.col(xk))*U)/sum(xi_t_T.col(xk));
-      sigma[xk] = sigma_m_tmp; 
-      sigma_out = join_vert(sigma_out, covar_vech(sigma_m_tmp));
+      double sig_denom = sum(xi_t_T.col(xk));
+      arma::mat sigma_m_tmp;
+      if (sig_denom >= 1e-6 * Tsize) {
+        sigma_m_tmp = (trans(U)*diagmat(xi_t_T.col(xk))*U)/sig_denom;
+      } else {
+        sigma_m_tmp = as<arma::mat>(sig[xk]);  // degenerate: keep previous sigma
+      }
+      sigma[xk] = sigma_m_tmp;
+      sigma_out.subvec(xk * sigN, (xk+1)*sigN - 1) = covar_vech(sigma_m_tmp);
     }
   }else{
     arma::mat sigma_m_tmp(q,q,arma::fill::zeros);
@@ -3482,40 +3826,98 @@ List EMaximization_MSARmdl(arma::vec theta, List mdl, List MSloglik_output, int 
   // ----- Estimate Transition probs for k-state Markov-chain [eq. 22.4.16]
   arma::mat xi_t_T_tmp = xi_t_T.rows(1,Tsize-1);
   arma::mat xi_t_t_tmp = xi_t_t.rows(0,Tsize-2);
-  arma::mat xi_tp1_t_tmp = xi_tp1_t.rows(0,Tsize-2);
+  arma::mat xi_tp1_t_safe = arma::clamp(xi_tp1_t.rows(0,Tsize-2), 1e-300, 1.0);
   arma::mat p_ij(Tsize-1, k*k, arma::fill::zeros);
   for (int xk = 0; xk<k; xk++){
-    p_ij.submat(0,xk*k,Tsize-2,xk*k+k-1) = (xi_t_T_tmp%trans(P.col(xk)*trans(xi_t_t_tmp.col(xk))))/xi_tp1_t_tmp;
+    p_ij.submat(0,xk*k,Tsize-2,xk*k+k-1) = (xi_t_T_tmp%trans(P.col(xk)*trans(xi_t_t_tmp.col(xk))))/xi_tp1_t_safe;
   }
-  arma::mat P_new(k, k, arma::fill::zeros);
+  arma::mat P_new = trans(P);  // Initialize from previous P; degenerate regimes keep their column
   arma::mat p_ij_sums = arma::sum(p_ij,0);
   for (int xk = 0 ; xk<k; xk++){
     arma::vec regime_prob = xi_t_T.submat(0,xk,(Tsize-2),xk);
     double regimesum = sum(regime_prob);
+    if (regimesum < 1e-6 * Tsize) continue;  // degenerate: keep previous P column
     P_new.row(xk) = p_ij_sums.submat(0,(xk*k),0,(xk*k+(k-1)))/regimesum;
   }
   P_new = trans(P_new);
+  // Guard against NaN in P_new (can occur when p_ij numerator is also 0)
+  for (int xk = 0; xk < k; xk++) {
+    if (!P_new.col(xk).is_finite()) P_new.col(xk) = P.col(xk);  // keep previous
+  }
+  // Enforce valid transition probabilities: clamp to [0,1] and normalize columns to sum to 1.
+  // In exact arithmetic, P_new is already in [0,1] with unit column sums (Krolzig 1997, eq. 6.14).
+  // This guard defends against floating-point drift only.
+  P_new = arma::clamp(P_new, 0.0, 1.0);
+  for (int xk = 0; xk < k; xk++) {
+    double colsum = arma::accu(P_new.col(xk));
+    if (colsum > 0) {
+      P_new.col(xk) /= colsum;
+    } else {
+      P_new.col(xk) = P.col(xk);  // fallback: keep previous
+    }
+  }
   // Get limiting probabilities implied by transition matrix P_0
   arma::vec pinf = limP(P_new);
   // --------------- Update estimates for mu
   // ----- Obtain state indicators
-  arma::vec mu(1+msmu*(k-1), arma::fill::zeros);
-  arma::vec mu_tmp(M, arma::fill::zeros);
+  arma::vec mu = theta.head(1 + msmu*(k-1));  // Initialize from previous theta (fallback)
   arma::vec sum_tmp(M, arma::fill::zeros);
-  // ----- Compute updated mu
-  if (msmu == TRUE){
-    for (int xk = 0 ; xk<M; xk++){
-      mu_tmp(xk) = sum(y%xi_t_T_AR.col(xk));
-      sum_tmp(xk) = sum(xi_t_T_AR.col(xk));
+  // ----- Compute updated mu (Krolzig 1997, Table 9.19 — MSM GLS estimator)
+  {
+    // ỹ_t = y_t - sum_j phi(j)*x(t,j)  [regime-independent, T×1]
+    arma::vec ytilde = y;
+    for (int j = 0; j < ar; j++) ytilde -= phi(j) * x.col(j);
+    // Expand sigma to length k (handles msvar=T and msvar=F)
+    arma::vec sig_k(k);
+    for (int xk = 0; xk < k; xk++) sig_k(xk) = (sig.n_elem > 1) ? sig(xk) : sig(0);
+    if (msmu == TRUE){
+      // Build c_{n,k} [M×k]: c = +I[i0=k] - sum_j phi(j)*I[ij=k]  (Krolzig 1997, Table 9.19)
+      arma::mat d_mat(M, k, arma::fill::zeros);
+      for (int xn = 0; xn < M; xn++){
+        int kpow = 1;
+        for (int j = 0; j <= ar; j++){
+          int reg_ij = (xn / kpow) % k;
+          d_mat(xn, reg_ij) += (j == 0) ? +1.0 : -phi(j-1);
+          kpow *= k;
+        }
+      }
+      // Build A (k×k) and b (k×1)
+      arma::mat A(k, k, arma::fill::zeros);
+      arma::vec b_vec(k, arma::fill::zeros);
+      for (int xn = 0; xn < M; xn++){
+        double sig_xn = sig_k(xn % k);
+        if (!std::isfinite(sig_xn) || sig_xn < 1e-14) continue;
+        double wt_sum    = arma::sum(xi_t_T_AR.col(xn)) / sig_xn;
+        double ytilde_wt = arma::dot(xi_t_T_AR.col(xn) / sig_xn, ytilde);
+        for (int xk = 0; xk < k; xk++){
+          b_vec(xk) += d_mat(xn, xk) * ytilde_wt;
+          for (int xl = 0; xl < k; xl++)
+            A(xk, xl) += d_mat(xn, xk) * d_mat(xn, xl) * wt_sum;
+        }
+      }
+      // Solve A·mu = b; fall back to previous mu if A is near-singular
+      if (A.is_finite() && arma::rcond(A) > 1e-12){
+        try {
+          arma::vec mu_new = arma::solve(A, b_vec, arma::solve_opts::allow_ugly);
+          if (mu_new.is_finite()) mu = mu_new;
+        } catch (...) { /* keep previous mu */ }
+      }
+    }else{
+      // Single common mean: mu = (sum_tn xi*ytilde/sig) / (c * sum_tn xi/sig)
+      // where c = 1 - sum_j phi(j)
+      double c_val = 1.0;
+      for (int j = 0; j < ar; j++) c_val -= phi(j);
+      double numer = 0.0, denom_val = 0.0;
+      for (int xn = 0; xn < M; xn++){
+        double sig_xn = sig_k(xn % k);
+        if (!std::isfinite(sig_xn) || sig_xn < 1e-14) continue;
+        numer     += arma::dot(xi_t_T_AR.col(xn) / sig_xn, ytilde);
+        denom_val += arma::sum(xi_t_T_AR.col(xn)) / sig_xn;
+      }
+      if (std::isfinite(numer) && std::abs(c_val * denom_val) > 1e-14)
+        mu(0) = numer / (c_val * denom_val);
+      // else: keep previous mu
     }
-    for (int xk = 1; xk<=k;xk++){
-      mu(xk-1) = arma::as_scalar(sum(mu_tmp.rows(find(state_ind==xk)))/sum(sum_tmp.rows(find(state_ind==xk))));
-    }
-  }else{
-    for (int xk = 0 ; xk<M; xk++){
-      mu = mu + sum(y%xi_t_T_AR.col(xk));
-    }
-    mu = mu/Tsize;
   }
   // ----- Update estimates for phi
   arma::mat muAR(M, ar+1,arma::fill::zeros);
@@ -3527,28 +3929,47 @@ List EMaximization_MSARmdl(arma::vec theta, List mdl, List MSloglik_output, int 
   arma::mat denom(ar,ar,arma::fill::zeros);
   arma::mat num(ar,1,arma::fill::zeros);
   for (int xm = 0; xm<M; xm++){
+    double sig_xm = sigAR(xm);
+    if (!std::isfinite(sig_xm) || sig_xm < 1e-14) continue;  // degenerate sigma: skip
     arma::vec y_tmp = y - repmu*muAR(xm,0);
     arma::mat x_tmp = x - repmu*muAR.submat(xm,1,xm,ar);
-    denom = denom + (trans(x_tmp)*diagmat(xi_t_T_AR.col(xm)/sigAR(xm))*x_tmp);
-    num = num + (trans(x_tmp)*diagmat(xi_t_T_AR.col(xm)/sigAR(xm))*y_tmp);
+    denom = denom + (trans(x_tmp)*diagmat(xi_t_T_AR.col(xm)/sig_xm)*x_tmp);
+    num = num + (trans(x_tmp)*diagmat(xi_t_T_AR.col(xm)/sig_xm)*y_tmp);
   }
-  arma::vec phi_new = inv(denom)*num;
-  //arma::vec phi_new = inv(denom, arma::inv_opts::allow_approx)*num;
+  arma::vec phi_new;
+  try {
+    phi_new = arma::solve(denom, num, arma::solve_opts::allow_ugly);
+    if (!phi_new.is_finite()) phi_new = phi;
+  } catch (...) {
+    phi_new = phi;  // Singular denom: keep previous phi
+  }
+  // Stationarity check via companion matrix eigenvalues
+  if (ar > 0) {
+    arma::mat F_comp(ar, ar, arma::fill::zeros);
+    F_comp.row(0) = phi_new.t();
+    if (ar > 1) F_comp.submat(1, 0, ar-1, ar-2) = arma::eye(ar-1, ar-1);
+    arma::cx_vec eigvals = arma::eig_gen(F_comp);
+    if (arma::max(arma::abs(eigvals)) >= 1.0) {
+      phi_new = phi;  // revert to previous (stationary) phi
+    }
+  }
   // ----- Update estimates for variance
   // ----- Compute new residuals
   List mdl_tmp    = clone(mdl);
   mdl_tmp["phi"]  = phi_new;
   arma::mat eps   = calcResid_MSARmdl(mdl_tmp, muAR, k);
   // ----- Compute updated sigma
-  arma::vec sigma(1+msvar*(k-1), arma::fill::zeros);
+  arma::vec sigma = sig.head(1 + msvar*(k-1));  // Initialize from previous sigma
   arma::vec sigma_tmp(M, arma::fill::zeros);
   if (msvar == TRUE){
     for (int xk = 0 ; xk<M; xk++){
-      sigma_tmp(xk) = sum(eps.col(xk)%eps.col(xk)%xi_t_T_AR.col(xk)); 
-      sum_tmp(xk) = sum(xi_t_T_AR.col(xk)); 
+      sigma_tmp(xk) = sum(eps.col(xk)%eps.col(xk)%xi_t_T_AR.col(xk));
+      sum_tmp(xk) = sum(xi_t_T_AR.col(xk));
     }
     for (int xk = 1; xk<=k;xk++){
-      sigma(xk-1) = arma::as_scalar(sum(sigma_tmp.rows(find(state_ind==xk)))/sum(sum_tmp.rows(find(state_ind==xk))));
+      double sig_denom = arma::as_scalar(sum(sum_tmp.rows(find(state_ind==xk))));
+      if (sig_denom < 1e-6 * Tsize) continue;  // degenerate: keep previous sigma
+      sigma(xk-1) = arma::as_scalar(sum(sigma_tmp.rows(find(state_ind==xk)))/sig_denom);
     }
   }else{
     sigma = arma::sum(arma::sum(eps%eps%xi_t_T_AR,0),1)/Tsize;
@@ -3627,40 +4048,99 @@ List EMaximization_MSARXmdl(arma::vec theta, List mdl, List MSloglik_output, int
   // ----- Estimate Transition probs for k-state Markov-chain [eq. 22.4.16]
   arma::mat xi_t_T_tmp    = xi_t_T.rows(1,Tsize-1);
   arma::mat xi_t_t_tmp    = xi_t_t.rows(0,Tsize-2);
-  arma::mat xi_tp1_t_tmp  = xi_tp1_t.rows(0,Tsize-2);
+  arma::mat xi_tp1_t_safe = arma::clamp(xi_tp1_t.rows(0,Tsize-2), 1e-300, 1.0);
   arma::mat p_ij(Tsize-1, k*k, arma::fill::zeros);
   for (int xk = 0; xk<k; xk++){
-    p_ij.submat(0,xk*k,Tsize-2,xk*k+k-1) = (xi_t_T_tmp%trans(P.col(xk)*trans(xi_t_t_tmp.col(xk))))/xi_tp1_t_tmp;
+    p_ij.submat(0,xk*k,Tsize-2,xk*k+k-1) = (xi_t_T_tmp%trans(P.col(xk)*trans(xi_t_t_tmp.col(xk))))/xi_tp1_t_safe;
   }
-  arma::mat P_new(k, k, arma::fill::zeros);
+  arma::mat P_new = trans(P);  // Initialize from previous P; degenerate regimes keep their column
   arma::mat p_ij_sums = arma::sum(p_ij,0);
   for (int xk = 0 ; xk<k; xk++){
     arma::vec regime_prob = xi_t_T.submat(0,xk,(Tsize-2),xk);
     double regimesum      = sum(regime_prob);
+    if (regimesum < 1e-6 * Tsize) continue;  // degenerate: keep previous P column
     P_new.row(xk)         = p_ij_sums.submat(0,(xk*k),0,(xk*k+(k-1)))/regimesum;
   }
   P_new = trans(P_new);
+  // Guard against NaN in P_new (can occur when p_ij numerator is also 0)
+  for (int xk = 0; xk < k; xk++) {
+    if (!P_new.col(xk).is_finite()) P_new.col(xk) = P.col(xk);  // keep previous
+  }
+  // Enforce valid transition probabilities: clamp to [0,1] and normalize columns to sum to 1.
+  // In exact arithmetic, P_new is already in [0,1] with unit column sums (Krolzig 1997, eq. 6.14).
+  // This guard defends against floating-point drift only.
+  P_new = arma::clamp(P_new, 0.0, 1.0);
+  for (int xk = 0; xk < k; xk++) {
+    double colsum = arma::accu(P_new.col(xk));
+    if (colsum > 0) {
+      P_new.col(xk) /= colsum;
+    } else {
+      P_new.col(xk) = P.col(xk);  // fallback: keep previous
+    }
+  }
   // Get limiting probabilities implied by transition matrix P_0
   arma::vec pinf = limP(P_new);
   // --------------- Update estimates for mu
   // ----- Obtain state indicators
-  arma::vec mu(1+msmu*(k-1), arma::fill::zeros);
-  arma::vec mu_tmp(M, arma::fill::zeros);
+  arma::vec mu = theta.head(1 + msmu*(k-1));  // Initialize from previous theta (fallback)
   arma::vec sum_tmp(M, arma::fill::zeros);
-  // ----- Compute updated mu
-  if (msmu == TRUE){
-    for (int xk   = 0 ; xk<M; xk++){
-      mu_tmp(xk)  = sum(y%xi_t_T_AR.col(xk));
-      sum_tmp(xk) = sum(xi_t_T_AR.col(xk));
+  // Pre-compute zdm here so mu update can adjust ỹ_t for exogenous contribution
+  arma::vec repmu(Tsize, arma::fill::ones);
+  arma::mat zdm = (Z - repmu*zbar);
+  // ----- Compute updated mu (Krolzig 1997, Table 9.19 — MSM GLS estimator)
+  {
+    // ỹ_t = y_t - betaZ'*zdm_t - sum_j phi(j)*x(t,j)  [regime-independent, T×1]
+    arma::vec ytilde = y - zdm * betaZ;
+    for (int j = 0; j < ar; j++) ytilde -= phi(j) * x.col(j);
+    // Expand sigma to length k (handles msvar=T and msvar=F)
+    arma::vec sig_k(k);
+    for (int xk = 0; xk < k; xk++) sig_k(xk) = (sig.n_elem > 1) ? sig(xk) : sig(0);
+    if (msmu == TRUE){
+      // Build c_{n,k} [M×k]: c = +I[i0=k] - sum_j phi(j)*I[ij=k]  (Krolzig 1997, Table 9.19)
+      arma::mat d_mat(M, k, arma::fill::zeros);
+      for (int xn = 0; xn < M; xn++){
+        int kpow = 1;
+        for (int j = 0; j <= ar; j++){
+          int reg_ij = (xn / kpow) % k;
+          d_mat(xn, reg_ij) += (j == 0) ? +1.0 : -phi(j-1);
+          kpow *= k;
+        }
+      }
+      // Build A (k×k) and b (k×1)
+      arma::mat A(k, k, arma::fill::zeros);
+      arma::vec b_vec(k, arma::fill::zeros);
+      for (int xn = 0; xn < M; xn++){
+        double sig_xn = sig_k(xn % k);
+        if (!std::isfinite(sig_xn) || sig_xn < 1e-14) continue;
+        double wt_sum    = arma::sum(xi_t_T_AR.col(xn)) / sig_xn;
+        double ytilde_wt = arma::dot(xi_t_T_AR.col(xn) / sig_xn, ytilde);
+        for (int xk = 0; xk < k; xk++){
+          b_vec(xk) += d_mat(xn, xk) * ytilde_wt;
+          for (int xl = 0; xl < k; xl++)
+            A(xk, xl) += d_mat(xn, xk) * d_mat(xn, xl) * wt_sum;
+        }
+      }
+      // Solve A·mu = b; fall back to previous mu if A is near-singular
+      if (A.is_finite() && arma::rcond(A) > 1e-12){
+        try {
+          arma::vec mu_new = arma::solve(A, b_vec, arma::solve_opts::allow_ugly);
+          if (mu_new.is_finite()) mu = mu_new;
+        } catch (...) { /* keep previous mu */ }
+      }
+    }else{
+      // Single common mean: mu = (sum_tn xi*ytilde/sig) / (c * sum_tn xi/sig)
+      double c_val = 1.0;
+      for (int j = 0; j < ar; j++) c_val -= phi(j);
+      double numer = 0.0, denom_val = 0.0;
+      for (int xn = 0; xn < M; xn++){
+        double sig_xn = sig_k(xn % k);
+        if (!std::isfinite(sig_xn) || sig_xn < 1e-14) continue;
+        numer     += arma::dot(xi_t_T_AR.col(xn) / sig_xn, ytilde);
+        denom_val += arma::sum(xi_t_T_AR.col(xn)) / sig_xn;
+      }
+      if (std::isfinite(numer) && std::abs(c_val * denom_val) > 1e-14)
+        mu(0) = numer / (c_val * denom_val);
     }
-    for (int xk = 1; xk<=k;xk++){
-      mu(xk-1)    = arma::as_scalar(sum(mu_tmp.rows(find(state_ind==xk)))/sum(sum_tmp.rows(find(state_ind==xk))));
-    }
-  }else{
-    for (int xk = 0 ; xk<M; xk++){
-      mu  = mu + sum(y%xi_t_T_AR.col(xk));
-    }
-    mu    = mu/Tsize;
   }
   // ----- Update estimates for beta (phi & betaZ)
   arma::mat muAR(M, ar+1,arma::fill::zeros);
@@ -3668,20 +4148,39 @@ List EMaximization_MSARXmdl(arma::vec theta, List mdl, List MSloglik_output, int
   List mugrid   = argrid_MSARmdl(mu, sig, k, ar, msmu, msvar); // new mu & old sigma are used
   muAR          = as<arma::mat>(mugrid["mu"]);
   sigAR         = as<arma::vec>(mugrid["sig"]);
-  arma::vec repmu(Tsize,arma::fill::ones);
-  arma::mat zdm = (Z-repmu*zbar); 
+  // (repmu and zdm already computed above) 
   arma::mat denom(ar+qz,ar+qz,arma::fill::zeros);
   arma::mat num(ar+qz,1,arma::fill::zeros);
   for (int xm = 0; xm<M; xm++){
+     double sig_xm = sigAR(xm);
+     if (!std::isfinite(sig_xm) || sig_xm < 1e-14) continue;  // degenerate sigma: skip
      arma::vec y_tmp  = y - repmu*muAR(xm,0);
      arma::mat x_tmp  = x - repmu*muAR.submat(xm,1,xm,ar);
      arma::mat xz_tmp = join_rows(x_tmp,zdm);
-     denom            = denom + (trans(xz_tmp)*diagmat(xi_t_T_AR.col(xm)/sigAR(xm))*xz_tmp);
-     num              = num + (trans(xz_tmp)*diagmat(xi_t_T_AR.col(xm)/sigAR(xm))*y_tmp);
+     denom            = denom + (trans(xz_tmp)*diagmat(xi_t_T_AR.col(xm)/sig_xm)*xz_tmp);
+     num              = num + (trans(xz_tmp)*diagmat(xi_t_T_AR.col(xm)/sig_xm)*y_tmp);
   }
-  arma::vec beta_new  = inv(denom)*num;
+  arma::vec prev_beta = join_vert(phi, betaZ);
+  arma::vec beta_new;
+  try {
+    beta_new = arma::solve(denom, num, arma::solve_opts::allow_ugly);
+    if (!beta_new.is_finite()) beta_new = prev_beta;
+  } catch (...) {
+    beta_new = prev_beta;  // Singular denom: keep previous beta
+  }
   arma::vec phi_new   = beta_new.rows(0,ar-1);
   arma::vec betaZ_new = beta_new.rows(ar,ar+qz-1);
+  // Stationarity check via companion matrix eigenvalues
+  if (ar > 0) {
+    arma::mat F_comp(ar, ar, arma::fill::zeros);
+    F_comp.row(0) = phi_new.t();
+    if (ar > 1) F_comp.submat(1, 0, ar-1, ar-2) = arma::eye(ar-1, ar-1);
+    arma::cx_vec eigvals = arma::eig_gen(F_comp);
+    if (arma::max(arma::abs(eigvals)) >= 1.0) {
+      phi_new = phi;      // revert to previous (stationary) phi
+      betaZ_new = betaZ;  // revert betaZ too (joint solve)
+    }
+  }
   // ----- Update estimates for variance
   // ----- Compute new residuals
   List mdl_tmp        = clone(mdl);
@@ -3689,7 +4188,7 @@ List EMaximization_MSARXmdl(arma::vec theta, List mdl, List MSloglik_output, int
   mdl_tmp["betaZ"]    = betaZ_new;
   arma::mat eps       = calcResid_MSARXmdl(mdl_tmp, muAR, k);
   // ----- Compute updated sigma
-  arma::vec sigma(1+msvar*(k-1), arma::fill::zeros);
+  arma::vec sigma = sig.head(1 + msvar*(k-1));  // Initialize from previous sigma
   arma::vec sigma_tmp(M, arma::fill::zeros);
   if (msvar == TRUE){
     for (int xk = 0 ; xk<M; xk++){
@@ -3697,7 +4196,9 @@ List EMaximization_MSARXmdl(arma::vec theta, List mdl, List MSloglik_output, int
       sum_tmp(xk)   = sum(xi_t_T_AR.col(xk));
     }
     for (int xk = 1; xk<=k;xk++){
-      sigma(xk-1)   = arma::as_scalar(sum(sigma_tmp.rows(find(state_ind==xk)))/sum(sum_tmp.rows(find(state_ind==xk))));
+      double sig_denom = arma::as_scalar(sum(sum_tmp.rows(find(state_ind==xk))));
+      if (sig_denom < 1e-6 * Tsize) continue;  // degenerate: keep previous sigma
+      sigma(xk-1)   = arma::as_scalar(sum(sigma_tmp.rows(find(state_ind==xk)))/sig_denom);
     }
   }else{
     sigma = arma::sum(arma::sum(eps%eps%xi_t_T_AR,0),1)/Tsize;
@@ -3776,44 +4277,117 @@ List EMaximization_MSVARmdl(arma::vec theta, List mdl, List MSloglik_output, int
   // ----- Estimate Transition probs for k-state Markov-chain [eq. 22.4.16]
   arma::mat xi_t_T_tmp    = xi_t_T.rows(1,Tsize-1);
   arma::mat xi_t_t_tmp    = xi_t_t.rows(0,Tsize-2);
-  arma::mat xi_tp1_t_tmp  = xi_tp1_t.rows(0,Tsize-2);
+  arma::mat xi_tp1_t_safe = arma::clamp(xi_tp1_t.rows(0,Tsize-2), 1e-300, 1.0);
   arma::mat p_ij(Tsize-1, k*k, arma::fill::zeros);
   for (int xk = 0; xk<k; xk++){
-    p_ij.submat(0,xk*k,Tsize-2,xk*k+k-1) = (xi_t_T_tmp%trans(P.col(xk)*trans(xi_t_t_tmp.col(xk))))/xi_tp1_t_tmp;
+    p_ij.submat(0,xk*k,Tsize-2,xk*k+k-1) = (xi_t_T_tmp%trans(P.col(xk)*trans(xi_t_t_tmp.col(xk))))/xi_tp1_t_safe;
   }
-  arma::mat P_new(k, k, arma::fill::zeros);
+  arma::mat P_new = trans(P);  // Initialize from previous P; degenerate regimes keep their column
   arma::mat p_ij_sums = arma::sum(p_ij,0);
   for (int xk = 0 ; xk<k; xk++){
     arma::vec regime_prob = xi_t_T.submat(0,xk,(Tsize-2),xk);
     double regimesum = sum(regime_prob);
+    if (regimesum < 1e-6 * Tsize) continue;  // degenerate: keep previous P column
     P_new.row(xk) = p_ij_sums.submat(0,(xk*k),0,(xk*k+(k-1)))/regimesum;
   }
   P_new = trans(P_new);
+  // Guard against NaN in P_new (can occur when p_ij numerator is also 0)
+  for (int xk = 0; xk < k; xk++) {
+    if (!P_new.col(xk).is_finite()) P_new.col(xk) = P.col(xk);  // keep previous
+  }
+  // Enforce valid transition probabilities: clamp to [0,1] and normalize columns to sum to 1.
+  // In exact arithmetic, P_new is already in [0,1] with unit column sums (Krolzig 1997, eq. 6.14).
+  // This guard defends against floating-point drift only.
+  P_new = arma::clamp(P_new, 0.0, 1.0);
+  for (int xk = 0; xk < k; xk++) {
+    double colsum = arma::accu(P_new.col(xk));
+    if (colsum > 0) {
+      P_new.col(xk) /= colsum;
+    } else {
+      P_new.col(xk) = P.col(xk);  // fallback: keep previous
+    }
+  }
   // Get limiting probabilities implied by transition matrix P_0
   arma::vec pinf = limP(P_new);
   // --------------- Update estimates for mu
-  // ----- Obtain state indicators
-  arma::mat mu(1+msmu*(k-1), q, arma::fill::zeros);
+  // Initialize from previous theta (used as fallback if linear system is ill-conditioned)
+  int mu_len = q * (1 + msmu*(k-1));
+  arma::mat mu = arma::reshape(theta.head(mu_len), q, 1 + msmu*(k-1)).t();
   arma::mat mu_k(k, q, arma::fill::zeros);
-  arma::mat mu_tmp(M, q, arma::fill::zeros);
-  arma::vec sum_tmp(M, arma::fill::zeros);
-  // ----- Compute updated mu
-  if (msmu == TRUE){
-    for (int xk = 0 ; xk<M; xk++){
-      mu_tmp.row(xk) = arma::sum(y%(xi_t_T_AR.col(xk)*repq),0);
-      sum_tmp(xk) = sum(xi_t_T_AR.col(xk));
+  // ----- Compute updated mu (Krolzig 1997, Table 9.19 — MSM GLS estimator)
+  {
+    // ỹ_t = y_t - sum_j A_j * y_{t-j}  [regime-independent, T×q]
+    arma::mat ytilde = y;
+    for (int j = 0; j < ar; j++){
+      arma::mat Aj = phi.submat(0, q*j, q-1, q*(j+1)-1);  // q×q
+      ytilde -= x.submat(0, q*j, Tsize-1, q*(j+1)-1) * Aj.t();
     }
-    for (int xk = 1; xk<=k;xk++){
-      mu.row(xk-1) = arma::sum(mu_tmp.rows(find(state_ind==xk)),0)/(sum(sum_tmp.rows(find(state_ind==xk)))*repq);
-    }
-    mu_k = mu;
-  }else{
-    for (int xk = 0 ; xk<M; xk++){
-      mu = mu + arma::sum(y%(xi_t_T_AR.col(xk)*repq),0);
-    }
-    mu = mu/Tsize;
-    for (int xk = 0 ; xk<k; xk++){
-      mu_k.row(xk) = mu;
+    if (msmu == TRUE){
+      // Build A_lsys (qk×qk) and b_vec (qk×1): normal equations for stacked mu vector
+      // mu_flat = [μ₀(0),...,μ₀(q-1), μ₁(0),...,μ_{k-1}(q-1)]  (regime 0-indexed)
+      arma::mat A_lsys(k*q, k*q, arma::fill::zeros);
+      arma::vec b_vec(k*q, arma::fill::zeros);
+      for (int xn = 0; xn < M; xn++){
+        arma::mat sigma_inv = arma::solve(as<arma::mat>(sig[xn % k]), arma::eye(q,q), arma::solve_opts::allow_ugly);
+        double wt_sum = arma::sum(xi_t_T_AR.col(xn));
+        arma::vec ytilde_wt = ytilde.t() * xi_t_T_AR.col(xn);  // q×1
+        for (int xm1 = 0; xm1 < k; xm1++){
+          // Build X^μ_{n,xm1} [q×q]: I_q*I[i₀=xm1] - sum_j A_j*I[i_j=xm1]
+          arma::mat Xmu1(q, q, arma::fill::zeros);
+          if ((xn % k) == xm1) Xmu1 += arma::eye<arma::mat>(q, q);
+          int kpow = k;
+          for (int j = 1; j <= ar; j++){
+            if (((xn / kpow) % k) == xm1)
+              Xmu1 -= phi.submat(0, q*(j-1), q-1, q*j-1);
+            kpow *= k;
+          }
+          b_vec.rows(xm1*q, (xm1+1)*q-1) += Xmu1.t() * sigma_inv * ytilde_wt;
+          for (int xm2 = 0; xm2 < k; xm2++){
+            arma::mat Xmu2(q, q, arma::fill::zeros);
+            if ((xn % k) == xm2) Xmu2 += arma::eye<arma::mat>(q, q);
+            int kpow2 = k;
+            for (int j = 1; j <= ar; j++){
+              if (((xn / kpow2) % k) == xm2)
+                Xmu2 -= phi.submat(0, q*(j-1), q-1, q*j-1);
+              kpow2 *= k;
+            }
+            A_lsys.submat(xm1*q, xm2*q, (xm1+1)*q-1, (xm2+1)*q-1) +=
+              wt_sum * Xmu1.t() * sigma_inv * Xmu2;
+          }
+        }
+      }
+      // Solve A_lsys * mu_flat = b_vec; recover (k×q) matrix
+      if (A_lsys.is_finite() && arma::rcond(A_lsys) > 1e-12){
+        try {
+          arma::vec mu_flat = arma::solve(A_lsys, b_vec, arma::solve_opts::allow_ugly);
+          if (mu_flat.is_finite()){
+            for (int xm = 0; xm < k; xm++)
+              mu.row(xm) = mu_flat.rows(xm*q, (xm+1)*q-1).t();
+          }
+        } catch (...) { /* keep previous mu */ }
+      }
+      mu_k = mu;
+    }else{
+      // Single common mean C = I_q - sum_j A_j
+      arma::mat C = arma::eye<arma::mat>(q, q);
+      for (int j = 0; j < ar; j++) C -= phi.submat(0, q*j, q-1, q*(j+1)-1);
+      // Pre-compute sigma-weighted sums over extended states
+      arma::mat A_scalar(q, q, arma::fill::zeros);
+      arma::mat b_scalar(q, 1, arma::fill::zeros);
+      for (int xn = 0; xn < M; xn++){
+        arma::mat sigma_inv = arma::solve(as<arma::mat>(sig[xn % k]), arma::eye(q,q), arma::solve_opts::allow_ugly);
+        double wt_sum = arma::sum(xi_t_T_AR.col(xn));
+        arma::mat ytilde_wt = ytilde.t() * xi_t_T_AR.col(xn);  // q×1
+        A_scalar += wt_sum * C.t() * sigma_inv * C;
+        b_scalar += C.t() * sigma_inv * ytilde_wt;
+      }
+      if (A_scalar.is_finite() && arma::rcond(A_scalar) > 1e-12){
+        try {
+          arma::mat mu_new = arma::solve(A_scalar, b_scalar, arma::solve_opts::allow_ugly);
+          if (mu_new.is_finite()) mu.row(0) = mu_new.t();
+        } catch (...) { /* keep previous mu */ }
+      }
+      for (int xm = 0; xm < k; xm++) mu_k.row(xm) = mu.row(0);
     }
   }
   // --------------- Update estimates for phi
@@ -3831,17 +4405,35 @@ List EMaximization_MSVARmdl(arma::vec theta, List mdl, List MSloglik_output, int
       xz_tmp.submat(0,q*xp,Tsize-1,q*xp+q-1) = x.submat(0,q*xp,Tsize-1,q*xp+q-1) - repmu*trans(muAR_tmp.col(xp+1));
     }
     arma::mat sigma_m = sigAR[xm];
-    denom = denom + kron(inv(sigma_m),trans(xz_tmp)*diagmat(xi_t_T_AR.col(xm))*xz_tmp);
-    num = num + kron(inv(sigma_m),trans(xz_tmp)*diagmat(xi_t_T_AR.col(xm)))*vectorise(y_tmp);
+    arma::mat sigma_m_inv = arma::solve(sigma_m, arma::eye(q,q), arma::solve_opts::allow_ugly);
+    denom = denom + kron(sigma_m_inv,trans(xz_tmp)*diagmat(xi_t_T_AR.col(xm))*xz_tmp);
+    num = num + kron(sigma_m_inv,trans(xz_tmp)*diagmat(xi_t_T_AR.col(xm)))*vectorise(y_tmp);
   }
-  arma::mat phi_new = reshape(inv(denom)*num, q*ar, q); 
-  
+  arma::mat phi_new;
+  try {
+    arma::vec phi_vec = arma::solve(denom, num, arma::solve_opts::allow_ugly);
+    if (!phi_vec.is_finite()) {
+      phi_new = trans(phi);  // keep previous (phi is q×(q*ar), phi_new is (q*ar)×q)
+    } else {
+      phi_new = reshape(phi_vec, q*ar, q);
+    }
+  } catch (...) {
+    phi_new = trans(phi);  // Singular denom: keep previous phi
+  }
+
   // Companion Mat
   arma::mat F_tmp = trans(phi_new);
   arma::mat diag_mat = arma::eye(q*(ar-1),q*(ar-1));
   arma::mat diag_zero(q*(ar-1), q, arma::fill::zeros);
   arma::mat Mn = join_rows(diag_mat,diag_zero);
-  arma::mat F = join_cols(F_tmp,Mn); 
+  arma::mat F = join_cols(F_tmp,Mn);
+  // Stationarity check via companion matrix eigenvalues
+  arma::cx_vec eigvals = arma::eig_gen(F);
+  if (arma::max(arma::abs(eigvals)) >= 1.0) {
+    phi_new = trans(phi);  // revert to previous (stationary) phi
+    F_tmp = trans(phi_new);
+    F = join_cols(F_tmp, Mn);
+  }
   // --------------- Update estimates for variance
   // ----- Compute new residuals
   List mdl_tmp  = clone(mdl);
@@ -3865,14 +4457,23 @@ List EMaximization_MSVARmdl(arma::vec theta, List mdl, List MSloglik_output, int
       Tsize_k(state_ind(xk)-1) = Tsize_k(state_ind(xk)-1) + sum(xi_t_T_AR.col(xk));
     }
     for (int xk = 0; xk<k; xk++){
-      arma::mat sigma_m_tmp  = sigma[xk];
-      sigma_m_tmp = sigma_m_tmp/Tsize_k(xk);
-      sigma[xk] = sigma_m_tmp;
-      arma::vec sigma_out_tmp = trans(sigma_m_tmp.row(0));
-      for (int xn = 1; xn<q; xn++){
-        sigma_out_tmp = join_vert(sigma_out_tmp,trans(sigma_m_tmp.submat(xn,xn,xn,q-1)));
+      arma::mat sigma_m_tmp;
+      if (Tsize_k(xk) < 1e-6 * Tsize) {
+        sigma_m_tmp = as<arma::mat>(sig[xk]);  // degenerate: keep previous sigma
+      } else {
+        sigma_m_tmp = as<arma::mat>(sigma[xk]);
+        sigma_m_tmp = sigma_m_tmp / Tsize_k(xk);
+        // PD regularization: eigenvalue floor proportional to trace
+        arma::mat U_eig; arma::vec eigval;
+        arma::eig_sym(eigval, U_eig, sigma_m_tmp);
+        double eps_rel = 1e-6 * arma::trace(sigma_m_tmp) / q;
+        if (eigval.min() < eps_rel) {
+          eigval.elem(arma::find(eigval < eps_rel)).fill(eps_rel);
+          sigma_m_tmp = U_eig * arma::diagmat(eigval) * U_eig.t();
+        }
       }
-      sigma_out.subvec(xk*sigN,xk*sigN+sigN-1) = sigma_out_tmp;
+      sigma[xk] = sigma_m_tmp;
+      sigma_out.subvec(xk*sigN, xk*sigN+sigN-1) = covar_vech(sigma_m_tmp);
     }
   }else{
     arma::mat sigma_m_tmp(q,q,arma::fill::zeros);
@@ -3884,11 +4485,7 @@ List EMaximization_MSVARmdl(arma::vec theta, List mdl, List MSloglik_output, int
     for (int xk = 0; xk<k;xk++){
       sigma[xk] = sigma_m_tmp;
     }
-    arma::vec sigma_out_tmp = trans(sigma_m_tmp.row(0));
-    for (int xn = 1; xn<q; xn++){
-      sigma_out_tmp = join_vert(sigma_out_tmp, trans(sigma_m_tmp.submat(xn,xn,xn,q-1)));
-    }
-    sigma_out = sigma_out_tmp;
+    sigma_out = covar_vech(sigma_m_tmp);
   }
   // ----- Compute model residuals 
   arma::mat residuals(Tsize, q, arma::fill::zeros); 
@@ -3967,52 +4564,121 @@ List EMaximization_MSVARXmdl(arma::vec theta, List mdl, List MSloglik_output, in
   // ----- Estimate Transition probs for k-state Markov-chain [eq. 22.4.16]
   arma::mat xi_t_T_tmp    = xi_t_T.rows(1,Tsize-1);
   arma::mat xi_t_t_tmp    = xi_t_t.rows(0,Tsize-2);
-  arma::mat xi_tp1_t_tmp  = xi_tp1_t.rows(0,Tsize-2);
+  arma::mat xi_tp1_t_safe = arma::clamp(xi_tp1_t.rows(0,Tsize-2), 1e-300, 1.0);
   arma::mat p_ij(Tsize-1, k*k, arma::fill::zeros);
   for (int xk = 0; xk<k; xk++){
-    p_ij.submat(0,xk*k,Tsize-2,xk*k+k-1) = (xi_t_T_tmp%trans(P.col(xk)*trans(xi_t_t_tmp.col(xk))))/xi_tp1_t_tmp;
+    p_ij.submat(0,xk*k,Tsize-2,xk*k+k-1) = (xi_t_T_tmp%trans(P.col(xk)*trans(xi_t_t_tmp.col(xk))))/xi_tp1_t_safe;
   }
-  arma::mat P_new(k, k, arma::fill::zeros);
+  arma::mat P_new = trans(P);  // Initialize from previous P; degenerate regimes keep their column
   arma::mat p_ij_sums = arma::sum(p_ij,0);
   for (int xk = 0 ; xk<k; xk++){
     arma::vec regime_prob = xi_t_T.submat(0,xk,(Tsize-2),xk);
     double regimesum = sum(regime_prob);
+    if (regimesum < 1e-6 * Tsize) continue;  // degenerate: keep previous P column
     P_new.row(xk) = p_ij_sums.submat(0,(xk*k),0,(xk*k+(k-1)))/regimesum;
   }
   P_new = trans(P_new);
+  // Guard against NaN in P_new (can occur when p_ij numerator is also 0)
+  for (int xk = 0; xk < k; xk++) {
+    if (!P_new.col(xk).is_finite()) P_new.col(xk) = P.col(xk);  // keep previous
+  }
+  // Enforce valid transition probabilities: clamp to [0,1] and normalize columns to sum to 1.
+  // In exact arithmetic, P_new is already in [0,1] with unit column sums (Krolzig 1997, eq. 6.14).
+  // This guard defends against floating-point drift only.
+  P_new = arma::clamp(P_new, 0.0, 1.0);
+  for (int xk = 0; xk < k; xk++) {
+    double colsum = arma::accu(P_new.col(xk));
+    if (colsum > 0) {
+      P_new.col(xk) /= colsum;
+    } else {
+      P_new.col(xk) = P.col(xk);  // fallback: keep previous
+    }
+  }
   // Get limiting probabilities implied by transition matrix P_0
   arma::vec pinf = limP(P_new);
   // --------------- Update estimates for mu
-  // ----- Obtain state indicators
-  arma::mat mu(1+msmu*(k-1), q, arma::fill::zeros);
+  // Initialize from previous theta (used as fallback if linear system is ill-conditioned)
+  int mu_len = q * (1 + msmu*(k-1));
+  arma::mat mu = arma::reshape(theta.head(mu_len), q, 1 + msmu*(k-1)).t();
   arma::mat mu_k(k, q, arma::fill::zeros);
-  arma::mat mu_tmp(M, q, arma::fill::zeros);
-  arma::vec sum_tmp(M, arma::fill::zeros);
-  // ----- Compute updated mu
-  if (msmu == TRUE){
-    for (int xk = 0 ; xk<M; xk++){
-      mu_tmp.row(xk) = arma::sum(y%(xi_t_T_AR.col(xk)*repq),0);
-      sum_tmp(xk) = sum(xi_t_T_AR.col(xk));
+  // Pre-compute zdm here so mu update can adjust ỹ_t for exogenous contribution
+  arma::vec repmu(Tsize, arma::fill::ones);
+  arma::mat zdm = (Z - repmu*zbar);
+  // ----- Compute updated mu (Krolzig 1997, Table 9.19 — MSM GLS estimator)
+  {
+    // ỹ_t = y_t - zdm*betaZ - sum_j A_j * y_{t-j}  [regime-independent, T×q]
+    arma::mat ytilde = y - zdm * betaZ;
+    for (int j = 0; j < ar; j++){
+      arma::mat Aj = phi.submat(0, q*j, q-1, q*(j+1)-1);
+      ytilde -= x.submat(0, q*j, Tsize-1, q*(j+1)-1) * Aj.t();
     }
-    for (int xk = 1; xk<=k;xk++){
-      mu.row(xk-1) = arma::sum(mu_tmp.rows(find(state_ind==xk)),0)/(sum(sum_tmp.rows(find(state_ind==xk)))*repq);
-    }
-    mu_k = mu;
-  }else{
-    for (int xk = 0 ; xk<M; xk++){
-      mu = mu + arma::sum(y%(xi_t_T_AR.col(xk)*repq),0);
-    }
-    mu = mu/Tsize;
-    for (int xk = 0 ; xk<k; xk++){
-      mu_k.row(xk) = mu;
+    if (msmu == TRUE){
+      arma::mat A_lsys(k*q, k*q, arma::fill::zeros);
+      arma::vec b_vec(k*q, arma::fill::zeros);
+      for (int xn = 0; xn < M; xn++){
+        arma::mat sigma_inv = arma::solve(as<arma::mat>(sig[xn % k]), arma::eye(q,q), arma::solve_opts::allow_ugly);
+        double wt_sum = arma::sum(xi_t_T_AR.col(xn));
+        arma::vec ytilde_wt = ytilde.t() * xi_t_T_AR.col(xn);  // q×1
+        for (int xm1 = 0; xm1 < k; xm1++){
+          arma::mat Xmu1(q, q, arma::fill::zeros);
+          if ((xn % k) == xm1) Xmu1 += arma::eye<arma::mat>(q, q);
+          int kpow = k;
+          for (int j = 1; j <= ar; j++){
+            if (((xn / kpow) % k) == xm1)
+              Xmu1 -= phi.submat(0, q*(j-1), q-1, q*j-1);
+            kpow *= k;
+          }
+          b_vec.rows(xm1*q, (xm1+1)*q-1) += Xmu1.t() * sigma_inv * ytilde_wt;
+          for (int xm2 = 0; xm2 < k; xm2++){
+            arma::mat Xmu2(q, q, arma::fill::zeros);
+            if ((xn % k) == xm2) Xmu2 += arma::eye<arma::mat>(q, q);
+            int kpow2 = k;
+            for (int j = 1; j <= ar; j++){
+              if (((xn / kpow2) % k) == xm2)
+                Xmu2 -= phi.submat(0, q*(j-1), q-1, q*j-1);
+              kpow2 *= k;
+            }
+            A_lsys.submat(xm1*q, xm2*q, (xm1+1)*q-1, (xm2+1)*q-1) +=
+              wt_sum * Xmu1.t() * sigma_inv * Xmu2;
+          }
+        }
+      }
+      if (A_lsys.is_finite() && arma::rcond(A_lsys) > 1e-12){
+        try {
+          arma::vec mu_flat = arma::solve(A_lsys, b_vec, arma::solve_opts::allow_ugly);
+          if (mu_flat.is_finite()){
+            for (int xm = 0; xm < k; xm++)
+              mu.row(xm) = mu_flat.rows(xm*q, (xm+1)*q-1).t();
+          }
+        } catch (...) { /* keep previous mu */ }
+      }
+      mu_k = mu;
+    }else{
+      arma::mat C = arma::eye<arma::mat>(q, q);
+      for (int j = 0; j < ar; j++) C -= phi.submat(0, q*j, q-1, q*(j+1)-1);
+      arma::mat A_scalar(q, q, arma::fill::zeros);
+      arma::vec b_scalar(q, arma::fill::zeros);
+      for (int xn = 0; xn < M; xn++){
+        arma::mat sigma_inv = arma::solve(as<arma::mat>(sig[xn % k]), arma::eye(q,q), arma::solve_opts::allow_ugly);
+        double wt_sum = arma::sum(xi_t_T_AR.col(xn));
+        arma::vec ytilde_wt = ytilde.t() * xi_t_T_AR.col(xn);
+        A_scalar += wt_sum * C.t() * sigma_inv * C;
+        b_scalar += C.t() * sigma_inv * ytilde_wt;
+      }
+      if (A_scalar.is_finite() && arma::rcond(A_scalar) > 1e-12){
+        try {
+          arma::vec mu_new = arma::solve(A_scalar, b_scalar, arma::solve_opts::allow_ugly);
+          if (mu_new.is_finite()) mu.row(0) = mu_new.t();
+        } catch (...) { /* keep previous mu */ }
+      }
+      for (int xm = 0; xm < k; xm++) mu_k.row(xm) = mu.row(0);
     }
   }
   // ----- Update estimates for beta (phi & betaZ)
   List mugrid = argrid_MSVARmdl(mu_k, sig, k, ar, msmu, msvar);
   List muAR   = mugrid["mu"];
   List sigAR  = mugrid["sig"];
-  arma::vec repmu(Tsize, arma::fill::ones);
-  arma::mat zdm = (Z-repmu*zbar); 
+  // (repmu and zdm already computed above) 
   arma::mat denom(q*q*ar + qz*q, q*q*ar  + qz*q, arma::fill::zeros);
   arma::mat num(q*q*ar  + qz*q, 1, arma::fill::zeros);
   for (int xm = 0; xm<M; xm++){
@@ -4024,18 +4690,41 @@ List EMaximization_MSVARXmdl(arma::vec theta, List mdl, List MSloglik_output, in
     }
     arma::mat xz_tmp = join_rows(x_tmp,zdm);
     arma::mat sigma_m = sigAR[xm];
-    denom = denom + kron(inv(sigma_m),trans(xz_tmp)*diagmat(xi_t_T_AR.col(xm))*xz_tmp);
-    num = num + kron(inv(sigma_m),trans(xz_tmp)*diagmat(xi_t_T_AR.col(xm)))*vectorise(y_tmp);
+    arma::mat sigma_m_inv = arma::solve(sigma_m, arma::eye(q,q), arma::solve_opts::allow_ugly);
+    denom = denom + kron(sigma_m_inv,trans(xz_tmp)*diagmat(xi_t_T_AR.col(xm))*xz_tmp);
+    num = num + kron(sigma_m_inv,trans(xz_tmp)*diagmat(xi_t_T_AR.col(xm)))*vectorise(y_tmp);
   }
-  arma::mat beta_new  = reshape(inv(denom)*num,q*ar+qz,q);
-  arma::mat phi_new   = beta_new.rows(0,q*ar-1);
-  arma::mat betaZ_new = beta_new.rows(q*ar,q*ar+qz-1);
+  arma::mat beta_new;
+  arma::mat phi_new;
+  arma::mat betaZ_new;
+  try {
+    arma::vec beta_vec = arma::solve(denom, num, arma::solve_opts::allow_ugly);
+    if (!beta_vec.is_finite()) {
+      phi_new = trans(phi);  // keep previous (phi is q×(q*ar), phi_new is (q*ar)×q)
+      betaZ_new = betaZ;     // keep previous
+    } else {
+      beta_new  = reshape(beta_vec, q*ar+qz, q);
+      phi_new   = beta_new.rows(0, q*ar-1);
+      betaZ_new = beta_new.rows(q*ar, q*ar+qz-1);
+    }
+  } catch (...) {
+    phi_new = trans(phi);  // Singular denom: keep previous
+    betaZ_new = betaZ;     // keep previous
+  }
   // Companion Mat
   arma::mat F_tmp = trans(phi_new);
   arma::mat diag_mat = arma::eye(q*(ar-1),q*(ar-1));
   arma::mat diag_zero(q*(ar-1), q, arma::fill::zeros);
   arma::mat Mn = join_rows(diag_mat,diag_zero);
   arma::mat F = join_cols(F_tmp,Mn);
+  // Stationarity check via companion matrix eigenvalues
+  arma::cx_vec eigvals = arma::eig_gen(F);
+  if (arma::max(arma::abs(eigvals)) >= 1.0) {
+    phi_new = trans(phi);  // revert to previous (stationary) phi
+    betaZ_new = betaZ;     // revert betaZ too (joint solve)
+    F_tmp = trans(phi_new);
+    F = join_cols(F_tmp, Mn);
+  }
   // --------------- Update estimates for variance
   // ----- Compute new residuals
   List mdl_tmp    = clone(mdl);
@@ -4060,14 +4749,23 @@ List EMaximization_MSVARXmdl(arma::vec theta, List mdl, List MSloglik_output, in
       Tsize_k(state_ind(xk)-1) = Tsize_k(state_ind(xk)-1) + sum(xi_t_T_AR.col(xk));
     }
     for (int xk = 0; xk<k; xk++){
-      arma::mat sigma_m_tmp  = sigma[xk];
-      sigma_m_tmp = sigma_m_tmp/Tsize_k(xk);
-      sigma[xk] = sigma_m_tmp;
-      arma::vec sigma_out_tmp = trans(sigma_m_tmp.row(0));
-      for (int xn = 1; xn<q; xn++){
-        sigma_out_tmp = join_vert(sigma_out_tmp,trans(sigma_m_tmp.submat(xn,xn,xn,q-1)));
+      arma::mat sigma_m_tmp;
+      if (Tsize_k(xk) < 1e-6 * Tsize) {
+        sigma_m_tmp = as<arma::mat>(sig[xk]);  // degenerate: keep previous sigma
+      } else {
+        sigma_m_tmp = as<arma::mat>(sigma[xk]);
+        sigma_m_tmp = sigma_m_tmp / Tsize_k(xk);
+        // PD regularization: eigenvalue floor proportional to trace
+        arma::mat U_eig; arma::vec eigval;
+        arma::eig_sym(eigval, U_eig, sigma_m_tmp);
+        double eps_rel = 1e-6 * arma::trace(sigma_m_tmp) / q;
+        if (eigval.min() < eps_rel) {
+          eigval.elem(arma::find(eigval < eps_rel)).fill(eps_rel);
+          sigma_m_tmp = U_eig * arma::diagmat(eigval) * U_eig.t();
+        }
       }
-      sigma_out.subvec(xk*sigN,xk*sigN+sigN-1) = sigma_out_tmp;
+      sigma[xk] = sigma_m_tmp;
+      sigma_out.subvec(xk*sigN, xk*sigN+sigN-1) = covar_vech(sigma_m_tmp);
     }
   }else{
     arma::mat sigma_m_tmp(q,q,arma::fill::zeros);
@@ -4079,11 +4777,7 @@ List EMaximization_MSVARXmdl(arma::vec theta, List mdl, List MSloglik_output, in
     for (int xk = 0; xk<k;xk++){
       sigma[xk] = sigma_m_tmp;
     }
-    arma::vec sigma_out_tmp = trans(sigma_m_tmp.row(0));
-    for (int xn = 1; xn<q; xn++){
-      sigma_out_tmp = join_vert(sigma_out_tmp, trans(sigma_m_tmp.submat(xn,xn,xn,q-1)));
-    }
-    sigma_out = sigma_out_tmp;
+    sigma_out = covar_vech(sigma_m_tmp);
   }
   // ----- Compute model residuals
   arma::mat residuals(Tsize, q, arma::fill::zeros);
@@ -4140,8 +4834,9 @@ List EMiter_HMmdl(List mdl, List EMest_output, int k){
   thl(1) = loglik_new - loglik_old;
   arma::mat P_n     = Maxim_output["P"];
   arma::vec theta_n = Maxim_output["theta"];
-  arma::vec delta   = theta_n - theta;
-  double deltath    = max(abs(delta));
+  arma::vec delta_rel = arma::abs(theta_n - theta) / (arma::abs(theta) + 1e-10);
+  double deltath    = arma::max(delta_rel);
+  if (!std::isfinite(deltath)) deltath = arma::datum::inf;
   thl(2)            = deltath;
   List EM_output;
   EM_output["theta"]      = theta_n; 
@@ -4189,8 +4884,9 @@ List EMiter_MSARmdl(List mdl, List EMest_output, int k){
   thl(1)            = loglik_new - loglik_old;
   arma::mat P_n     = Maxim_output["P"];
   arma::vec theta_n = Maxim_output["theta"];
-  arma::vec delta   = theta_n - theta;
-  double deltath    = max(abs(delta));
+  arma::vec delta_rel = arma::abs(theta_n - theta) / (arma::abs(theta) + 1e-10);
+  double deltath    = arma::max(delta_rel);
+  if (!std::isfinite(deltath)) deltath = arma::datum::inf;
   thl(2) = deltath;
   List EM_output;
   EM_output["theta"]      = theta_n; 
@@ -4239,8 +4935,9 @@ List EMiter_MSARXmdl(List mdl, List EMest_output, int k){
   thl(1)            = loglik_new - loglik_old;
   arma::mat P_n     = Maxim_output["P"];
   arma::vec theta_n = Maxim_output["theta"];
-  arma::vec delta   = theta_n - theta;
-  double deltath    = max(abs(delta));
+  arma::vec delta_rel = arma::abs(theta_n - theta) / (arma::abs(theta) + 1e-10);
+  double deltath    = arma::max(delta_rel);
+  if (!std::isfinite(deltath)) deltath = arma::datum::inf;
   thl(2) = deltath;
   List EM_output;
   EM_output["theta"]      = theta_n; 
@@ -4291,8 +4988,9 @@ List EMiter_MSVARmdl(List mdl, List EMest_output, int k){
   thl(1) = loglik_new - loglik_old;
   arma::mat P_n = Maxim_output["P"];
   arma::vec theta_n = Maxim_output["theta"];
-  arma::vec delta = theta_n - theta;
-  double deltath = max(abs(delta));
+  arma::vec delta_rel = arma::abs(theta_n - theta) / (arma::abs(theta) + 1e-10);
+  double deltath = arma::max(delta_rel);
+  if (!std::isfinite(deltath)) deltath = arma::datum::inf;
   thl(2) = deltath;
   List EM_output;
   EM_output["theta"]          = theta_n; 
@@ -4341,8 +5039,9 @@ List EMiter_MSVARXmdl(List mdl, List EMest_output, int k){
   thl(1) = loglik_new - loglik_old;
   arma::mat P_n = Maxim_output["P"];
   arma::vec theta_n = Maxim_output["theta"];
-  arma::vec delta = theta_n - theta;
-  double deltath = max(abs(delta));
+  arma::vec delta_rel = arma::abs(theta_n - theta) / (arma::abs(theta) + 1e-10);
+  double deltath = arma::max(delta_rel);
+  if (!std::isfinite(deltath)) deltath = arma::datum::inf;
   thl(2) = deltath;
   List EM_output;
   EM_output["theta"]          = theta_n; 
@@ -4364,7 +5063,71 @@ List EMiter_MSVARXmdl(List mdl, List EMest_output, int k){
 }
 
 // ==============================================================================
-//' @title Estimation of Hidden Markov model by EM Algorithm 
+// Internal helper: EM convergence test. Returns true when the chosen criterion
+// `conv` is satisfied. Not exported; used by the *_em drivers below.
+//   thl = [logLike_new, logLike_new - logLike_old, deltath] from EMiter_*.
+//   conv: "theta"    relative parameter change (Hamilton 1994; Krolzig 1997),
+//         "loglik"   relative log-likelihood change, floored (Krolzig 1997, 6.4.4),
+//         "both"     theta AND loglik (Krolzig 1997 default),
+//         "loglik-A" / "both-A"  Aitken-accelerated log-likelihood
+//                    (Bohning et al. 1994; McLachlan & Krishnan 2008).
+//   thtol = parameter tolerance; ltol = log-likelihood tolerance.
+//   inc_prev/linf_prev/aitken_streak carry Aitken state across iterations.
+bool em_converged(const std::string& conv, double deltath, const arma::vec& thl,
+                  double thtol, double ltol, int it,
+                  double& inc_prev, double& linf_prev, int& aitken_streak){
+  double L_new = thl(0);          // log-likelihood at iteration it
+  double inc   = thl(1);          // L_it - L_{it-1}
+  double L_old = L_new - inc;     // log-likelihood at iteration it-1
+  // --- relative parameter change (legacy; valid from it == 1) ---
+  bool conv_theta = (deltath <= thtol);
+  // --- relative log-likelihood change, floored (Krolzig 1997, 6.4.4) ---
+  //     at it == 1, L_{it-1} is the 0.0 placeholder, so require it >= 2.
+  bool conv_ll = false;
+  if (it >= 2){
+    double denom = std::fabs(L_old);
+    if (denom < 1.0) denom = 1.0;
+    conv_ll = ((std::fabs(inc) / denom) <= ltol);
+  }
+  // --- Aitken-accelerated log-likelihood (Bohning et al. 1994) ---
+  //     needs it >= 3, a valid prior increment, rate a in (0,1) bounded away
+  //     from 1, and two consecutive valid Aitken steps (so linf_prev is the
+  //     immediately preceding extrapolated limit).
+  bool conv_llA = false;
+  double linf_cur = arma::datum::nan;
+  bool aitken_ok = false;
+  if (it >= 3 && std::isfinite(inc_prev) &&
+      std::fabs(inc_prev) > 1e-12 * (std::fabs(L_old) + 1.0)){
+    double a = inc / inc_prev;
+    if (a > 0.0 && a < 1.0 && (1.0 - a) > 1e-8){
+      linf_cur = L_old + inc / (1.0 - a);
+      if (std::isfinite(linf_cur)){
+        aitken_ok = true;
+        if (aitken_streak >= 1 && std::isfinite(linf_prev)){
+          double denomA = std::fabs(linf_prev);
+          if (denomA < 1.0) denomA = 1.0;
+          conv_llA = ((std::fabs(linf_cur - linf_prev) / denomA) <= ltol);
+        }
+      }
+    }
+  }
+  // --- combine per mode ---
+  bool converged;
+  if      (conv == "theta")    converged = conv_theta;
+  else if (conv == "loglik")   converged = conv_ll;
+  else if (conv == "both")     converged = conv_theta && conv_ll;
+  else if (conv == "loglik-A") converged = conv_llA;
+  else if (conv == "both-A")   converged = conv_theta && conv_llA;
+  else                         converged = conv_theta;   // unknown -> legacy
+  // --- carry state to next iteration ---
+  if (aitken_ok){ linf_prev = linf_cur; aitken_streak += 1; }
+  else          { aitken_streak = 0; }
+  if (it >= 2)  { inc_prev = inc; }   // never store the placeholder it == 1 increment
+  return converged;
+}
+
+// ==============================================================================
+//' @title Estimation of Hidden Markov model by EM Algorithm
 //' 
 //' @description Estimate Hidden Markov model by EM algorithm. This function is used by \code{\link{HMmdl}} which organizes the output and takes raw data as input.
 //' 
@@ -4389,17 +5152,27 @@ List HMmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   // ----- Initial values
   List EMest_output;
   EMest_output["theta"] = theta_0;  // initial values for parameters
-  EMest_output["logLike"] = 0;     // initial log-likelihood
+  EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_HMmdl(mdl, EMest_output, k);
   int it = 1;
   double deltath = EMest_output["deltath"];
-  // iterate to unitl convergence criterion is met or max number of iterations (maxit) 
-  while ((it<=maxit) & (deltath>thtol)){
+  arma::vec thl = EMest_output["thl"];
+  // convergence controls (ltol/conv may be absent for legacy direct callers)
+  double ltol = optim_options.containsElementNamed("ltol") ? Rcpp::as<double>(optim_options["ltol"]) : 1e-7;
+  std::string conv = optim_options.containsElementNamed("conv") ? Rcpp::as<std::string>(optim_options["conv"]) : "theta";
+  double inc_prev = arma::datum::nan, linf_prev = arma::datum::nan;
+  int aitken_streak = 0;
+  bool converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
+  // iterate until convergence criterion is met or max number of iterations (maxit)
+  while ((it<=maxit) & (!converged)){
     EMest_output = EMiter_HMmdl(mdl, EMest_output, k);
     deltath = EMest_output["deltath"];
+    thl = Rcpp::as<arma::vec>(EMest_output["thl"]);
     it = it + 1;
+    converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   }
-  EMest_output["iterations"] = it-1; 
+  EMest_output["iterations"] = it-1;
+  EMest_output["converged"] = converged;
   return(EMest_output);
 }
 
@@ -4432,17 +5205,27 @@ List MSARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   // ----- Initial values
   List EMest_output;
   EMest_output["theta"] = theta_0;  // initial values for parameters
-  EMest_output["logLike"] = 0;     // initial log-likelihood
+  EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_MSARmdl(mdl, EMest_output, k);
   int it = 1;
   double deltath = EMest_output["deltath"];
-  // iterate to unitl convergence criterion is met or max number of iterations (maxit) 
-  while ((it<=maxit) & (deltath>thtol)){
+  arma::vec thl = EMest_output["thl"];
+  // convergence controls (ltol/conv may be absent for legacy direct callers)
+  double ltol = optim_options.containsElementNamed("ltol") ? Rcpp::as<double>(optim_options["ltol"]) : 1e-7;
+  std::string conv = optim_options.containsElementNamed("conv") ? Rcpp::as<std::string>(optim_options["conv"]) : "theta";
+  double inc_prev = arma::datum::nan, linf_prev = arma::datum::nan;
+  int aitken_streak = 0;
+  bool converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
+  // iterate until convergence criterion is met or max number of iterations (maxit)
+  while ((it<=maxit) & (!converged)){
     EMest_output = EMiter_MSARmdl(mdl, EMest_output, k);
     deltath = EMest_output["deltath"];
+    thl = Rcpp::as<arma::vec>(EMest_output["thl"]);
     it = it + 1;
+    converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   }
-  EMest_output["iterations"] = it-1; 
+  EMest_output["iterations"] = it-1;
+  EMest_output["converged"] = converged;
   return(EMest_output);
 }
 
@@ -4473,17 +5256,27 @@ List MSARXmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   // ----- Initial values
   List EMest_output;
   EMest_output["theta"] = theta_0;  // initial values for parameters
-  EMest_output["logLike"] = 0;     // initial log-likelihood
+  EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_MSARXmdl(mdl, EMest_output, k);
   int it = 1;
   double deltath = EMest_output["deltath"];
-  // iterate to unitl convergence criterion is met or max number of iterations (maxit) 
-  while ((it<=maxit) & (deltath>thtol)){
+  arma::vec thl = EMest_output["thl"];
+  // convergence controls (ltol/conv may be absent for legacy direct callers)
+  double ltol = optim_options.containsElementNamed("ltol") ? Rcpp::as<double>(optim_options["ltol"]) : 1e-7;
+  std::string conv = optim_options.containsElementNamed("conv") ? Rcpp::as<std::string>(optim_options["conv"]) : "theta";
+  double inc_prev = arma::datum::nan, linf_prev = arma::datum::nan;
+  int aitken_streak = 0;
+  bool converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
+  // iterate until convergence criterion is met or max number of iterations (maxit)
+  while ((it<=maxit) & (!converged)){
     EMest_output = EMiter_MSARXmdl(mdl, EMest_output, k);
     deltath = EMest_output["deltath"];
+    thl = Rcpp::as<arma::vec>(EMest_output["thl"]);
     it = it + 1;
+    converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   }
-  EMest_output["iterations"] = it-1; 
+  EMest_output["iterations"] = it-1;
+  EMest_output["converged"] = converged;
   return(EMest_output);
 }
 
@@ -4514,17 +5307,27 @@ List MSVARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   // ----- Initial values
   List EMest_output;
   EMest_output["theta"] = theta_0;  // initial values for parameters
-  EMest_output["logLike"] = 0;     // initial log-likelihood
+  EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_MSVARmdl(mdl, EMest_output, k);
   int it = 1;
   double deltath = EMest_output["deltath"];
-  // iterate to unitl convergence criterion is met or max number of iterations (maxit) 
-  while ((it<=maxit) & (deltath>thtol)){
+  arma::vec thl = EMest_output["thl"];
+  // convergence controls (ltol/conv may be absent for legacy direct callers)
+  double ltol = optim_options.containsElementNamed("ltol") ? Rcpp::as<double>(optim_options["ltol"]) : 1e-7;
+  std::string conv = optim_options.containsElementNamed("conv") ? Rcpp::as<std::string>(optim_options["conv"]) : "theta";
+  double inc_prev = arma::datum::nan, linf_prev = arma::datum::nan;
+  int aitken_streak = 0;
+  bool converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
+  // iterate until convergence criterion is met or max number of iterations (maxit)
+  while ((it<=maxit) & (!converged)){
     EMest_output = EMiter_MSVARmdl(mdl, EMest_output, k);
     deltath = EMest_output["deltath"];
+    thl = Rcpp::as<arma::vec>(EMest_output["thl"]);
     it = it + 1;
+    converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   }
-  EMest_output["iterations"] = it-1; 
+  EMest_output["iterations"] = it-1;
+  EMest_output["converged"] = converged;
   return(EMest_output);
 }
 
@@ -4555,17 +5358,27 @@ List MSVARXmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   // ----- Initial values
   List EMest_output;
   EMest_output["theta"] = theta_0;  // initial values for parameters
-  EMest_output["logLike"] = 0;     // initial log-likelihood
+  EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_MSVARXmdl(mdl, EMest_output, k);
   int it = 1;
   double deltath = EMest_output["deltath"];
-  // iterate to unitl convergence criterion is met or max number of iterations (maxit) 
-  while ((it<=maxit) & (deltath>thtol)){
+  arma::vec thl = EMest_output["thl"];
+  // convergence controls (ltol/conv may be absent for legacy direct callers)
+  double ltol = optim_options.containsElementNamed("ltol") ? Rcpp::as<double>(optim_options["ltol"]) : 1e-7;
+  std::string conv = optim_options.containsElementNamed("conv") ? Rcpp::as<std::string>(optim_options["conv"]) : "theta";
+  double inc_prev = arma::datum::nan, linf_prev = arma::datum::nan;
+  int aitken_streak = 0;
+  bool converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
+  // iterate until convergence criterion is met or max number of iterations (maxit)
+  while ((it<=maxit) & (!converged)){
     EMest_output = EMiter_MSVARXmdl(mdl, EMest_output, k);
     deltath = EMest_output["deltath"];
+    thl = Rcpp::as<arma::vec>(EMest_output["thl"]);
     it = it + 1;
+    converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   }
-  EMest_output["iterations"] = it-1; 
+  EMest_output["iterations"] = it-1;
+  EMest_output["converged"] = converged;
   return(EMest_output);
  }
 

@@ -116,8 +116,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // LR_samp_dist
-arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin, Rcpp::Nullable<arma::mat> Z, List mdl_h0_control, List mdl_h1_control);
-RcppExport SEXP _MSTest_LR_samp_dist(SEXP mdl_h0SEXP, SEXP k1SEXP, SEXP NSEXP, SEXP burninSEXP, SEXP ZSEXP, SEXP mdl_h0_controlSEXP, SEXP mdl_h1_controlSEXP) {
+arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin, Rcpp::Nullable<arma::mat> Z, List mdl_h0_control, List mdl_h1_control, Rcpp::Nullable<List> predrawn_eps, Rcpp::Nullable<Rcpp::NumericMatrix> predrawn_state_rand);
+RcppExport SEXP _MSTest_LR_samp_dist(SEXP mdl_h0SEXP, SEXP k1SEXP, SEXP NSEXP, SEXP burninSEXP, SEXP ZSEXP, SEXP mdl_h0_controlSEXP, SEXP mdl_h1_controlSEXP, SEXP predrawn_epsSEXP, SEXP predrawn_state_randSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -128,20 +128,22 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< Rcpp::Nullable<arma::mat> >::type Z(ZSEXP);
     Rcpp::traits::input_parameter< List >::type mdl_h0_control(mdl_h0_controlSEXP);
     Rcpp::traits::input_parameter< List >::type mdl_h1_control(mdl_h1_controlSEXP);
-    rcpp_result_gen = Rcpp::wrap(LR_samp_dist(mdl_h0, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<List> >::type predrawn_eps(predrawn_epsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type predrawn_state_rand(predrawn_state_randSEXP);
+    rcpp_result_gen = Rcpp::wrap(LR_samp_dist(mdl_h0, k1, N, burnin, Z, mdl_h0_control, mdl_h1_control, predrawn_eps, predrawn_state_rand));
     return rcpp_result_gen;
 END_RCPP
 }
 // MMCLRpval_fun
-double MMCLRpval_fun(arma::vec theta_h0, List mdl_h0, int k1, double LT_h1, int N, int burnin, int workers, double lambda, bool stationary_constraint, double thtol, Rcpp::Nullable<arma::mat> Z, bool exog, List mdl_h0_control, List mdl_h1_control);
-RcppExport SEXP _MSTest_MMCLRpval_fun(SEXP theta_h0SEXP, SEXP mdl_h0SEXP, SEXP k1SEXP, SEXP LT_h1SEXP, SEXP NSEXP, SEXP burninSEXP, SEXP workersSEXP, SEXP lambdaSEXP, SEXP stationary_constraintSEXP, SEXP thtolSEXP, SEXP ZSEXP, SEXP exogSEXP, SEXP mdl_h0_controlSEXP, SEXP mdl_h1_controlSEXP) {
+double MMCLRpval_fun(arma::vec theta_h0, List mdl_h0, int k1, double LRT_0, int N, int burnin, int workers, double lambda, bool stationary_constraint, double thtol, Rcpp::Nullable<arma::mat> Z, bool exog, List mdl_h0_control, List mdl_h1_control, Rcpp::Nullable<List> predrawn_eps, Rcpp::Nullable<Rcpp::NumericMatrix> predrawn_state_rand);
+RcppExport SEXP _MSTest_MMCLRpval_fun(SEXP theta_h0SEXP, SEXP mdl_h0SEXP, SEXP k1SEXP, SEXP LRT_0SEXP, SEXP NSEXP, SEXP burninSEXP, SEXP workersSEXP, SEXP lambdaSEXP, SEXP stationary_constraintSEXP, SEXP thtolSEXP, SEXP ZSEXP, SEXP exogSEXP, SEXP mdl_h0_controlSEXP, SEXP mdl_h1_controlSEXP, SEXP predrawn_epsSEXP, SEXP predrawn_state_randSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::vec >::type theta_h0(theta_h0SEXP);
     Rcpp::traits::input_parameter< List >::type mdl_h0(mdl_h0SEXP);
     Rcpp::traits::input_parameter< int >::type k1(k1SEXP);
-    Rcpp::traits::input_parameter< double >::type LT_h1(LT_h1SEXP);
+    Rcpp::traits::input_parameter< double >::type LRT_0(LRT_0SEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
     Rcpp::traits::input_parameter< int >::type workers(workersSEXP);
@@ -152,20 +154,22 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type exog(exogSEXP);
     Rcpp::traits::input_parameter< List >::type mdl_h0_control(mdl_h0_controlSEXP);
     Rcpp::traits::input_parameter< List >::type mdl_h1_control(mdl_h1_controlSEXP);
-    rcpp_result_gen = Rcpp::wrap(MMCLRpval_fun(theta_h0, mdl_h0, k1, LT_h1, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<List> >::type predrawn_eps(predrawn_epsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type predrawn_state_rand(predrawn_state_randSEXP);
+    rcpp_result_gen = Rcpp::wrap(MMCLRpval_fun(theta_h0, mdl_h0, k1, LRT_0, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control, predrawn_eps, predrawn_state_rand));
     return rcpp_result_gen;
 END_RCPP
 }
 // MMCLRpval_fun_min
-double MMCLRpval_fun_min(arma::vec theta, List mdl_h0, int k1, double LT_h1, int N, int burnin, int workers, double lambda, bool stationary_constraint, double thtol, Rcpp::Nullable<arma::mat> Z, bool exog, List mdl_h0_control, List mdl_h1_control);
-RcppExport SEXP _MSTest_MMCLRpval_fun_min(SEXP thetaSEXP, SEXP mdl_h0SEXP, SEXP k1SEXP, SEXP LT_h1SEXP, SEXP NSEXP, SEXP burninSEXP, SEXP workersSEXP, SEXP lambdaSEXP, SEXP stationary_constraintSEXP, SEXP thtolSEXP, SEXP ZSEXP, SEXP exogSEXP, SEXP mdl_h0_controlSEXP, SEXP mdl_h1_controlSEXP) {
+double MMCLRpval_fun_min(arma::vec theta, List mdl_h0, int k1, double LRT_0, int N, int burnin, int workers, double lambda, bool stationary_constraint, double thtol, Rcpp::Nullable<arma::mat> Z, bool exog, List mdl_h0_control, List mdl_h1_control, Rcpp::Nullable<List> predrawn_eps, Rcpp::Nullable<Rcpp::NumericMatrix> predrawn_state_rand);
+RcppExport SEXP _MSTest_MMCLRpval_fun_min(SEXP thetaSEXP, SEXP mdl_h0SEXP, SEXP k1SEXP, SEXP LRT_0SEXP, SEXP NSEXP, SEXP burninSEXP, SEXP workersSEXP, SEXP lambdaSEXP, SEXP stationary_constraintSEXP, SEXP thtolSEXP, SEXP ZSEXP, SEXP exogSEXP, SEXP mdl_h0_controlSEXP, SEXP mdl_h1_controlSEXP, SEXP predrawn_epsSEXP, SEXP predrawn_state_randSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< arma::vec >::type theta(thetaSEXP);
     Rcpp::traits::input_parameter< List >::type mdl_h0(mdl_h0SEXP);
     Rcpp::traits::input_parameter< int >::type k1(k1SEXP);
-    Rcpp::traits::input_parameter< double >::type LT_h1(LT_h1SEXP);
+    Rcpp::traits::input_parameter< double >::type LRT_0(LRT_0SEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
     Rcpp::traits::input_parameter< int >::type workers(workersSEXP);
@@ -176,7 +180,9 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< bool >::type exog(exogSEXP);
     Rcpp::traits::input_parameter< List >::type mdl_h0_control(mdl_h0_controlSEXP);
     Rcpp::traits::input_parameter< List >::type mdl_h1_control(mdl_h1_controlSEXP);
-    rcpp_result_gen = Rcpp::wrap(MMCLRpval_fun_min(theta, mdl_h0, k1, LT_h1, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control));
+    Rcpp::traits::input_parameter< Rcpp::Nullable<List> >::type predrawn_eps(predrawn_epsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::NumericMatrix> >::type predrawn_state_rand(predrawn_state_randSEXP);
+    rcpp_result_gen = Rcpp::wrap(MMCLRpval_fun_min(theta, mdl_h0, k1, LRT_0, N, burnin, workers, lambda, stationary_constraint, thtol, Z, exog, mdl_h0_control, mdl_h1_control, predrawn_eps, predrawn_state_rand));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1123,9 +1129,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_simuMdl", (DL_FUNC) &_MSTest_simuMdl, 6},
     {"_MSTest_mdledit", (DL_FUNC) &_MSTest_mdledit, 6},
     {"_MSTest_compu_tstat", (DL_FUNC) &_MSTest_compu_tstat, 7},
-    {"_MSTest_LR_samp_dist", (DL_FUNC) &_MSTest_LR_samp_dist, 7},
-    {"_MSTest_MMCLRpval_fun", (DL_FUNC) &_MSTest_MMCLRpval_fun, 14},
-    {"_MSTest_MMCLRpval_fun_min", (DL_FUNC) &_MSTest_MMCLRpval_fun_min, 14},
+    {"_MSTest_LR_samp_dist", (DL_FUNC) &_MSTest_LR_samp_dist, 9},
+    {"_MSTest_MMCLRpval_fun", (DL_FUNC) &_MSTest_MMCLRpval_fun, 16},
+    {"_MSTest_MMCLRpval_fun_min", (DL_FUNC) &_MSTest_MMCLRpval_fun_min, 16},
     {"_MSTest_calc_DLmoments", (DL_FUNC) &_MSTest_calc_DLmoments, 1},
     {"_MSTest_sim_DLmoments", (DL_FUNC) &_MSTest_sim_DLmoments, 2},
     {"_MSTest_combine_stat", (DL_FUNC) &_MSTest_combine_stat, 3},

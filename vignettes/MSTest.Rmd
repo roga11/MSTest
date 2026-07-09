@@ -1,0 +1,187 @@
+---
+title: "Introduction to MSTest"
+author: "Gabriel Rodriguez-Rondon and Jean-Marie Dufour"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to MSTest}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.width = 6,
+  fig.height = 4
+)
+library(MSTest)
+seed <- 1234
+```
+
+## Overview
+
+**MSTest** implements hypothesis testing procedures for determining the number
+of regimes in Markov switching models. When fitting such a model the number of
+regimes must be specified by the researcher, yet the standard asymptotic theory
+for likelihood ratio tests does not apply, because regularity conditions are
+violated (unidentified nuisance parameters and parameters on the boundary of the
+parameter space under the null).
+
+The central contribution of the package is a pair of **Monte Carlo likelihood
+ratio tests** introduced by Rodriguez-Rondon and Dufour: the local
+(`LMCLRTest`) and maximized (`MMCLRTest`) Monte Carlo LR tests. These apply to
+both univariate and multivariate models and to general hypotheses of \(M_0\)
+versus \(M_0 + m\) regimes; the maximized version additionally controls test
+size in finite samples and is robust to identification failures. The package
+also provides three further procedures for the \(M_0 = m = 1\) case: the
+moment-based tests of Dufour and Luger (2017) (`DLMCTest`, `DLMMCTest`), the
+parameter stability test of Carrasco, Hu, and Ploberger (2014) (`CHPTest`), and
+Hansen's (1992) standardized likelihood ratio test (`HLRTest`).
+
+A typical workflow is to **simulate** (or load) a process, **estimate** a model,
+and **test** the number of regimes. The examples below use small Monte Carlo
+replication counts so the vignette builds quickly; in applications these would be
+larger.
+
+## Simulating a Markov switching process
+
+We simulate a two-regime Markov switching autoregressive process in which both
+the mean and the variance switch across regimes.
+
+```{r simulate}
+set.seed(seed)
+mdl <- list(n     = 200,
+            mu    = c(0, 8),
+            sigma = c(1, 1),
+            phi   = c(0.5),
+            k     = 2,
+            P     = rbind(c(0.90, 0.10),
+                          c(0.10, 0.90)))
+
+sim <- simuMSAR(mdl)
+plot(sim)
+```
+
+The returned object stores the simulated series in `sim$y` and the true latent
+regime path in `sim$St`.
+
+## Estimating a model
+
+Markov switching models are estimated with the expectation--maximization (EM)
+algorithm by default. The `summary` method reports the parameter estimates with
+asymptotic standard errors, the log-likelihood, and information criteria.
+
+```{r estimate}
+set.seed(seed)
+mdl_est <- MSARmdl(sim$y, p = 1, k = 2,
+                   control = list(msmu = TRUE, msvar = TRUE, use_diff_init = 5))
+summary(mdl_est)
+```
+
+## Testing the number of regimes
+
+### Local Monte Carlo likelihood ratio test
+
+`LMCLRTest` is the local Monte Carlo LR test. For each of `N` Monte Carlo
+replications it simulates the model under the null and re-estimates under both
+hypotheses, and reports the p-value as the rank of the observed likelihood ratio
+statistic in the simulated null distribution. It is a finite-sample analogue of
+the parametric bootstrap. Here we test the null of a single regime (\(M_0 = 1\))
+against a two-regime alternative on the data simulated above.
+
+```{r lmclrt}
+set.seed(seed)
+lmc <- LMCLRTest(sim$y, p = 1, k0 = 1, k1 = 2,
+                 control = list(N = 19,
+                                mdl_h0_control = list(const = TRUE, getSE = FALSE),
+                                mdl_h1_control = list(msmu = TRUE, msvar = TRUE,
+                                                      getSE = FALSE, use_diff_init = 3)))
+summary(lmc)
+```
+
+A small p-value is evidence against a single regime in favour of two regimes.
+
+### Maximized Monte Carlo likelihood ratio test
+
+`MMCLRTest` is the maximized version. Rather than fixing the nuisance parameters
+at a point estimate, it maximizes the Monte Carlo p-value over a consistent set
+of nuisance parameter values. This is what gives the test exact control of size
+in finite samples and robustness to identification problems, at the cost of
+greater computation. The `threshold_stop` control lets the search terminate as
+soon as it finds a nuisance value for which the test fails to reject, which is
+useful when the null is true.
+
+To illustrate the size-control property we apply the test to a series with **no**
+regime switching (a single-regime Gaussian process); the test should fail to
+reject. We use `p = 0` (no autoregressive dynamics) and `threshold_stop = 0.05`
+so the search stops as soon as it finds a nuisance value for which the p-value
+exceeds the 5% level. We set `N = 19`, the smallest number of Monte Carlo
+replications that permits a test at the 5% level, since \((N + 1)\alpha\) must be
+an integer (here \(20 \times 0.05 = 1\)); see Dufour (2006).
+
+Because the maximization over the nuisance parameter space is computationally
+intensive, this example is shown with its pre-computed output rather than
+evaluated when the vignette is built.
+
+```{r mmclrt, eval = FALSE}
+set.seed(seed)
+y0 <- simuNorm(list(n = 150, q = 1, mu = 0, sigma = as.matrix(1)))$y
+mmc <- MMCLRTest(y0, p = 0, k0 = 1, k1 = 2,
+                 control = list(N = 19, eps = 0.1, CI_union = FALSE,
+                                optim_type = "GenSA", threshold_stop = 0.05,
+                                maxit = 10, silence = TRUE,
+                                mdl_h0_control = list(getSE = FALSE),
+                                mdl_h1_control = list(msmu = TRUE, msvar = TRUE,
+                                                      getSE = FALSE, use_diff_init = 1)))
+summary(mmc)
+```
+
+```
+#> Rodriguez-Rondon & Dufour (2026a) Maximized Monte Carlo Likelihood Ratio Test
+#>         LRT_0 p-value
+#> MMC_LRT 1.671     0.9
+```
+
+As expected, the test does not reject the null of a single regime (p-value
+\(= 0.9\)). In applications `N` would be larger, and the search can be
+parallelized with the `workers` control. The Monte Carlo LR tests also apply to
+multivariate models (`MSVARmdl`) and to hypotheses with \(M_0 > 1\); see
+`?LMCLRTest` and `?MMCLRTest`.
+
+### Faster alternatives for the one-versus-two regime case
+
+For the special case of testing one regime against two (\(M_0 = m = 1\)), the
+package provides computationally lighter procedures. The moment-based local
+Monte Carlo test of Dufour and Luger (2017) only requires estimation under the
+null and is nearly instantaneous:
+
+```{r dlmc}
+set.seed(seed)
+mom <- DLMCTest(sim$y, p = 1, control = list(N = 99, simdist_N = 10000))
+summary(mom)
+```
+
+The parameter stability test of Carrasco, Hu, and Ploberger (2014) is another
+option that requires estimation only under the null:
+
+```{r chp}
+set.seed(seed)
+chp <- CHPTest(sim$y, p = 1, control = list(N = 99, rho_b = 0.7))
+summary(chp)
+```
+
+## References
+
+Carrasco, M., Hu, L., and Ploberger, W. (2014). Optimal test for Markov switching
+parameters. *Econometrica*, 82(2), 765-784.
+
+Dufour, J.-M., and Luger, R. (2017). Identification-robust moment-based tests for
+Markov switching in autoregressive models. *Econometric Reviews*, 36(6-9),
+713-727.
+
+Hansen, B. E. (1992). The likelihood ratio test under nonstandard conditions:
+Testing the Markov switching model of GNP. *Journal of Applied Econometrics*,
+7(S1), S61-S82.
+
+Rodriguez-Rondon, G., and Dufour, J.-M. (2026a). Monte Carlo likelihood-ratio tests for Markov switching models. *Bank of Canada Staff Working Paper*, No. 2026-23. doi: 10.34989/swp-2026-23.

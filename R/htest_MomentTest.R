@@ -92,7 +92,7 @@ DLMCTest <- function(Y, p, control = list()){
   rownames(theta) <- paste0("phi_", seq(1:p))
   # ----- Simulate distribution 
   params    <- approxDistDL(Tsize-p, con$simdist_N)
-  sim_ms    <- sim_DLmoments(Tsize, con$N)
+  sim_ms    <- sim_DLmoments(Tsize - p, con$N)  # sample size = T - p to match the AR(p) residual count (exchangeability; Dufour & Luger 2017)
   Fmin_sim  <- as.matrix(sort(combine_stat(sim_ms, params, "min")))
   Fprd_sim  <- as.matrix(sort(combine_stat(sim_ms, params, "prod")))
   # ----- Compute test stat
@@ -249,8 +249,8 @@ DLMMCTest <- function(Y, p, control = list()){
   }
   # ----- Get parameters from approximated distribution 
   params <- approxDistDL(Tsize-p, con$simdist_N)
-  # ----- Simulated process eta_i is fixed (see pg. 721 of Dufour & Luger 2017) and so simulated statistics are fixed 
-  sim_ms    <- sim_DLmoments(Tsize, con$N)
+  # ----- Simulated process eta_i is fixed (see pg. 721 of Dufour & Luger 2017) and so simulated statistics are fixed
+  sim_ms    <- sim_DLmoments(Tsize - p, con$N)  # sample size = T - p to match the AR(p) residual count (exchangeability; Dufour & Luger 2017)
   Fmin_sim  <-  as.matrix(sort(combine_stat(sim_ms, params, "min")))
   Fprd_sim  <-  as.matrix(sort(combine_stat(sim_ms, params, "prod")))
   # ----- Define starting values, lower & upper bounds for search

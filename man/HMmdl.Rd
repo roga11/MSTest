@@ -21,7 +21,9 @@ HMmdl(Y, k, Z = NULL, control = list())
  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation. Default is \code{'EM'}.
  \item maxit: integer determining the maximum number of EM iterations.
- \item thtol: double determining the convergence criterion for the absolute difference in parameter estimates \code{theta} between iterations. Default is \code{1e-6}.
+ \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
+ \item ltol: double determining the convergence criterion for the relative change in the log-likelihood between iterations (used when \code{conv} is \code{"loglik"}, \code{"both"}, \code{"loglik-A"}, or \code{"both-A"}). Default is \code{1e-7}.
+ \item conv: string determining the EM convergence criterion. \code{"loglik"} (the default) stops on the relative change in the log-likelihood; \code{"theta"} stops on the relative change in the parameters (the convention of Hamilton (1994) and of earlier versions of this package); \code{"both"} requires both, following Krolzig (1997); \code{"loglik-A"} and \code{"both-A"} replace the log-likelihood test with the Aitken-accelerated criterion of Bohning et al. (1994) and McLachlan and Krishnan (2008). Default is \code{"loglik"}.
  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{500}.
  \item use_diff_init: integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.
  \item mle_variance_constraint: double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is \code{1e-3}.
@@ -52,8 +54,9 @@ List of class \code{HMmdl} (\code{S3} object) with model attributes including:
   \item P: a \code{(k x k)} transition matrix.
   \item pinf: a \code{(k x 1)} vector with limiting probabilities of each regime.
   \item St: a \code{(T x k)} vector with smoothed probabilities of each regime at each time \code{t}.
-  \item deltath: double with maximum absolute difference in vector \code{theta} between last iteration.
+  \item deltath: double with the maximum relative change in vector \code{theta} on the last iteration.
   \item iterations: number of EM iterations performed to achieve convergence (if less than \code{maxit}).
+  \item converged: Boolean. \code{TRUE} if the \code{conv} convergence criterion was met before \code{maxit} iterations, \code{FALSE} otherwise.
   \item theta_0: vector of initial values used.
   \item init_used: number of different initial values used to get a finite solution. See description of input \code{maxit_converge}.
   \item msmu: Boolean. If \code{TRUE} model was estimated with switch in mean. If \code{FALSE} model was estimated with constant mean.
@@ -74,6 +77,10 @@ This function estimates a Hidden Markov model with \code{k} regimes.
 }
 \references{
 Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38..
+
+Böhning, D., E. Dietz, R. Schaub, P. Schlattmann, and B. G. Lindsay. 1994. “The distribution of the likelihood ratio for mixtures of densities from the one-parameter exponential family.” \emph{Annals of the Institute of Statistical Mathematics} 46 (2): 373–388.
+
+McLachlan, G. J., and T. Krishnan. 2008. \emph{The EM Algorithm and Extensions}. 2nd ed. Hoboken, New Jersey: John Wiley & Sons.
 
 Hamilton, James D. 1990. “Analysis of time series subject to changes in regime.” \emph{Journal of econometrics}, 45 (1-2): 39–70.
 

@@ -12,7 +12,10 @@ LR_samp_dist_par(
   Z,
   mdl_h0_control,
   mdl_h1_control,
-  workers
+  workers,
+  seed = NULL,
+  predrawn_eps = NULL,
+  predrawn_state_rand = NULL
 )
 }
 \arguments{
@@ -24,21 +27,27 @@ LR_samp_dist_par(
 
 \item{burnin}{integer specifying the number of observations to drop from beginning of simulation.}
 
+\item{Z}{Exogenous regressors matrix or \code{NULL}.}
+
 \item{mdl_h0_control}{List with controls/options used to estimate restricted model.}
 
 \item{mdl_h1_control}{List with controls/options used to estimate unrestricted model.}
 
-\item{workers}{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open.}
+\item{workers}{Integer determining the number of parallel workers. If \code{workers > N}, the effective count is silently capped at \code{N} (more workers than simulations provides no speedup and can thin the pre-drawn buffer below its retry budget).}
+
+\item{seed}{Optional integer seed for reproducible parallel RNG (L'Ecuyer-CMRG). Default is \code{NULL} (random but independent streams).}
+
+\item{predrawn_eps}{Optional list of pre-drawn standard normal matrices for fixed-error simulation (Dufour 2006, Prop. 4.2). Each element is a \code{(T+burnin) x q} matrix. Default is \code{NULL} (draw fresh innovations).}
+
+\item{predrawn_state_rand}{Optional matrix of pre-drawn U[0,1] for state transitions. Columns correspond to simulation draws. Default is \code{NULL} (only needed when null model has multiple regimes).}
 }
 \value{
 vector of simulated LRT statistics
 }
 \description{
-This function simulates the sample distribution under the null hypothesis using a parallel pool.
+This function simulates the sample distribution under the null hypothesis using parallel workers.
 }
 \references{
-Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2022. "Simulation-Based Inference for Markov Switching Models” \emph{JSM Proceedings, Business and Economic Statistics Section: American Statistical Association}.
-
-Rodriguez-Rondon, Gabriel and Jean-Marie Dufour. 2023. “Monte Carlo Likelihood Ratio Tests for Markov Switching Models.” \emph{Unpublished manuscript}.
+Rodriguez-Rondon, G., & Dufour, J.-M. 2026a. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-23. doi: 10.34989/swp-2026-23.
 }
 \keyword{internal}

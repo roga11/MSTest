@@ -1,11 +1,11 @@
 #' -----------------------------------------------------------------------------
-#' Rodriguez-Rondon & Dufour 2024 Real GDP data
+#' Rodriguez-Rondon & Dufour (2026a) Real GDP data
 rm(list=ls())
 USRGDP <- read.table('inst/extdata/US_RGDP_19470401_20240401.csv', sep = ',', header = T)
 colnames(USRGDP) <- c('Date','RGDP','RGDP_gr')
 usethis::use_data(USRGDP, overwrite = TRUE)
 #' -----------------------------------------------------------------------------
-#' Rodriguez-Rondon & Dufour 2024 GNP data
+#' Rodriguez-Rondon & Dufour (2026a) GNP data
 rm(list=ls())
 USGNP <- read.table('inst/extdata/US_GNP_19470401_20240401.csv', sep = ',', header = T)
 colnames(USGNP) <- c('Date','GNP','GNP_gr')

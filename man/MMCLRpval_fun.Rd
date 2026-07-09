@@ -8,7 +8,7 @@ MMCLRpval_fun(
   theta_h0,
   mdl_h0,
   k1,
-  LT_h1,
+  LRT_0,
   N,
   burnin,
   workers,
@@ -18,7 +18,9 @@ MMCLRpval_fun(
   Z,
   exog,
   mdl_h0_control,
-  mdl_h1_control
+  mdl_h1_control,
+  predrawn_eps = NULL,
+  predrawn_state_rand = NULL
 )
 }
 \arguments{
@@ -28,13 +30,13 @@ MMCLRpval_fun(
 
 \item{k1}{integer determining the number of regimes under the alternative.}
 
-\item{LT_h1}{double specifying maximum log likelihood under alternative.}
+\item{LRT_0}{double specifying the fixed observed likelihood ratio test statistic.}
 
 \item{N}{integer specifying the number of replications.}
 
 \item{burnin}{integer specifying the number of observations to drop from beginning of simulation.}
 
-\item{workers}{Integer determining the number of workers to use for parallel computing version of test. Note that parallel pool must already be open.}
+\item{workers}{Integer determining the number of workers to use for parallel computing.}
 
 \item{lambda}{Double determining penalty on nonlinear constraint.}
 
@@ -45,11 +47,17 @@ MMCLRpval_fun(
 \item{mdl_h0_control}{List with controls/options used to estimate restricted model.}
 
 \item{mdl_h1_control}{List with controls/options used to estimate unrestricted model.}
+
+\item{predrawn_eps}{Optional list of pre-drawn standard normal matrices (fixed across theta evaluations).}
+
+\item{predrawn_state_rand}{Optional matrix of pre-drawn U[0,1] for state transitions.}
 }
 \value{
 MMC p-value
 }
 \description{
 This function computes the Maximum Monte Carlo P-value.
+When pre-drawn innovations are provided, the same fixed draws are used
+for every theta evaluation (Dufour 2006, Proposition 4.2).
 }
 \keyword{internal}
