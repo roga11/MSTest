@@ -2,22 +2,21 @@
 % Please edit documentation in R/methods.R
 \name{print.HLRTest}
 \alias{print.HLRTest}
-\title{Print summary of a \code{CHPTest} object}
+\title{Print summary of a \code{HLRTest} object}
 \usage{
 \method{print}{HLRTest}(x, digits = getOption("digits"), ...)
 }
 \arguments{
 \item{x}{an object used to select a method.}
 
-\item{digits}{minimal number of \emph{significant} digits, see
-    \code{\link[base]{print.default}}.}
+\item{digits}{Integer determining the number of significant digits to print.}
 
 \item{...}{further arguments passed to or from other methods.}
 }
 \value{
-The \code{CHPTest} object is returned invisibly.
+The \code{HLRTest} object is returned invisibly.
 }
 \description{
-This is a method for the function \code{print()} for objects of the class \code{CHPTest}.
+This is a method for the function \code{print()} for objects of the class \code{HLRTest}.
 }
 \keyword{internal}

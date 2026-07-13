@@ -872,6 +872,7 @@ getHessian.MSVARmdl <- function(mdl){
 #' @description This is a method for the function \code{print()} for objects of the class \code{Nmdl}.
 #' 
 #' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{Nmdl} object is returned invisibly.
 #' 
@@ -894,6 +895,7 @@ print.Nmdl <- function(x, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{print()} for objects of the class \code{ARmdl}.
 #' 
 #' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{ARmdl} object is returned invisibly.
 #' 
@@ -917,6 +919,7 @@ print.ARmdl <- function(x, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{print()} for objects of the class \code{VARmdl}.
 #' 
 #' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{VARmdl} object is returned invisibly.
 #' 
@@ -940,6 +943,7 @@ print.VARmdl <- function(x, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{print()} for objects of the class \code{HMmdl}.
 #' 
 #' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{HMmdl} object is returned invisibly.
 #' 
@@ -963,6 +967,7 @@ print.HMmdl <- function(x, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{print()} for objects of the class \code{MSARmdl}.
 #' 
 #' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{MSARmdl} object is returned invisibly.
 #' 
@@ -986,6 +991,7 @@ print.MSARmdl <- function(x, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{print()} for objects of the class \code{MSVARmdl}.
 #' 
 #' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{MSVARmdl} object is returned invisibly.
 #' 
@@ -1004,16 +1010,17 @@ print.MSVARmdl <- function(x, digits = getOption("digits"), ...){
 }
 
 
-#' @title Print summary of a \code{CHPTest} object
+#' @title Print summary of a \code{HLRTest} object
 #'
-#' @description This is a method for the function \code{print()} for objects of the class \code{CHPTest}.
-#' 
+#' @description This is a method for the function \code{print()} for objects of the class \code{HLRTest}.
+#'
 #' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
 #'
-#' @return The \code{CHPTest} object is returned invisibly.
-#' 
+#' @return The \code{HLRTest} object is returned invisibly.
+#'
 #' @keywords internal
-#' 
+#'
 #' @export
 print.HLRTest <- function(x, digits = getOption("digits"), ...){
   if (x$control$msvar){
@@ -1034,6 +1041,7 @@ print.HLRTest <- function(x, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{print()} for objects of the class \code{CHPTest}.
 #' 
 #' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{CHPTest} object is returned invisibly.
 #' 
@@ -1060,6 +1068,7 @@ print.CHPTest <- function(x, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{print()} for objects of the class \code{DLMCTest}.
 #' 
 #' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{DLMCTest} object is returned invisibly.
 #' 
@@ -1081,6 +1090,7 @@ print.DLMCTest <- function(x, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{print()} for objects of the class \code{DLMMCTest}.
 #' 
 #' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{DLMMCTest} object is returned invisibly.
 #' 
@@ -1102,6 +1112,7 @@ print.DLMMCTest <- function(x, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{print()} for objects of the class \code{LMCLRTest}.
 #' 
 #' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{LMCLRTest} object is returned invisibly.
 #' 
@@ -1124,6 +1135,7 @@ print.LMCLRTest <- function(x, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{print()} for objects of the class \code{MMCLRTest}.
 #' 
 #' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{MMCLRTest} object is returned invisibly.
 #' 
@@ -1145,6 +1157,7 @@ print.MMCLRTest <- function(x, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{print()} for objects of the class \code{BootLRTest}.
 #' 
 #' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{BootLRTest} object is returned invisibly.
 #' 
@@ -1167,6 +1180,7 @@ print.BootLRTest <- function(x, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{summary()} for objects of the class \code{Nmdl}.
 #' 
 #' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{Nmdl} object is returned invisibly.
 #' 
@@ -1202,6 +1216,7 @@ summary.Nmdl <- function(object, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{summary()} for objects of the class \code{ARmdl}.
 #' 
 #' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{ARmdl} object is returned invisibly.
 #' 
@@ -1237,6 +1252,7 @@ summary.ARmdl <- function(object, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{summary()} for objects of the class \code{VARmdl}.
 #' 
 #' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{VARmdl} object is returned invisibly.
 #' 
@@ -1272,6 +1288,7 @@ summary.VARmdl <- function(object, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{summary()} for objects of the class \code{HMmdl}.
 #' 
 #' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{HMmdl} object is returned invisibly.
 #' 
@@ -1308,6 +1325,7 @@ summary.HMmdl <- function(object, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{summary()} for objects of the class \code{MSARmdl}.
 #' 
 #' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{MSARmdl} object is returned invisibly.
 #' 
@@ -1343,6 +1361,7 @@ summary.MSARmdl <- function(object, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{summary()} for objects of the class \code{MSVARmdl}.
 #' 
 #' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{MSVARmdl} object is returned invisibly.
 #' 
@@ -1373,16 +1392,17 @@ summary.MSVARmdl <- function(object, digits = getOption("digits"), ...){
   
 }
 
-#' @title Summary of a \code{CHPTest} object
+#' @title Summary of a \code{HLRTest} object
 #'
-#' @description This is a method for the function \code{summary()} for objects of the class \code{CHPTest}.
-#' 
+#' @description This is a method for the function \code{summary()} for objects of the class \code{HLRTest}.
+#'
 #' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
 #'
-#' @return The \code{CHPTest} object is returned invisibly.
-#' 
+#' @return The \code{HLRTest} object is returned invisibly.
+#'
 #' @keywords internal
-#' 
+#'
 #' @export
 summary.HLRTest <- function(object, digits = getOption("digits"), ...){
   cat("Restricted Model\n")
@@ -1412,6 +1432,7 @@ summary.HLRTest <- function(object, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{summary()} for objects of the class \code{CHPTest}.
 #' 
 #' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{CHPTest} object is returned invisibly.
 #' 
@@ -1444,11 +1465,12 @@ summary.CHPTest <- function(object, digits = getOption("digits"), ...){
   invisible(object)
 }
 
-#' @title summaryummary of a \code{DLMCTest} object
+#' @title Summary of a \code{DLMCTest} object
 #'
 #' @description This is a method for the function \code{summary()} for objects of the class \code{DLMCTest}.
 #' 
 #' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{DLMCTest} object is returned invisibly.
 #' 
@@ -1481,6 +1503,7 @@ summary.DLMCTest <- function(object, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{summary()} for objects of the class \code{DLMMCTest}.
 #' 
 #' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{DLMMCTest} object is returned invisibly.
 #' 
@@ -1513,6 +1536,7 @@ summary.DLMMCTest <- function(object, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{summary()} for objects of the class \code{LMCLRTest}.
 #' 
 #' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{LMCLRTest} object is returned invisibly.
 #' 
@@ -1557,6 +1581,7 @@ summary.LMCLRTest <- function(object, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{summary()} for objects of the class \code{MMCLRTest}.
 #' 
 #' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{MMCLRTest} object is returned invisibly.
 #' 
@@ -1600,6 +1625,7 @@ summary.MMCLRTest <- function(object, digits = getOption("digits"), ...){
 #' @description This is a method for the function \code{summary()} for objects of the class \code{BootLRTest}.
 #' 
 #' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
 #'
 #' @return The \code{BootLRTest} object is returned invisibly.
 #' 
@@ -1720,11 +1746,15 @@ predict.VARmdl <- function(object, ..., h = 10){
 #' @title Predict for a \code{HMmdl} object
 #'
 #' @description This is a method for the function \code{predict()} for objects of the class \code{HMmdl}.
-#' 
+#'
 #' @inheritParams stats::predict
 #' @param h max number of prediction periods
 #'
-#' @return a \code{(h x q)} matrix with predicted value values.
+#' @return A list with the following elements:
+#' \itemize{
+#'   \item predict: a \code{(h x q)} matrix with predicted values.
+#'   \item predictSt: a \code{(h x k)} matrix with predicted regime probabilities.
+#' }
 #' 
 #' @keywords internal
 #' 
@@ -1746,11 +1776,15 @@ predict.HMmdl <- function(object, ..., h = 10){
 #' @title Predict for a \code{MSARmdl} object
 #'
 #' @description This is a method for the function \code{predict()} for objects of the class \code{MSARmdl}.
-#' 
+#'
 #' @inheritParams stats::predict
 #' @param h max number of prediction periods
 #'
-#' @return a \code{(h x q)} matrix with predicted value values.
+#' @return A list with the following elements:
+#' \itemize{
+#'   \item predict: a \code{(h x q)} matrix with predicted values.
+#'   \item predictSt: a \code{(h x k)} matrix with predicted regime probabilities.
+#' }
 #' 
 #' @keywords internal
 #' 
@@ -1782,11 +1816,15 @@ predict.MSARmdl <- function(object, ..., h = 10){
 #' @title Predict for a \code{MSVARmdl} object
 #'
 #' @description This is a method for the function \code{predict()} for objects of the class \code{MSVARmdl}.
-#' 
+#'
 #' @inheritParams stats::predict
 #' @param h max number of prediction periods
 #'
-#' @return a \code{(h x q)} matrix with predicted value values.
+#' @return A list with the following elements:
+#' \itemize{
+#'   \item predict: a \code{(h x q)} matrix with predicted values.
+#'   \item predictSt: a \code{(h x k)} matrix with predicted regime probabilities.
+#' }
 #' 
 #' @keywords internal
 #' 
@@ -1854,8 +1892,8 @@ plot.simuAR <- function(x, ...){
 
 #' @title Plot of a \code{simuARX} object
 #'
-#' @description This is a method for the function \code{plot()} for objects of the class \code{simuAR}.
-#' 
+#' @description This is a method for the function \code{plot()} for objects of the class \code{simuARX}.
+#'
 #' @inheritParams base::plot
 #'
 #' @return The \code{simuARX} object is returned invisibly.
@@ -1887,8 +1925,8 @@ plot.simuVAR <- function(x, ...){
 
 #' @title Plot of a \code{simuVARX} object
 #'
-#' @description This is a method for the function \code{plot()} for objects of the class \code{simuVAR}.
-#' 
+#' @description This is a method for the function \code{plot()} for objects of the class \code{simuVARX}.
+#'
 #' @inheritParams base::plot
 #'
 #' @return The \code{simuVARX} object is returned invisibly.
@@ -1953,8 +1991,8 @@ plot.simuMSAR <- function(x, ...){
 
 #' @title Plot of a \code{simuMSARX} object
 #'
-#' @description This is a method for the function \code{plot()} for objects of the class \code{simuMSAR}.
-#' 
+#' @description This is a method for the function \code{plot()} for objects of the class \code{simuMSARX}.
+#'
 #' @inheritParams base::plot
 #'
 #' @return The \code{simuMSARX} object is returned invisibly.
@@ -1993,8 +2031,8 @@ plot.simuMSVAR <- function(x, ...){
 
 #' @title Plot of a \code{simuMSVARX} object
 #'
-#' @description This is a method for the function \code{plot()} for objects of the class \code{simuMSVAR}.
-#' 
+#' @description This is a method for the function \code{plot()} for objects of the class \code{simuMSVARX}.
+#'
 #' @inheritParams base::plot
 #'
 #' @return The \code{simuMSVARX} object is returned invisibly.

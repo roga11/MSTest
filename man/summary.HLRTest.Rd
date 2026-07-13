@@ -2,27 +2,21 @@
 % Please edit documentation in R/methods.R
 \name{summary.HLRTest}
 \alias{summary.HLRTest}
-\title{Summary of a \code{CHPTest} object}
+\title{Summary of a \code{HLRTest} object}
 \usage{
 \method{summary}{HLRTest}(object, digits = getOption("digits"), ...)
 }
 \arguments{
 \item{object}{an object for which a summary is desired.}
 
-\item{digits}{integer, used for number formatting with
-    \code{\link[base]{signif}()} (for \code{summary.default}) or
-    \code{\link[base]{format}()} (for \code{summary.data.frame}).  In
-    \code{summary.default}, if not specified (i.e.,
-    \code{\link[base]{missing}(.)}), \code{signif()} will \emph{not} be called
-    anymore (since \R >= 3.4.0, where the default has been changed to
-    only round in the \code{print} and \code{format} methods).}
+\item{digits}{Integer determining the number of significant digits to print.}
 
 \item{...}{additional arguments affecting the summary produced.}
 }
 \value{
-The \code{CHPTest} object is returned invisibly.
+The \code{HLRTest} object is returned invisibly.
 }
 \description{
-This is a method for the function \code{summary()} for objects of the class \code{CHPTest}.
+This is a method for the function \code{summary()} for objects of the class \code{HLRTest}.
 }
 \keyword{internal}

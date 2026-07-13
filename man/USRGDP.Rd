@@ -5,8 +5,7 @@
 \alias{USRGDP}
 \title{US Real GDP data 1947Q2 - 2024Q2}
 \format{
-\describe{This data is used in Rodriguez-Rondon & Dufour (2026a). The series ranges from 
-1947Q2 to 2024Q2.
+\describe{
   \item{Date}{Vector of dates}
   \item{RGDP}{US Real GDP series}
   \item{RGDP_gr}{log difference of US Real GDP series}
@@ -19,7 +18,8 @@
 USRGDP
 }
 \description{
-US Real GDP data 1947Q2 - 2024Q2
+This data is used in Rodriguez-Rondon & Dufour (2026a). The series ranges from
+1947Q2 to 2024Q2.
 }
 \references{
 U.S. Bureau of Economic Analysis, Real Gross Domestic Product [GDPC1], retrieved from FRED, Federal Reserve Bank of St. Louis; \emph{\url{https://fred.stlouisfed.org/series/GDPC1}}, September, 2024.

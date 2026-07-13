@@ -9,8 +9,7 @@
 \arguments{
 \item{x}{an object used to select a method.}
 
-\item{digits}{minimal number of \emph{significant} digits, see
-    \code{\link[base]{print.default}}.}
+\item{digits}{Integer determining the number of significant digits to print.}
 
 \item{...}{further arguments passed to or from other methods.}
 }

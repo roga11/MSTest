@@ -46,6 +46,6 @@
 The \code{simuARX} object is returned invisibly.
 }
 \description{
-This is a method for the function \code{plot()} for objects of the class \code{simuAR}.
+This is a method for the function \code{plot()} for objects of the class \code{simuARX}.
 }
 \keyword{internal}

@@ -16,6 +16,7 @@ MSARmdl(Y, p, k, control = list())
 \item{control}{List with model options including:
 \itemize{
  \item getSE: Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.
+ \item se_method: String determining the standard-error method. Options are \code{"hessian"} (default) and \code{"louis"} (Louis 1982 expected-information); the Louis method is used automatically as a fallback when the Hessian is ill-conditioned.
  \item msmu: Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.
  \item msvar: Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.
  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.

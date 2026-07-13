@@ -9,13 +9,7 @@
 \arguments{
 \item{object}{an object for which a summary is desired.}
 
-\item{digits}{integer, used for number formatting with
-    \code{\link[base]{signif}()} (for \code{summary.default}) or
-    \code{\link[base]{format}()} (for \code{summary.data.frame}).  In
-    \code{summary.default}, if not specified (i.e.,
-    \code{\link[base]{missing}(.)}), \code{signif()} will \emph{not} be called
-    anymore (since \R >= 3.4.0, where the default has been changed to
-    only round in the \code{print} and \code{format} methods).}
+\item{digits}{Integer determining the number of significant digits to print.}
 
 \item{...}{additional arguments affecting the summary produced.}
 }

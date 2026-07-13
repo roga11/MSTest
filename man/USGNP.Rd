@@ -5,8 +5,7 @@
 \alias{USGNP}
 \title{US GNP data 1947Q2 - 2024Q2}
 \format{
-\describe{This data is used in Rodriguez-Rondon & Dufour (2026a). The series ranges from 
-1947Q2 to 2024Q2.
+\describe{
   \item{Date}{Vector of dates}
   \item{GNP}{US GNP series}
   \item{GNP_gr}{log difference of US GNP series}
@@ -19,7 +18,8 @@
 USGNP
 }
 \description{
-US GNP data 1947Q2 - 2024Q2
+This data is used in Rodriguez-Rondon & Dufour (2026a). The series ranges from
+1947Q2 to 2024Q2.
 }
 \references{
 U.S. Bureau of Economic Analysis, Gross National Product [GNP], retrieved from FRED, Federal Reserve Bank of St. Louis; \emph{\url{https://fred.stlouisfed.org/series/GNP}}, September, 2024.

@@ -129,7 +129,7 @@ set.seed(seed)
 y0 <- simuNorm(list(n = 150, q = 1, mu = 0, sigma = as.matrix(1)))$y
 mmc <- MMCLRTest(y0, p = 0, k0 = 1, k1 = 2,
                  control = list(N = 19, eps = 0.1, CI_union = FALSE,
-                                optim_type = "GenSA", threshold_stop = 0.05,
+                                type = "GenSA", threshold_stop = 0.05,
                                 maxit = 10, silence = TRUE,
                                 mdl_h0_control = list(getSE = FALSE),
                                 mdl_h1_control = list(msmu = TRUE, msvar = TRUE,
@@ -138,7 +138,7 @@ summary(mmc)
 ```
 
 ```
-#> Rodriguez-Rondon & Dufour (2026a) Maximized Monte Carlo Likelihood Ratio Test
+#> Rodriguez-Rondon & Dufour (2026) Maximized Monte Carlo Likelihood Ratio Test
 #>         LRT_0 p-value
 #> MMC_LRT 1.671     0.9
 ```

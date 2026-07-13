@@ -2,7 +2,7 @@
 % Please edit documentation in R/models.R
 \name{MSVARXmdl}
 \alias{MSVARXmdl}
-\title{Markov-switching vector autoregressive model}
+\title{Markov-switching vector autoregressive model with exogenous regressors}
 \usage{
 MSVARXmdl(Y, p, k, Z, control = list())
 }
@@ -18,6 +18,7 @@ MSVARXmdl(Y, p, k, Z, control = list())
 \item{control}{List with optimization options including:
 \itemize{
  \item getSE: Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.
+ \item se_method: String determining the standard-error method. Options are \code{"hessian"} (default) and \code{"louis"} (Louis 1982 expected-information); the Louis method is used automatically as a fallback when the Hessian is ill-conditioned.
  \item msmu: Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.
  \item msvar: Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.
  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix. This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
@@ -35,7 +36,7 @@ MSVARXmdl(Y, p, k, Z, control = list())
 }}
 }
 \value{
-List of class \code{MSVARmdl} (\code{S3} object) with model attributes including:
+List of class \code{MSVARXmdl} (\code{S3} object) with model attributes including:
 \itemize{
   \item y: a \code{(T-p x q)} matrix of observations.
   \item X: a \code{(T-p x p*q + const)} matrix of lagged observations with a leading column of \code{1}s.
@@ -44,7 +45,7 @@ List of class \code{MSVARmdl} (\code{S3} object) with model attributes including
   \item fitted: a \code{(T x q)} matrix of fitted values.
   \item intercept: a \code{(k x q)} matrix of estimated intercepts of each process.
   \item mu: a \code{(k x q)} matrix of estimated means of each process.
-  \item beta: a list containing \code{k} separate \code{((1 + p + qz) x q)} matrix of estimated coefficients for each regime.  
+  \item beta: a list containing \code{k} separate \code{((1 + p + qz) x q)} matrix of estimated coefficients for each regime.
   \item betaZ: a \code{(qz x q)} matrix of estimated exogenous regressor coefficients.
   \item phi: estimates of autoregressive coefficients.
   \item Fmat: Companion matrix containing autoregressive coefficients.
@@ -80,11 +81,9 @@ List of class \code{MSVARmdl} (\code{S3} object) with model attributes including
   \item theta_se: standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.
   \item trace: List with Lists of estimation output for each initial value used due to \code{use_diff_init > 1}.
 }
-
-List with model characteristics
 }
 \description{
-This function estimates a Markov-switching vector autoregressive model
+This function estimates a Markov-switching vector autoregressive model with exogenous regressors.
 }
 \examples{
 set.seed(123)

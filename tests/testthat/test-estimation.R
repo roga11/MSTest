@@ -38,6 +38,26 @@ test_that("HMmdl estimates a 2-regime hidden Markov model", {
   expect_equal(unname(colSums(mdl$P)), rep(1, 2), tolerance = 1e-6)
 })
 
+test_that("MSVARmdl estimates a bivariate 2-regime MS-VAR model with valid P", {
+  skip_on_cran()
+  set.seed(205)
+  mdl_dgp <- list(n = 200, p = 1, q = 2, k = 2,
+                  mu = rbind(c(5, -2), c(10, 2)),
+                  sigma = list(rbind(c(5.0, 1.5), c(1.5, 1.0)),
+                               rbind(c(7.0, 3.0), c(3.0, 2.0))),
+                  phi = rbind(c(0.50, 0.30), c(0.20, 0.70)),
+                  P = rbind(c(0.95, 0.10), c(0.05, 0.90)))
+  y <- simuMSVAR(mdl_dgp)$y
+  mdl <- MSVARmdl(y, p = 1, k = 2,
+                  control = list(msmu = TRUE, msvar = TRUE, use_diff_init = 3))
+  expect_s3_class(mdl, "MSVARmdl")
+  expect_true(is.finite(mdl$logLike))
+  # transition matrix columns sum to 1 (column-stochastic convention)
+  expect_equal(unname(colSums(mdl$P)), rep(1, 2), tolerance = 1e-6)
+  # smoothed regime probabilities lie in [0, 1]
+  expect_true(all(mdl$St >= -1e-8 & mdl$St <= 1 + 1e-8))
+})
+
 test_that("S3 methods are available for fitted models", {
   set.seed(204)
   y <- simuAR(list(n = 200, mu = 5, sigma = 1, phi = c(0.5), p = 1))$y

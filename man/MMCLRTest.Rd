@@ -39,19 +39,22 @@ MMCLRTest(Y, p, k0, k1, Z = NULL, control = list())
   \item mdl_h0_control: List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
   \item mdl_h1_control: List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
   \item use_diff_init_sim: Value which determines the number of initial values to use when estimating models for null distribution. Default is set to use the same as specified in \code{mdl_h0_control} and \code{mdl_h1_control}.
-  \item optim_control: List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is to set \code{list(maxit = 200)} so that maximum number of iterations is \code{200}.
+  \item optim_control: List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is \code{list()} (an empty list); the maximum number of optimizer iterations is instead controlled by the separate \code{maxit} argument (default \code{50}).
 }}
 }
 \value{
-List of class \code{LMCLRTest} (\code{S3} object) with attributes including: 
+List of class \code{MMCLRTest} (\code{S3} object) with attributes including:
 \itemize{
-  \item mdl_h0: List with restricted model attributes. 
-  \item mdl_h1: List with unrestricted model attributes. 
+  \item mdl_h0: List with restricted model attributes.
+  \item mdl_h1: List with unrestricted model attributes.
+  \item mdl_h0_mmc: List with restricted model attributes at the maximizing nuisance parameter values.
+  \item mdl_h1_mmc: List with unrestricted model attributes (same as \code{mdl_h1}).
   \item LRT_0: Value of test statistic from observed data.
-  \item LRN: A (\code{N x 1}) vector of test statistics from data simulated under the null hypothesis.
-  \item pval: P-value of Local Monte Carlo Likelihood Ratio Test.
-  \item LRN_cv: Vector with 90\%, 95\%, and 99\% Monte Carlo simulated critical values (from vector \code{LRN}). These are not asymptotic critical values. 
+  \item pval: Maximized p-value of the Maximized Monte Carlo Likelihood Ratio Test.
+  \item theta_h0: Maximizing nuisance parameter vector for the restricted model.
+  \item theta_h1: Parameter vector of the unrestricted model.
   \item control: List with test procedure options used.
+  \item mmc_optimout: Optimization output object returned by the selected optimizer (\code{pso}, \code{GenSA}, or \code{GA}).
 }
 }
 \description{

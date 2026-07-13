@@ -16,6 +16,7 @@ HMmdl(Y, k, Z = NULL, control = list())
 \item{control}{List with model options including:
 \itemize{
  \item getSE: Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.
+ \item se_method: String determining the standard-error method. Options are \code{"hessian"} (default) and \code{"louis"} (Louis 1982 expected-information); the Louis method is used automatically as a fallback when the Hessian is ill-conditioned.
  \item msmu: Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.
  \item msvar: Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.
  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
@@ -74,6 +75,65 @@ List of class \code{HMmdl} (\code{S3} object) with model attributes including:
 }
 \description{
 This function estimates a Hidden Markov model with \code{k} regimes.
+}
+\examples{
+set.seed(1234)
+# ----- Univariate ----- #
+# Define DGP 
+mdl_hmm <- list(n     = 1000, 
+                q     = 1,
+                mu    = as.matrix(c(5,-2)),
+                sigma = list(as.matrix(5.0),
+                             as.matrix(7.0)),
+                k     = 2,
+                P     = rbind(c(0.90, 0.10),
+                              c(0.10, 0.90)))
+
+# Simulate process using simuHMM() function
+y_hmm_simu <- simuHMM(mdl_hmm)
+
+# Set options for model estimation
+control <- list(msmu   = TRUE, 
+                msvar  = TRUE,
+                method = "EM",
+                use_diff_init = 1)
+
+
+# Estimate model
+y_hmm_mdl <- HMmdl(y_hmm_simu$y, k = 2, control = control)
+summary(y_hmm_mdl)
+
+
+
+# ----- Multivariate normal process ----- #
+# Define DGP 
+mdl_hmm <- list(n     = 500, 
+                q     = 2,
+                mu    = rbind(c(5, -2),
+                              c(10, 2)),
+                sigma = list(rbind(c(5.0, 1.5),
+                                   c(1.5, 1.0)),
+                             rbind(c(7.0, 3.0),
+                                   c(3.0, 2.0))),
+                k     = 2,
+                P     = rbind(c(0.90, 0.10),
+                              c(0.10, 0.90)))
+
+# Simulate process using simuHMM() function
+y_hmm_simu <- simuHMM(mdl_hmm)
+
+# Set options for model estimation
+control <- list(msmu   = TRUE, 
+                msvar  = TRUE,
+                method = "EM",
+                use_diff_init = 1)
+
+# Estimate model
+\donttest{
+  y_hmm_mdl <- HMmdl(y_hmm_simu$y, k = 2, control = control)
+  summary(y_hmm_mdl)
+}
+
 }
 \references{
 Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38..

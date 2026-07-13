@@ -14,7 +14,11 @@
 \item{h}{max number of prediction periods}
 }
 \value{
-a \code{(h x q)} matrix with predicted value values.
+A list with the following elements:
+\itemize{
+  \item predict: a \code{(h x q)} matrix with predicted values.
+  \item predictSt: a \code{(h x k)} matrix with predicted regime probabilities.
+}
 }
 \description{
 This is a method for the function \code{predict()} for objects of the class \code{HMmdl}.

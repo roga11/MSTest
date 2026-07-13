@@ -5,8 +5,7 @@
 \alias{hamilton84GNP}
 \title{Hamilton 1984 & Hansen 1992 GNP data}
 \format{
-\describe{This data set is used in Hansen (1992) to test the US GNP model proposed by 
-Hamilton (1989). This series ranges from 1951Q2 to 1984Q4. 
+\describe{
   \item{Date}{Vector of dates}
   \item{GNP}{US GNP series}
   \item{GNP_gr}{US GNP log difference}
@@ -19,7 +18,8 @@ Hamilton (1989). This series ranges from 1951Q2 to 1984Q4.
 hamilton84GNP
 }
 \description{
-Hamilton 1984 & Hansen 1992 GNP data
+This data set is used in Hansen (1992) to test the US GNP model proposed by
+Hamilton (1989). This series ranges from 1951Q2 to 1984Q4.
 }
 \references{
 Hansen, Bruce E. 1992. “The likelihood ratio test under nonstandard conditions: testing the Markov switching model of GNP.” \emph{Journal of applied Econometrics} 7 (S1): S61–S82.

@@ -12,8 +12,8 @@
 #'   \item Z: A (\code{T x qz}) matrix with exogenous regressors (Optional) and where qz is the number of exogenous variables.
 #'   \item betaZ: A (\code{qz x q}) matrix  true coefficients on exogenous regressors (Optional) and where qz is the number of exogenous variables.
 #'   }
-#' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
-#' 
+#' @param burnin Number of simulated observations to remove from beginning. Default is \code{0}.
+#'
 #' @return List with simulated series and its DGP parameters.
 #' 
 #' @example /inst/examples/simuNorm_examples.R
@@ -97,7 +97,8 @@ simuARX <- function(mdl_h0, burnin = 100){
 #' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
 #' @return List with simulated vector autoregressive series and its DGP parameters.
-#' 
+#'
+#' @example /inst/examples/simuVAR_examples.R
 #' @export
 simuVAR <- function(mdl_h0, burnin = 100){
   simu_output <- simuVAR_cpp(mdl_h0, burnin)
@@ -106,10 +107,10 @@ simuVAR <- function(mdl_h0, burnin = 100){
   return(simu_output)
 }
 
-#' @title Simulate VAR process
-#' 
-#' @description This function simulates a vector autoregresive process.
-#' 
+#' @title Simulate VARX process
+#'
+#' @description This function simulates a vector autoregressive process with exogenous regressors.
+#'
 #' @param mdl_h0 List containing the following DGP parameters
 #' \itemize{
 #'   \item n: Length of series.
@@ -125,7 +126,8 @@ simuVAR <- function(mdl_h0, burnin = 100){
 #' @param burnin Number of simulated observations to remove from beginning. Default is \code{100}.
 #' 
 #' @return List with simulated vector autoregressive series and its DGP parameters.
-#' 
+#'
+#' @example /inst/examples/simuVAR_examples.R
 #' @export
 simuVARX <- function(mdl_h0, burnin = 100){
   simu_output <- simuVARX_cpp(mdl_h0, burnin)
@@ -981,6 +983,7 @@ VARXmdl <- function(Y, p, Z, control = list()){
 #' @param control List with model options including:
 #' \itemize{
 #'  \item getSE: Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.
+#'  \item se_method: String determining the standard-error method. Options are \code{"hessian"} (default) and \code{"louis"} (Louis 1982 expected-information); the Louis method is used automatically as a fallback when the Hessian is ill-conditioned.
 #'  \item msmu: Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.
 #'  \item msvar: Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
@@ -1043,6 +1046,7 @@ VARXmdl <- function(Y, p, Z, control = list()){
 #' @references Krolzig, Hans-Martin. 1997. “The markov-switching vector autoregressive model.”. Springer.
 #' 
 #' @seealso \code{\link{Nmdl}}
+#' @example /inst/examples/HMmdl_examples.R
 #' @export
 HMmdl <- function(Y, k, Z = NULL, control = list()){
   # ----- Set control values
@@ -1286,6 +1290,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
 #' @param control List with model options including:
 #' \itemize{
 #'  \item getSE: Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.
+#'  \item se_method: String determining the standard-error method. Options are \code{"hessian"} (default) and \code{"louis"} (Louis 1982 expected-information); the Louis method is used automatically as a fallback when the Hessian is ill-conditioned.
 #'  \item msmu: Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.
 #'  \item msvar: Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
@@ -1547,17 +1552,18 @@ MSARmdl <- function(Y, p, k, control = list()){
 }
 
 
-#' @title Markov-switching autoregressive model 
-#' 
-#' @description This function estimates a Markov-switching autoregressive model
-#' 
-#' @param Y a \code{(T x 1)} vector with observational data. 
-#' @param p integer for the number of lags to use in estimation. Must be greater than or equal to \code{1}. 
+#' @title Markov-switching autoregressive model with exogenous regressors
+#'
+#' @description This function estimates a Markov-switching autoregressive model with exogenous regressors.
+#'
+#' @param Y a \code{(T x 1)} vector with observational data.
+#' @param p integer for the number of lags to use in estimation. Must be greater than or equal to \code{1}.
 #' @param k integer for the number of regimes to use in estimation. Must be greater than or equal to \code{2}.
-#' @param Z a \code{(T x qz)} matrix of exogenous regressors. 
+#' @param Z a \code{(T x qz)} matrix of exogenous regressors.
 #' @param control List with model options including:
 #' \itemize{
 #'  \item getSE: Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.
+#'  \item se_method: String determining the standard-error method. Options are \code{"hessian"} (default) and \code{"louis"} (Louis 1982 expected-information); the Louis method is used automatically as a fallback when the Hessian is ill-conditioned.
 #'  \item msmu: Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.
 #'  \item msvar: Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
@@ -1574,7 +1580,7 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'  \item mle_theta_upp: Vector with upper bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
 #' }
 #' 
-#' @return List of class \code{MSARmdl} (\code{S3} object) with model attributes including:
+#' @return List of class \code{MSARXmdl} (\code{S3} object) with model attributes including:
 #' \itemize{
 #'   \item y: a \code{(T x 1)} matrix of observations.
 #'   \item X: a \code{(T-p x p + const)} matrix of lagged observations with a leading column of \code{1}s.
@@ -1583,7 +1589,7 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'   \item resid: a \code{(T x 1)} matrix of residuals.
 #'   \item intercept: a \code{(k x 1)} vector of estimated intercepts of each process.
 #'   \item mu: a \code{(k x 1)} vector of estimated means of each process.
-#'   \item beta: a \code{((1 + p + qz) x k)} matrix of estimated coefficients. 
+#'   \item beta: a \code{((1 + p + qz) x k)} matrix of estimated coefficients.
 #'   \item betaZ: a \code{(qz x q)} matrix of estimated exogenous regressor coefficients.
 #'   \item phi: estimates of autoregressive coefficients.
 #'   \item stdev: a \code{(k x 1)} vector of estimated standard deviation of each process.
@@ -1829,6 +1835,7 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
 #' @param control List with optimization options including:
 #' \itemize{
 #'  \item getSE: Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.
+#'  \item se_method: String determining the standard-error method. Options are \code{"hessian"} (default) and \code{"louis"} (Louis 1982 expected-information); the Louis method is used automatically as a fallback when the Hessian is ill-conditioned.
 #'  \item msmu: Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.
 #'  \item msvar: Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix. This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
@@ -1889,9 +1896,7 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
 #'   \item theta_se: standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.
 #'   \item trace: List with Lists of estimation output for each initial value used due to \code{use_diff_init > 1}.
 #' }
-#' 
-#' @return List with model characteristics
-#' 
+#'
 #' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38..
 #' @references Böhning, D., E. Dietz, R. Schaub, P. Schlattmann, and B. G. Lindsay. 1994. “The distribution of the likelihood ratio for mixtures of densities from the one-parameter exponential family.” \emph{Annals of the Institute of Statistical Mathematics} 46 (2): 373–388.
 #' @references McLachlan, G. J., and T. Krishnan. 2008. \emph{The EM Algorithm and Extensions}. 2nd ed. Hoboken, New Jersey: John Wiley & Sons.
@@ -2104,17 +2109,18 @@ MSVARmdl <- function(Y, p, k, control = list()){
 
 
 
-#' @title Markov-switching vector autoregressive model 
-#' 
-#' @description This function estimates a Markov-switching vector autoregressive model 
-#' 
+#' @title Markov-switching vector autoregressive model with exogenous regressors
+#'
+#' @description This function estimates a Markov-switching vector autoregressive model with exogenous regressors.
+#'
 #' @param Y (\code{T x q}) vector with observational data.
 #' @param p integer for the number of lags to use in estimation. Must be greater than or equal to \code{0}.
 #' @param k integer for the number of regimes to use in estimation. Must be greater than or equal to \code{2}.
-#' @param Z a \code{(T x qz)} matrix of exogenous regressors. 
+#' @param Z a \code{(T x qz)} matrix of exogenous regressors.
 #' @param control List with optimization options including:
 #' \itemize{
 #'  \item getSE: Boolean. If \code{TRUE} standard errors are computed and returned. If \code{FALSE} standard errors are not computed. Default is \code{TRUE}.
+#'  \item se_method: String determining the standard-error method. Options are \code{"hessian"} (default) and \code{"louis"} (Louis 1982 expected-information); the Louis method is used automatically as a fallback when the Hessian is ill-conditioned.
 #'  \item msmu: Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.
 #'  \item msvar: Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix. This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
@@ -2131,7 +2137,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
 #'  \item mle_theta_upp: Vector with upper bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
 #' }
 #' 
-#' @return List of class \code{MSVARmdl} (\code{S3} object) with model attributes including:
+#' @return List of class \code{MSVARXmdl} (\code{S3} object) with model attributes including:
 #' \itemize{
 #'   \item y: a \code{(T-p x q)} matrix of observations.
 #'   \item X: a \code{(T-p x p*q + const)} matrix of lagged observations with a leading column of \code{1}s.
@@ -2140,7 +2146,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
 #'   \item fitted: a \code{(T x q)} matrix of fitted values.
 #'   \item intercept: a \code{(k x q)} matrix of estimated intercepts of each process.
 #'   \item mu: a \code{(k x q)} matrix of estimated means of each process.
-#'   \item beta: a list containing \code{k} separate \code{((1 + p + qz) x q)} matrix of estimated coefficients for each regime.  
+#'   \item beta: a list containing \code{k} separate \code{((1 + p + qz) x q)} matrix of estimated coefficients for each regime.
 #'   \item betaZ: a \code{(qz x q)} matrix of estimated exogenous regressor coefficients.
 #'   \item phi: estimates of autoregressive coefficients.
 #'   \item Fmat: Companion matrix containing autoregressive coefficients.
@@ -2176,9 +2182,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
 #'   \item theta_se: standard errors of parameters in \code{theta}.  Only returned if \code{getSE=TRUE}.
 #'   \item trace: List with Lists of estimation output for each initial value used due to \code{use_diff_init > 1}.
 #' }
-#' 
-#' @return List with model characteristics
-#' 
+#'
 #' @references Dempster, A. P., N. M. Laird, and D. B. Rubin. 1977. “Maximum Likelihood from Incomplete Data via the EM Algorithm.” \emph{Journal of the Royal Statistical Society}. Series B 39 (1): 1–38..
 #' @references Böhning, D., E. Dietz, R. Schaub, P. Schlattmann, and B. G. Lindsay. 1994. “The distribution of the likelihood ratio for mixtures of densities from the one-parameter exponential family.” \emph{Annals of the Institute of Statistical Mathematics} 46 (2): 373–388.
 #' @references McLachlan, G. J., and T. Krishnan. 2008. \emph{The EM Algorithm and Extensions}. 2nd ed. Hoboken, New Jersey: John Wiley & Sons.

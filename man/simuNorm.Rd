@@ -18,7 +18,7 @@ simuNorm(mdl_h0, burnin = 0)
   \item betaZ: A (\code{qz x q}) matrix  true coefficients on exogenous regressors (Optional) and where qz is the number of exogenous variables.
   }}
 
-\item{burnin}{Number of simulated observations to remove from beginning. Default is \code{100}.}
+\item{burnin}{Number of simulated observations to remove from beginning. Default is \code{0}.}
 }
 \value{
 List with simulated series and its DGP parameters.

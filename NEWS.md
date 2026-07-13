@@ -1,8 +1,3 @@
----
-output:
-  pdf_document: default
-  html_document: default
----
 # MSTest 0.1.9
 
 ## Reproducibility note
@@ -84,8 +79,6 @@ output:
 ## Other
 * Model constructors now validate `use_diff_init >= 1` (and `maxit_converge >= 1`) with a clear error
   instead of failing cryptically.
-* Fixed `MSVARXmdl()` to call `MSVARXmdl_em()` (not `MSVARmdl_em()`) in the single-initial-value EM
-  branch, so exogenous regressors are handled correctly on that path.
 * C++ sources: made integer/double literal usage explicit throughout (no change to results).
 * Added a unit-test suite (`testthat`) and an introductory vignette.
 

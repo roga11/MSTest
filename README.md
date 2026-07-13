@@ -1,7 +1,7 @@
 # MSTest
 [![CRAN](https://www.r-pkg.org/badges/version/MSTest)](https://cran.r-project.org/package=MSTest)[![Downloads](https://cranlogs.r-pkg.org/badges/MSTest)](https://cran.r-project.org/package=MSTest) [![Downloads](https://cranlogs.r-pkg.org/badges/grand-total/MSTest)](https://cran.r-project.org/package=MSTest)
 
-This package implements hypothesis testing procedures that can be used to identify the number of regimes in a Markov switching model. It includes the Monte Carlo moment-based test of Dufour & Luger (2017), the parametric bootstrap test described in Qu & Zhuo (2021) and Kasahara & Shimotsu (2018), the Monte Carlo Likelihood ratio tests of Rodriguez-Rondon & Dufour (2026a), the optimal test for regime switching of Carrasco, Hu, & Ploberger (2014), and the likelihood ratio test described in Hansen (1992).
+This package implements hypothesis testing procedures that can be used to identify the number of regimes in a Markov switching model. It includes the Monte Carlo moment-based test of Dufour & Luger (2017), the Monte Carlo likelihood ratio tests of Rodriguez-Rondon & Dufour (2026a), the optimal test for regime switching of Carrasco, Hu, & Ploberger (2014), and the likelihood ratio test of Hansen (1992).
 
 In addition to testing procedures, the package also includes datasets and functions that can be used to simulate: autoregressive, vector autoregressive, Markov switching autoregressive, and Markov switching vector autoregressive processes among others. Model estimation procedures are also available.
 
@@ -28,11 +28,11 @@ The MSTest package includes 3 datasets that can be used as examples. The three d
   
 * hamilton84GNP: US GNP data from 1951Q2 - 1984Q4 used in Hamilton (1989) and Hansen (1992; 1996)
 * chp10GNP: US GNP data from 1951Q2 - 2010Q4 used by Carrasco, Hu and Ploberger (2014)
-* USGNP: US GNP data from 1947Q2 - 2022Q2 from FRED 
+* USGNP: US GNP data from 1947Q2 - 2024Q2 from FRED 
   
 They can be loaded using the following code. 
 ```{r}
-GNPdata <- USGNP # this can be hamilton82GNP, chp10GNP or USGNP
+GNPdata <- USGNP # this can be hamilton84GNP, chp10GNP or USGNP
 Y       <- as.matrix(GNPdata$GNP_gr)
 date    <- as.Date(GNPdata$Date)
 plot(date,Y,xlab='Time',ylab='GNP - log difference',type = 'l')

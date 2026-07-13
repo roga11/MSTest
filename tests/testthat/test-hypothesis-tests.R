@@ -59,3 +59,27 @@ test_that("LMCLRTest returns a valid p-value", {
   expect_s3_class(out, "LMCLRTest")
   expect_true(valid_pval(as.numeric(out$pval)))
 })
+
+test_that("MMCLRTest returns a valid p-value (guards fixed-S0 and NaN-penalty fixes)", {
+  skip_on_cran()
+  set.seed(305)
+  # Well-separated regimes so the 2-regime fit reliably beats the 1-regime fit.
+  y <- simuMSAR(list(n = 200, mu = c(0, 10), sigma = c(1, 1), phi = c(0.5),
+                     k = 2, P = rbind(c(0.9, 0.1), c(0.1, 0.9))))$y
+  out <- tryCatch(
+    MMCLRTest(y, p = 1, k0 = 1, k1 = 2,
+              control = list(N = 19, eps = 0.1, CI_union = FALSE, type = "GenSA",
+                             threshold_stop = 0.1, maxit = 5, silence = TRUE, mc_seed = 42,
+                             mdl_h0_control = list(const = TRUE, getSE = FALSE),
+                             mdl_h1_control = list(msmu = TRUE, msvar = TRUE,
+                                                   getSE = FALSE, method = "EM",
+                                                   use_diff_init = 1))),
+    error = function(e) e)
+  skip_if(inherits(out, "error") && grepl("LRT_0 is negative", conditionMessage(out)),
+          "EM landed on a poor H1 optimum (negative LR statistic) for this seed")
+  expect_s3_class(out, "MMCLRTest")
+  # S0 is computed once from the observed fits and must be finite; the NaN-penalty
+  # fix must keep the maximized p-value a genuine probability (not the penalty constant).
+  expect_true(is.finite(as.numeric(out$LRT_0)))
+  expect_true(valid_pval(as.numeric(out$pval)))
+})

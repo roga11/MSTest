@@ -9,7 +9,7 @@
   This package implements hypothesis testing procedures that can be used to identify the number of regimes in a Markov-Switching model.
 }
 \author{
-Gabriel Rodriguez Rondon, gabriel.rodriguezrondon@mail.mcgill.ca (Maintainer)
+Gabriel Rodriguez-Rondon, gabrodriguezrondon@gmail.com (Maintainer)
 
 Jean-Marie Dufour, jean-marie.dufour@mcgill.ca
 }
