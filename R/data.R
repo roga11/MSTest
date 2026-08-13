@@ -13,7 +13,7 @@
 #' @references U.S. Bureau of Economic Analysis, Real Gross Domestic Product [GDPC1], retrieved from FRED, Federal Reserve Bank of St. Louis; \emph{\url{https://fred.stlouisfed.org/series/GDPC1}}, September, 2024.
 #' @references Rodriguez-Rondon, G., & Dufour, J.-M. 2026a. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-23. doi: 10.34989/swp-2026-23.
 "USRGDP"
-# -----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------- #
 #' @title US GNP data 1947Q2 - 2024Q2
 #'
 #' @description This data is used in Rodriguez-Rondon & Dufour (2026a). The series ranges from
@@ -29,7 +29,7 @@
 #' @references U.S. Bureau of Economic Analysis, Gross National Product [GNP], retrieved from FRED, Federal Reserve Bank of St. Louis; \emph{\url{https://fred.stlouisfed.org/series/GNP}}, September, 2024.
 #' @references Rodriguez-Rondon, G., & Dufour, J.-M. 2026a. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-23. doi: 10.34989/swp-2026-23.
 "USGNP"
-# -----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------- #
 #' @title Carrasco, Hu, & Ploberger 2010 GNP data
 #'
 #' @description This data is the extension of the GNP series used in CHP (2014), Econometrica. This series ranges from
@@ -45,7 +45,7 @@
 #' 
 #' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 "chp10GNP"
-# -----------------------------------------------------------------------------
+# ----------------------------------------------------------------------------- #
 #' @title Hamilton 1984 & Hansen 1992 GNP data
 #'
 #' @description This data set is used in Hansen (1992) to test the US GNP model proposed by

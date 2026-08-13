@@ -754,34 +754,8 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     mmc_out   <- do.call(GA::ga, c(ga_fixed, ga_ctrl))
     theta     <- as.matrix(mmc_out@solution[1,])
     pval      <- mmc_out@fitnessValue
-  }else if(con$type=="gridSearch"){
-    stop("Optim method 'gridSearch' is not available yet. Please use 'pso', 'GenSA', or 'GA' for 'type' in control List. ")
-    # LT_h1 <- mdl_h1$logLike
-    # LRT_0s <- matrix(0,con$maxit,1)
-    # mmc_params_h0 <- matrix(0,con$maxit,length(theta_0))
-    # for (xp in 1:length(theta_0)){
-    #   mmc_params_h0[,xp] <- runif(con$maxit,min = theta_low[xp], max = theta_upp[xp])  
-    # }
-    # # Need to write soemthing that will make sure process is stationary, P has columns that sum to 1
-    # mmc_pval_mat <- matrix(0,con$maxit,1)
-    # LRN_ls <- list()
-    # for (xs in 1:nrow(mmc_params_h0)){
-    #    mdl_h0_tmp <- mdledit(mdl_h0,mmc_params_h0[xs,],p,q,k0,exog)
-    #    LRT_0s[xs,]  <- compu_tstat(mmc_params_h0[xs,], mdl_h0_tmp, LT_h1, p, q, k0, exog)
-    #    if (con$workers>0){
-    #      LRN <- LR_samp_dist_par(mdl_h0_tmp, k1, con$N, con$burnin, Zsim, mdl_h0_null_cont, mdl_h1_null_cont, con$workers)
-    #    }else{
-    #      LRN <- LR_samp_dist(mdl_h0, k1, con$N, con$burnin, Zsim, mdl_h0_null_cont, mdl_h1_null_cont) 
-    #    }
-    #    LRN_ls[[xs]] <- LRN
-    #    mmc_pval_mat[xs,] <- MCpval(LRT_0s[xs,],LRN)
-    #    if (mmc_pval_mat[xs,]>con$threshold_stop){
-    #      break
-    #    }
-    # }
-    # pval <- mmc_pval_mat[which.max(mmc_pval_mat)[1],]
-    # theta <- mmc_params_h0[which.max(mmc_pval_mat)[1],]
-    # LRT_0 <- LRT_0s[which.max(mmc_pval_mat)[1],]
+  }else{
+    stop("'type' must be one of 'pso', 'GenSA', or 'GA'.")
   }
   # ----- get test output using optimization output params
   theta_h0 <- theta

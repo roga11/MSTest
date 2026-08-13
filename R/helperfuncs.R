@@ -183,9 +183,9 @@ thetaSE <- function(mdl){
   return(mdl)
 }
 
-# ==============================================================================
+# ============================================================================== #
 # Reduced parameterization helpers for transition matrix P (Krolzig 1997, Sec. 6.3.2)
-# ==============================================================================
+# ============================================================================== #
 #
 # The k x k transition matrix P is column-stochastic (columns sum to 1). This means
 # only k(k-1) of the k^2 entries are free. Computing the Hessian w.r.t. all k^2
@@ -200,7 +200,7 @@ thetaSE <- function(mdl){
 # Drop pattern (preserves all diagonal/persistence entries as free):
 #   Columns 1 to k-1: drop P[k, j] (last row)
 #   Column k: drop P[1, k] (first row)
-# ==============================================================================
+# ============================================================================== #
 
 # Compute the reduced parameterization setup: Jacobian J and index mappings
 .reduced_P_setup <- function(k, npar) {
@@ -428,9 +428,9 @@ thetaSE_louis <- function(mdl) {
   return(mdl)
 }
 
-# ==============================================================================
+# ============================================================================== #
 # Louis (1982) Q-function builders (internal)
-# ==============================================================================
+# ============================================================================== #
 
 # Dispatcher: build Q(theta) closure for the appropriate model class
 .louis_build_Q <- function(mdl, xi) {
@@ -1014,9 +1014,9 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 
 
 
-# ==============================================================================
+# ============================================================================== #
 # Warm-start embeddings for Monte Carlo LR tests (regime-duplication)
-# ==============================================================================
+# ============================================================================== #
 
 # Enumerate all ways to distribute `extra` clones among k0 regimes
 # (weak compositions of `extra` into k0 non-negative parts).
