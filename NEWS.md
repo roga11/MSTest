@@ -77,6 +77,12 @@ simulation study is finalized.)*
   optimizer seed.
 
 ## Other
+* `MMCLRTest()`: when the p-value at the initial values already satisfies
+  `pval_0 >= threshold_stop`, the nuisance-parameter search is skipped entirely and
+  `pval = pval_0` is returned (`mmc_optimout` carries an early-stop marker). Previously the
+  optimizer was always launched and stopped via its own threshold rule, wasting one evaluation
+  (GenSA) or a full first swarm (pso). With `threshold_stop` slightly above the significance
+  level, most true-null replications in a simulation study now cost no more than a Local MC run.
 * `MMCLRTest()`: user-supplied `mdl_h0_control`/`mdl_h1_control` sublists are now merged with
   their defaults instead of replacing them, fixing an "argument is of length zero" error when a
   supplied sublist omitted `getSE`.

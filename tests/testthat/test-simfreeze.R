@@ -139,6 +139,22 @@ test_that("MMCLRTest: pval_0 reported, pval >= pval_0 under CRN, reproducible", 
   expect_identical(a$theta_h0, b$theta_h0)
 })
 
+test_that("MMCLRTest early stop: pval_0 >= threshold_stop skips the search", {
+  skip_on_cran()
+  # True-null data with a low threshold: the theta_0 evaluation should settle it.
+  set.seed(55)
+  y0 <- simuAR(list(n = 150, p = 1, q = 1, mu = 1, sigma = 1, phi = 0.5, burnin = 100))$y
+  ctl <- list(N = 19, burnin = 100, mc_seed = 99, workers = 0,
+              type = "pso", maxit = 50, threshold_stop = 0.2, silence = TRUE,
+              CI_union = FALSE,
+              mdl_h0_control = list(const = TRUE, getSE = FALSE),
+              mdl_h1_control = list(getSE = FALSE, use_diff_init = 1))
+  a <- suppressWarnings(MMCLRTest(y0, p = 1, k0 = 1, k1 = 2, control = ctl))
+  skip_if(as.numeric(a$pval_0) < 0.2, "pval_0 below threshold for this seed")
+  expect_identical(as.numeric(a$pval), as.numeric(a$pval_0))
+  expect_true(isTRUE(a$mmc_optimout$early_stop))
+})
+
 test_that("internal seeds are drawn (not mc_seed+k) and pre-draws stay aligned", {
   # The pre-drawn innovations must depend on mc_seed alone (draw-then-reseed):
   # calling set.seed(s); sample.int(...); set.seed(s) reproduces the same rnorm

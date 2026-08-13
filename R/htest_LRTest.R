@@ -432,7 +432,7 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item P_upp: Value with upper bound for transition probabilities when optimizing. Default is \code{1}.
 #'   \item variance_constraint: Double used to determine the lower bound for variance in parameter set for search. Value should be between \code{0} and \code{1} as it is multiplied by consistent point estimates of variances. Default is \code{0.01} (i.e., \code{1\%} of consistent point estimates.
 #'   \item silence: Boolean determining if optimization steps should be silenced (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{FALSE}.
-#'   \item threshold_stop: Double determining the global optimum of function. Default is \code{1}.
+#'   \item threshold_stop: Double determining the p-value level at which the nuisance-parameter search stops early (the search seeks the maximum p-value, so once a candidate reaches this level the test decision at any smaller significance level is settled). If the p-value at the initial values already satisfies \code{pval_0 >= threshold_stop}, the optimizer is skipped entirely and \code{pval = pval_0} is returned (with \code{mmc_optimout} set to an early-stop marker). Default is \code{1} (no early stopping).
 #'   \item mdl_h0_control: List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
 #'   \item mdl_h1_control: List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
 #'   \item use_diff_init_sim: Value which determines the number of initial values to use when estimating models for null distribution. Default is set to use the same as specified in \code{mdl_h0_control} and \code{mdl_h1_control}.
@@ -688,7 +688,19 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   # optimizer and estimation randomness continue the ambient (script-seeded)
   # stream, so script-seeded legacy runs reproduce 0.1.9 bit-for-bit.
   if (need_early_seeds) set.seed(internal_seeds[1L])
-  if (con$type=="pso"){
+  if (p_seed >= con$threshold_stop){
+    # ----- Early stop: the p-value at theta_0 already meets threshold_stop, so the
+    # search cannot change the test decision (pval >= pval_0 >= threshold_stop by
+    # construction). Skip the optimizer entirely -- exactly the threshold-stopping
+    # semantics, at the cost of a single (LMC-type) evaluation. Note the reported
+    # pval is then pval_0 itself (an optimizer run crossing the threshold could
+    # report a weakly larger value; both are valid and imply the same decision).
+    theta   <- theta_0
+    pval    <- p_seed
+    mmc_out <- list(early_stop = TRUE,
+                    message = "threshold_stop reached at theta_0 (pval_0 >= threshold_stop); nuisance-parameter search skipped.")
+    if (!isTRUE(con$silence)) message("MMCLRTest: threshold_stop reached at theta_0; skipping the nuisance-parameter search.")
+  }else if (con$type=="pso"){
     # Set PSO specific controls
     con$optim_control$trace.stats <- TRUE
     con$optim_control$trace <- as.numeric(con$silence==FALSE)
