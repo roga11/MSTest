@@ -1,7 +1,8 @@
-# MSTest 0.2.0
+# MSTest (development version)
 
-*(Development release for the Rodriguez-Rondon & Dufour (2026) simulation study; tagged
-`v0.2.0` on GitHub, not submitted to CRAN.)*
+*(Pre-simulation freeze for the Rodriguez-Rondon & Dufour (2026) simulation study; tagged
+`v0.1.9.9001` on GitHub, not submitted to CRAN. Slated for CRAN release as 0.2.0 once the
+simulation study is finalized.)*
 
 ## IMPORTANT: results of the Monte Carlo LR tests change relative to 0.1.9
 * For a given seed, `LMCLRTest()` and `MMCLRTest()` produce different numerical results than
