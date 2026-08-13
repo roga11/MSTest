@@ -1,8 +1,9 @@
-# MSTest (development version)
+# MSTest 0.1.9.9001
 
-*(Pre-simulation freeze for the Rodriguez-Rondon & Dufour (2026) simulation study; tagged
-`v0.1.9.9001` on GitHub, not submitted to CRAN. Slated for CRAN release as 0.2.0 once the
-simulation study is finalized.)*
+## Pre-simulation freeze
+* This development version is the frozen state used for the Rodriguez-Rondon & Dufour (2026)
+  simulation study (GitHub tag `v0.1.9.9001`); it is not on CRAN. It will be released to CRAN
+  as version 0.2.0 once the simulation study is finalized.
 
 ## IMPORTANT: results of the Monte Carlo LR tests change relative to 0.1.9
 * For a given seed, `LMCLRTest()` and `MMCLRTest()` produce different numerical results than
