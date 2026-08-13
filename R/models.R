@@ -987,6 +987,8 @@ VARXmdl <- function(Y, p, Z, control = list()){
 #'  \item msmu: Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.
 #'  \item msvar: Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
+#'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
+#'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation. Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -1055,6 +1057,8 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
               msmu = TRUE,
               msvar = TRUE,
               init_theta = NULL,
+              init_theta_extra = NULL,
+              init_method = NULL,
               method = "EM",
               maxit = 1000,
               thtol = 1.e-6,
@@ -1089,15 +1093,30 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
   init_mdl$msmu <- con$msmu
   init_mdl$msvar <- con$msvar
   init_mdl$exog <- (!is.null(Z))
+  # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
+  # They are attempted first and compete with the random starts on logLike; a
+  # failing extra start falls back to a random draw on retry (see loop below).
+  if (!is.null(con$init_theta_extra) && !is.list(con$init_theta_extra)){
+    con$init_theta_extra <- list(con$init_theta_extra)
+  }
+  con$init_theta_extra <- Filter(function(th) all(is.finite(th)), con$init_theta_extra)
+  n_extra <- length(con$init_theta_extra)
+  n_init_total <- n_extra + con$use_diff_init
+  output_all <- list()
+  max_loglik <- matrix(-Inf, n_init_total, 1)
   if (is.null(con$init_theta)==TRUE){
     if (con$method=="EM"){
       # ----- Estimate using 'use_diff_init' different initial values
-      for (xi in 1:con$use_diff_init){
+      for (xi in 1:n_init_total){
         init_used <- 0
         converge_check <- FALSE
         while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
-          # ----- Initial values
-          theta_0 <- initVals_HMmdl(init_mdl, k)
+          # ----- Initial values (deterministic extra starts first; random on retry)
+          if ((xi <= n_extra) && (init_used == 0)){
+            theta_0 <- con$init_theta_extra[[xi]]
+          }else{
+            theta_0 <- initVals_HMmdl(init_mdl, k)
+          }
           # ----- Estimate using EM algorithm and initial values provided
           output_tmp <- NULL
           try(
@@ -1127,13 +1146,17 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
       optim_options$mle_theta_upp <- con$mle_theta_upp
       init_mdl$mle_variance_constraint <- con$mle_variance_constraint
       # ----- Estimate using 'use_diff_init' different initial values
-      for (xi in 1:con$use_diff_init){
+      for (xi in 1:n_init_total){
         init_used <- 0
         converge_check <- FALSE
         while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
-          # ----- Initial values
-          theta_0 <- initVals_HMmdl(init_mdl, k)
-          # ----- Estimate using roptim and initial values provided 
+          # ----- Initial values (deterministic extra starts first; random on retry)
+          if ((xi <= n_extra) && (init_used == 0)){
+            theta_0 <- con$init_theta_extra[[xi]]
+          }else{
+            theta_0 <- initVals_HMmdl(init_mdl, k)
+          }
+          # ----- Estimate using roptim and initial values provided
           output_tmp <- NULL
           try(
             output_tmp <- HMmdl_mle(theta_0, init_mdl, k, optim_options)  
@@ -1156,7 +1179,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
         output_all[[xi]] <- output_tmp
       }
     }
-    if (con$use_diff_init==1){
+    if (n_init_total==1){
       output = output_tmp
     }else{
       xl = which.max(max_loglik)
@@ -1294,6 +1317,8 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
 #'  \item msmu: Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.
 #'  \item msvar: Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
+#'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
+#'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -1366,6 +1391,8 @@ MSARmdl <- function(Y, p, k, control = list()){
               msmu = TRUE,
               msvar = TRUE,
               init_theta = NULL,
+              init_theta_extra = NULL,
+              init_method = NULL,
               method = "EM",
               maxit = 1000,
               thtol = 1.e-6,
@@ -1399,15 +1426,30 @@ MSARmdl <- function(Y, p, k, control = list()){
   init_mdl <- ARmdl(Y, p = p, control = init_control)
   init_mdl$msmu <- con$msmu
   init_mdl$msvar <- con$msvar
+  # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
+  # They are attempted first and compete with the random starts on logLike; a
+  # failing extra start falls back to a random draw on retry (see loop below).
+  if (!is.null(con$init_theta_extra) && !is.list(con$init_theta_extra)){
+    con$init_theta_extra <- list(con$init_theta_extra)
+  }
+  con$init_theta_extra <- Filter(function(th) all(is.finite(th)), con$init_theta_extra)
+  n_extra <- length(con$init_theta_extra)
+  n_init_total <- n_extra + con$use_diff_init
+  output_all <- list()
+  max_loglik <- matrix(-Inf, n_init_total, 1)
   if (is.null(con$init_theta)==TRUE){
     if (con$method=="EM"){
       # ----- Estimate using 'use_diff_init' different initial values
-      for (xi in 1:con$use_diff_init){
+      for (xi in 1:n_init_total){
         init_used <- 0
         converge_check <- FALSE
         while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
-          # ----- Initial values
-          theta_0 <- initVals_MSARmdl(init_mdl, k)  
+          # ----- Initial values (deterministic extra starts first; random on retry)
+          if ((xi <= n_extra) && (init_used == 0)){
+            theta_0 <- con$init_theta_extra[[xi]]
+          }else{
+            theta_0 <- initVals_MSARmdl(init_mdl, k)
+          }
           # ----- Estimate using EM algorithm and initial values provided
           output_tmp <- NULL
           try(
@@ -1435,13 +1477,17 @@ MSARmdl <- function(Y, p, k, control = list()){
       init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
       init_mdl$mle_variance_constraint <- con$mle_variance_constraint
       # ----- Estimate using 'use_diff_init' different initial values
-      for (xi in 1:con$use_diff_init){
+      for (xi in 1:n_init_total){
         init_used <- 0
         converge_check <- FALSE
         while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
-          # ----- Initial values
-          theta_0 <- initVals_MSARmdl(init_mdl, k)  
-          # ----- Estimate using roptim and initial values provided 
+          # ----- Initial values (deterministic extra starts first; random on retry)
+          if ((xi <= n_extra) && (init_used == 0)){
+            theta_0 <- con$init_theta_extra[[xi]]
+          }else{
+            theta_0 <- initVals_MSARmdl(init_mdl, k)
+          }
+          # ----- Estimate using roptim and initial values provided
           output_tmp <- NULL
           try(
             output_tmp <- MSARmdl_mle(theta_0, init_mdl, k, optim_options)  
@@ -1461,7 +1507,7 @@ MSARmdl <- function(Y, p, k, control = list()){
         output_all[[xi]] <- output_tmp
       }
     }
-    if (con$use_diff_init==1){
+    if (n_init_total==1){
       output <- output_tmp
     }else{
       xl = which.max(max_loglik)
@@ -1567,6 +1613,8 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'  \item msmu: Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.
 #'  \item msvar: Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
+#'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
+#'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -1640,6 +1688,8 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
               msmu = TRUE,
               msvar = TRUE,
               init_theta = NULL,
+              init_theta_extra = NULL,
+              init_method = NULL,
               method = "EM",
               maxit = 1000,
               thtol = 1.e-6,
@@ -1674,15 +1724,30 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
   init_mdl <- ARXmdl(Y, p = p, Z = Z, control = init_control)
   init_mdl$msmu <- con$msmu
   init_mdl$msvar <- con$msvar
+  # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
+  # They are attempted first and compete with the random starts on logLike; a
+  # failing extra start falls back to a random draw on retry (see loop below).
+  if (!is.null(con$init_theta_extra) && !is.list(con$init_theta_extra)){
+    con$init_theta_extra <- list(con$init_theta_extra)
+  }
+  con$init_theta_extra <- Filter(function(th) all(is.finite(th)), con$init_theta_extra)
+  n_extra <- length(con$init_theta_extra)
+  n_init_total <- n_extra + con$use_diff_init
+  output_all <- list()
+  max_loglik <- matrix(-Inf, n_init_total, 1)
   if (is.null(con$init_theta)==TRUE){
     if (con$method=="EM"){
       # ----- Estimate using 'use_diff_init' different initial values
-      for (xi in 1:con$use_diff_init){
+      for (xi in 1:n_init_total){
         init_used <- 0
         converge_check <- FALSE
         while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
-          # ----- Initial values
-          theta_0 <- initVals_MSARXmdl(init_mdl, k)  
+          # ----- Initial values (deterministic extra starts first; random on retry)
+          if ((xi <= n_extra) && (init_used == 0)){
+            theta_0 <- con$init_theta_extra[[xi]]
+          }else{
+            theta_0 <- initVals_MSARXmdl(init_mdl, k)
+          }
           # ----- Estimate using EM algorithm and initial values provided
           output_tmp <- NULL
           try(
@@ -1710,13 +1775,17 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
       init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
       init_mdl$mle_variance_constraint <- con$mle_variance_constraint
       # ----- Estimate using 'use_diff_init' different initial values
-      for (xi in 1:con$use_diff_init){
+      for (xi in 1:n_init_total){
         init_used <- 0
         converge_check <- FALSE
         while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
-          # ----- Initial values
-          theta_0 <- initVals_MSARXmdl(init_mdl, k)  
-          # ----- Estimate using roptim and initial values provided 
+          # ----- Initial values (deterministic extra starts first; random on retry)
+          if ((xi <= n_extra) && (init_used == 0)){
+            theta_0 <- con$init_theta_extra[[xi]]
+          }else{
+            theta_0 <- initVals_MSARXmdl(init_mdl, k)
+          }
+          # ----- Estimate using roptim and initial values provided
           output_tmp <- NULL
           try(
             output_tmp <- MSARmdl_mle(theta_0, init_mdl, k, optim_options)  
@@ -1736,7 +1805,7 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
         output_all[[xi]] <- output_tmp
       }
     }
-    if (con$use_diff_init==1){
+    if (n_init_total==1){
       output <- output_tmp
     }else{
       xl = which.max(max_loglik)
@@ -1839,6 +1908,8 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
 #'  \item msmu: Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.
 #'  \item msvar: Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix. This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
+#'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
+#'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -1912,6 +1983,8 @@ MSVARmdl <- function(Y, p, k, control = list()){
               msmu = TRUE,
               msvar = TRUE,
               init_theta = NULL,
+              init_theta_extra = NULL,
+              init_method = NULL,
               method = "EM",
               maxit = 1000,
               thtol = 1.e-6,
@@ -1945,15 +2018,30 @@ MSVARmdl <- function(Y, p, k, control = list()){
   init_mdl <- VARmdl(Y, p = p, control = init_control)
   init_mdl$msmu <- con$msmu
   init_mdl$msvar <- con$msvar
+  # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
+  # They are attempted first and compete with the random starts on logLike; a
+  # failing extra start falls back to a random draw on retry (see loop below).
+  if (!is.null(con$init_theta_extra) && !is.list(con$init_theta_extra)){
+    con$init_theta_extra <- list(con$init_theta_extra)
+  }
+  con$init_theta_extra <- Filter(function(th) all(is.finite(th)), con$init_theta_extra)
+  n_extra <- length(con$init_theta_extra)
+  n_init_total <- n_extra + con$use_diff_init
+  output_all <- list()
+  max_loglik <- matrix(-Inf, n_init_total, 1)
   if (is.null(con$init_theta)==TRUE){
     if (con$method=="EM"){
       # ----- Estimate using 'use_diff_init' different initial values
-      for (xi in 1:con$use_diff_init){
+      for (xi in 1:n_init_total){
         init_used <- 0
         converge_check <- FALSE
         while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
-          # ----- Initial values
-          theta_0 <- initVals_MSVARmdl(init_mdl, k)
+          # ----- Initial values (deterministic extra starts first; random on retry)
+          if ((xi <= n_extra) && (init_used == 0)){
+            theta_0 <- con$init_theta_extra[[xi]]
+          }else{
+            theta_0 <- initVals_MSVARmdl(init_mdl, k)
+          }
           # ----- Estimate using EM algorithm and initial values provided
           output_tmp <- NULL
           try(
@@ -1981,13 +2069,17 @@ MSVARmdl <- function(Y, p, k, control = list()){
       init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
       init_mdl$mle_variance_constraint <- con$mle_variance_constraint
       # ----- Estimate using 'use_diff_init' different initial values
-      for (xi in 1:con$use_diff_init){
+      for (xi in 1:n_init_total){
         init_used <- 0
         converge_check <- FALSE
         while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
-          # ----- Initial values
-          theta_0 <- initVals_MSVARmdl(init_mdl, k)
-          # ----- Estimate using roptim and initial values provided 
+          # ----- Initial values (deterministic extra starts first; random on retry)
+          if ((xi <= n_extra) && (init_used == 0)){
+            theta_0 <- con$init_theta_extra[[xi]]
+          }else{
+            theta_0 <- initVals_MSVARmdl(init_mdl, k)
+          }
+          # ----- Estimate using roptim and initial values provided
           output_tmp <- NULL
           try(
             output_tmp <- MSVARmdl_mle(theta_0, init_mdl, k, optim_options)  
@@ -2007,7 +2099,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
         output_all[[xi]] <- output_tmp
       }
     }
-    if (con$use_diff_init==1){
+    if (n_init_total==1){
       output = output_tmp
     }else{
       xl = which.max(max_loglik)
@@ -2124,6 +2216,8 @@ MSVARmdl <- function(Y, p, k, control = list()){
 #'  \item msmu: Boolean. If \code{TRUE} model is estimated with switch in mean. If \code{FALSE} model is estimated with constant mean. Default is \code{TRUE}.
 #'  \item msvar: Boolean. If \code{TRUE} model is estimated with switch in variance. If \code{FALSE} model is estimated with constant variance. Default is \code{TRUE}.
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix. This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
+#'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
+#'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -2198,6 +2292,8 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
               msmu = TRUE,
               msvar = TRUE,
               init_theta = NULL,
+              init_theta_extra = NULL,
+              init_method = NULL,
               method = "EM",
               maxit = 1000,
               thtol = 1.e-6,
@@ -2232,15 +2328,30 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
   init_mdl <- VARXmdl(Y, p = p, Z = Z, control = init_control)
   init_mdl$msmu <- con$msmu
   init_mdl$msvar <- con$msvar
+  # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
+  # They are attempted first and compete with the random starts on logLike; a
+  # failing extra start falls back to a random draw on retry (see loop below).
+  if (!is.null(con$init_theta_extra) && !is.list(con$init_theta_extra)){
+    con$init_theta_extra <- list(con$init_theta_extra)
+  }
+  con$init_theta_extra <- Filter(function(th) all(is.finite(th)), con$init_theta_extra)
+  n_extra <- length(con$init_theta_extra)
+  n_init_total <- n_extra + con$use_diff_init
+  output_all <- list()
+  max_loglik <- matrix(-Inf, n_init_total, 1)
   if (is.null(con$init_theta)==TRUE){
     if (con$method=="EM"){
       # ----- Estimate using 'use_diff_init' different initial values
-      for (xi in 1:con$use_diff_init){
+      for (xi in 1:n_init_total){
         init_used <- 0
         converge_check <- FALSE
         while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
-          # ----- Initial values
-          theta_0 <- initVals_MSVARXmdl(init_mdl, k)
+          # ----- Initial values (deterministic extra starts first; random on retry)
+          if ((xi <= n_extra) && (init_used == 0)){
+            theta_0 <- con$init_theta_extra[[xi]]
+          }else{
+            theta_0 <- initVals_MSVARXmdl(init_mdl, k)
+          }
           # ----- Estimate using EM algorithm and initial values provided
           output_tmp <- NULL
           try(
@@ -2268,13 +2379,17 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
       init_mdl$mle_stationary_constraint <- con$mle_stationary_constraint
       init_mdl$mle_variance_constraint <- con$mle_variance_constraint
       # ----- Estimate using 'use_diff_init' different initial values
-      for (xi in 1:con$use_diff_init){
+      for (xi in 1:n_init_total){
         init_used <- 0
         converge_check <- FALSE
         while ((converge_check==FALSE) & (init_used<con$maxit_converge)){
-          # ----- Initial values
-          theta_0 <- initVals_MSVARXmdl(init_mdl, k)
-          # ----- Estimate using roptim and initial values provided 
+          # ----- Initial values (deterministic extra starts first; random on retry)
+          if ((xi <= n_extra) && (init_used == 0)){
+            theta_0 <- con$init_theta_extra[[xi]]
+          }else{
+            theta_0 <- initVals_MSVARXmdl(init_mdl, k)
+          }
+          # ----- Estimate using roptim and initial values provided
           output_tmp <- NULL
           try(
             output_tmp <- MSVARmdl_mle(theta_0, init_mdl, k, optim_options)  
@@ -2294,7 +2409,7 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
         output_all[[xi]] <- output_tmp
       }
     }
-    if (con$use_diff_init==1){
+    if (n_init_total==1){
       output = output_tmp
     }else{
       xl = which.max(max_loglik)

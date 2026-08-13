@@ -156,6 +156,12 @@ compu_tstat <- function(theta_h0, mdl_h0, LT_h1, p, q, k0, exog) {
 #' When pre-drawn innovations are provided (for fixed-error MMC per Dufour 2006, Prop. 4.2),
 #' uses a buffer loop where each innovation is tried once; failed draws skip to the next slot.
 #' Falls back to fresh random draws if the buffer is exhausted.
+#' When \code{init_method = "warmstart"} is present in \code{mdl_h1_control}, the alternative
+#' model of each draw is warm-started from that draw's own null-model fit (regime-duplication
+#' embedding; see \code{\link{warmstart_theta}}). Simulated LR statistics are non-negative by
+#' construction: for \code{k0 > 1} the null log-likelihood is floored at the one-regime fit,
+#' and negative values (numerical optimization artifacts) are set to 0, identically to the
+#' treatment of the observed statistic.
 #'
 #' @param mdl_h0 List with restricted model properties.
 #' @param k1 integer specifying the number of regimes under the alternative hypothesis.

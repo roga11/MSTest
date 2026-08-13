@@ -253,6 +253,12 @@ double compu_tstat(arma::vec theta_h0, List mdl_h0, double LT_h1, int p, int q, 
 //' When pre-drawn innovations are provided (for fixed-error MMC per Dufour 2006, Prop. 4.2),
 //' uses a buffer loop where each innovation is tried once; failed draws skip to the next slot.
 //' Falls back to fresh random draws if the buffer is exhausted.
+//' When \code{init_method = "warmstart"} is present in \code{mdl_h1_control}, the alternative
+//' model of each draw is warm-started from that draw's own null-model fit (regime-duplication
+//' embedding; see \code{\link{warmstart_theta}}). Simulated LR statistics are non-negative by
+//' construction: for \code{k0 > 1} the null log-likelihood is floored at the one-regime fit,
+//' and negative values (numerical optimization artifacts) are set to 0, identically to the
+//' treatment of the observed statistic.
 //'
 //' @param mdl_h0 List with restricted model properties.
 //' @param k1 integer specifying the number of regimes under the alternative hypothesis.
@@ -292,6 +298,27 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
   List mdl_h1_control_tmp = clone(mdl_h1_control);
   mdl_h0_control_tmp["getSE"] = getSE;
   mdl_h1_control_tmp["getSE"] = getSE;
+  // ---------- Warm-start setup (init_method = "warmstart"): the alternative model of
+  // each simulated draw is warm-started from that draw's own null-model fit via the
+  // regime-duplication embedding (identical procedure to the observed-data side).
+  bool do_warmstart = FALSE;
+  if (mdl_h1_control_tmp.containsElementNamed("init_method")) {
+    Rcpp::RObject im_obj = mdl_h1_control_tmp["init_method"];
+    if (!im_obj.isNULL()) {
+      std::string im = Rcpp::as<std::string>(im_obj);
+      do_warmstart = (im == "warmstart");
+    }
+  }
+  Rcpp::Function warmstart_theta_fun = mstest["warmstart_theta"];
+  Rcpp::RObject ws_msmu = R_NilValue;
+  Rcpp::RObject ws_msvar = R_NilValue;
+  if (mdl_h1_control_tmp.containsElementNamed("msmu"))  ws_msmu  = mdl_h1_control_tmp["msmu"];
+  if (mdl_h1_control_tmp.containsElementNamed("msvar")) ws_msvar = mdl_h1_control_tmp["msvar"];
+  // Minimal control for the one-regime fit used by the H0 linear floor (k0 > 1)
+  List mdl_lin_control = List::create(Rcpp::Named("getSE") = false);
+  // Diagnostics for the LR >= 0 cap
+  int n_capped = 0;
+  double worst_neg = 0.0;
   // ---------- Setup pre-drawn innovations (Dufour 2006, Prop. 4.2)
   int N_buffer = 0;
   bool has_predrawn = predrawn_eps.isNotNull();
@@ -333,11 +360,29 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
       List simu_mdl = simuMdl(mdl_h0_sim, p, q, k0, burnin, exog);
       arma::mat y0 = simu_mdl["y"];
       mdl_h0_tmp = estimMdl(y0, p, q, k0, Z, mdl_h0_control_tmp);
+      if (do_warmstart) {
+        mdl_h1_control_tmp["init_theta_extra"] = warmstart_theta_fun(mdl_h0_tmp, k1, ws_msmu, ws_msvar);
+      }
       mdl_h1_tmp = estimMdl(y0, p, q, k1, Z, mdl_h1_control_tmp);
       double l_0 = mdl_h0_tmp["logLike"];
       double l_1 = mdl_h1_tmp["logLike"];
+      if (k0 > 1) {
+        // H0 linear floor: the one-regime fit is a feasible point of the null space;
+        // protects the statistic against a poor k0-regime local optimum (applied
+        // identically to the observed statistic in LMCLRTest/MMCLRTest).
+        List mdl_lin_tmp = estimMdl(y0, p, q, 1, Z, mdl_lin_control);
+        double l_lin = mdl_lin_tmp["logLike"];
+        if (std::isfinite(l_lin) && (l_lin > l_0)) l_0 = l_lin;
+      }
       LRT_i = -2.0*(l_0 - l_1);
-      LRT_finite = ((std::isfinite(LRT_i)) and (LRT_i >= 0));
+      LRT_finite = std::isfinite(LRT_i);
+      if (LRT_finite && (LRT_i < 0.0)) {
+        // LR >= 0 by construction for nested models (the null fit embeds into the
+        // alternative space with equal likelihood); a negative value is numerical.
+        // Cap at 0, identically to the observed statistic on the R side.
+        if (LRT_i < -1e-6) { n_capped++; if (LRT_i < worst_neg) worst_neg = LRT_i; }
+        LRT_i = 0.0;
+      }
     } catch (...) {
       LRT_finite = FALSE;
     }
@@ -361,11 +406,25 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
         List simu_mdl = simuMdl(mdl_h0, p, q, k0, burnin, exog);
         arma::mat y0 = simu_mdl["y"];
         mdl_h0_tmp = estimMdl(y0, p, q, k0, Z, mdl_h0_control_tmp);
+        if (do_warmstart) {
+          mdl_h1_control_tmp["init_theta_extra"] = warmstart_theta_fun(mdl_h0_tmp, k1, ws_msmu, ws_msvar);
+        }
         mdl_h1_tmp = estimMdl(y0, p, q, k1, Z, mdl_h1_control_tmp);
         double l_0 = mdl_h0_tmp["logLike"];
         double l_1 = mdl_h1_tmp["logLike"];
+        if (k0 > 1) {
+          // H0 linear floor (see pre-drawn loop above)
+          List mdl_lin_tmp = estimMdl(y0, p, q, 1, Z, mdl_lin_control);
+          double l_lin = mdl_lin_tmp["logLike"];
+          if (std::isfinite(l_lin) && (l_lin > l_0)) l_0 = l_lin;
+        }
         LRT_i = -2.0*(l_0 - l_1);
-        LRT_finite = ((std::isfinite(LRT_i)) and (LRT_i >= 0));
+        LRT_finite = std::isfinite(LRT_i);
+        if (LRT_finite && (LRT_i < 0.0)) {
+          // Cap at 0 (see pre-drawn loop above)
+          if (LRT_i < -1e-6) { n_capped++; if (LRT_i < worst_neg) worst_neg = LRT_i; }
+          LRT_i = 0.0;
+        }
       } catch (...) {
         LRT_finite = FALSE;
       }
@@ -381,6 +440,9 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
   }
   if (total_na > N * 0.05) {
     Rcpp::warning("LR_samp_dist: %.1f%% of MC draws produced non-finite LRT statistics. Null distribution may be unreliable.", 100.0*total_na/N);
+  }
+  if (n_capped > 0) {
+    Rcpp::warning("LR_samp_dist: %d of %d simulated LR statistics were negative (largest magnitude %.3g; numerical optimization artifact) and were set to 0. Consider a higher 'use_diff_init'.", n_capped, N, -worst_neg);
   }
   return(LRT_N);
 }

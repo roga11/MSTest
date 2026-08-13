@@ -43,6 +43,12 @@ This function simulates the sample distribution under the null hypothesis.
 When pre-drawn innovations are provided (for fixed-error MMC per Dufour 2006, Prop. 4.2),
 uses a buffer loop where each innovation is tried once; failed draws skip to the next slot.
 Falls back to fresh random draws if the buffer is exhausted.
+When \code{init_method = "warmstart"} is present in \code{mdl_h1_control}, the alternative
+model of each draw is warm-started from that draw's own null-model fit (regime-duplication
+embedding; see \code{\link{warmstart_theta}}). Simulated LR statistics are non-negative by
+construction: for \code{k0 > 1} the null log-likelihood is floored at the one-regime fit,
+and negative values (numerical optimization artifacts) are set to 0, identically to the
+treatment of the observed statistic.
 }
 \references{
 Rodriguez-Rondon, G., & Dufour, J.-M. 2026a. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-23. doi: 10.34989/swp-2026-23.

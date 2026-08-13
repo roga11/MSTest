@@ -1012,3 +1012,196 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   return(output)
 }
 
+
+
+# ==============================================================================
+# Warm-start embeddings for Monte Carlo LR tests (regime-duplication)
+# ==============================================================================
+
+# Enumerate all ways to distribute `extra` clones among k0 regimes
+# (weak compositions of `extra` into k0 non-negative parts).
+.ws_compositions <- function(k0, extra){
+  if (k0 == 1) return(list(extra))
+  out <- list()
+  for (e1 in 0:extra){
+    for (rest in .ws_compositions(k0 - 1, extra - e1)){
+      out[[length(out) + 1]] <- c(e1, rest)
+    }
+  }
+  return(out)
+}
+
+# Half-vectorization matching the C++ covar_vech() convention
+# (row-wise upper triangle == column-major lower triangle for symmetric M).
+.ws_vech <- function(M){
+  M <- as.matrix(M)
+  return(M[lower.tri(M, diag = TRUE)])
+}
+
+# Extract regime-level parameters from a fitted model object (any estimMdl class)
+# in normalized shapes: mu0 (k0 x q), sig0 (list of k0 q x q), phi0, betaZ0, P0.
+.ws_extract <- function(mdl_h0){
+  k0 <- mdl_h0$k
+  if (is.null(k0)) k0 <- 1
+  q  <- mdl_h0$q
+  p  <- mdl_h0$p
+  if (is.null(p)) p <- 0
+  exog <- !is.null(mdl_h0$betaZ)
+  # ----- means (k0 x q; MS outputs duplicate rows when msmu = FALSE)
+  mu_m <- as.matrix(mdl_h0$mu)
+  if (nrow(mu_m) != k0) mu_m <- matrix(as.numeric(mu_m), k0, q, byrow = TRUE)
+  # ----- covariances (list of k0 q x q; variances for q = 1)
+  sig_raw <- mdl_h0$sigma
+  if (is.list(sig_raw)){
+    sig0 <- lapply(sig_raw, as.matrix)
+  }else{
+    sig_m <- as.matrix(sig_raw)
+    if (q == 1){
+      sig0 <- lapply(seq_len(k0), function(j) matrix(sig_m[min(j, nrow(sig_m)), 1], 1, 1))
+    }else{
+      sig0 <- replicate(k0, sig_m, simplify = FALSE)
+    }
+  }
+  # ----- autoregressive coefficients
+  phi0 <- NULL
+  if (p > 0){
+    phi0 <- if (q == 1) as.numeric(mdl_h0$phi) else as.matrix(mdl_h0$phi)
+  }
+  # ----- exogenous regressor coefficients (qz x q)
+  betaZ0 <- if (exog) as.matrix(mdl_h0$betaZ) else NULL
+  # ----- transition matrix
+  P0 <- if (k0 > 1) as.matrix(mdl_h0$P) else NULL
+  return(list(k0 = k0, q = q, p = p, exog = exog, mu0 = mu_m, sig0 = sig0,
+              phi0 = phi0, betaZ0 = betaZ0, P0 = P0))
+}
+
+# Build one embedded (and optionally perturbed) k1-regime theta vector from a
+# fitted k0-regime model, for the clone-count composition `extras` (length k0,
+# extras[j] = number of extra clones of regime j; sum(extras) = k1 - k0).
+.ws_build_theta <- function(src, k1, msmu, msvar, c_pert, extras){
+  k0 <- src$k0; q <- src$q; p <- src$p
+  nj <- 1 + extras
+  # ----- per-regime split weights (equal; asymmetric if nothing else can
+  # break the clone symmetry because neither mean nor variance switches)
+  wts <- lapply(seq_len(k0), function(j){
+    n <- nj[j]
+    if (!msmu && !msvar && n > 1) return((n:1) / sum(n:1))
+    return(rep(1 / n, n))
+  })
+  # ----- clone-level mean and covariance with antisymmetric perturbation
+  mu_new  <- matrix(0, k1, q)
+  sig_new <- vector("list", k1)
+  r <- 0
+  for (j in seq_len(k0)){
+    n  <- nj[j]
+    sdj <- sqrt(pmax(diag(src$sig0[[j]]), 0))
+    for (a in seq_len(n)){
+      r <- r + 1
+      s <- if (n == 1) 0 else c_pert * (2 * a - n - 1) / (n - 1)
+      mu_new[r, ]   <- src$mu0[j, ] + if (msmu) s * sdj else 0
+      sig_new[[r]]  <- src$sig0[[j]] * (if (msvar) (1 + c_pert)^(if (n == 1) 0 else (2 * a - n - 1) / (n - 1)) else 1)
+    }
+  }
+  # ----- transition matrix embedding
+  if (k0 == 1){
+    # identical clone emissions make the likelihood invariant to P; use a
+    # persistent chain as the EM starting point
+    P_new <- matrix(0.2 / max(1, k1 - 1), k1, k1)
+    diag(P_new) <- 0.8
+  }else{
+    # lumpability-exact expansion: P1[(i,a),(c,b)] = w_{i,a} * P0[i,c]
+    Rm <- matrix(0, k1, k0)
+    Cm <- matrix(0, k0, k1)
+    r <- 0
+    for (j in seq_len(k0)){
+      for (a in seq_len(nj[j])){
+        r <- r + 1
+        Rm[r, j] <- wts[[j]][a]
+        Cm[j, r] <- 1
+      }
+    }
+    P_new <- Rm %*% src$P0 %*% Cm
+  }
+  # ----- assemble theta in the target class layout:
+  # c(mu, phi, betaZ, sigma, vec(P)) with empty blocks dropped
+  mu_block <- if (msmu){
+    if (q == 1) mu_new[, 1] else as.vector(t(mu_new))
+  }else{
+    as.numeric(src$mu0[1, ])
+  }
+  phi_block <- if (p > 0){
+    if (q == 1) src$phi0 else as.vector(t(src$phi0))
+  }else{
+    numeric(0)
+  }
+  x_block <- if (src$exog) as.vector(src$betaZ0) else numeric(0)
+  sig_block <- if (q == 1){
+    if (msvar) vapply(sig_new, function(m) m[1, 1], 0.0) else src$sig0[[1]][1, 1]
+  }else{
+    if (msvar) unlist(lapply(sig_new, .ws_vech)) else .ws_vech(src$sig0[[1]])
+  }
+  return(c(mu_block, phi_block, x_block, sig_block, as.vector(P_new)))
+}
+
+# Unperturbed embedding (likelihood exactly equal to the k0-regime fit's;
+# all extra clones assigned to `split_regime`). Used by tests and as the
+# theoretical basis of the LR >= 0 floor.
+.embed_theta <- function(mdl_h0, k1, msmu = NULL, msvar = NULL, split_regime = 1){
+  src <- .ws_extract(mdl_h0)
+  if (is.null(msmu))  msmu  <- if (!is.null(mdl_h0$msmu))  mdl_h0$msmu  else TRUE
+  if (is.null(msvar)) msvar <- if (!is.null(mdl_h0$msvar)) mdl_h0$msvar else TRUE
+  extras <- rep(0, src$k0)
+  extras[split_regime] <- k1 - src$k0
+  return(.ws_build_theta(src, k1, msmu, msvar, c_pert = 0, extras = extras))
+}
+
+#' @title Warm-start values for the alternative model of a Monte Carlo LR test
+#'
+#' @description Builds deterministic starting values for the \code{k1}-regime
+#' (alternative) model by embedding a fitted \code{k0}-regime (null) model into
+#' the larger parameter space. Each embedding duplicates one or more regimes of
+#' the null fit (with the transition-matrix column split so that the likelihood
+#' at the exact embedding equals the null model's log-likelihood) and then
+#' applies a small deterministic antisymmetric perturbation to the duplicated
+#' regimes (means shifted by \code{+/- c_pert} regime standard deviations when
+#' the mean switches; variances scaled by \code{(1 + c_pert)^{+/-1}} when the
+#' variance switches) so that the EM algorithm can leave the symmetric fixed
+#' point. One starting vector is returned per way of distributing the
+#' \code{k1 - k0} extra regimes among the \code{k0} regimes of the null fit.
+#' These starts are used in addition to the random starting values when
+#' \code{init_method = "warmstart"} in \code{\link{LMCLRTest}} and
+#' \code{\link{MMCLRTest}}.
+#'
+#' @param mdl_h0 Fitted model under the null hypothesis (any model object
+#' returned by \code{\link{estimMdl}}; a one-regime linear model or a Markov
+#' switching model with \code{k0 > 1} regimes).
+#' @param k1 integer specifying the number of regimes of the alternative model
+#' (must exceed the number of regimes of \code{mdl_h0}).
+#' @param msmu Boolean indicating whether the mean switches in the alternative
+#' model. Default is \code{NULL}, in which case it is taken from \code{mdl_h0}
+#' when available and \code{TRUE} otherwise.
+#' @param msvar Boolean indicating whether the variance switches in the
+#' alternative model. Default is \code{NULL} (as for \code{msmu}).
+#' @param c_pert Double determining the size of the antisymmetric perturbation
+#' in regime standard-deviation units. Default is \code{0.5}.
+#'
+#' @return List of numeric vectors, each a valid starting value for the
+#' \code{k1}-regime model (in the parameter ordering used by the corresponding
+#' model constructor). Starting vectors containing non-finite values are
+#' dropped; the list may be empty if the null fit is degenerate.
+#'
+#' @references Kasahara, H. & Shimotsu, K. 2018. "Testing the number of regimes in Markov regime switching models." arXiv:1801.06862.
+#' @references Dufour, J.-M. 2006. "Monte Carlo tests with nuisance parameters: A general approach to finite-sample inference and nonstandard asymptotics." \emph{Journal of Econometrics}, 133(2), 443-477.
+#' @references Rodriguez-Rondon, G. & Dufour, J.-M. 2026. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." Bank of Canada Staff Working Paper 2026-23.
+#'
+#' @export
+warmstart_theta <- function(mdl_h0, k1, msmu = NULL, msvar = NULL, c_pert = 0.5){
+  src <- .ws_extract(mdl_h0)
+  if (k1 <= src$k0) stop("'k1' must exceed the number of regimes of 'mdl_h0'.")
+  if (is.null(msmu))  msmu  <- if (!is.null(mdl_h0$msmu))  mdl_h0$msmu  else TRUE
+  if (is.null(msvar)) msvar <- if (!is.null(mdl_h0$msvar)) mdl_h0$msvar else TRUE
+  comps <- .ws_compositions(src$k0, k1 - src$k0)
+  out <- lapply(comps, function(extras) .ws_build_theta(src, k1, msmu, msvar, c_pert, extras))
+  out <- out[vapply(out, function(th) all(is.finite(th)), TRUE)]
+  return(out)
+}

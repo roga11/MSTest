@@ -1,5 +1,17 @@
 ## Install Package
 
+# NOTE ON REPRODUCIBILITY: the results reported in the R Journal article
+# "MSTest: An R Package for Testing Markov Switching Models" are reproduced
+# EXACTLY by CRAN version 0.1.9 of this package. From version 0.2.0 the
+# Monte Carlo LR tests (LMCLRTest, MMCLRTest) use warm-started estimation of
+# the alternative model, an LR >= 0 numerical policy, and common random
+# numbers across the MMC search (see NEWS.md), so their p-values (and
+# critical values) differ numerically for a given seed; test conclusions are
+# unaffected. All other results in this script (estimation, simulation, and
+# the moment-based, CHP, and Hansen tests) are unchanged across versions.
+# To reproduce the article exactly: install.packages("remotes");
+# remotes::install_version("MSTest", version = "0.1.9")
+
 # CRAN version
 #install.packages("MSTest")
 

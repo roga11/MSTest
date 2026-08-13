@@ -1,4 +1,83 @@
-# MSTest (development version)
+# MSTest 0.2.0
+
+*(Development release for the Rodriguez-Rondon & Dufour (2026) simulation study; tagged
+`v0.2.0` on GitHub, not submitted to CRAN.)*
+
+## IMPORTANT: results of the Monte Carlo LR tests change relative to 0.1.9
+* For a given seed, `LMCLRTest()` and `MMCLRTest()` produce different numerical results than
+  version 0.1.9 (p-values, critical values, and possibly the observed statistic, which can only
+  weakly increase). This is a consequence of the warm-start, LR >= 0, and common-random-numbers
+  changes described below. Everything else is unchanged bit-for-bit: model estimation
+  (`ARmdl()`, `MSARmdl()`, etc. with default controls), the simulation functions (`simu*`), and
+  the other testing procedures (`DLMCTest()`, `DLMMCTest()`, `CHPTest()`, `HLRTest()`) reproduce
+  0.1.9 exactly. The R Journal article results are reproduced exactly by CRAN version 0.1.9
+  (see the note in `inst/examples/article.R`). Setting `init_method = "random"` and `crn = FALSE`
+  recovers the legacy behavior of the LR tests.
+
+## Warm-started estimation of the alternative model (new default)
+* `LMCLRTest()` and `MMCLRTest()` gain an `init_method` control (default `"warmstart"`). The
+  alternative (`k1`-regime) model is now also initialized at deterministic warm starts built by
+  embedding the fitted null model into the `k1`-regime parameter space (duplicating regimes with
+  a split transition column, so the embedded point attains exactly the null log-likelihood, then
+  applying a small antisymmetric perturbation; one start per way of distributing the extra
+  regimes). These compete with the existing `use_diff_init` random starts, and the identical
+  procedure is applied to the observed data and to every simulated draw, preserving the
+  exchangeability underlying the Monte Carlo p-value. See `warmstart_theta()` (new, exported).
+  The embedding follows the null-hypothesis geometry of Kasahara & Shimotsu (2018) and the
+  component-splitting initialization of the EM-test literature (Chen & Li 2009).
+* Model constructors (`HMmdl()`, `MSARmdl()`, `MSARXmdl()`, `MSVARmdl()`, `MSVARXmdl()`) gain an
+  additive `init_theta_extra` control: a list of extra deterministic starting vectors that
+  compete with the random multi-start draws (unlike `init_theta`, which bypasses the multi-start
+  search). Default behavior is unchanged bit-for-bit.
+
+## LR statistic numerical policy: floored at 0, never an error
+* For nested models the LR statistic is non-negative by construction; a negative computed value
+  is a numerical optimization artifact. `LMCLRTest()` and `MMCLRTest()` no longer stop with
+  "LRT_0 is negative": the observed statistic is set to 0 with a warning (when the magnitude is
+  non-negligible), and simulated null statistics are treated identically inside `LR_samp_dist()`
+  (previously, negative simulated draws were silently redrawn). Applying the same rule on both
+  sides preserves exchangeability; the induced ties at 0 are handled by the randomized
+  tie-breaking rule of Dufour (2006) already implemented in `MCpval()` and can only make the
+  test conservative. This also removes a source of bias in simulation studies, where
+  discarded negative-statistic replications previously inflated empirical rejection rates.
+* For `k0 > 1`, the null log-likelihood is floored at the one-regime (linear) fit — a feasible
+  point of the null space — identically on the observed and simulated sides.
+
+## Common random numbers (CRN) across the MMC nuisance-parameter search
+* `MMCLRTest()` gains a `crn` control (default `TRUE`): an identical estimation-RNG stream (EM
+  starting values; master and parallel-worker streams) is replayed at every candidate theta
+  evaluation, so that together with the pre-drawn innovations the MC p-value is a deterministic
+  function of theta during the search — implementing Dufour (2006, Prop. 4.2) with the
+  estimation randomness folded into the fixed disturbance vector u. This removes optimizer
+  objective noise (which is size-safe but costs power and can trigger `threshold_stop`
+  spuriously) and makes the search fully reproducible. The RNG state is saved and restored
+  around each evaluation, so the optimizer's own search randomness and the user's session RNG
+  are unaffected.
+* The p-value at the initial (estimated) nuisance parameters is now evaluated with the same
+  worker configuration and CRN stream as the optimizer's evaluations and returned as `pval_0`
+  (additive output field); under `crn = TRUE` the reported `pval` satisfies `pval >= pval_0` by
+  construction.
+
+## Seeding scheme
+* Internal seeds (optimizer trajectory, worker RNG streams, CRN stream) are now drawn from the
+  `mc_seed` stream via `sample.int()` instead of being derived as `mc_seed + 1`, `mc_seed + 2`.
+  The arithmetic scheme made replication r's optimizer stream identical to replication (r+1)'s
+  data/estimation stream whenever an outer simulation study used consecutive `mc_seed` values —
+  correlating replications. Drawn seeds remove this systematic collision (a draw-then-reseed
+  construction keeps the observed-data estimation and the pre-drawn innovations bit-identical
+  to 0.1.9 for a given `mc_seed`; only optimizer/worker streams change). When `mc_seed` is
+  `NULL`, internal seeds are drawn from the ambient RNG state, so a script-level `set.seed()`
+  makes both sequential and parallel runs fully reproducible.
+* Documentation note: GenSA is deterministic given the fixed starting value used by
+  `MMCLRTest()`, so its search trajectory does not depend on any seed; pso and GA consume the
+  optimizer seed.
+
+## Other
+* `MMCLRTest()`: user-supplied `mdl_h0_control`/`mdl_h1_control` sublists are now merged with
+  their defaults instead of replacing them, fixing an "argument is of length zero" error when a
+  supplied sublist omitted `getSE`.
+* `LMCLRTest()`: the p-value is computed before the null draws are sorted (sorting is now only
+  used for the reported critical values); numerically equivalent, clearer semantics.
 
 # MSTest 0.1.9
 

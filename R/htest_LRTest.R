@@ -180,11 +180,14 @@ estimMdl <- function(Y, p, q, k, Z = NULL, control = list()){
 #'   \item burnin: Number of simulated observations to remove from beginning. Default is \code{100}.
 #'   \item converge_check: String or NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.
 #'   \item workers: Integer determining the number of workers to use for parallel computing. Default is \code{0} (sequential). If \code{workers > N}, the effective count is capped at \code{N} and an informational message is printed.
-#'   \item mc_seed: Integer seed for reproducible Monte Carlo simulations. When set, seeds the RNG before observed-data estimation and pre-draws innovations once, ensuring fully reproducible results (including the observed LRT statistic). When \code{workers > 0}, also sets L'Ecuyer-CMRG parallel RNG streams. Default is \code{NULL} (non-reproducible, fresh draws).
+#'   \item mc_seed: Integer seed for reproducible Monte Carlo simulations. When set, seeds the RNG before observed-data estimation and pre-draws innovations once, ensuring fully reproducible results (including the observed LRT statistic). When \code{workers > 0}, also sets L'Ecuyer-CMRG parallel RNG streams. Default is \code{NULL}, in which case all internal randomness is drawn from the ambient RNG state, so a script-level \code{set.seed()} placed before the call makes the procedure reproducible as well (sequential and parallel).
+#'   \item init_method: String determining how the alternative (\code{k1}-regime) model is initialized. \code{"warmstart"} (the default) adds deterministic warm starts built by embedding the null-model fit into the \code{k1}-regime space (see \code{\link{warmstart_theta}}) to the \code{use_diff_init} random starts, applied identically to the observed data and to every simulated draw; combined with the LR >= 0 policy this makes negative LR statistics essentially impossible. \code{"random"} reproduces the legacy behavior (random starts only).
 #'   \item mdl_h0_control: List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
 #'   \item mdl_h1_control: List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
 #'   \item use_diff_init_sim: Value which determines the number of initial values to use when estimating models for null distribution. Default is set to use the same as specified in \code{mdl_h0_control} and \code{mdl_h1_control}.
 #' }
+#'
+#' @section Numerical policy for the LR statistic: For nested models the LR statistic is non-negative by construction (the null fit embeds into the alternative parameter space with equal likelihood), so a negative computed value can only be a numerical optimization artifact. Both the observed statistic and every simulated statistic are therefore floored at 0 (identically on both sides, which preserves the exchangeability underlying the Monte Carlo p-value); a warning reports the magnitude when it is non-negligible. For \code{k0 > 1}, the null log-likelihood is additionally floored at the one-regime (linear) fit on both sides. Ties at 0 are handled by the randomized tie-breaking rule of Dufour (2006) already implemented in \code{\link{MCpval}}; ties at the bottom of the support can only make the test conservative.
 #'
 #' @return List of class \code{LMCLRTest} (\code{S3} object) with attributes including:
 #' \itemize{
@@ -207,6 +210,7 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
               converge_check = NULL,
               workers = 0,
               mc_seed = NULL,
+              init_method = "warmstart",
               mdl_h0_control = list(),
               mdl_h1_control = list(),
               use_diff_init_sim = NULL)
@@ -214,21 +218,34 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
   if (length(noNms <- namc[!namc %in% nmsC])){
-    warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+    warning("unknown names in control: ", paste(noNms,collapse=", "))
   }
+  con$init_method <- match.arg(con$init_method, c("warmstart", "random"))
   # ----- Perform other checks
   if (is.matrix(Y)){
     q <- ncol(Y)
   }else{
-    stop("Observations Y must be a (T x q) matrix.") 
+    stop("Observations Y must be a (T x q) matrix.")
   }
   # ----- Seed RNG for reproducible estimation (random initial values in EM)
   if (!is.null(con$mc_seed)) set.seed(con$mc_seed)
   # ----- Estimate models using observed data
   mdl_h0 <- estimMdl(Y, p, q, k0, Z, con$mdl_h0_control)
+  if ((con$init_method == "warmstart") && (k1 > 1)){
+    # Warm-start the alternative model from the null fit (regime-duplication
+    # embedding, see warmstart_theta); deterministic, so the RNG stream and the
+    # random starts are unaffected. The same rule is applied per draw when
+    # simulating the null distribution (see LR_samp_dist).
+    con$mdl_h1_control$init_theta_extra <- warmstart_theta(mdl_h0, k1,
+                                                           msmu = con$mdl_h1_control$msmu,
+                                                           msvar = con$mdl_h1_control$msvar)
+  }
   mdl_h1 <- estimMdl(Y, p, q, k1, Z, con$mdl_h1_control)
   con$mdl_h0_control <- mdl_h0$control
   con$mdl_h1_control <- mdl_h1$control
+  # Strip the observed-data warm starts from the stored control: they are specific
+  # to the observed null fit; the simulated side rebuilds them per draw.
+  con$mdl_h1_control$init_theta_extra <- NULL
   # ----- Optional model convergence checks
   if (is.null(con$converge_check)==FALSE){
     if ((con$converge_check=="null") & (mdl_h0$converged==FALSE)){
@@ -246,13 +263,26 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   logL1 <- mdl_h1$logLike
   theta_h0 <- mdl_h0$theta
   theta_h1 <- mdl_h1$theta
+  if (k0 > 1){
+    # H0 linear floor: the one-regime model is a feasible point of the null space,
+    # so its (closed-form) log-likelihood bounds logL0 from below. Applied
+    # identically per draw when simulating the null (see LR_samp_dist).
+    mdl_lin <- estimMdl(Y, p, q, 1, Z, list(getSE = FALSE))
+    if (is.finite(mdl_lin$logLike) && (mdl_lin$logLike > logL0)) logL0 <- mdl_lin$logLike
+  }
   LRT_0 <- -2*(logL0-logL1)
   # ----- Perform check of test stat and model parameters
   if ((is.finite(LRT_0)==FALSE) | (any(is.finite(theta_h0)==FALSE)) | (any(is.finite(theta_h1)==FALSE))){
-    stop("LRT_0 or model parameters are not finite. Run again to use different initial values") 
+    stop("LRT_0 or model parameters are not finite. Run again to use different initial values")
   }
-  if (LRT_0<0){
-    stop("LRT_0 is negative. Run again to use different initial values")
+  if (LRT_0 < 0){
+    # LR >= 0 by construction for nested models (the null fit embeds into the
+    # alternative space with equal likelihood); a negative value is a numerical
+    # optimization artifact. Cap at 0, identically to the simulated statistics.
+    if (LRT_0 < -1e-6){
+      warning(sprintf("LMCLRTest: the observed LR statistic was negative (%.3g; numerical optimization artifact) and was set to 0. Consider a higher 'use_diff_init'.", LRT_0))
+    }
+    LRT_0 <- 0
   }
   names(LRT_0) <- c("LRT_0")
   # ----- Simulate sample null distribution
@@ -267,6 +297,9 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     mdl_h0_null_cont$use_diff_init <- con$use_diff_init_sim
     mdl_h1_null_cont$use_diff_init <- con$use_diff_init_sim
   }
+  # Tell LR_samp_dist to warm-start each draw's alternative fit from that draw's
+  # own null fit (identical procedure to the observed-data side).
+  mdl_h1_null_cont$init_method <- con$init_method
   # ----- Pre-draw innovations for reproducibility when mc_seed is set
   predrawn_eps <- NULL
   predrawn_state_rand <- NULL
@@ -294,15 +327,18 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     LRN <- LR_samp_dist(mdl_h0, k1, con$N, con$burnin, Zsim, mdl_h0_null_cont, mdl_h1_null_cont,
                           predrawn_eps, predrawn_state_rand)
   }
-  # ----- get critical values
-  LRN     <- as.matrix(sort(LRN))   # sort() drops any non-finite (failed) draws
-  if (nrow(LRN)==0){
+  # ----- Drop non-finite (failed) draws and check the null distribution is non-empty
+  LRN <- LRN[is.finite(LRN)]
+  if (length(LRN)==0){
     stop("LMCLRTest: the null distribution could not be simulated (all draws failed even after the re-draw safety); the p-value cannot be computed. Increase 'use_diff_init' or inspect the observed model fit.")
   }
+  # ----- Compute p-value (before sorting, so the randomized tie-break in MCpval
+  # pairs uniforms with draws in simulation order)
+  pval <- MCpval(LRT_0, LRN, "geq")
+  # ----- get critical values
+  LRN     <- as.matrix(sort(LRN))
   LRN_cv  <- LRN[round(c(0.90,0.95,0.99)*nrow(LRN)),]
   names(LRN_cv)  <- paste0(c("0.90","0.95","0.99"), "%")
-  # ----- Compute p-value
-  pval <- MCpval(LRT_0, LRN, "geq")
   # ----- Organize output
   MCLRTest_output <- list(mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, LRT_0 = LRT_0, LRN = LRN,
                           pval = pval, LRN_cv = LRN_cv, control = con)
@@ -382,7 +418,9 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item burnin: Number of simulated observations to remove from beginning. Default is \code{100}.
 #'   \item converge_check: String of NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.
 #'   \item workers: Integer determining the number of workers to use for parallel computing. Default is \code{0} (sequential). If \code{workers > N}, the effective count is capped at \code{N} and an informational message is printed (unless \code{silence = TRUE}).
-#'   \item mc_seed: Integer seed for reproducible Monte Carlo simulations and fixed-error MMC (Dufour 2006, Prop. 4.2). When set, seeds the RNG before observed-data estimation, pre-draws innovations once and holds them fixed across all optimizer evaluations, ensuring full reproducibility (including the observed LRT statistic) and theoretical size control. Default is \code{NULL} (non-reproducible).
+#'   \item mc_seed: Integer seed for reproducible Monte Carlo simulations and fixed-error MMC (Dufour 2006, Prop. 4.2). When set, seeds the RNG before observed-data estimation, pre-draws innovations once and holds them fixed across all optimizer evaluations, ensuring full reproducibility (including the observed LRT statistic) and theoretical size control. Internal seeds (optimizer trajectory, worker streams, CRN scheme) are drawn from the \code{mc_seed} stream rather than derived by arithmetic, so consecutive \code{mc_seed} values across replications of an outer simulation study do not produce colliding RNG streams; for studies with more than about 10^4 replications, well-separated seeds are still recommended. Default is \code{NULL}, in which case internal seeds are drawn from the ambient RNG state, so a script-level \code{set.seed()} placed before the call makes the procedure reproducible as well (sequential and parallel). Note: GenSA is deterministic given the fixed starting value used here, so its search trajectory does not depend on any seed; pso and GA use the optimizer seed.
+#'   \item init_method: String determining how the alternative (\code{k1}-regime) model is initialized. \code{"warmstart"} (the default) adds deterministic warm starts built by embedding the null-model fit into the \code{k1}-regime space (see \code{\link{warmstart_theta}}) to the \code{use_diff_init} random starts, applied identically to the observed data and to every simulated draw. \code{"random"} reproduces the legacy behavior.
+#'   \item crn: Boolean determining whether common random numbers are used across the nuisance-parameter search (default \code{TRUE}): an identical estimation-RNG stream (EM starting values; master and worker streams) is replayed at every candidate theta evaluation, so that together with the pre-drawn innovations the MC p-value is a deterministic function of theta (Dufour 2006, Prop. 4.2, with the estimation randomness folded into the fixed disturbance vector). This removes optimizer objective noise and guarantees \code{pval >= pval_0} exactly. Set to \code{FALSE} for the legacy behavior (estimation randomness evolves across evaluations; still valid, but the objective is noisy and the reported maximum tends to be conservative).
 #'   \item type: String that determines the type of optimization algorithm used. Arguments allowed are: \code{"pso"}, \code{"GenSA"}, and \code{"GA"}. Default is \code{"pso"}.
 #'   \item eps: Double determining the constant value that defines a consistent set for search. Default is \code{0.1}.
 #'   \item CI_union: Boolean determining if union of set determined by \code{eps} and confidence set should be used to define consistent set for search. Default is \code{TRUE}.
@@ -413,7 +451,10 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item theta_h1: Parameter vector of the unrestricted model.
 #'   \item control: List with test procedure options used.
 #'   \item mmc_optimout: Optimization output object returned by the selected optimizer (\code{pso}, \code{GenSA}, or \code{GA}).
+#'   \item pval_0: Monte Carlo p-value at the initial (estimated) nuisance parameter values \code{theta_0} (the Local MC point of the search). Under \code{crn = TRUE} the reported \code{pval} satisfies \code{pval >= pval_0} by construction.
 #' }
+#'
+#' @section Numerical policy for the LR statistic: For nested models the LR statistic is non-negative by construction (the null fit embeds into the alternative parameter space with equal likelihood), so a negative computed value can only be a numerical optimization artifact. Both the observed statistic and every simulated statistic are therefore floored at 0 (identically on both sides, which preserves the exchangeability underlying the Monte Carlo p-value); a warning reports the magnitude when it is non-negligible. For \code{k0 > 1}, the null log-likelihood is additionally floored at the one-regime (linear) fit on both sides. Ties at 0 are handled by the randomized tie-breaking rule of Dufour (2006) already implemented in \code{\link{MCpval}}; ties at the bottom of the support can only make the test conservative.
 #'
 #' @references Rodriguez-Rondon, G., & Dufour, J.-M. 2026a. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-23. doi: 10.34989/swp-2026-23.
 #' @example /inst/examples/MMCLRTest_examples.R
@@ -437,6 +478,8 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
               variance_constraint = 0.01,
               silence = FALSE,
               threshold_stop = 1,
+              init_method = "warmstart",
+              crn = TRUE,
               mdl_h0_control = list(getSE = TRUE),
               mdl_h1_control = list(getSE = TRUE),
               use_diff_init_sim = NULL,
@@ -446,13 +489,19 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   nmsC <- names(con)
   con[(namc <- names(control))] <- control
   if(length(noNms <- namc[!namc %in% nmsC])){
-    warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+    warning("unknown names in control: ", paste(noNms,collapse=", "))
   }
+  con$init_method <- match.arg(con$init_method, c("warmstart", "random"))
+  # Merge (rather than replace) the model-control sublists with their defaults so a
+  # user-supplied sublist that omits e.g. 'getSE' keeps the default instead of
+  # dropping it (a missing getSE previously crashed the CI_union check below).
+  con$mdl_h0_control <- utils::modifyList(list(getSE = TRUE), con$mdl_h0_control)
+  con$mdl_h1_control <- utils::modifyList(list(getSE = TRUE), con$mdl_h1_control)
   # ----- Perform other checks
   if (is.matrix(Y)){
     q <- ncol(Y)
   }else{
-    stop("Observations Y must be a (T x q) matrix.") 
+    stop("Observations Y must be a (T x q) matrix.")
   }
   if ((con$CI_union==TRUE) & ((con$mdl_h0_control$getSE==FALSE) | (con$mdl_h1_control$getSE==FALSE))){
     con$mdl_h0_control$getSE <- TRUE
@@ -463,9 +512,21 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   if (!is.null(con$mc_seed)) set.seed(con$mc_seed)
   # ----- Estimate models using observed data
   mdl_h0 <- estimMdl(Y, p, q, k0, Z, con$mdl_h0_control)
+  if ((con$init_method == "warmstart") && (k1 > 1)){
+    # Warm-start the alternative model from the null fit (regime-duplication
+    # embedding, see warmstart_theta); deterministic, so the RNG stream and the
+    # random starts are unaffected. The same rule is applied per draw when
+    # simulating the null distribution (see LR_samp_dist).
+    con$mdl_h1_control$init_theta_extra <- warmstart_theta(mdl_h0, k1,
+                                                           msmu = con$mdl_h1_control$msmu,
+                                                           msvar = con$mdl_h1_control$msvar)
+  }
   mdl_h1 <- estimMdl(Y, p, q, k1, Z, con$mdl_h1_control)
   con$mdl_h0_control <- mdl_h0$control
   con$mdl_h1_control <- mdl_h1$control
+  # Strip the observed-data warm starts from the stored control: they are specific
+  # to the observed null fit; the simulated side rebuilds them per draw.
+  con$mdl_h1_control$init_theta_extra <- NULL
   # ----- Optional model convergence checks
   if (is.null(con$converge_check)==FALSE){
     if ((con$converge_check=="null") & (mdl_h0$converged==FALSE)){
@@ -484,12 +545,25 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   #       null distribution varies with the candidate nuisance parameters.
   logL0 <- mdl_h0$logLike
   logL1 <- mdl_h1$logLike
+  if (k0 > 1){
+    # H0 linear floor: the one-regime model is a feasible point of the null space,
+    # so its (closed-form) log-likelihood bounds logL0 from below. Applied
+    # identically per draw when simulating the null (see LR_samp_dist).
+    mdl_lin <- estimMdl(Y, p, q, 1, Z, list(getSE = FALSE))
+    if (is.finite(mdl_lin$logLike) && (mdl_lin$logLike > logL0)) logL0 <- mdl_lin$logLike
+  }
   LRT_0 <- -2*(logL0-logL1)
   if ((is.finite(LRT_0)==FALSE) | (any(is.finite(mdl_h0$theta)==FALSE)) | (any(is.finite(mdl_h1$theta)==FALSE))){
     stop("LRT_0 or model parameters are not finite. Run again to use different initial values")
   }
-  if (LRT_0<0){
-    stop("LRT_0 is negative. Run again to use different initial values")
+  if (LRT_0 < 0){
+    # LR >= 0 by construction for nested models (the null fit embeds into the
+    # alternative space with equal likelihood); a negative value is a numerical
+    # optimization artifact. Cap at 0, identically to the simulated statistics.
+    if (LRT_0 < -1e-6){
+      warning(sprintf("MMCLRTest: the observed LR statistic was negative (%.3g; numerical optimization artifact) and was set to 0. Consider a higher 'use_diff_init'.", LRT_0))
+    }
+    LRT_0 <- 0
   }
   names(LRT_0) <- c("LRT_0")
   # ----- Define lower & upper bounds for search
@@ -503,6 +577,9 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     mdl_h0_null_cont$use_diff_init <- con$use_diff_init_sim
     mdl_h1_null_cont$use_diff_init <- con$use_diff_init_sim
   }
+  # Tell LR_samp_dist to warm-start each draw's alternative fit from that draw's
+  # own null fit (identical procedure to the observed-data side).
+  mdl_h1_null_cont$init_method <- con$init_method
   if (is.null(Z)==FALSE){
     Zsim <- Z[(p+1):nrow(Z),,drop=F]
     exog <- TRUE
@@ -510,6 +587,16 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     Zsim <- Z
     exog <- FALSE
   }
+  # ----- Internal seeds (optimizer trajectory, worker streams, CRN scheme).
+  # Drawn from the mc_seed stream and then re-seeding (draw-then-reseed) so the
+  # pre-drawn innovations below are bit-identical for a given mc_seed. Drawn
+  # seeds -- rather than mc_seed+k arithmetic -- avoid systematic RNG-stream
+  # collisions when consecutive parent seeds are used across replications of an
+  # outer Monte Carlo study. When mc_seed is NULL the seeds are drawn from the
+  # ambient RNG state, so a script-level set.seed() upstream still makes the
+  # whole procedure reproducible.
+  if (!is.null(con$mc_seed)) set.seed(con$mc_seed)
+  internal_seeds <- sample.int(.Machine$integer.max, 3L)
   # ----- Pre-draw innovations for fixed-error MMC (Dufour 2006, Prop. 4.2)
   N_buffer <- ceiling(con$N * 1.5) + 10
   Teps <- mdl_h0$n + con$burnin   # T + burnin
@@ -523,20 +610,6 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   if (k0 > 1) {
     predrawn_state_rand <- matrix(runif(Teps * N_buffer), Teps, N_buffer)
   }
-  # ----- Verify the seed theta_0 (= the LMC point) yields a computable null distribution.
-  #       theta_0 is exempt from the degenerate-candidate penalty inside MMCLRpval_fun, so if its
-  #       null is fully degenerate (all draws fail even after the buffer + retry safety) the p-value
-  #       is non-finite and would crash/garble the optimizer. Stop here instead -- LMCLRTest's null
-  #       would likewise be empty in this case. Done BEFORE the optimizer seed is set below so it
-  #       does not disturb the reproducible search trajectory.
-  p_seed <- MMCLRpval_fun(theta_0, mdl_h0, k1, LRT_0, con$N, con$burnin, 0L, con$lambda,
-                          con$stationary_constraint, mdl_h1$control$thtol, Zsim, exog,
-                          mdl_h0_null_cont, mdl_h1_null_cont, predrawn_eps, predrawn_state_rand)
-  if (!is.finite(p_seed)) {
-    stop("MMCLRTest: the null distribution could not be simulated at the initial parameter values (theta_0); the MMC p-value cannot be computed. Increase 'use_diff_init' or inspect the observed model fit.")
-  }
-  # Set optimizer seed for reproducible search trajectory (PSO/GenSA/GA internal randomness)
-  if (!is.null(con$mc_seed)) set.seed(con$mc_seed + 1L)
   # ----- Cap workers at N (no benefit to more workers than simulations)
   if (con$workers > 0 && con$workers > con$N) {
     if (!isTRUE(con$silence))
@@ -544,22 +617,66 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
               " (", con$workers, " requested).")
     con$workers <- con$N
   }
-  # ----- Create and cache parallel cluster for MMC (reused across optimizer iterations)
+  # ----- Create and cache parallel cluster for MMC (reused across optimizer
+  # iterations and, under crn = TRUE, re-seeded identically at each objective
+  # evaluation). Created before the p_seed evaluation below so that p_seed uses
+  # the same worker configuration as the optimizer's evaluations.
   if (con$workers > 0) {
     .MSTest_cluster_env$cl <- parallel::makePSOCKcluster(con$workers)
     parallel::clusterEvalQ(.MSTest_cluster_env$cl, library(MSTest))
-    # Seed worker RNG streams once (L'Ecuyer-CMRG); streams evolve deterministically
-    # across optimizer iterations since LR_samp_dist_par skips reset when predrawn.
-    if (!is.null(con$mc_seed)) {
-      parallel::clusterSetRNGStream(.MSTest_cluster_env$cl, iseed = con$mc_seed + 2L)
-    } else {
-      parallel::clusterSetRNGStream(.MSTest_cluster_env$cl)
-    }
+    # Initial worker RNG streams (L'Ecuyer-CMRG). With crn = TRUE these are
+    # re-seeded at every objective evaluation; this initialization governs the
+    # draws only when crn = FALSE (legacy behavior: streams evolve across
+    # evaluations since LR_samp_dist_par skips the reset when predrawn).
+    parallel::clusterSetRNGStream(.MSTest_cluster_env$cl, iseed = internal_seeds[2L])
     on.exit({
       parallel::stopCluster(.MSTest_cluster_env$cl)
       .MSTest_cluster_env$cl <- NULL
     }, add = TRUE)
   }
+  # ----- CRN (common random numbers) objective wrapper: replays an identical
+  # estimation-RNG stream (master and, when parallel, worker streams) at every
+  # candidate theta evaluation so that -- together with the pre-drawn
+  # innovations -- the MC p-value is a deterministic function of theta during
+  # the nuisance-parameter search (Dufour 2006, Prop. 4.2, with the EM
+  # starting-value randomness folded into the fixed disturbance vector u). The
+  # master RNG state is saved and restored around each evaluation (via on.exit,
+  # so errors cannot corrupt it), leaving the optimizer's own search randomness
+  # undisturbed.
+  crn_seed <- internal_seeds[3L]
+  crn_wrap <- function(objfn){
+    if (!isTRUE(con$crn)) return(objfn)
+    function(...){
+      if (!exists(".Random.seed", envir = globalenv(), inherits = FALSE)) stats::runif(1)
+      old_seed <- get(".Random.seed", envir = globalenv())
+      on.exit(assign(".Random.seed", old_seed, envir = globalenv()), add = TRUE)
+      set.seed(crn_seed)
+      cl <- .MSTest_cluster_env$cl   # looked up at call time (may be NULL)
+      if (!is.null(cl)) parallel::clusterSetRNGStream(cl, iseed = crn_seed)
+      objfn(...)
+    }
+  }
+  obj_min <- crn_wrap(MMCLRpval_fun_min)   # pso / GenSA (minimize the negative p-value)
+  obj_max <- crn_wrap(MMCLRpval_fun)       # GA (maximize the p-value) and p_seed below
+  # ----- Verify the seed theta_0 (= the LMC point) yields a computable null distribution.
+  #       theta_0 is exempt from the degenerate-candidate penalty inside MMCLRpval_fun, so if its
+  #       null is fully degenerate (all draws fail even after the buffer + retry safety) the p-value
+  #       is non-finite and would crash/garble the optimizer. Stop here instead. Under crn = TRUE
+  #       this evaluation uses the optimizer's own worker configuration and CRN stream, so it is
+  #       bit-identical to the optimizer's evaluation at theta_0: the guard is exact and the
+  #       reported MMC p-value satisfies pval >= pval_0 by construction. Done BEFORE the optimizer
+  #       seed is set below so it does not disturb the reproducible search trajectory.
+  p_seed_workers <- if (isTRUE(con$crn)) con$workers else 0L
+  p_seed <- obj_max(theta_0, mdl_h0, k1, LRT_0, con$N, con$burnin, p_seed_workers, con$lambda,
+                    con$stationary_constraint, mdl_h1$control$thtol, Zsim, exog,
+                    mdl_h0_null_cont, mdl_h1_null_cont, predrawn_eps, predrawn_state_rand)
+  if (!is.finite(p_seed)) {
+    stop("MMCLRTest: the null distribution could not be simulated at the initial parameter values (theta_0); the MMC p-value cannot be computed. Increase 'use_diff_init' or inspect the observed model fit.")
+  }
+  # Set optimizer seed for a reproducible search trajectory (PSO/GA internal
+  # randomness; GenSA with a fixed 'par' is deterministic and unaffected). A drawn
+  # seed is used instead of mc_seed+1 to avoid cross-replication stream collisions.
+  set.seed(internal_seeds[1L])
   if (con$type=="pso"){
     # Set PSO specific controls
     con$optim_control$trace.stats <- TRUE
@@ -568,7 +685,7 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     con$optim_control$maxf <- con$maxit
     con$optim_control$REPORT <- 1
     # begin optimization
-    mmc_out   <- pso::psoptim(par = theta_0, fn = MMCLRpval_fun_min, lower = theta_low, upper = theta_upp,
+    mmc_out   <- pso::psoptim(par = theta_0, fn = obj_min, lower = theta_low, upper = theta_upp,
                               gr = NULL, control = con$optim_control,
                               mdl_h0 = mdl_h0, k1 = k1, LRT_0 = LRT_0, N = con$N, burnin = con$burnin, workers = con$workers,
                               lambda = con$lambda, stationary_constraint = con$stationary_constraint,
@@ -584,7 +701,7 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     con$optim_control$threshold.stop <- -con$threshold_stop
     con$optim_control$max.call <- con$maxit
     # begin optimization
-    mmc_out   <- GenSA::GenSA(par = theta_0, fn = MMCLRpval_fun_min, lower = theta_low, upper = theta_upp,
+    mmc_out   <- GenSA::GenSA(par = theta_0, fn = obj_min, lower = theta_low, upper = theta_upp,
                               control = con$optim_control,
                               mdl_h0 = mdl_h0, k1 = k1, LRT_0 = LRT_0, N = con$N, burnin = con$burnin, workers = con$workers,
                               lambda = con$lambda, stationary_constraint = con$stationary_constraint,
@@ -601,7 +718,7 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     ga_ctrl <- con$optim_control
     if (is.null(ga_ctrl)) ga_ctrl <- list()
     if (is.null(ga_ctrl$popSize)) ga_ctrl$popSize <- 10
-    ga_fixed <- list(type = "real-valued", fitness = MMCLRpval_fun,
+    ga_fixed <- list(type = "real-valued", fitness = obj_max,
                      mdl_h0 = mdl_h0, k1 = k1, LRT_0 = LRT_0, N = con$N, burnin = con$burnin, workers = con$workers,
                      lambda = con$lambda, stationary_constraint = con$stationary_constraint,
                      thtol = mdl_h1$control$thtol, Z = Zsim, exog = exog, mdl_h0_control = mdl_h0_null_cont,
@@ -658,10 +775,11 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   # ----- Reported test statistic: the FIXED observed LRT_0 computed above from the
   #       observed-data fits (Dufour 2006), NOT recomputed at the optimized nuisance value.
   # ----- organize test output
-  MMCLRTest_output <- list(mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, mdl_h0_mmc = mdl_h0_mmc, mdl_h1_mmc = mdl_h1, 
+  MMCLRTest_output <- list(mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, mdl_h0_mmc = mdl_h0_mmc, mdl_h1_mmc = mdl_h1,
                            LRT_0 = LRT_0, pval = pval,
-                           theta_h0 = theta_h0, theta_h1 = theta_h1, control = con, 
-                           mmc_optimout = mmc_out)
+                           theta_h0 = theta_h0, theta_h1 = theta_h1, control = con,
+                           mmc_optimout = mmc_out,
+                           pval_0 = p_seed)
   class(MMCLRTest_output) <- "MMCLRTest"
   return(MMCLRTest_output)
 }
