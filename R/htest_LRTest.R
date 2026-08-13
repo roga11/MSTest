@@ -420,7 +420,7 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item workers: Integer determining the number of workers to use for parallel computing. Default is \code{0} (sequential). If \code{workers > N}, the effective count is capped at \code{N} and an informational message is printed (unless \code{silence = TRUE}).
 #'   \item mc_seed: Integer seed for reproducible Monte Carlo simulations and fixed-error MMC (Dufour 2006, Prop. 4.2). When set, seeds the RNG before observed-data estimation, pre-draws innovations once and holds them fixed across all optimizer evaluations, ensuring full reproducibility (including the observed LRT statistic) and theoretical size control. Internal seeds (optimizer trajectory, worker streams, CRN scheme) are drawn from the \code{mc_seed} stream rather than derived by arithmetic, so consecutive \code{mc_seed} values across replications of an outer simulation study do not produce colliding RNG streams; for studies with more than about 10^4 replications, well-separated seeds are still recommended. Default is \code{NULL}, in which case internal seeds are drawn from the ambient RNG state, so a script-level \code{set.seed()} placed before the call makes the procedure reproducible as well (sequential and parallel). Note: GenSA is deterministic given the fixed starting value used here, so its search trajectory does not depend on any seed; pso and GA use the optimizer seed.
 #'   \item init_method: String determining how the alternative (\code{k1}-regime) model is initialized. \code{"warmstart"} (the default) adds deterministic warm starts built by embedding the null-model fit into the \code{k1}-regime space (see \code{\link{warmstart_theta}}) to the \code{use_diff_init} random starts, applied identically to the observed data and to every simulated draw. \code{"random"} reproduces the legacy behavior.
-#'   \item crn: Boolean determining whether common random numbers are used across the nuisance-parameter search (default \code{TRUE}): an identical estimation-RNG stream (EM starting values; master and worker streams) is replayed at every candidate theta evaluation, so that together with the pre-drawn innovations the MC p-value is a deterministic function of theta (Dufour 2006, Prop. 4.2, with the estimation randomness folded into the fixed disturbance vector). This removes optimizer objective noise and guarantees \code{pval >= pval_0} exactly. Set to \code{FALSE} for the legacy behavior (estimation randomness evolves across evaluations; still valid, but the objective is noisy and the reported maximum tends to be conservative).
+#'   \item crn: Boolean determining whether common random numbers are used across the nuisance-parameter search (default \code{TRUE}): an identical estimation-RNG stream (EM starting values; master and worker streams) is replayed at every candidate theta evaluation, so that together with the pre-drawn innovations the MC p-value is a deterministic function of theta (Dufour 2006, Prop. 4.2, with the estimation randomness folded into the fixed disturbance vector). This removes optimizer objective noise and guarantees \code{pval >= pval_0} exactly. Set to \code{FALSE} for the legacy behavior (estimation randomness evolves across evaluations; still valid, but the objective is noisy and the reported maximum tends to be conservative). Note: with \code{init_method = "random"}, \code{crn = FALSE}, \code{workers = 0} and no \code{mc_seed}, a script-seeded call reproduces version 0.1.9 bit-for-bit.
 #'   \item type: String that determines the type of optimization algorithm used. Arguments allowed are: \code{"pso"}, \code{"GenSA"}, and \code{"GA"}. Default is \code{"pso"}.
 #'   \item eps: Double determining the constant value that defines a consistent set for search. Default is \code{0.1}.
 #'   \item CI_union: Boolean determining if union of set determined by \code{eps} and confidence set should be used to define consistent set for search. Default is \code{TRUE}.
@@ -594,9 +594,16 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   # collisions when consecutive parent seeds are used across replications of an
   # outer Monte Carlo study. When mc_seed is NULL the seeds are drawn from the
   # ambient RNG state, so a script-level set.seed() upstream still makes the
-  # whole procedure reproducible.
-  if (!is.null(con$mc_seed)) set.seed(con$mc_seed)
-  internal_seeds <- sample.int(.Machine$integer.max, 3L)
+  # whole procedure reproducible; in the sequential legacy configuration
+  # (mc_seed = NULL, crn = FALSE, workers = 0) the draw is DEFERRED until after
+  # the p_seed evaluation so that a script-seeded run reproduces version 0.1.9
+  # bit-for-bit through the pre-drawn innovations and p_seed (only the optimizer
+  # seed differs, which GenSA ignores).
+  need_early_seeds <- (!is.null(con$mc_seed)) || isTRUE(con$crn) || (con$workers > 0)
+  if (need_early_seeds){
+    if (!is.null(con$mc_seed)) set.seed(con$mc_seed)
+    internal_seeds <- sample.int(.Machine$integer.max, 3L)
+  }
   # ----- Pre-draw innovations for fixed-error MMC (Dufour 2006, Prop. 4.2)
   N_buffer <- ceiling(con$N * 1.5) + 10
   Teps <- mdl_h0$n + con$burnin   # T + burnin
@@ -643,7 +650,7 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   # master RNG state is saved and restored around each evaluation (via on.exit,
   # so errors cannot corrupt it), leaving the optimizer's own search randomness
   # undisturbed.
-  crn_seed <- internal_seeds[3L]
+  crn_seed <- if (isTRUE(con$crn)) internal_seeds[3L] else NA_integer_
   crn_wrap <- function(objfn){
     if (!isTRUE(con$crn)) return(objfn)
     function(...){
@@ -676,7 +683,11 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   # Set optimizer seed for a reproducible search trajectory (PSO/GA internal
   # randomness; GenSA with a fixed 'par' is deterministic and unaffected). A drawn
   # seed is used instead of mc_seed+1 to avoid cross-replication stream collisions.
-  set.seed(internal_seeds[1L])
+  # In the sequential legacy configuration (mc_seed = NULL, crn = FALSE,
+  # workers = 0) no seed is set at all, exactly as in version 0.1.9: the
+  # optimizer and estimation randomness continue the ambient (script-seeded)
+  # stream, so script-seeded legacy runs reproduce 0.1.9 bit-for-bit.
+  if (need_early_seeds) set.seed(internal_seeds[1L])
   if (con$type=="pso"){
     # Set PSO specific controls
     con$optim_control$trace.stats <- TRUE

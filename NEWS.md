@@ -68,7 +68,10 @@ simulation study is finalized.)*
   construction keeps the observed-data estimation and the pre-drawn innovations bit-identical
   to 0.1.9 for a given `mc_seed`; only optimizer/worker streams change). When `mc_seed` is
   `NULL`, internal seeds are drawn from the ambient RNG state, so a script-level `set.seed()`
-  makes both sequential and parallel runs fully reproducible.
+  makes both sequential and parallel runs fully reproducible. In the sequential legacy
+  configuration (`mc_seed = NULL`, `crn = FALSE`, `workers = 0`) no internal seeding happens at
+  all, so a script-seeded legacy run reproduces version 0.1.9 bit-for-bit (verified on the
+  R Journal article's MMC example).
 * Documentation note: GenSA is deterministic given the fixed starting value used by
   `MMCLRTest()`, so its search trajectory does not depend on any seed; pso and GA consume the
   optimizer seed.
