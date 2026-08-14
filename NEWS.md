@@ -89,6 +89,11 @@
   supplied sublist omitted `getSE`.
 * `LMCLRTest()`: the p-value is computed before the null draws are sorted (sorting is now only
   used for the reported critical values); numerically equivalent, clearer semantics.
+* Documentation fix: the `sigma` element of the DGP list for the univariate simulators
+  (`simuAR()`, `simuARX()`, `simuMSAR()`, `simuMSARX()`) was documented as a standard
+  deviation; it is (and always was) a **variance** (per-regime variances for the
+  Markov-switching versions), consistent with the multivariate simulators and the estimation
+  output convention. Documentation only; no change to any computation.
 
 # MSTest 0.1.9
 

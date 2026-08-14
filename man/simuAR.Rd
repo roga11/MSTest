@@ -11,7 +11,7 @@ simuAR(mdl_h0, burnin = 100)
 \itemize{
   \item n: Length of series.
   \item mu: Mean of process.
-  \item sigma: Standard deviation of process.
+  \item sigma: Variance of process (the innovation standard deviation used in the simulation is \code{sqrt(sigma)}).
   \item phi: Vector of autoregressive coefficients.
   \item eps: An optional (\code{T+burnin x q}) matrix with standard normal errors to be used. Errors will be generated if not provided.
 }}
