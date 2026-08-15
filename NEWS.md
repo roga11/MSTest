@@ -16,6 +16,37 @@
   (see the note in `inst/examples/article.R`). Setting `init_method = "random"` and `crn = FALSE`
   recovers the legacy behavior of the LR tests.
 
+## Regime-variance floor in the EM algorithm (new default; constrained ML)
+* The Gaussian Markov-switching likelihood is unbounded: a regime variance driven to zero on a
+  few observations sends the likelihood to infinity, so the unconstrained maximum likelihood
+  estimate does not exist (Kiefer and Wolfowitz 1956; Day 1969; Hamilton 1994, p. 689). With
+  thorough multi-start estimation these degenerate modes are found often enough to distort
+  Monte Carlo LR tests: the simulated null statistics acquire spurious spikes, inflating the
+  simulated critical values and destroying power. (Earlier versions were partly shielded by
+  numerical fragility: the degenerate paths tended to abort before converging; the numerical
+  stability work in 0.1.9 made them reachable.)
+* The Markov-switching constructors (`HMmdl()`, `MSARmdl()`, `MSARXmdl()`, `MSVARmdl()`,
+  `MSVARXmdl()`) now constrain the regime variances during EM estimation, via the new control
+  `em_variance_constraint` (default `0.01`): `sigma_k^2 >= 0.01 * sigma_linear^2`, where
+  `sigma_linear^2` is the variance of the one-regime fit of the same data (for multivariate
+  models the bound applies to the smallest eigenvalue of each regime covariance). Setting the
+  control to `0` disables it and reproduces the previous unconstrained behaviour. The bound
+  follows Kasahara and Shimotsu (2018) (on the variance rather than the standard-deviation
+  scale) and is in the spirit of the constrained maximum likelihood formulation of Hathaway
+  (1985, 1986).
+* Clipping the variance update at the bound in each EM iteration is the exact constrained
+  maximization step, so monotone ascent of the (constrained) likelihood is retained; starting
+  values are projected onto the bound so this holds from the first iteration.
+* Fitted models gain the additive fields `em_variance_constraint`, `sigma_floor`, and
+  `sigma_floor_binding` (per-regime logical). Standard errors of variances that end at the
+  bound are reported as `NA`, since they are boundary estimates.
+* The constraint applies identically to the observed data and to every simulated sample inside
+  `LMCLRTest()` and `MMCLRTest()` (each sample's bound comes from its own linear fit), so the
+  Monte Carlo p-values remain exact: Monte Carlo validity holds for any statistic computed by
+  the same rule on both sides, and the constrained-likelihood ratio is such a statistic. NOTE:
+  transition probabilities remain unconstrained, so the tests continue to allow boundary values
+  of the transition matrix.
+
 ## Warm-started estimation of the alternative model (new default)
 * `LMCLRTest()` and `MMCLRTest()` gain an `init_method` control (default `"warmstart"`). The
   alternative (`k1`-regime) model is now also initialized at deterministic warm starts built by

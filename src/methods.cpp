@@ -3596,6 +3596,94 @@ List ExpectationM_MSVARXmdl(arma::vec theta, List mdl, int k){
 }
 
 // ==============================================================================
+
+// ============================================================================== #
+// EM regime-variance floor (constrained ML). The floor sigma^2_k >= c*sigma^2_lin
+// is set per dataset in the R constructors (control 'em_variance_constraint') and
+// passed in the model list as 'sigma_floor' (0 or absent = disabled, which
+// reproduces the unconstrained legacy behaviour for direct *_em callers).
+// Rationale: the Gaussian mixture / Markov-switching likelihood is unbounded --
+// a regime variance driven to zero on a few observations sends the likelihood to
+// infinity (Kiefer and Wolfowitz 1956; Day 1969; Hamilton 1994, p. 689) -- so the
+// unconstrained MLE does not exist. Constraining the regime variances restores a
+// well-defined maximizer (Hathaway 1985, 1986, who bounds variance ratios; the
+// data-dependent floor used here follows Kasahara and Shimotsu 2018).
+// ============================================================================== #
+
+// Read the per-dataset variance floor from the model list (0.0 = disabled).
+double get_sigma_floor(List mdl){
+  if (mdl.containsElementNamed("sigma_floor")){
+    Rcpp::RObject sf = mdl["sigma_floor"];
+    if (!sf.isNULL()){
+      double val = Rcpp::as<double>(sf);
+      if (std::isfinite(val) && val > 0.0) return val;
+    }
+  }
+  return 0.0;
+}
+
+// Floor a covariance matrix at sig_floor*I by eigenvalue clipping. This is the
+// EXACT maximizer of the M-step objective over {Sigma : Sigma >= sig_floor*I}
+// (the objective is orthogonally invariant and separates over the eigenvalues),
+// not a ridge-type approximation.
+arma::mat floor_cov(arma::mat S, double sig_floor){
+  if (sig_floor <= 0.0) return S;
+  arma::vec eigval;
+  arma::mat eigvec;
+  arma::mat S_sym = arma::symmatu(S);
+  if (!arma::eig_sym(eigval, eigvec, S_sym)) return S;   // keep as-is on failure
+  if (eigval.min() >= sig_floor) return S;               // constraint slack
+  eigval = arma::clamp(eigval, sig_floor, arma::datum::inf);
+  return arma::symmatu(eigvec * arma::diagmat(eigval) * trans(eigvec));
+}
+
+// Apply the floor to the multivariate M-step output, keeping the per-regime List
+// 'sigma' and the vech-stacked vector 'sigma_out' consistent.
+void apply_sigma_floor_mv(List& sigma, arma::vec& sigma_out, double sig_floor,
+                          int q, int k, bool msvar){
+  if (sig_floor <= 0.0) return;
+  int sigN = (q*(q+1))/2;
+  int nblk = (msvar ? k : 1);
+  for (int xb = 0; xb < nblk; xb++){
+    arma::mat S_f = floor_cov(as<arma::mat>(sigma[xb]), sig_floor);
+    sigma_out.subvec(xb*sigN, (xb+1)*sigN - 1) = covar_vech(S_f);
+    if (msvar){
+      sigma[xb] = S_f;
+    }else{
+      for (int xk = 0; xk < k; xk++) sigma[xk] = S_f;
+    }
+  }
+}
+
+// Project the sigma block of a STARTING value onto the variance floor, so the EM
+// iteration begins from a feasible point (monotone ascent of the constrained
+// likelihood then holds from the first iteration). Layout-agnostic: in every
+// model class the sigma block sits immediately before the k*k transition
+// probabilities at the end of theta.
+arma::vec project_theta_sigma_floor(arma::vec theta_0, List mdl, int k){
+  double sig_floor = get_sigma_floor(mdl);
+  if (sig_floor <= 0.0) return theta_0;
+  int q = mdl.containsElementNamed("q") ? Rcpp::as<int>(mdl["q"]) : 1;
+  bool msvar = mdl.containsElementNamed("msvar") ? Rcpp::as<bool>(mdl["msvar"]) : true;
+  int sigN = (q*(q+1))/2;
+  int nblk = 1 + (msvar ? (k-1) : 0);
+  int len  = sigN * nblk;
+  int n    = (int) theta_0.n_elem;
+  int end  = n - k*k - 1;          // last sigma entry (P block is last)
+  int start = end - len + 1;
+  if (start < 0 || end >= n || end < start) return theta_0;   // unexpected layout: leave as-is
+  if (q == 1){
+    theta_0.subvec(start, end) = arma::clamp(theta_0.subvec(start, end), sig_floor, arma::datum::inf);
+  }else{
+    for (int xb = 0; xb < nblk; xb++){
+      int s0 = start + xb*sigN;
+      arma::mat S_f = floor_cov(covar_unvech(theta_0.subvec(s0, s0 + sigN - 1), q), sig_floor);
+      theta_0.subvec(s0, s0 + sigN - 1) = covar_vech(S_f);
+    }
+  }
+  return theta_0;
+}
+
 //' @title Maximization step of EM algorithm for Hidden Markov model
 //' 
 //' @description This function performs the maximization step of the Expectation Maximization algorithm for Hidden Markov models.
@@ -3756,6 +3844,8 @@ List EMaximization_HMmdl(arma::vec theta, List mdl, List MSloglik_output, int k)
     }
     sigma_out = covar_vech(sigma_m_tmp);
   }
+  // ----- Apply the EM regime-variance floor (constrained ML; see get_sigma_floor)
+  apply_sigma_floor_mv(sigma, sigma_out, get_sigma_floor(mdl), q, k, msvar);
   // ----- Compute model residuals 
   arma::mat residuals(Tsize, q, arma::fill::zeros); 
   for (int xk = 0; xk<k;xk++){
@@ -3982,6 +4072,13 @@ List EMaximization_MSARmdl(arma::vec theta, List mdl, List MSloglik_output, int 
   }
   residuals = arma::sum(residuals,1);
   // --------------- Organize output
+  // ----- Apply the EM regime-variance floor (constrained ML; see get_sigma_floor).
+  // Univariate: clipping the variance update at the floor is the exact
+  // constrained M-step maximizer (the M-step objective is unimodal in sigma^2).
+  {
+    double sig_floor_uv = get_sigma_floor(mdl);
+    if (sig_floor_uv > 0.0) sigma = arma::clamp(sigma, sig_floor_uv, arma::datum::inf);
+  }
   // ----- Produce new theta vector
   arma::vec theta_new = join_vert(mu, phi_new);
   theta_new = join_vert(theta_new, sigma);
@@ -4211,6 +4308,13 @@ List EMaximization_MSARXmdl(arma::vec theta, List mdl, List MSloglik_output, int
   }
   residuals = arma::sum(residuals,1);
   // --------------- Organize output
+  // ----- Apply the EM regime-variance floor (constrained ML; see get_sigma_floor).
+  // Univariate: clipping the variance update at the floor is the exact
+  // constrained M-step maximizer (the M-step objective is unimodal in sigma^2).
+  {
+    double sig_floor_uv = get_sigma_floor(mdl);
+    if (sig_floor_uv > 0.0) sigma = arma::clamp(sigma, sig_floor_uv, arma::datum::inf);
+  }
   // ----- Produce new theta vector
   arma::vec theta_new = join_vert(mu, phi_new);
   theta_new = join_vert(theta_new, betaZ_new);
@@ -4487,6 +4591,8 @@ List EMaximization_MSVARmdl(arma::vec theta, List mdl, List MSloglik_output, int
     }
     sigma_out = covar_vech(sigma_m_tmp);
   }
+  // ----- Apply the EM regime-variance floor (constrained ML; see get_sigma_floor)
+  apply_sigma_floor_mv(sigma, sigma_out, get_sigma_floor(mdl), q, k, msvar);
   // ----- Compute model residuals 
   arma::mat residuals(Tsize, q, arma::fill::zeros); 
   for (int xk = 0; xk<M;xk++){
@@ -4779,6 +4885,8 @@ List EMaximization_MSVARXmdl(arma::vec theta, List mdl, List MSloglik_output, in
     }
     sigma_out = covar_vech(sigma_m_tmp);
   }
+  // ----- Apply the EM regime-variance floor (constrained ML; see get_sigma_floor)
+  apply_sigma_floor_mv(sigma, sigma_out, get_sigma_floor(mdl), q, k, msvar);
   // ----- Compute model residuals
   arma::mat residuals(Tsize, q, arma::fill::zeros);
   for (int xk = 0; xk<M;xk++){
@@ -5151,6 +5259,8 @@ List HMmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   // ---------- Begin EM Algo
   // ----- Initial values
   List EMest_output;
+  // ----- Start from a feasible point w.r.t. the EM variance floor
+  theta_0 = project_theta_sigma_floor(theta_0, mdl, k);
   EMest_output["theta"] = theta_0;  // initial values for parameters
   EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_HMmdl(mdl, EMest_output, k);
@@ -5204,6 +5314,8 @@ List MSARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   // ---------- Begin EM Algo
   // ----- Initial values
   List EMest_output;
+  // ----- Start from a feasible point w.r.t. the EM variance floor
+  theta_0 = project_theta_sigma_floor(theta_0, mdl, k);
   EMest_output["theta"] = theta_0;  // initial values for parameters
   EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_MSARmdl(mdl, EMest_output, k);
@@ -5255,6 +5367,8 @@ List MSARXmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   // ---------- Begin EM Algo
   // ----- Initial values
   List EMest_output;
+  // ----- Start from a feasible point w.r.t. the EM variance floor
+  theta_0 = project_theta_sigma_floor(theta_0, mdl, k);
   EMest_output["theta"] = theta_0;  // initial values for parameters
   EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_MSARXmdl(mdl, EMest_output, k);
@@ -5306,6 +5420,8 @@ List MSVARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   // ---------- Begin EM Algo
   // ----- Initial values
   List EMest_output;
+  // ----- Start from a feasible point w.r.t. the EM variance floor
+  theta_0 = project_theta_sigma_floor(theta_0, mdl, k);
   EMest_output["theta"] = theta_0;  // initial values for parameters
   EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_MSVARmdl(mdl, EMest_output, k);
@@ -5357,6 +5473,8 @@ List MSVARXmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   // ---------- Begin EM Algo
   // ----- Initial values
   List EMest_output;
+  // ----- Start from a feasible point w.r.t. the EM variance floor
+  theta_0 = project_theta_sigma_floor(theta_0, mdl, k);
   EMest_output["theta"] = theta_0;  // initial values for parameters
   EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_MSVARXmdl(mdl, EMest_output, k);

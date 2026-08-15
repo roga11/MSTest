@@ -989,6 +989,7 @@ VARXmdl <- function(Y, p, Z, control = list()){
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
 #'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
 #'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
+#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation. Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -1058,6 +1059,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
               msvar = TRUE,
               init_theta = NULL,
               init_theta_extra = NULL,
+              em_variance_constraint = 0.01,
               init_method = NULL,
               method = "EM",
               maxit = 1000,
@@ -1093,6 +1095,16 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
   init_mdl$msmu <- con$msmu
   init_mdl$msvar <- con$msvar
   init_mdl$exog <- (!is.null(Z))
+  # ----- EM regime-variance floor (constrained ML): sigma_k^2 >= c * sigma_lin^2,
+  # with c = em_variance_constraint (variance scale) and sigma_lin^2 the linear
+  # (one-regime) fit's innovation variance scale for THIS dataset. Rules out the
+  # degenerate sigma -> 0 likelihood spikes (unbounded-likelihood pathology);
+  # see the em_variance_constraint control documentation. <= 0 disables.
+  init_mdl$sigma_floor <- if (isTRUE(con$em_variance_constraint > 0)){
+    con$em_variance_constraint * mean(diag(as.matrix(init_mdl$sigma)))
+  }else{
+    0
+  }
   # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
   # They are attempted first and compete with the random starts on logLike; a
   # failing extra start falls back to a random draw on retry (see loop below).
@@ -1284,6 +1296,10 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
                             paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
     }
   }
+  # ----- Variance-floor diagnostics (constrained ML; additive fields)
+  out$em_variance_constraint <- con$em_variance_constraint
+  out$sigma_floor <- init_mdl$sigma_floor
+  out$sigma_floor_binding <- .sigma_floor_binding(out$sigma, init_mdl$sigma_floor)
   if (con$getSE==TRUE){
     if (identical(con$se_method, "louis")) {
       out <- thetaSE_louis(out)
@@ -1294,6 +1310,9 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
         out <- thetaSE_louis(out)
       }
     }
+    # Variance components at the floor are boundary estimates: their SEs are
+    # not interpretable under the asymptotic normal approximation -> NA.
+    out <- .floor_na_se(out)
   }
   if (is.null(con$init_theta)){
     out$trace <- output_all
@@ -1319,6 +1338,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
 #'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
 #'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
+#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -1327,7 +1347,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
 #'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{500}.
 #'  \item use_diff_init: integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.
 #'  \item mle_stationary_constraint: Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.
-#'  \item mle_variance_constraint: Double used to determine the lower bound for variance in each regime. Value should be between \code{0} and \code{1} as it is multiplied by single regime variance. Default is \code{0.01} (i.e., \code{1\%} of single regime variance.
+#'  \item mle_variance_constraint: Double used to determine the lower bound for variance in each regime. Value should be between \code{0} and \code{1} as it is multiplied by single regime variance. Default is \code{0.01} (i.e., \code{1\%} of single regime variance. This is the \code{method = "MLE"} counterpart of \code{em_variance_constraint}, which imposes the same bound on the EM path.
 #'  \item mle_theta_low: Vector with lower bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
 #'  \item mle_theta_upp: Vector with upper bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
 #' }
@@ -1392,6 +1412,7 @@ MSARmdl <- function(Y, p, k, control = list()){
               msvar = TRUE,
               init_theta = NULL,
               init_theta_extra = NULL,
+              em_variance_constraint = 0.01,
               init_method = NULL,
               method = "EM",
               maxit = 1000,
@@ -1426,6 +1447,16 @@ MSARmdl <- function(Y, p, k, control = list()){
   init_mdl <- ARmdl(Y, p = p, control = init_control)
   init_mdl$msmu <- con$msmu
   init_mdl$msvar <- con$msvar
+  # ----- EM regime-variance floor (constrained ML): sigma_k^2 >= c * sigma_lin^2,
+  # with c = em_variance_constraint (variance scale) and sigma_lin^2 the linear
+  # (one-regime) fit's innovation variance scale for THIS dataset. Rules out the
+  # degenerate sigma -> 0 likelihood spikes (unbounded-likelihood pathology);
+  # see the em_variance_constraint control documentation. <= 0 disables.
+  init_mdl$sigma_floor <- if (isTRUE(con$em_variance_constraint > 0)){
+    con$em_variance_constraint * mean(diag(as.matrix(init_mdl$sigma)))
+  }else{
+    0
+  }
   # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
   # They are attempted first and compete with the random starts on logLike; a
   # failing extra start falls back to a random draw on retry (see loop below).
@@ -1580,6 +1611,10 @@ MSARmdl <- function(Y, p, k, control = list()){
                         paste0("phi_",(1:p)),
                         if (con$msvar==TRUE) paste0("sig_", (1:k)) else "sig",
                         paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
+  # ----- Variance-floor diagnostics (constrained ML; additive fields)
+  out$em_variance_constraint <- con$em_variance_constraint
+  out$sigma_floor <- init_mdl$sigma_floor
+  out$sigma_floor_binding <- .sigma_floor_binding(out$sigma, init_mdl$sigma_floor)
   if (con$getSE==TRUE){
     if (identical(con$se_method, "louis")) {
       out <- thetaSE_louis(out)
@@ -1590,6 +1625,9 @@ MSARmdl <- function(Y, p, k, control = list()){
         out <- thetaSE_louis(out)
       }
     }
+    # Variance components at the floor are boundary estimates: their SEs are
+    # not interpretable under the asymptotic normal approximation -> NA.
+    out <- .floor_na_se(out)
   }
   if (is.null(con$init_theta)){
     out$trace <- output_all
@@ -1615,6 +1653,7 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
 #'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
 #'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
+#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -1623,7 +1662,7 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{500}.
 #'  \item use_diff_init: integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.
 #'  \item mle_stationary_constraint: Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.
-#'  \item mle_variance_constraint: Double used to determine the lower bound for variance in each regime. Value should be between \code{0} and \code{1} as it is multiplied by single regime variance. Default is \code{0.01} (i.e., \code{1\%} of single regime variance.
+#'  \item mle_variance_constraint: Double used to determine the lower bound for variance in each regime. Value should be between \code{0} and \code{1} as it is multiplied by single regime variance. Default is \code{0.01} (i.e., \code{1\%} of single regime variance. This is the \code{method = "MLE"} counterpart of \code{em_variance_constraint}, which imposes the same bound on the EM path.
 #'  \item mle_theta_low: Vector with lower bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
 #'  \item mle_theta_upp: Vector with upper bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
 #' }
@@ -1689,6 +1728,7 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
               msvar = TRUE,
               init_theta = NULL,
               init_theta_extra = NULL,
+              em_variance_constraint = 0.01,
               init_method = NULL,
               method = "EM",
               maxit = 1000,
@@ -1724,6 +1764,16 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
   init_mdl <- ARXmdl(Y, p = p, Z = Z, control = init_control)
   init_mdl$msmu <- con$msmu
   init_mdl$msvar <- con$msvar
+  # ----- EM regime-variance floor (constrained ML): sigma_k^2 >= c * sigma_lin^2,
+  # with c = em_variance_constraint (variance scale) and sigma_lin^2 the linear
+  # (one-regime) fit's innovation variance scale for THIS dataset. Rules out the
+  # degenerate sigma -> 0 likelihood spikes (unbounded-likelihood pathology);
+  # see the em_variance_constraint control documentation. <= 0 disables.
+  init_mdl$sigma_floor <- if (isTRUE(con$em_variance_constraint > 0)){
+    con$em_variance_constraint * mean(diag(as.matrix(init_mdl$sigma)))
+  }else{
+    0
+  }
   # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
   # They are attempted first and compete with the random starts on logLike; a
   # failing extra start falls back to a random draw on retry (see loop below).
@@ -1875,6 +1925,10 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
                         paste0("x_",1:length(betaZ)),
                         if (con$msvar==TRUE) paste0("sig_", (1:k)) else "sig",
                         paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
+  # ----- Variance-floor diagnostics (constrained ML; additive fields)
+  out$em_variance_constraint <- con$em_variance_constraint
+  out$sigma_floor <- init_mdl$sigma_floor
+  out$sigma_floor_binding <- .sigma_floor_binding(out$sigma, init_mdl$sigma_floor)
   if (con$getSE==TRUE){
     if (identical(con$se_method, "louis")) {
       out <- thetaSE_louis(out)
@@ -1885,6 +1939,9 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
         out <- thetaSE_louis(out)
       }
     }
+    # Variance components at the floor are boundary estimates: their SEs are
+    # not interpretable under the asymptotic normal approximation -> NA.
+    out <- .floor_na_se(out)
   }
   if (is.null(con$init_theta)){
     out$trace <- output_all
@@ -1910,6 +1967,7 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix. This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
 #'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
 #'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
+#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -1984,6 +2042,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
               msvar = TRUE,
               init_theta = NULL,
               init_theta_extra = NULL,
+              em_variance_constraint = 0.01,
               init_method = NULL,
               method = "EM",
               maxit = 1000,
@@ -2018,6 +2077,16 @@ MSVARmdl <- function(Y, p, k, control = list()){
   init_mdl <- VARmdl(Y, p = p, control = init_control)
   init_mdl$msmu <- con$msmu
   init_mdl$msvar <- con$msvar
+  # ----- EM regime-variance floor (constrained ML): sigma_k^2 >= c * sigma_lin^2,
+  # with c = em_variance_constraint (variance scale) and sigma_lin^2 the linear
+  # (one-regime) fit's innovation variance scale for THIS dataset. Rules out the
+  # degenerate sigma -> 0 likelihood spikes (unbounded-likelihood pathology);
+  # see the em_variance_constraint control documentation. <= 0 disables.
+  init_mdl$sigma_floor <- if (isTRUE(con$em_variance_constraint > 0)){
+    con$em_variance_constraint * mean(diag(as.matrix(init_mdl$sigma)))
+  }else{
+    0
+  }
   # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
   # They are attempted first and compete with the random starts on logLike; a
   # failing extra start falls back to a random draw on retry (see loop below).
@@ -2181,6 +2250,10 @@ MSVARmdl <- function(Y, p, k, control = list()){
                         paste0("phi_",paste0(phi_n_tmp[,2],",",phi_n_tmp[,3],phi_n_tmp[,1])),
                         if (con$msvar==TRUE) paste0("sig_",sig_n_tmp[,1],",",sig_n_tmp[,2]) else paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))),
                         paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
+  # ----- Variance-floor diagnostics (constrained ML; additive fields)
+  out$em_variance_constraint <- con$em_variance_constraint
+  out$sigma_floor <- init_mdl$sigma_floor
+  out$sigma_floor_binding <- .sigma_floor_binding(out$sigma, init_mdl$sigma_floor)
   if (con$getSE==TRUE){
     if (identical(con$se_method, "louis")) {
       out <- thetaSE_louis(out)
@@ -2191,6 +2264,9 @@ MSVARmdl <- function(Y, p, k, control = list()){
         out <- thetaSE_louis(out)
       }
     }
+    # Variance components at the floor are boundary estimates: their SEs are
+    # not interpretable under the asymptotic normal approximation -> NA.
+    out <- .floor_na_se(out)
   }
   if (is.null(con$init_theta)){
     out$trace <- output_all
@@ -2218,6 +2294,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix. This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values.
 #'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
 #'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
+#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -2293,6 +2370,7 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
               msvar = TRUE,
               init_theta = NULL,
               init_theta_extra = NULL,
+              em_variance_constraint = 0.01,
               init_method = NULL,
               method = "EM",
               maxit = 1000,
@@ -2328,6 +2406,16 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
   init_mdl <- VARXmdl(Y, p = p, Z = Z, control = init_control)
   init_mdl$msmu <- con$msmu
   init_mdl$msvar <- con$msvar
+  # ----- EM regime-variance floor (constrained ML): sigma_k^2 >= c * sigma_lin^2,
+  # with c = em_variance_constraint (variance scale) and sigma_lin^2 the linear
+  # (one-regime) fit's innovation variance scale for THIS dataset. Rules out the
+  # degenerate sigma -> 0 likelihood spikes (unbounded-likelihood pathology);
+  # see the em_variance_constraint control documentation. <= 0 disables.
+  init_mdl$sigma_floor <- if (isTRUE(con$em_variance_constraint > 0)){
+    con$em_variance_constraint * mean(diag(as.matrix(init_mdl$sigma)))
+  }else{
+    0
+  }
   # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
   # They are attempted first and compete with the random starts on logLike; a
   # failing extra start falls back to a random draw on retry (see loop below).
@@ -2493,6 +2581,10 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
                         paste0("x_",paste0(betaZ_n_tmp[,1],",",betaZ_n_tmp[,2])),
                         if (con$msvar==TRUE) paste0("sig_",sig_n_tmp[,1],",",sig_n_tmp[,2]) else paste0("sig_",covar_vech(t(matrix(as.double(sapply((1:q),  function(x) paste0(x, (1:q)))), q,q)))),
                         paste0("p_",c(sapply((1:k),  function(x) paste0(x, (1:k)) ))))
+  # ----- Variance-floor diagnostics (constrained ML; additive fields)
+  out$em_variance_constraint <- con$em_variance_constraint
+  out$sigma_floor <- init_mdl$sigma_floor
+  out$sigma_floor_binding <- .sigma_floor_binding(out$sigma, init_mdl$sigma_floor)
   if (con$getSE==TRUE){
     if (identical(con$se_method, "louis")) {
       out <- thetaSE_louis(out)
@@ -2503,6 +2595,9 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
         out <- thetaSE_louis(out)
       }
     }
+    # Variance components at the floor are boundary estimates: their SEs are
+    # not interpretable under the asymptotic normal approximation -> NA.
+    out <- .floor_na_se(out)
   }
   if (is.null(con$init_theta)){
     out$trace <- output_all

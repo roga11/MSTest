@@ -1205,3 +1205,42 @@ warmstart_theta <- function(mdl_h0, k1, msmu = NULL, msvar = NULL, c_pert = 0.5)
   out <- out[vapply(out, function(th) all(is.finite(th)), TRUE)]
   return(out)
 }
+
+
+# ============================================================================== #
+# EM regime-variance floor helpers (constrained ML; see em_variance_constraint)
+# ============================================================================== #
+
+# Per-regime indicator of whether the fitted variance (min eigenvalue for
+# covariance matrices) sits at the floor (within relative tolerance 1e-6).
+.sigma_floor_binding <- function(sigma, floor_val){
+  k <- if (is.list(sigma)) length(sigma) else nrow(as.matrix(sigma))
+  if (!isTRUE(floor_val > 0)) return(rep(FALSE, k))
+  tol <- floor_val * (1 + 1e-6)
+  if (is.list(sigma)){
+    vapply(sigma, function(S){
+      min(eigen(as.matrix(S), symmetric = TRUE, only.values = TRUE)$values) <= tol
+    }, TRUE)
+  }else{
+    as.numeric(as.matrix(sigma)[, 1]) <= tol
+  }
+}
+
+# Set the theta-SE entries of floored regimes' variance components to NA
+# (boundary point: the asymptotic normal approximation is invalid there).
+.floor_na_se <- function(mdl){
+  if (is.null(mdl$theta_se) || is.null(mdl$sigma_floor_binding) ||
+      !any(mdl$sigma_floor_binding, na.rm = TRUE)) return(mdl)
+  ind <- which(as.numeric(mdl$theta_sig_ind) == 1)
+  if (length(ind) == 0) return(mdl)
+  if (isTRUE(mdl$msvar)){
+    bl <- length(ind) / mdl$k
+    for (j in which(mdl$sigma_floor_binding)){
+      mdl$theta_se[ind[((j - 1) * bl + 1):(j * bl)]] <- NA
+    }
+  }else{
+    # single shared variance block
+    mdl$theta_se[ind] <- NA
+  }
+  return(mdl)
+}

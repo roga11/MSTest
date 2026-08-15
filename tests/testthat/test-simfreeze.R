@@ -155,6 +155,87 @@ test_that("MMCLRTest early stop: pval_0 >= threshold_stop skips the search", {
   expect_true(isTRUE(a$mmc_optimout$early_stop))
 })
 
+test_that("EM variance floor removes the degenerate sigma^2 -> 0 spike", {
+  skip_on_cran()
+  # Dataset/seed pair that reproducibly finds the spike mode without the floor
+  # (a regime with sigma^2 ~ 1e-13 planted on ~1% of observations, LR ~ 44).
+  set.seed(5008)
+  y <- simuAR(list(n = 200, p = 1, q = 1, mu = 1, sigma = 1, phi = 0.9, burnin = 100))$y
+  ar <- ARmdl(y, p = 1, control = list(getSE = FALSE))
+  ctl <- list(getSE = FALSE, use_diff_init = 20, maxit = 500)
+  # Unconstrained (legacy escape hatch): spike present
+  set.seed(6008)
+  ms_free <- suppressWarnings(MSARmdl(y, p = 1, k = 2,
+                control = c(ctl, list(em_variance_constraint = 0))))
+  expect_gt(-2 * (ar$logLike - ms_free$logLike), 20)
+  expect_lt(min(as.numeric(ms_free$sigma)), 1e-6)
+  # Constrained (default): spike gone, variances respect the floor
+  set.seed(6008)
+  ms_con <- suppressWarnings(MSARmdl(y, p = 1, k = 2, control = ctl))
+  expect_lt(-2 * (ar$logLike - ms_con$logLike), 20)
+  expect_gte(min(as.numeric(ms_con$sigma)), ms_con$sigma_floor * (1 - 1e-9))
+  expect_equal(ms_con$sigma_floor, 0.01 * as.numeric(ar$sigma), tolerance = 1e-8)
+})
+
+test_that("variance floor is a no-op when slack (bit-identity) and flags/SEs behave", {
+  skip_on_cran()
+  # Well-separated regimes: the floor never binds, so results must be identical
+  set.seed(1234)
+  Y <- simuMSAR(list(n = 200, k = 2, mu = c(-2, 2), sigma = c(1, 1), phi = 0.3,
+                     P = rbind(c(0.90, 0.10), c(0.10, 0.90))))$y
+  set.seed(3); a <- MSARmdl(Y, p = 1, k = 2, control = list(getSE = FALSE, use_diff_init = 3))
+  set.seed(3); b <- MSARmdl(Y, p = 1, k = 2,
+                            control = list(getSE = FALSE, use_diff_init = 3,
+                                           em_variance_constraint = 0))
+  expect_identical(a$logLike, b$logLike)
+  expect_identical(a$theta, b$theta)
+  expect_false(any(a$sigma_floor_binding))
+  # A binding fit flags the regime and returns NA SE for that variance only
+  set.seed(5011)
+  y2 <- simuAR(list(n = 200, p = 1, q = 1, mu = 1, sigma = 1, phi = 0.9, burnin = 100))$y
+  set.seed(6011)
+  m <- suppressWarnings(MSARmdl(y2, p = 1, k = 2,
+         control = list(getSE = TRUE, use_diff_init = 20, maxit = 500)))
+  skip_if(!any(m$sigma_floor_binding), "floor did not bind for this seed")
+  se_sig <- m$theta_se[as.logical(m$theta_sig_ind)]
+  expect_true(all(is.na(se_sig[m$sigma_floor_binding])))
+  expect_true(all(is.finite(m$theta_se[!as.logical(m$theta_sig_ind)])))
+})
+
+test_that("constrained EM ascends monotonically and keeps starts feasible", {
+  skip_on_cran()
+  set.seed(5008)
+  y <- simuAR(list(n = 200, p = 1, q = 1, mu = 1, sigma = 1, phi = 0.9, burnin = 100))$y
+  # Deliberately strong floor so the constraint binds throughout the run
+  lls <- vapply(1:8, function(m){
+    set.seed(11)
+    suppressWarnings(MSARmdl(y, p = 1, k = 2,
+      control = list(getSE = FALSE, use_diff_init = 1, maxit = m, conv = "theta",
+                     thtol = 1e-14, em_variance_constraint = 0.5))$logLike)
+  }, 0.0)
+  expect_true(all(diff(lls) >= -1e-8))
+  # Warm starts (which perturb variances downward) are projected onto the floor
+  ar <- ARmdl(y, p = 1, control = list(getSE = FALSE))
+  set.seed(5)
+  fw <- suppressWarnings(MSARmdl(y, p = 1, k = 2,
+          control = list(getSE = FALSE, use_diff_init = 1, maxit = 300,
+                         em_variance_constraint = 0.5,
+                         init_theta_extra = warmstart_theta(ar, 2))))
+  expect_gte(min(as.numeric(fw$sigma)), fw$sigma_floor * (1 - 1e-9))
+})
+
+test_that("variance floor works for multivariate models (eigenvalue clipping)", {
+  skip_on_cran()
+  set.seed(9)
+  mv <- suppressWarnings(MSVARmdl(y_biv, p = 1, k = 2,
+          control = list(getSE = FALSE, use_diff_init = 2, maxit = 300)))
+  expect_true(is.finite(mv$logLike))
+  eig <- vapply(mv$sigma, function(S)
+    min(eigen(as.matrix(S), symmetric = TRUE, only.values = TRUE)$values), 0.0)
+  expect_true(all(eig >= mv$sigma_floor * (1 - 1e-9)))
+  expect_equal(unname(colSums(mv$P)), rep(1, 2), tolerance = 1e-8)
+})
+
 test_that("internal seeds are drawn (not mc_seed+k) and pre-draws stay aligned", {
   # The pre-drawn innovations must depend on mc_seed alone (draw-then-reseed):
   # calling set.seed(s); sample.int(...); set.seed(s) reproduces the same rnorm
