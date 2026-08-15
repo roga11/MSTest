@@ -3,7 +3,7 @@
 # NOTE ON REPRODUCIBILITY: the results reported in the R Journal article
 # "MSTest: An R Package for Testing Markov Switching Models" are reproduced
 # EXACTLY by CRAN version 0.1.9 of this package. From development versions
-# after 0.1.9 (0.1.9.9001+, slated for CRAN release as 0.2.0) the
+# after 0.1.9 (0.1.9.9001 and later, slated for CRAN release as 0.2.0) the
 # Monte Carlo LR tests (LMCLRTest, MMCLRTest) use warm-started estimation of
 # the alternative model, an LR >= 0 numerical policy, and common random
 # numbers across the MMC search (see NEWS.md), so their p-values (and
