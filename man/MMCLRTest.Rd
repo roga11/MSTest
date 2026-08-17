@@ -41,7 +41,8 @@ MMCLRTest(Y, p, k0, k1, Z = NULL, control = list())
   \item mdl_h0_control: List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
   \item mdl_h1_control: List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
   \item use_diff_init_sim: Value which determines the number of initial values to use when estimating models for null distribution. Default is set to use the same as specified in \code{mdl_h0_control} and \code{mdl_h1_control}.
-  \item optim_control: List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is \code{list()} (an empty list); the maximum number of optimizer iterations is instead controlled by the separate \code{maxit} argument (default \code{50}).
+  \item maxit: Int determining the budget of the nuisance-parameter search, as a cap on objective-function evaluations: passed as \code{maxf} to \code{pso} and as \code{max.call} to \code{GenSA} (both are evaluation counts, not iterations), and as \code{maxiter} to \code{GA} (generations, so roughly \code{popSize} times as many evaluations). Note that \code{GenSA} treats its cap as a soft bound and can substantially exceed it for higher-dimensional searches. Default is \code{50}.
+  \item optim_control: List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is \code{list()} (an empty list); the search budget is instead controlled by the separate \code{maxit} control above.
 }}
 }
 \value{

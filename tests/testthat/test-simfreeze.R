@@ -158,19 +158,19 @@ test_that("MMCLRTest early stop: pval_0 >= threshold_stop skips the search", {
 test_that("EM variance floor removes the degenerate sigma^2 -> 0 spike", {
   skip_on_cran()
   # Dataset/seed pair that reproducibly finds the spike mode without the floor
-  # (a regime with sigma^2 ~ 1e-13 planted on ~1% of observations, LR ~ 44).
-  set.seed(5008)
+  # (a regime with sigma^2 ~ 1e-11 planted on ~1% of observations, LR ~ 35).
+  set.seed(5010)
   y <- simuAR(list(n = 200, p = 1, q = 1, mu = 1, sigma = 1, phi = 0.9, burnin = 100))$y
   ar <- ARmdl(y, p = 1, control = list(getSE = FALSE))
   ctl <- list(getSE = FALSE, use_diff_init = 20, maxit = 500)
   # Unconstrained (legacy escape hatch): spike present
-  set.seed(6008)
+  set.seed(6010)
   ms_free <- suppressWarnings(MSARmdl(y, p = 1, k = 2,
                 control = c(ctl, list(em_variance_constraint = 0))))
   expect_gt(-2 * (ar$logLike - ms_free$logLike), 20)
   expect_lt(min(as.numeric(ms_free$sigma)), 1e-6)
   # Constrained (default): spike gone, variances respect the floor
-  set.seed(6008)
+  set.seed(6010)
   ms_con <- suppressWarnings(MSARmdl(y, p = 1, k = 2, control = ctl))
   expect_lt(-2 * (ar$logLike - ms_con$logLike), 20)
   expect_gte(min(as.numeric(ms_con$sigma)), ms_con$sigma_floor * (1 - 1e-9))

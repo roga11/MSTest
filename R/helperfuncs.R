@@ -526,10 +526,11 @@ thetaSE_louis <- function(mdl) {
     Z      <- Z_orig[(p + 1):(Tsize + p), , drop = FALSE]
     Zdm    <- sweep(Z, 2, colMeans(Z))
   }
-  # Expected transition counts from extended states
+  # Expected transition counts: rows t = 2..T of the extended smoothed probabilities,
+  # the same range as the EM transition-count update
   n_hat <- matrix(0, k, k)
   for (n in seq_len(M)) {
-    n_hat[sg[n, 1], sg[n, 2]] <- n_hat[sg[n, 1], sg[n, 2]] + sum(xi[, n])
+    n_hat[sg[n, 1], sg[n, 2]] <- n_hat[sg[n, 1], sg[n, 2]] + sum(xi[-1L, n])
   }
 
   function(th) {
@@ -587,9 +588,11 @@ thetaSE_louis <- function(mdl) {
     Z      <- Z_orig[(ar + 1):(Tsize + ar), , drop = FALSE]
     Zdm    <- sweep(Z, 2, colMeans(Z))
   }
+  # Expected transition counts: rows t = 2..T of the extended smoothed probabilities,
+  # the same range as the EM transition-count update
   n_hat <- matrix(0, k, k)
   for (n in seq_len(M)) {
-    n_hat[sg[n, 1], sg[n, 2]] <- n_hat[sg[n, 1], sg[n, 2]] + sum(xi[, n])
+    n_hat[sg[n, 1], sg[n, 2]] <- n_hat[sg[n, 1], sg[n, 2]] + sum(xi[-1L, n])
   }
   sigN <- as.integer(q * (q + 1) / 2)
 

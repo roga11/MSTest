@@ -995,7 +995,8 @@ VARXmdl <- function(Y, p, Z, control = list()){
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
 #'  \item ltol: double determining the convergence criterion for the relative change in the log-likelihood between iterations (used when \code{conv} is \code{"loglik"}, \code{"both"}, \code{"loglik-A"}, or \code{"both-A"}). Default is \code{1e-7}.
 #'  \item conv: string determining the EM convergence criterion. \code{"loglik"} (the default) stops on the relative change in the log-likelihood; \code{"theta"} stops on the relative change in the parameters (the convention of Hamilton (1994) and of earlier versions of this package); \code{"both"} requires both, following Krolzig (1997); \code{"loglik-A"} and \code{"both-A"} replace the log-likelihood test with the Aitken-accelerated criterion of Bohning et al. (1994) and McLachlan and Krishnan (2008). Default is \code{"loglik"}.
-#'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{500}.
+#'  \item em_best_iterate: Boolean. If \code{TRUE} (the default), the EM returns the iterate with the highest log-likelihood visited along the iteration path, with the smoothed probabilities, residuals, and log-likelihood evaluated at that iterate. The filter is initialized at the ergodic distribution implied by the transition matrix, whose dependence on the transition probabilities the EM update does not account for, so individual iterations can reduce the log-likelihood slightly; this option makes the returned fit the best one visited. If \code{FALSE}, the final iterate is returned (the convention of earlier versions). The output element \code{descents} reports the number of likelihood decreases observed along the path.
+#'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{10}.
 #'  \item use_diff_init: integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.
 #'  \item mle_variance_constraint: double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is \code{1e-3}.
 #'  \item mle_theta_low: Vector with lower bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
@@ -1066,7 +1067,8 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
               thtol = 1.e-6,
               ltol = 1.e-7,
               conv = "loglik",
-              maxit_converge = 500,
+              em_best_iterate = TRUE,
+              maxit_converge = 10,
               use_diff_init = 1,
               mle_variance_constraint = 1e-3,
               mle_theta_low = NULL,
@@ -1085,7 +1087,8 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
   con$conv <- match.arg(con$conv, c("theta", "loglik", "both", "loglik-A", "both-A"))
   if (!isTRUE(con$use_diff_init >= 1)) stop("'use_diff_init' must be an integer >= 1.")
   if (!is.null(con$maxit_converge) && !isTRUE(con$maxit_converge >= 1)) stop("'maxit_converge' must be an integer >= 1.")
-  optim_options <- list(maxit = con$maxit, thtol = con$thtol, ltol = con$ltol, conv = con$conv)
+  optim_options <- list(maxit = con$maxit, thtol = con$thtol, ltol = con$ltol, conv = con$conv,
+                        em_best_iterate = con$em_best_iterate)
   # pre-define list and matrix length for results
   output_all <- list(con$use_diff_init)
   max_loglik <- matrix(-Inf, con$use_diff_init, 1)
@@ -1148,6 +1151,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
         if (is.null(Z)){
           output_tmp$betaZ <- NULL    
         }
+        if (is.null(output_tmp)) output_tmp <- list(logLike=-Inf, theta=rep(NA_real_, length(theta_0)))
         output_tmp$theta_0 <- theta_0
         max_loglik[xi] <- output_tmp$logLike
         output_tmp$init_used <- init_used
@@ -1249,6 +1253,10 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
   theta_sig_ind   <- c(rep(0, q + q*(k-1)*con$msmu + length(output$betaZ)), rep(1, Nsig + Nsig*(k-1)*con$msvar), rep(0, k*k))
   theta_var_ind   <- c(rep(0, q + q*(k-1)*con$msmu + length(output$betaZ)), rep(t(covar_vech(diag(q))), 1+(k-1)*con$msvar), rep(0, k*k))
   theta_P_ind     <- c(rep(0, length(output$theta) - (k*k)), rep(1, k*k))
+  if (is.null(output$mu)) {
+    stop("HMmdl estimation failed for every starting value (each start exhausted 'maxit_converge' attempts). ",
+         "Verify the data or increase 'use_diff_init'/'maxit_converge'.")
+  }
   if (con$msmu==FALSE){
     output$mu     <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
   }
@@ -1260,7 +1268,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
               theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind, 
               n = init_mdl$n, q = q, p = 0, k = k, control = con,
               P = output$P, pinf = output$pinf, St = output$St, logLike = output$logLike,  
-              deltath = output$deltath, iterations = output$iterations, converged = output$converged, theta_0 = output$theta_0,
+              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, theta_0 = output$theta_0,
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, exog = (!is.null(Z)))
   # Define class
   class(out) <- "HMmdl"
@@ -1344,7 +1352,8 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
 #'  \item ltol: double determining the convergence criterion for the relative change in the log-likelihood between iterations (used when \code{conv} is \code{"loglik"}, \code{"both"}, \code{"loglik-A"}, or \code{"both-A"}). Default is \code{1e-7}.
 #'  \item conv: string determining the EM convergence criterion. \code{"loglik"} (the default) stops on the relative change in the log-likelihood; \code{"theta"} stops on the relative change in the parameters (the convention of Hamilton (1994) and of earlier versions of this package); \code{"both"} requires both, following Krolzig (1997); \code{"loglik-A"} and \code{"both-A"} replace the log-likelihood test with the Aitken-accelerated criterion of Bohning et al. (1994) and McLachlan and Krishnan (2008). Default is \code{"loglik"}.
-#'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{500}.
+#'  \item em_best_iterate: Boolean. If \code{TRUE} (the default), the EM returns the iterate with the highest log-likelihood visited along the iteration path, with the smoothed probabilities, residuals, and log-likelihood evaluated at that iterate. The filter is initialized at the ergodic distribution implied by the transition matrix, whose dependence on the transition probabilities the EM update does not account for, so individual iterations can reduce the log-likelihood slightly; this option makes the returned fit the best one visited. If \code{FALSE}, the final iterate is returned (the convention of earlier versions). The output element \code{descents} reports the number of likelihood decreases observed along the path.
+#'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{10}.
 #'  \item use_diff_init: integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.
 #'  \item mle_stationary_constraint: Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.
 #'  \item mle_variance_constraint: Double used to determine the lower bound for variance in each regime. Value should be between \code{0} and \code{1} as it is multiplied by single regime variance. Default is \code{0.01} (i.e., \code{1\%} of single regime variance. This is the \code{method = "MLE"} counterpart of \code{em_variance_constraint}, which imposes the same bound on the EM path.
@@ -1419,7 +1428,8 @@ MSARmdl <- function(Y, p, k, control = list()){
               thtol = 1.e-6,
               ltol = 1.e-7,
               conv = "loglik",
-              maxit_converge = 500,
+              em_best_iterate = TRUE,
+              maxit_converge = 10,
               use_diff_init = 1,
               mle_stationary_constraint = TRUE,
               mle_variance_constraint = 0.01,
@@ -1438,7 +1448,8 @@ MSARmdl <- function(Y, p, k, control = list()){
   con$conv <- match.arg(con$conv, c("theta", "loglik", "both", "loglik-A", "both-A"))
   if (!isTRUE(con$use_diff_init >= 1)) stop("'use_diff_init' must be an integer >= 1.")
   if (!is.null(con$maxit_converge) && !isTRUE(con$maxit_converge >= 1)) stop("'maxit_converge' must be an integer >= 1.")
-  optim_options <- list(maxit = con$maxit, thtol = con$thtol, ltol = con$ltol, conv = con$conv)
+  optim_options <- list(maxit = con$maxit, thtol = con$thtol, ltol = con$ltol, conv = con$conv,
+                        em_best_iterate = con$em_best_iterate)
   # pre-define list and matrix length for results
   output_all <- list()
   max_loglik <- matrix(-Inf, con$use_diff_init, 1)
@@ -1497,6 +1508,7 @@ MSARmdl <- function(Y, p, k, control = list()){
             init_used <- init_used + 1
           }
         }
+        if (is.null(output_tmp)) output_tmp <- list(logLike=-Inf, theta=rep(NA_real_, length(theta_0)))
         output_tmp$theta_0 <- theta_0
         max_loglik[xi] <- output_tmp$logLike
         output_tmp$init_used <- init_used
@@ -1564,6 +1576,10 @@ MSARmdl <- function(Y, p, k, control = list()){
       output$init_used <- 1
     }
   }
+  if (is.null(output$mu)) {
+    stop("MSARmdl estimation failed for every starting value (each start exhausted 'maxit_converge' attempts). ",
+         "Verify the data or increase 'use_diff_init'/'maxit_converge'.")
+  }
   if (!is.finite(output$logLike) || !all(is.finite(output$theta))) {
     warning("MSARmdl estimation produced non-finite parameters. ",
             "Try: higher 'use_diff_init', different starting values, ",
@@ -1598,7 +1614,7 @@ MSARmdl <- function(Y, p, k, control = list()){
               theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind, 
               stationary = stationary, n = init_mdl$n, q = 1, p = p, k = k, control = con,
               P = output$P, pinf = output$pinf, St = output$St, logLike = output$logLike, 
-              deltath = output$deltath, iterations = output$iterations, converged = output$converged, theta_0 = output$theta_0, 
+              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, theta_0 = output$theta_0, 
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar)
   # Define class
   class(out) <- "MSARmdl"
@@ -1659,7 +1675,8 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
 #'  \item ltol: double determining the convergence criterion for the relative change in the log-likelihood between iterations (used when \code{conv} is \code{"loglik"}, \code{"both"}, \code{"loglik-A"}, or \code{"both-A"}). Default is \code{1e-7}.
 #'  \item conv: string determining the EM convergence criterion. \code{"loglik"} (the default) stops on the relative change in the log-likelihood; \code{"theta"} stops on the relative change in the parameters (the convention of Hamilton (1994) and of earlier versions of this package); \code{"both"} requires both, following Krolzig (1997); \code{"loglik-A"} and \code{"both-A"} replace the log-likelihood test with the Aitken-accelerated criterion of Bohning et al. (1994) and McLachlan and Krishnan (2008). Default is \code{"loglik"}.
-#'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{500}.
+#'  \item em_best_iterate: Boolean. If \code{TRUE} (the default), the EM returns the iterate with the highest log-likelihood visited along the iteration path, with the smoothed probabilities, residuals, and log-likelihood evaluated at that iterate. The filter is initialized at the ergodic distribution implied by the transition matrix, whose dependence on the transition probabilities the EM update does not account for, so individual iterations can reduce the log-likelihood slightly; this option makes the returned fit the best one visited. If \code{FALSE}, the final iterate is returned (the convention of earlier versions). The output element \code{descents} reports the number of likelihood decreases observed along the path.
+#'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{10}.
 #'  \item use_diff_init: integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.
 #'  \item mle_stationary_constraint: Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.
 #'  \item mle_variance_constraint: Double used to determine the lower bound for variance in each regime. Value should be between \code{0} and \code{1} as it is multiplied by single regime variance. Default is \code{0.01} (i.e., \code{1\%} of single regime variance. This is the \code{method = "MLE"} counterpart of \code{em_variance_constraint}, which imposes the same bound on the EM path.
@@ -1735,7 +1752,8 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
               thtol = 1.e-6,
               ltol = 1.e-7,
               conv = "loglik",
-              maxit_converge = 500,
+              em_best_iterate = TRUE,
+              maxit_converge = 10,
               use_diff_init = 1,
               mle_stationary_constraint = TRUE,
               mle_variance_constraint = 0.01,
@@ -1755,7 +1773,8 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
   con$conv <- match.arg(con$conv, c("theta", "loglik", "both", "loglik-A", "both-A"))
   if (!isTRUE(con$use_diff_init >= 1)) stop("'use_diff_init' must be an integer >= 1.")
   if (!is.null(con$maxit_converge) && !isTRUE(con$maxit_converge >= 1)) stop("'maxit_converge' must be an integer >= 1.")
-  optim_options <- list(maxit = con$maxit, thtol = con$thtol, ltol = con$ltol, conv = con$conv)
+  optim_options <- list(maxit = con$maxit, thtol = con$thtol, ltol = con$ltol, conv = con$conv,
+                        em_best_iterate = con$em_best_iterate)
   # pre-define list and matrix length for results
   output_all <- list()
   max_loglik <- matrix(-Inf, con$use_diff_init, 1)
@@ -1814,6 +1833,7 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
             init_used <- init_used + 1
           }
         }
+        if (is.null(output_tmp)) output_tmp <- list(logLike=-Inf, theta=rep(NA_real_, length(theta_0)))
         output_tmp$theta_0 <- theta_0
         max_loglik[xi] <- output_tmp$logLike
         output_tmp$init_used <- init_used
@@ -1881,6 +1901,10 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
       output$init_used <- 1  
     }
   }
+  if (is.null(output$mu)) {
+    stop("MSARXmdl estimation failed for every starting value (each start exhausted 'maxit_converge' attempts). ",
+         "Verify the data or increase 'use_diff_init'/'maxit_converge'.")
+  }
   if (con$msmu==FALSE){
     output$mu <- matrix(output$mu, nrow=k, ncol=1, byrow=TRUE) 
   }
@@ -1911,7 +1935,7 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
               theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind, 
               stationary = stationary, n = init_mdl$n, q = 1, p = p, k = k, control = con,
               P = output$P, pinf = output$pinf, St = output$St, logLike = output$logLike, 
-              deltath = output$deltath, iterations = output$iterations, converged = output$converged, theta_0 = output$theta_0, 
+              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, theta_0 = output$theta_0, 
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar)
   # Define class
   class(out) <- "MSARmdl"
@@ -1973,7 +1997,8 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
 #'  \item ltol: double determining the convergence criterion for the relative change in the log-likelihood between iterations (used when \code{conv} is \code{"loglik"}, \code{"both"}, \code{"loglik-A"}, or \code{"both-A"}). Default is \code{1e-7}.
 #'  \item conv: string determining the EM convergence criterion. \code{"loglik"} (the default) stops on the relative change in the log-likelihood; \code{"theta"} stops on the relative change in the parameters (the convention of Hamilton (1994) and of earlier versions of this package); \code{"both"} requires both, following Krolzig (1997); \code{"loglik-A"} and \code{"both-A"} replace the log-likelihood test with the Aitken-accelerated criterion of Bohning et al. (1994) and McLachlan and Krishnan (2008). Default is \code{"loglik"}.
-#'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{500}.
+#'  \item em_best_iterate: Boolean. If \code{TRUE} (the default), the EM returns the iterate with the highest log-likelihood visited along the iteration path, with the smoothed probabilities, residuals, and log-likelihood evaluated at that iterate. The filter is initialized at the ergodic distribution implied by the transition matrix, whose dependence on the transition probabilities the EM update does not account for, so individual iterations can reduce the log-likelihood slightly; this option makes the returned fit the best one visited. If \code{FALSE}, the final iterate is returned (the convention of earlier versions). The output element \code{descents} reports the number of likelihood decreases observed along the path.
+#'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{10}.
 #'  \item use_diff_init: integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.
 #'  \item mle_stationary_constraint: Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.
 #'  \item mle_variance_constraint: double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is \code{1e-3}.
@@ -2049,7 +2074,8 @@ MSVARmdl <- function(Y, p, k, control = list()){
               thtol = 1.e-6,
               ltol = 1.e-7,
               conv = "loglik",
-              maxit_converge = 500,
+              em_best_iterate = TRUE,
+              maxit_converge = 10,
               use_diff_init = 1,
               mle_stationary_constraint = TRUE,
               mle_variance_constraint = 1e-3,
@@ -2068,7 +2094,8 @@ MSVARmdl <- function(Y, p, k, control = list()){
   con$conv <- match.arg(con$conv, c("theta", "loglik", "both", "loglik-A", "both-A"))
   if (!isTRUE(con$use_diff_init >= 1)) stop("'use_diff_init' must be an integer >= 1.")
   if (!is.null(con$maxit_converge) && !isTRUE(con$maxit_converge >= 1)) stop("'maxit_converge' must be an integer >= 1.")
-  optim_options <- list(maxit = con$maxit, thtol = con$thtol, ltol = con$ltol, conv = con$conv)
+  optim_options <- list(maxit = con$maxit, thtol = con$thtol, ltol = con$ltol, conv = con$conv,
+                        em_best_iterate = con$em_best_iterate)
   # pre-define list and matrix length for results
   output_all <- list()
   max_loglik <- matrix(-Inf, con$use_diff_init, 1)
@@ -2127,6 +2154,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
             init_used <- init_used + 1
           }
         }
+        if (is.null(output_tmp)) output_tmp <- list(logLike=-Inf, theta=rep(NA_real_, length(theta_0)))
         output_tmp$theta_0 <- theta_0
         max_loglik[xi] <- output_tmp$logLike
         output_tmp$init_used <- init_used
@@ -2197,6 +2225,10 @@ MSVARmdl <- function(Y, p, k, control = list()){
     }
   }
   q <- ncol(Y)
+  if (is.null(output$mu)) {
+    stop("MSVARmdl estimation failed for every starting value (each start exhausted 'maxit_converge' attempts). ",
+         "Verify the data or increase 'use_diff_init'/'maxit_converge'.")
+  }
   if (con$msmu==FALSE){
     output$mu     <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
   }
@@ -2233,7 +2265,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
               theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind, 
               stationary = stationary, n = init_mdl$n, q = q, p = p, k = k, control = con,
               P = output$P, pinf = output$pinf, St = output$St, logLike = output$logLike,  
-              deltath = output$deltath, iterations = output$iterations, converged = output$converged, theta_0 = output$theta_0,
+              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, theta_0 = output$theta_0,
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar)
   # Define class
   class(out) <- "MSVARmdl"
@@ -2300,7 +2332,8 @@ MSVARmdl <- function(Y, p, k, control = list()){
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
 #'  \item ltol: double determining the convergence criterion for the relative change in the log-likelihood between iterations (used when \code{conv} is \code{"loglik"}, \code{"both"}, \code{"loglik-A"}, or \code{"both-A"}). Default is \code{1e-7}.
 #'  \item conv: string determining the EM convergence criterion. \code{"loglik"} (the default) stops on the relative change in the log-likelihood; \code{"theta"} stops on the relative change in the parameters (the convention of Hamilton (1994) and of earlier versions of this package); \code{"both"} requires both, following Krolzig (1997); \code{"loglik-A"} and \code{"both-A"} replace the log-likelihood test with the Aitken-accelerated criterion of Bohning et al. (1994) and McLachlan and Krishnan (2008). Default is \code{"loglik"}.
-#'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{500}.
+#'  \item em_best_iterate: Boolean. If \code{TRUE} (the default), the EM returns the iterate with the highest log-likelihood visited along the iteration path, with the smoothed probabilities, residuals, and log-likelihood evaluated at that iterate. The filter is initialized at the ergodic distribution implied by the transition matrix, whose dependence on the transition probabilities the EM update does not account for, so individual iterations can reduce the log-likelihood slightly; this option makes the returned fit the best one visited. If \code{FALSE}, the final iterate is returned (the convention of earlier versions). The output element \code{descents} reports the number of likelihood decreases observed along the path.
+#'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{10}.
 #'  \item use_diff_init: integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.
 #'  \item mle_stationary_constraint: Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.
 #'  \item mle_variance_constraint: double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is \code{1e-3}.
@@ -2377,7 +2410,8 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
               thtol = 1.e-6,
               ltol = 1.e-7,
               conv = "loglik",
-              maxit_converge = 500,
+              em_best_iterate = TRUE,
+              maxit_converge = 10,
               use_diff_init = 1,
               mle_stationary_constraint = TRUE,
               mle_variance_constraint = 1e-3,
@@ -2397,7 +2431,8 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
   con$conv <- match.arg(con$conv, c("theta", "loglik", "both", "loglik-A", "both-A"))
   if (!isTRUE(con$use_diff_init >= 1)) stop("'use_diff_init' must be an integer >= 1.")
   if (!is.null(con$maxit_converge) && !isTRUE(con$maxit_converge >= 1)) stop("'maxit_converge' must be an integer >= 1.")
-  optim_options <- list(maxit = con$maxit, thtol = con$thtol, ltol = con$ltol, conv = con$conv)
+  optim_options <- list(maxit = con$maxit, thtol = con$thtol, ltol = con$ltol, conv = con$conv,
+                        em_best_iterate = con$em_best_iterate)
   # pre-define list and matrix length for results
   output_all <- list()
   max_loglik <- matrix(-Inf, con$use_diff_init, 1)
@@ -2456,6 +2491,7 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
             init_used <- init_used + 1
           }
         }
+        if (is.null(output_tmp)) output_tmp <- list(logLike=-Inf, theta=rep(NA_real_, length(theta_0)))
         output_tmp$theta_0 <- theta_0
         max_loglik[xi] <- output_tmp$logLike
         output_tmp$init_used <- init_used
@@ -2526,6 +2562,10 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
     }
   }
   q <- ncol(Y)
+  if (is.null(output$mu)) {
+    stop("MSVARXmdl estimation failed for every starting value (each start exhausted 'maxit_converge' attempts). ",
+         "Verify the data or increase 'use_diff_init'/'maxit_converge'.")
+  }
   if (con$msmu==FALSE){
     output$mu     <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
   }
@@ -2562,7 +2602,7 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
               theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind, 
               stationary = stationary, n = init_mdl$n, q = q, p = p, k = k, control = con,
               P = output$P, pinf = output$pinf, St = output$St, logLike = output$logLike,  
-              deltath = output$deltath, iterations = output$iterations, converged = output$converged, theta_0 = output$theta_0,
+              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, theta_0 = output$theta_0,
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar)
   # Define class
   class(out) <- "MSVARmdl"

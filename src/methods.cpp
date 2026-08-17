@@ -131,6 +131,15 @@ arma::vec limP(arma::mat P){
     if (!pinf.is_finite()) {
       pinf.fill(1.0 / nr);
     }
+    // A stationary distribution is nonnegative by definition; the least-squares
+    // solve can return tiny negative entries at boundary/rank-deficient P, which
+    // corrupt the filter/smoother downstream (support monotonicity fails).
+    // Conditional: a no-op (bit-identical) whenever the solution is nonnegative.
+    if (pinf.min() < 0.0) {
+      pinf = arma::clamp(pinf, 0.0, arma::datum::inf);
+      double s = arma::accu(pinf);
+      if (s > 0.0 && std::isfinite(s)) pinf /= s; else pinf.fill(1.0/nr);
+    }
     return (pinf);
   }else{
     stop("Input must be a square matrix");
@@ -3001,6 +3010,7 @@ List ExpectationM_HMmdl(arma::vec theta, List mdl, int k){
   MSloglik_output["pinf"] = pinf;
   MSloglik_output["resid"] = eps;
   MSloglik_output["mu"] = mu_k;
+  MSloglik_output["betaZ"] = betaZ;
   MSloglik_output["sigma"] = sigma;
   MSloglik_output["theta"] = theta;
   MSloglik_output["residuals"] = eps;
@@ -3084,15 +3094,12 @@ List ExpectationM_MSARmdl(arma::vec theta, List mdl, int k){
   double logL = sum(logf);     //[eq. 22.4.7]
   double L = logL/Tsize; 
   // ---------- Hamilton smoother
-  arma::mat xi_t_T(Tsize, k, arma::fill::zeros); // [eq. 22.4.14]
-  arma::mat xi_t_T_tmp(Tsize, M, arma::fill::zeros); 
+  arma::mat xi_t_T(Tsize, k, arma::fill::zeros);
+  arma::mat xi_t_T_tmp(Tsize, M, arma::fill::zeros);
   xi_t_T_tmp.row(Tsize-1)  = xi_t_t_tmp.row(Tsize-1);
-  xi_t_T.row(Tsize-1)  = xi_t_t.row(Tsize-1);
   for (int xT = Tsize-2; xT>=0; xT--){
     arma::rowvec xi_tp1_tmp_safe = xi_tp1_t_tmp.row(xT);
     xi_tp1_tmp_safe.clamp(1e-300, 1.0);  // guard against exact-zero denominator
-    arma::rowvec xi_tp1_safe = xi_tp1_t.row(xT);
-    xi_tp1_safe.clamp(1e-300, 1.0);
     xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT)%trans(smooth_fast(trans(xi_t_T_tmp.row(xT+1)/xi_tp1_tmp_safe), P, k, p));
     double row_sum_M = accu(xi_t_T_tmp.row(xT));
     if (row_sum_M > 0 && std::isfinite(row_sum_M)) {
@@ -3100,14 +3107,12 @@ List ExpectationM_MSARmdl(arma::vec theta, List mdl, int k){
     } else {
       xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT);
     }
-    // k-state smoother: do NOT renormalize. Sum-to-1 is an algebraic invariant of the
-    // Kim (1994) recursion (Krolzig 1997, eq. 5.13). Renormalization introduces time-varying
-    // scaling that breaks the P update identity (eq. 6.14): sum_j P_new(j,i) != 1.
-    xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_safe));
-    // Non-finite guard: if smoother fails (should never happen for k-state), use filtered.
-    if (!xi_t_T.row(xT).is_finite()) {
-      xi_t_T.row(xT) = xi_t_t.row(xT);
-    }
+  }
+  // Marginal (k-state) smoothed probabilities: the conditional density of an MS-AR depends
+  // on the date-t and lagged regimes, so smoothed inference lives on the extended state
+  // (Hamilton 1994, sec. 22.4); the marginal is its aggregate over the date-t regime.
+  for (int xk = 1; xk<=k; xk++){
+    xi_t_T.col(xk-1) = arma::sum(xi_t_T_tmp.cols(find(state_ind==xk)), 1);
   }
   // ----- Compute model residuals
   arma::mat residuals_tmp = eps%xi_t_T_tmp;
@@ -3225,15 +3230,12 @@ List ExpectationM_MSARXmdl(arma::vec theta, List mdl, int k){
   double logL = sum(logf);     //[eq. 22.4.7]
   double L = logL/Tsize; 
   // ---------- Hamilton smoother
-  arma::mat xi_t_T(Tsize, k, arma::fill::zeros); // [eq. 22.4.14]
-  arma::mat xi_t_T_tmp(Tsize, M, arma::fill::zeros); 
+  arma::mat xi_t_T(Tsize, k, arma::fill::zeros);
+  arma::mat xi_t_T_tmp(Tsize, M, arma::fill::zeros);
   xi_t_T_tmp.row(Tsize-1)  = xi_t_t_tmp.row(Tsize-1);
-  xi_t_T.row(Tsize-1)  = xi_t_t.row(Tsize-1);
   for (int xT = Tsize-2; xT>=0; xT--){
     arma::rowvec xi_tp1_tmp_safe = xi_tp1_t_tmp.row(xT);
     xi_tp1_tmp_safe.clamp(1e-300, 1.0);  // guard against exact-zero denominator
-    arma::rowvec xi_tp1_safe = xi_tp1_t.row(xT);
-    xi_tp1_safe.clamp(1e-300, 1.0);
     xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT)%trans(smooth_fast(trans(xi_t_T_tmp.row(xT+1)/xi_tp1_tmp_safe), P, k, p));
     double row_sum_M = accu(xi_t_T_tmp.row(xT));
     if (row_sum_M > 0 && std::isfinite(row_sum_M)) {
@@ -3241,14 +3243,12 @@ List ExpectationM_MSARXmdl(arma::vec theta, List mdl, int k){
     } else {
       xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT);
     }
-    // k-state smoother: do NOT renormalize. Sum-to-1 is an algebraic invariant of the
-    // Kim (1994) recursion (Krolzig 1997, eq. 5.13). Renormalization introduces time-varying
-    // scaling that breaks the P update identity (eq. 6.14): sum_j P_new(j,i) != 1.
-    xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_safe));
-    // Non-finite guard: if smoother fails (should never happen for k-state), use filtered.
-    if (!xi_t_T.row(xT).is_finite()) {
-      xi_t_T.row(xT) = xi_t_t.row(xT);
-    }
+  }
+  // Marginal (k-state) smoothed probabilities: the conditional density of an MS-AR depends
+  // on the date-t and lagged regimes, so smoothed inference lives on the extended state
+  // (Hamilton 1994, sec. 22.4); the marginal is its aggregate over the date-t regime.
+  for (int xk = 1; xk<=k; xk++){
+    xi_t_T.col(xk-1) = arma::sum(xi_t_T_tmp.cols(find(state_ind==xk)), 1);
   }
   // ----- Compute model residuals
   arma::mat residuals_tmp = eps%xi_t_T_tmp;
@@ -3378,15 +3378,12 @@ List ExpectationM_MSVARmdl(arma::vec theta, List mdl, int k){
   double logL = sum(logf);     //[eq. 22.4.7]
   double L = logL/Tsize; 
   // ---------- Hamilton smoother
-  arma::mat xi_t_T(Tsize, k, arma::fill::zeros); // [eq. 22.4.14]
-  arma::mat xi_t_T_tmp(Tsize, M, arma::fill::zeros); 
+  arma::mat xi_t_T(Tsize, k, arma::fill::zeros);
+  arma::mat xi_t_T_tmp(Tsize, M, arma::fill::zeros);
   xi_t_T_tmp.row(Tsize-1)  = xi_t_t_tmp.row(Tsize-1);
-  xi_t_T.row(Tsize-1)  = xi_t_t.row(Tsize-1);
   for (int xT = Tsize-2; xT>=0; xT--){
     arma::rowvec xi_tp1_tmp_safe = xi_tp1_t_tmp.row(xT);
     xi_tp1_tmp_safe.clamp(1e-300, 1.0);  // guard against exact-zero denominator
-    arma::rowvec xi_tp1_safe = xi_tp1_t.row(xT);
-    xi_tp1_safe.clamp(1e-300, 1.0);
     xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT)%trans(smooth_fast(trans(xi_t_T_tmp.row(xT+1)/xi_tp1_tmp_safe), P, k, ar));
     double row_sum_M = accu(xi_t_T_tmp.row(xT));
     if (row_sum_M > 0 && std::isfinite(row_sum_M)) {
@@ -3394,14 +3391,12 @@ List ExpectationM_MSVARmdl(arma::vec theta, List mdl, int k){
     } else {
       xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT);
     }
-    // k-state smoother: do NOT renormalize. Sum-to-1 is an algebraic invariant of the
-    // Kim (1994) recursion (Krolzig 1997, eq. 5.13). Renormalization introduces time-varying
-    // scaling that breaks the P update identity (eq. 6.14): sum_j P_new(j,i) != 1.
-    xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_safe));
-    // Non-finite guard: if smoother fails (should never happen for k-state), use filtered.
-    if (!xi_t_T.row(xT).is_finite()) {
-      xi_t_T.row(xT) = xi_t_t.row(xT);
-    }
+  }
+  // Marginal (k-state) smoothed probabilities: the conditional density of an MS-VAR depends
+  // on the date-t and lagged regimes, so smoothed inference lives on the extended state
+  // (Hamilton 1994, sec. 22.4); the marginal is its aggregate over the date-t regime.
+  for (int xk = 1; xk<=k; xk++){
+    xi_t_T.col(xk-1) = arma::sum(xi_t_T_tmp.cols(find(state_ind==xk)), 1);
   }
   // ----- Compute model residuals
   arma::mat residuals(Tsize, q, arma::fill::zeros);
@@ -3534,15 +3529,12 @@ List ExpectationM_MSVARXmdl(arma::vec theta, List mdl, int k){
   double logL = sum(logf);     //[eq. 22.4.7]
   double L = logL/Tsize; 
   // ---------- Hamilton smoother
-  arma::mat xi_t_T(Tsize, k, arma::fill::zeros); // [eq. 22.4.14]
-  arma::mat xi_t_T_tmp(Tsize, M, arma::fill::zeros); 
+  arma::mat xi_t_T(Tsize, k, arma::fill::zeros);
+  arma::mat xi_t_T_tmp(Tsize, M, arma::fill::zeros);
   xi_t_T_tmp.row(Tsize-1)  = xi_t_t_tmp.row(Tsize-1);
-  xi_t_T.row(Tsize-1)  = xi_t_t.row(Tsize-1);
   for (int xT = Tsize-2; xT>=0; xT--){
     arma::rowvec xi_tp1_tmp_safe = xi_tp1_t_tmp.row(xT);
     xi_tp1_tmp_safe.clamp(1e-300, 1.0);  // guard against exact-zero denominator
-    arma::rowvec xi_tp1_safe = xi_tp1_t.row(xT);
-    xi_tp1_safe.clamp(1e-300, 1.0);
     xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT)%trans(smooth_fast(trans(xi_t_T_tmp.row(xT+1)/xi_tp1_tmp_safe), P, k, ar));
     double row_sum_M = accu(xi_t_T_tmp.row(xT));
     if (row_sum_M > 0 && std::isfinite(row_sum_M)) {
@@ -3550,14 +3542,12 @@ List ExpectationM_MSVARXmdl(arma::vec theta, List mdl, int k){
     } else {
       xi_t_T_tmp.row(xT) = xi_t_t_tmp.row(xT);
     }
-    // k-state smoother: do NOT renormalize. Sum-to-1 is an algebraic invariant of the
-    // Kim (1994) recursion (Krolzig 1997, eq. 5.13). Renormalization introduces time-varying
-    // scaling that breaks the P update identity (eq. 6.14): sum_j P_new(j,i) != 1.
-    xi_t_T.row(xT) = xi_t_t.row(xT)%trans(trans(P)*trans(xi_t_T.row(xT+1)/xi_tp1_safe));
-    // Non-finite guard: if smoother fails (should never happen for k-state), use filtered.
-    if (!xi_t_T.row(xT).is_finite()) {
-      xi_t_T.row(xT) = xi_t_t.row(xT);
-    }
+  }
+  // Marginal (k-state) smoothed probabilities: the conditional density of an MS-VAR depends
+  // on the date-t and lagged regimes, so smoothed inference lives on the extended state
+  // (Hamilton 1994, sec. 22.4); the marginal is its aggregate over the date-t regime.
+  for (int xk = 1; xk<=k; xk++){
+    xi_t_T.col(xk-1) = arma::sum(xi_t_T_tmp.cols(find(state_ind==xk)), 1);
   }
   // ----- Compute model residuals
   arma::mat residuals(Tsize, q, arma::fill::zeros);
@@ -3913,30 +3903,23 @@ List EMaximization_MSARmdl(arma::vec theta, List mdl, List MSloglik_output, int 
   int Tsize = y.n_elem; // Length of Time-Series (T)
   int M     = pow(k, ar+1); // Number of regimes consistent with AR lags
   // --------------- Update transition matrix (P) and limiting probabilities (pinf)
-  // ----- Estimate Transition probs for k-state Markov-chain [eq. 22.4.16]
-  arma::mat xi_t_T_tmp = xi_t_T.rows(1,Tsize-1);
-  arma::mat xi_t_t_tmp = xi_t_t.rows(0,Tsize-2);
-  arma::mat xi_tp1_t_safe = arma::clamp(xi_tp1_t.rows(0,Tsize-2), 1e-300, 1.0);
-  arma::mat p_ij(Tsize-1, k*k, arma::fill::zeros);
-  for (int xk = 0; xk<k; xk++){
-    p_ij.submat(0,xk*k,Tsize-2,xk*k+k-1) = (xi_t_T_tmp%trans(P.col(xk)*trans(xi_t_t_tmp.col(xk))))/xi_tp1_t_safe;
+  // ----- Smoothed transition counts [Hamilton 1994, eq. 22.4.16; Krolzig 1997, eq. 6.14].
+  // The extended state encodes (s_t, s_{t-1}, ...), so Pr(s_t = j, s_{t-1} = i | Y) is the
+  // sum of xi_t_T_AR over extended states with date-t regime j and lag-1 regime i.
+  arma::mat counts(k, k, arma::fill::zeros);
+  for (int xn = 0; xn < M; xn++){
+    int reg_i0 = xn % k;        // regime at date t
+    int reg_i1 = (xn / k) % k;  // regime at date t-1
+    counts(reg_i0, reg_i1) += arma::accu(xi_t_T_AR.submat(1, xn, Tsize-1, xn));
   }
-  arma::mat P_new = trans(P);  // Initialize from previous P; degenerate regimes keep their column
-  arma::mat p_ij_sums = arma::sum(p_ij,0);
-  for (int xk = 0 ; xk<k; xk++){
-    arma::vec regime_prob = xi_t_T.submat(0,xk,(Tsize-2),xk);
-    double regimesum = sum(regime_prob);
-    if (regimesum < 1e-6 * Tsize) continue;  // degenerate: keep previous P column
-    P_new.row(xk) = p_ij_sums.submat(0,(xk*k),0,(xk*k+(k-1)))/regimesum;
+  arma::mat P_new = P;  // degenerate regimes keep their previous column
+  for (int xk = 0; xk < k; xk++){
+    double countsum = arma::accu(counts.col(xk));
+    if (std::isfinite(countsum) && countsum >= 1e-6 * Tsize && counts.col(xk).is_finite()){
+      P_new.col(xk) = counts.col(xk) / countsum;
+    }
   }
-  P_new = trans(P_new);
-  // Guard against NaN in P_new (can occur when p_ij numerator is also 0)
-  for (int xk = 0; xk < k; xk++) {
-    if (!P_new.col(xk).is_finite()) P_new.col(xk) = P.col(xk);  // keep previous
-  }
-  // Enforce valid transition probabilities: clamp to [0,1] and normalize columns to sum to 1.
-  // In exact arithmetic, P_new is already in [0,1] with unit column sums (Krolzig 1997, eq. 6.14).
-  // This guard defends against floating-point drift only.
+  // Floating-point guard: keep P_new a valid column-stochastic matrix.
   P_new = arma::clamp(P_new, 0.0, 1.0);
   for (int xk = 0; xk < k; xk++) {
     double colsum = arma::accu(P_new.col(xk));
@@ -4142,30 +4125,23 @@ List EMaximization_MSARXmdl(arma::vec theta, List mdl, List MSloglik_output, int
   Z                     = Z.rows(ar,Tsize+ar-1);
   arma::rowvec zbar     = arma::mean(Z,0);
   // --------------- Update transition matrix (P) and limiting probabilities (pinf)
-  // ----- Estimate Transition probs for k-state Markov-chain [eq. 22.4.16]
-  arma::mat xi_t_T_tmp    = xi_t_T.rows(1,Tsize-1);
-  arma::mat xi_t_t_tmp    = xi_t_t.rows(0,Tsize-2);
-  arma::mat xi_tp1_t_safe = arma::clamp(xi_tp1_t.rows(0,Tsize-2), 1e-300, 1.0);
-  arma::mat p_ij(Tsize-1, k*k, arma::fill::zeros);
-  for (int xk = 0; xk<k; xk++){
-    p_ij.submat(0,xk*k,Tsize-2,xk*k+k-1) = (xi_t_T_tmp%trans(P.col(xk)*trans(xi_t_t_tmp.col(xk))))/xi_tp1_t_safe;
+  // ----- Smoothed transition counts [Hamilton 1994, eq. 22.4.16; Krolzig 1997, eq. 6.14].
+  // The extended state encodes (s_t, s_{t-1}, ...), so Pr(s_t = j, s_{t-1} = i | Y) is the
+  // sum of xi_t_T_AR over extended states with date-t regime j and lag-1 regime i.
+  arma::mat counts(k, k, arma::fill::zeros);
+  for (int xn = 0; xn < M; xn++){
+    int reg_i0 = xn % k;        // regime at date t
+    int reg_i1 = (xn / k) % k;  // regime at date t-1
+    counts(reg_i0, reg_i1) += arma::accu(xi_t_T_AR.submat(1, xn, Tsize-1, xn));
   }
-  arma::mat P_new = trans(P);  // Initialize from previous P; degenerate regimes keep their column
-  arma::mat p_ij_sums = arma::sum(p_ij,0);
-  for (int xk = 0 ; xk<k; xk++){
-    arma::vec regime_prob = xi_t_T.submat(0,xk,(Tsize-2),xk);
-    double regimesum      = sum(regime_prob);
-    if (regimesum < 1e-6 * Tsize) continue;  // degenerate: keep previous P column
-    P_new.row(xk)         = p_ij_sums.submat(0,(xk*k),0,(xk*k+(k-1)))/regimesum;
+  arma::mat P_new = P;  // degenerate regimes keep their previous column
+  for (int xk = 0; xk < k; xk++){
+    double countsum = arma::accu(counts.col(xk));
+    if (std::isfinite(countsum) && countsum >= 1e-6 * Tsize && counts.col(xk).is_finite()){
+      P_new.col(xk) = counts.col(xk) / countsum;
+    }
   }
-  P_new = trans(P_new);
-  // Guard against NaN in P_new (can occur when p_ij numerator is also 0)
-  for (int xk = 0; xk < k; xk++) {
-    if (!P_new.col(xk).is_finite()) P_new.col(xk) = P.col(xk);  // keep previous
-  }
-  // Enforce valid transition probabilities: clamp to [0,1] and normalize columns to sum to 1.
-  // In exact arithmetic, P_new is already in [0,1] with unit column sums (Krolzig 1997, eq. 6.14).
-  // This guard defends against floating-point drift only.
+  // Floating-point guard: keep P_new a valid column-stochastic matrix.
   P_new = arma::clamp(P_new, 0.0, 1.0);
   for (int xk = 0; xk < k; xk++) {
     double colsum = arma::accu(P_new.col(xk));
@@ -4378,30 +4354,23 @@ List EMaximization_MSVARmdl(arma::vec theta, List mdl, List MSloglik_output, int
   // Number of regimes consistent with AR lags
   int M = pow(k, ar+1);
   // --------------- Update transition matrix (P) and limiting probabilities (pinf)
-  // ----- Estimate Transition probs for k-state Markov-chain [eq. 22.4.16]
-  arma::mat xi_t_T_tmp    = xi_t_T.rows(1,Tsize-1);
-  arma::mat xi_t_t_tmp    = xi_t_t.rows(0,Tsize-2);
-  arma::mat xi_tp1_t_safe = arma::clamp(xi_tp1_t.rows(0,Tsize-2), 1e-300, 1.0);
-  arma::mat p_ij(Tsize-1, k*k, arma::fill::zeros);
-  for (int xk = 0; xk<k; xk++){
-    p_ij.submat(0,xk*k,Tsize-2,xk*k+k-1) = (xi_t_T_tmp%trans(P.col(xk)*trans(xi_t_t_tmp.col(xk))))/xi_tp1_t_safe;
+  // ----- Smoothed transition counts [Hamilton 1994, eq. 22.4.16; Krolzig 1997, eq. 6.14].
+  // The extended state encodes (s_t, s_{t-1}, ...), so Pr(s_t = j, s_{t-1} = i | Y) is the
+  // sum of xi_t_T_AR over extended states with date-t regime j and lag-1 regime i.
+  arma::mat counts(k, k, arma::fill::zeros);
+  for (int xn = 0; xn < M; xn++){
+    int reg_i0 = xn % k;        // regime at date t
+    int reg_i1 = (xn / k) % k;  // regime at date t-1
+    counts(reg_i0, reg_i1) += arma::accu(xi_t_T_AR.submat(1, xn, Tsize-1, xn));
   }
-  arma::mat P_new = trans(P);  // Initialize from previous P; degenerate regimes keep their column
-  arma::mat p_ij_sums = arma::sum(p_ij,0);
-  for (int xk = 0 ; xk<k; xk++){
-    arma::vec regime_prob = xi_t_T.submat(0,xk,(Tsize-2),xk);
-    double regimesum = sum(regime_prob);
-    if (regimesum < 1e-6 * Tsize) continue;  // degenerate: keep previous P column
-    P_new.row(xk) = p_ij_sums.submat(0,(xk*k),0,(xk*k+(k-1)))/regimesum;
+  arma::mat P_new = P;  // degenerate regimes keep their previous column
+  for (int xk = 0; xk < k; xk++){
+    double countsum = arma::accu(counts.col(xk));
+    if (std::isfinite(countsum) && countsum >= 1e-6 * Tsize && counts.col(xk).is_finite()){
+      P_new.col(xk) = counts.col(xk) / countsum;
+    }
   }
-  P_new = trans(P_new);
-  // Guard against NaN in P_new (can occur when p_ij numerator is also 0)
-  for (int xk = 0; xk < k; xk++) {
-    if (!P_new.col(xk).is_finite()) P_new.col(xk) = P.col(xk);  // keep previous
-  }
-  // Enforce valid transition probabilities: clamp to [0,1] and normalize columns to sum to 1.
-  // In exact arithmetic, P_new is already in [0,1] with unit column sums (Krolzig 1997, eq. 6.14).
-  // This guard defends against floating-point drift only.
+  // Floating-point guard: keep P_new a valid column-stochastic matrix.
   P_new = arma::clamp(P_new, 0.0, 1.0);
   for (int xk = 0; xk < k; xk++) {
     double colsum = arma::accu(P_new.col(xk));
@@ -4667,30 +4636,23 @@ List EMaximization_MSVARXmdl(arma::vec theta, List mdl, List MSloglik_output, in
   Z                     = Z.rows(ar,Tsize+ar-1);
   arma::rowvec zbar     = arma::mean(Z,0);
   // --------------- Update transition matrix (P) and limiting probabilities (pinf)
-  // ----- Estimate Transition probs for k-state Markov-chain [eq. 22.4.16]
-  arma::mat xi_t_T_tmp    = xi_t_T.rows(1,Tsize-1);
-  arma::mat xi_t_t_tmp    = xi_t_t.rows(0,Tsize-2);
-  arma::mat xi_tp1_t_safe = arma::clamp(xi_tp1_t.rows(0,Tsize-2), 1e-300, 1.0);
-  arma::mat p_ij(Tsize-1, k*k, arma::fill::zeros);
-  for (int xk = 0; xk<k; xk++){
-    p_ij.submat(0,xk*k,Tsize-2,xk*k+k-1) = (xi_t_T_tmp%trans(P.col(xk)*trans(xi_t_t_tmp.col(xk))))/xi_tp1_t_safe;
+  // ----- Smoothed transition counts [Hamilton 1994, eq. 22.4.16; Krolzig 1997, eq. 6.14].
+  // The extended state encodes (s_t, s_{t-1}, ...), so Pr(s_t = j, s_{t-1} = i | Y) is the
+  // sum of xi_t_T_AR over extended states with date-t regime j and lag-1 regime i.
+  arma::mat counts(k, k, arma::fill::zeros);
+  for (int xn = 0; xn < M; xn++){
+    int reg_i0 = xn % k;        // regime at date t
+    int reg_i1 = (xn / k) % k;  // regime at date t-1
+    counts(reg_i0, reg_i1) += arma::accu(xi_t_T_AR.submat(1, xn, Tsize-1, xn));
   }
-  arma::mat P_new = trans(P);  // Initialize from previous P; degenerate regimes keep their column
-  arma::mat p_ij_sums = arma::sum(p_ij,0);
-  for (int xk = 0 ; xk<k; xk++){
-    arma::vec regime_prob = xi_t_T.submat(0,xk,(Tsize-2),xk);
-    double regimesum = sum(regime_prob);
-    if (regimesum < 1e-6 * Tsize) continue;  // degenerate: keep previous P column
-    P_new.row(xk) = p_ij_sums.submat(0,(xk*k),0,(xk*k+(k-1)))/regimesum;
+  arma::mat P_new = P;  // degenerate regimes keep their previous column
+  for (int xk = 0; xk < k; xk++){
+    double countsum = arma::accu(counts.col(xk));
+    if (std::isfinite(countsum) && countsum >= 1e-6 * Tsize && counts.col(xk).is_finite()){
+      P_new.col(xk) = counts.col(xk) / countsum;
+    }
   }
-  P_new = trans(P_new);
-  // Guard against NaN in P_new (can occur when p_ij numerator is also 0)
-  for (int xk = 0; xk < k; xk++) {
-    if (!P_new.col(xk).is_finite()) P_new.col(xk) = P.col(xk);  // keep previous
-  }
-  // Enforce valid transition probabilities: clamp to [0,1] and normalize columns to sum to 1.
-  // In exact arithmetic, P_new is already in [0,1] with unit column sums (Krolzig 1997, eq. 6.14).
-  // This guard defends against floating-point drift only.
+  // Floating-point guard: keep P_new a valid column-stochastic matrix.
   P_new = arma::clamp(P_new, 0.0, 1.0);
   for (int xk = 0; xk < k; xk++) {
     double colsum = arma::accu(P_new.col(xk));
@@ -5267,21 +5229,58 @@ List HMmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   int it = 1;
   double deltath = EMest_output["deltath"];
   arma::vec thl = EMest_output["thl"];
-  // convergence controls (ltol/conv may be absent for legacy direct callers)
+  // convergence controls (ltol/conv/em_best_iterate may be absent for legacy direct callers)
   double ltol = optim_options.containsElementNamed("ltol") ? Rcpp::as<double>(optim_options["ltol"]) : 1e-7;
   std::string conv = optim_options.containsElementNamed("conv") ? Rcpp::as<std::string>(optim_options["conv"]) : "theta";
+  bool best_iterate = optim_options.containsElementNamed("em_best_iterate") ? Rcpp::as<bool>(optim_options["em_best_iterate"]) : false;
   double inc_prev = arma::datum::nan, linf_prev = arma::datum::nan;
   int aitken_streak = 0;
+  // Track the best likelihood visited: the ergodic filter initialization makes the
+  // transition-probability update a generalized EM step, so single iterations can lose
+  // likelihood; with em_best_iterate the best visited iterate is returned.
+  arma::vec best_theta = theta_0;
+  double best_ll = thl(0);
+  double ll_seen = thl(0);
+  int descents = 0;
   bool converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   // iterate until convergence criterion is met or max number of iterations (maxit)
-  while ((it<=maxit) & (!converged)){
+  while ((it<maxit) & (!converged)){
+    arma::vec theta_in = EMest_output["theta"];
     EMest_output = EMiter_HMmdl(mdl, EMest_output, k);
     deltath = EMest_output["deltath"];
     thl = Rcpp::as<arma::vec>(EMest_output["thl"]);
+    if (std::isfinite(thl(0))){
+      if (std::isfinite(ll_seen) && thl(0) < ll_seen - 1e-9) descents++;
+      if (!std::isfinite(best_ll) || thl(0) > best_ll){ best_ll = thl(0); best_theta = theta_in; }
+      ll_seen = thl(0);
+    }
     it = it + 1;
     converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   }
-  EMest_output["iterations"] = it-1;
+  if (best_iterate){
+    // One E-step at the returned iterate: logLike/St/residuals correspond to it exactly.
+    arma::vec theta_last = EMest_output["theta"];
+    List E_fin = ExpectationM_HMmdl(theta_last, mdl, k);
+    double ll_fin = E_fin["logLike"];
+    if (std::isfinite(ll_seen) && std::isfinite(ll_fin) && ll_fin < ll_seen - 1e-9) descents++;
+    arma::vec theta_w = theta_last; List E_w = E_fin;
+    if (std::isfinite(best_ll) && !(std::isfinite(ll_fin) && ll_fin >= best_ll)){
+      theta_w = best_theta; E_w = ExpectationM_HMmdl(best_theta, mdl, k);
+    }
+    EMest_output["theta"]     = theta_w;
+    EMest_output["mu"]        = E_w["mu"];
+    EMest_output["betaZ"]     = E_w["betaZ"];
+    EMest_output["sigma"]     = E_w["sigma"];
+    EMest_output["P"]         = E_w["P"];
+    EMest_output["pinf"]      = E_w["pinf"];
+    EMest_output["St"]        = E_w["xi_t_T"];
+    EMest_output["eta"]       = E_w["eta"];
+    EMest_output["logLike"]   = E_w["logLike"];
+    EMest_output["residuals"] = E_w["residuals"];
+    EMest_output["resid"]     = E_w["resid"];
+  }
+  EMest_output["descents"] = descents;
+  EMest_output["iterations"] = it;  // EM iterations performed, including the pre-loop iteration
   EMest_output["converged"] = converged;
   return(EMest_output);
 }
@@ -5322,21 +5321,59 @@ List MSARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   int it = 1;
   double deltath = EMest_output["deltath"];
   arma::vec thl = EMest_output["thl"];
-  // convergence controls (ltol/conv may be absent for legacy direct callers)
+  // convergence controls (ltol/conv/em_best_iterate may be absent for legacy direct callers)
   double ltol = optim_options.containsElementNamed("ltol") ? Rcpp::as<double>(optim_options["ltol"]) : 1e-7;
   std::string conv = optim_options.containsElementNamed("conv") ? Rcpp::as<std::string>(optim_options["conv"]) : "theta";
+  bool best_iterate = optim_options.containsElementNamed("em_best_iterate") ? Rcpp::as<bool>(optim_options["em_best_iterate"]) : false;
   double inc_prev = arma::datum::nan, linf_prev = arma::datum::nan;
   int aitken_streak = 0;
+  // Track the best likelihood visited: the ergodic filter initialization makes the
+  // transition-probability update a generalized EM step, so single iterations can lose
+  // likelihood; with em_best_iterate the best visited iterate is returned.
+  arma::vec best_theta = theta_0;
+  double best_ll = thl(0);
+  double ll_seen = thl(0);
+  int descents = 0;
   bool converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   // iterate until convergence criterion is met or max number of iterations (maxit)
-  while ((it<=maxit) & (!converged)){
+  while ((it<maxit) & (!converged)){
+    arma::vec theta_in = EMest_output["theta"];
     EMest_output = EMiter_MSARmdl(mdl, EMest_output, k);
     deltath = EMest_output["deltath"];
     thl = Rcpp::as<arma::vec>(EMest_output["thl"]);
+    if (std::isfinite(thl(0))){
+      if (std::isfinite(ll_seen) && thl(0) < ll_seen - 1e-9) descents++;
+      if (!std::isfinite(best_ll) || thl(0) > best_ll){ best_ll = thl(0); best_theta = theta_in; }
+      ll_seen = thl(0);
+    }
     it = it + 1;
     converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   }
-  EMest_output["iterations"] = it-1;
+  if (best_iterate){
+    // One E-step at the returned iterate: logLike/St/residuals correspond to it exactly.
+    arma::vec theta_last = EMest_output["theta"];
+    List E_fin = ExpectationM_MSARmdl(theta_last, mdl, k);
+    double ll_fin = E_fin["logLike"];
+    if (std::isfinite(ll_seen) && std::isfinite(ll_fin) && ll_fin < ll_seen - 1e-9) descents++;
+    arma::vec theta_w = theta_last; List E_w = E_fin;
+    if (std::isfinite(best_ll) && !(std::isfinite(ll_fin) && ll_fin >= best_ll)){
+      theta_w = best_theta; E_w = ExpectationM_MSARmdl(best_theta, mdl, k);
+    }
+    EMest_output["theta"]     = theta_w;
+    EMest_output["mu"]        = E_w["mu"];
+    EMest_output["phi"]       = E_w["phi"];
+    EMest_output["beta"]      = E_w["beta"];
+    EMest_output["sigma"]     = E_w["sigma"];
+    EMest_output["P"]         = E_w["P"];
+    EMest_output["pinf"]      = E_w["pinf"];
+    EMest_output["St"]        = E_w["xi_t_T"];
+    EMest_output["eta"]       = E_w["eta"];
+    EMest_output["logLike"]   = E_w["logLike"];
+    EMest_output["residuals"] = E_w["residuals"];
+    EMest_output["resid"]     = E_w["resid"];
+  }
+  EMest_output["descents"] = descents;
+  EMest_output["iterations"] = it;  // EM iterations performed, including the pre-loop iteration
   EMest_output["converged"] = converged;
   return(EMest_output);
 }
@@ -5375,21 +5412,60 @@ List MSARXmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   int it = 1;
   double deltath = EMest_output["deltath"];
   arma::vec thl = EMest_output["thl"];
-  // convergence controls (ltol/conv may be absent for legacy direct callers)
+  // convergence controls (ltol/conv/em_best_iterate may be absent for legacy direct callers)
   double ltol = optim_options.containsElementNamed("ltol") ? Rcpp::as<double>(optim_options["ltol"]) : 1e-7;
   std::string conv = optim_options.containsElementNamed("conv") ? Rcpp::as<std::string>(optim_options["conv"]) : "theta";
+  bool best_iterate = optim_options.containsElementNamed("em_best_iterate") ? Rcpp::as<bool>(optim_options["em_best_iterate"]) : false;
   double inc_prev = arma::datum::nan, linf_prev = arma::datum::nan;
   int aitken_streak = 0;
+  // Track the best likelihood visited: the ergodic filter initialization makes the
+  // transition-probability update a generalized EM step, so single iterations can lose
+  // likelihood; with em_best_iterate the best visited iterate is returned.
+  arma::vec best_theta = theta_0;
+  double best_ll = thl(0);
+  double ll_seen = thl(0);
+  int descents = 0;
   bool converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   // iterate until convergence criterion is met or max number of iterations (maxit)
-  while ((it<=maxit) & (!converged)){
+  while ((it<maxit) & (!converged)){
+    arma::vec theta_in = EMest_output["theta"];
     EMest_output = EMiter_MSARXmdl(mdl, EMest_output, k);
     deltath = EMest_output["deltath"];
     thl = Rcpp::as<arma::vec>(EMest_output["thl"]);
+    if (std::isfinite(thl(0))){
+      if (std::isfinite(ll_seen) && thl(0) < ll_seen - 1e-9) descents++;
+      if (!std::isfinite(best_ll) || thl(0) > best_ll){ best_ll = thl(0); best_theta = theta_in; }
+      ll_seen = thl(0);
+    }
     it = it + 1;
     converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   }
-  EMest_output["iterations"] = it-1;
+  if (best_iterate){
+    // One E-step at the returned iterate: logLike/St/residuals correspond to it exactly.
+    arma::vec theta_last = EMest_output["theta"];
+    List E_fin = ExpectationM_MSARXmdl(theta_last, mdl, k);
+    double ll_fin = E_fin["logLike"];
+    if (std::isfinite(ll_seen) && std::isfinite(ll_fin) && ll_fin < ll_seen - 1e-9) descents++;
+    arma::vec theta_w = theta_last; List E_w = E_fin;
+    if (std::isfinite(best_ll) && !(std::isfinite(ll_fin) && ll_fin >= best_ll)){
+      theta_w = best_theta; E_w = ExpectationM_MSARXmdl(best_theta, mdl, k);
+    }
+    EMest_output["theta"]     = theta_w;
+    EMest_output["mu"]        = E_w["mu"];
+    EMest_output["phi"]       = E_w["phi"];
+    EMest_output["betaZ"]     = E_w["betaZ"];
+    EMest_output["beta"]      = E_w["beta"];
+    EMest_output["sigma"]     = E_w["sigma"];
+    EMest_output["P"]         = E_w["P"];
+    EMest_output["pinf"]      = E_w["pinf"];
+    EMest_output["St"]        = E_w["xi_t_T"];
+    EMest_output["eta"]       = E_w["eta"];
+    EMest_output["logLike"]   = E_w["logLike"];
+    EMest_output["residuals"] = E_w["residuals"];
+    EMest_output["resid"]     = E_w["resid"];
+  }
+  EMest_output["descents"] = descents;
+  EMest_output["iterations"] = it;  // EM iterations performed, including the pre-loop iteration
   EMest_output["converged"] = converged;
   return(EMest_output);
 }
@@ -5428,21 +5504,58 @@ List MSVARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   int it = 1;
   double deltath = EMest_output["deltath"];
   arma::vec thl = EMest_output["thl"];
-  // convergence controls (ltol/conv may be absent for legacy direct callers)
+  // convergence controls (ltol/conv/em_best_iterate may be absent for legacy direct callers)
   double ltol = optim_options.containsElementNamed("ltol") ? Rcpp::as<double>(optim_options["ltol"]) : 1e-7;
   std::string conv = optim_options.containsElementNamed("conv") ? Rcpp::as<std::string>(optim_options["conv"]) : "theta";
+  bool best_iterate = optim_options.containsElementNamed("em_best_iterate") ? Rcpp::as<bool>(optim_options["em_best_iterate"]) : false;
   double inc_prev = arma::datum::nan, linf_prev = arma::datum::nan;
   int aitken_streak = 0;
+  // Track the best likelihood visited: the ergodic filter initialization makes the
+  // transition-probability update a generalized EM step, so single iterations can lose
+  // likelihood; with em_best_iterate the best visited iterate is returned.
+  arma::vec best_theta = theta_0;
+  double best_ll = thl(0);
+  double ll_seen = thl(0);
+  int descents = 0;
   bool converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   // iterate until convergence criterion is met or max number of iterations (maxit)
-  while ((it<=maxit) & (!converged)){
+  while ((it<maxit) & (!converged)){
+    arma::vec theta_in = EMest_output["theta"];
     EMest_output = EMiter_MSVARmdl(mdl, EMest_output, k);
     deltath = EMest_output["deltath"];
     thl = Rcpp::as<arma::vec>(EMest_output["thl"]);
+    if (std::isfinite(thl(0))){
+      if (std::isfinite(ll_seen) && thl(0) < ll_seen - 1e-9) descents++;
+      if (!std::isfinite(best_ll) || thl(0) > best_ll){ best_ll = thl(0); best_theta = theta_in; }
+      ll_seen = thl(0);
+    }
     it = it + 1;
     converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   }
-  EMest_output["iterations"] = it-1;
+  if (best_iterate){
+    // One E-step at the returned iterate: logLike/St/residuals correspond to it exactly.
+    arma::vec theta_last = EMest_output["theta"];
+    List E_fin = ExpectationM_MSVARmdl(theta_last, mdl, k);
+    double ll_fin = E_fin["logLike"];
+    if (std::isfinite(ll_seen) && std::isfinite(ll_fin) && ll_fin < ll_seen - 1e-9) descents++;
+    arma::vec theta_w = theta_last; List E_w = E_fin;
+    if (std::isfinite(best_ll) && !(std::isfinite(ll_fin) && ll_fin >= best_ll)){
+      theta_w = best_theta; E_w = ExpectationM_MSVARmdl(best_theta, mdl, k);
+    }
+    EMest_output["theta"]     = theta_w;
+    EMest_output["mu"]        = E_w["mu"];
+    EMest_output["phi"]       = E_w["phi"];
+    EMest_output["sigma"]     = E_w["sigma"];
+    EMest_output["P"]         = E_w["P"];
+    EMest_output["pinf"]      = E_w["pinf"];
+    EMest_output["St"]        = E_w["xi_t_T"];
+    EMest_output["eta"]       = E_w["eta"];
+    EMest_output["logLike"]   = E_w["logLike"];
+    EMest_output["residuals"] = E_w["residuals"];
+    EMest_output["resid"]     = E_w["resid"];
+  }
+  EMest_output["descents"] = descents;
+  EMest_output["iterations"] = it;  // EM iterations performed, including the pre-loop iteration
   EMest_output["converged"] = converged;
   return(EMest_output);
 }
@@ -5481,21 +5594,59 @@ List MSVARXmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   int it = 1;
   double deltath = EMest_output["deltath"];
   arma::vec thl = EMest_output["thl"];
-  // convergence controls (ltol/conv may be absent for legacy direct callers)
+  // convergence controls (ltol/conv/em_best_iterate may be absent for legacy direct callers)
   double ltol = optim_options.containsElementNamed("ltol") ? Rcpp::as<double>(optim_options["ltol"]) : 1e-7;
   std::string conv = optim_options.containsElementNamed("conv") ? Rcpp::as<std::string>(optim_options["conv"]) : "theta";
+  bool best_iterate = optim_options.containsElementNamed("em_best_iterate") ? Rcpp::as<bool>(optim_options["em_best_iterate"]) : false;
   double inc_prev = arma::datum::nan, linf_prev = arma::datum::nan;
   int aitken_streak = 0;
+  // Track the best likelihood visited: the ergodic filter initialization makes the
+  // transition-probability update a generalized EM step, so single iterations can lose
+  // likelihood; with em_best_iterate the best visited iterate is returned.
+  arma::vec best_theta = theta_0;
+  double best_ll = thl(0);
+  double ll_seen = thl(0);
+  int descents = 0;
   bool converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   // iterate until convergence criterion is met or max number of iterations (maxit)
-  while ((it<=maxit) & (!converged)){
+  while ((it<maxit) & (!converged)){
+    arma::vec theta_in = EMest_output["theta"];
     EMest_output = EMiter_MSVARXmdl(mdl, EMest_output, k);
     deltath = EMest_output["deltath"];
     thl = Rcpp::as<arma::vec>(EMest_output["thl"]);
+    if (std::isfinite(thl(0))){
+      if (std::isfinite(ll_seen) && thl(0) < ll_seen - 1e-9) descents++;
+      if (!std::isfinite(best_ll) || thl(0) > best_ll){ best_ll = thl(0); best_theta = theta_in; }
+      ll_seen = thl(0);
+    }
     it = it + 1;
     converged = em_converged(conv, deltath, thl, thtol, ltol, it, inc_prev, linf_prev, aitken_streak);
   }
-  EMest_output["iterations"] = it-1;
+  if (best_iterate){
+    // One E-step at the returned iterate: logLike/St/residuals correspond to it exactly.
+    arma::vec theta_last = EMest_output["theta"];
+    List E_fin = ExpectationM_MSVARXmdl(theta_last, mdl, k);
+    double ll_fin = E_fin["logLike"];
+    if (std::isfinite(ll_seen) && std::isfinite(ll_fin) && ll_fin < ll_seen - 1e-9) descents++;
+    arma::vec theta_w = theta_last; List E_w = E_fin;
+    if (std::isfinite(best_ll) && !(std::isfinite(ll_fin) && ll_fin >= best_ll)){
+      theta_w = best_theta; E_w = ExpectationM_MSVARXmdl(best_theta, mdl, k);
+    }
+    EMest_output["theta"]     = theta_w;
+    EMest_output["mu"]        = E_w["mu"];
+    EMest_output["phi"]       = E_w["phi"];
+    EMest_output["betaZ"]     = E_w["betaZ"];
+    EMest_output["sigma"]     = E_w["sigma"];
+    EMest_output["P"]         = E_w["P"];
+    EMest_output["pinf"]      = E_w["pinf"];
+    EMest_output["St"]        = E_w["xi_t_T"];
+    EMest_output["eta"]       = E_w["eta"];
+    EMest_output["logLike"]   = E_w["logLike"];
+    EMest_output["residuals"] = E_w["residuals"];
+    EMest_output["resid"]     = E_w["resid"];
+  }
+  EMest_output["descents"] = descents;
+  EMest_output["iterations"] = it;  // EM iterations performed, including the pre-loop iteration
   EMest_output["converged"] = converged;
   return(EMest_output);
  }

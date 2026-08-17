@@ -118,7 +118,9 @@ estimMdl <- function(Y, p, q, k, Z = NULL, control = list()){
   }else if ((k>1) & (p==0)){
     # Hidden Markov model
     mdl <- HMmdl(Y, k, Z, control)
-    mdl$converged = (mdl$deltath <= mdl$control$thtol)
+    # EM fits report convergence per the criterion chosen by control$conv; MLE fits
+    # do not set the flag, so fall back to the parameter-change test for them.
+    if (is.null(mdl$converged)) mdl$converged = (mdl$deltath <= mdl$control$thtol)
   }else if ((k==1) & (q==1) & (p>0)){
     # Autoregressive model
     control$const <- TRUE # forced to be TRUE for hypothesis testing
@@ -133,10 +135,14 @@ estimMdl <- function(Y, p, q, k, Z = NULL, control = list()){
     # Markov switching model
     if (is.null(Z) | (length(Z)==0)){
       mdl <- MSARmdl(Y, p, k, control)
-      mdl$converged = (mdl$deltath <= mdl$control$thtol)  
+      # EM fits report convergence per the criterion chosen by control$conv; MLE fits
+    # do not set the flag, so fall back to the parameter-change test for them.
+    if (is.null(mdl$converged)) mdl$converged = (mdl$deltath <= mdl$control$thtol)  
     }else{
       mdl <- MSARXmdl(Y, p, k, Z, control)
-      mdl$converged = (mdl$deltath <= mdl$control$thtol)
+      # EM fits report convergence per the criterion chosen by control$conv; MLE fits
+    # do not set the flag, so fall back to the parameter-change test for them.
+    if (is.null(mdl$converged)) mdl$converged = (mdl$deltath <= mdl$control$thtol)
     }
   }else if ((k==1) & (q>1) & (p>0)){
     # Vector autoregressive model
@@ -152,10 +158,14 @@ estimMdl <- function(Y, p, q, k, Z = NULL, control = list()){
     # Vector autoregressive Markov switching model
     if (is.null(Z) | (length(Z)==0)){
       mdl <- MSVARmdl(Y, p, k, control)
-      mdl$converged = (mdl$deltath <= mdl$control$thtol)
+      # EM fits report convergence per the criterion chosen by control$conv; MLE fits
+    # do not set the flag, so fall back to the parameter-change test for them.
+    if (is.null(mdl$converged)) mdl$converged = (mdl$deltath <= mdl$control$thtol)
     }else{
       mdl <- MSVARXmdl(Y, p, k, Z, control)
-      mdl$converged = (mdl$deltath <= mdl$control$thtol)
+      # EM fits report convergence per the criterion chosen by control$conv; MLE fits
+    # do not set the flag, so fall back to the parameter-change test for them.
+    if (is.null(mdl$converged)) mdl$converged = (mdl$deltath <= mdl$control$thtol)
     }
   }
   return(mdl)
@@ -367,10 +377,15 @@ MMC_bounds <- function(mdl_h0, con){
   # ----- Define lower & upper bounds for search
   theta_low = theta_0 - con$eps
   theta_upp = theta_0 + con$eps
-  # create ball around union of eps and 2*standard error (if set to true and SE are finite)
-  if ((con$CI_union==TRUE) & all(is.finite(mdl_h0$theta_se))){
-    theta_low <- apply(cbind(as.matrix(theta_0 - 2*c(mdl_h0$theta_se)), as.matrix(theta_low)), 1, FUN = min)
-    theta_upp <- apply(cbind(as.matrix(theta_0 + 2*c(mdl_h0$theta_se)), as.matrix(theta_upp)), 1, FUN = max)
+  # create ball around the union of eps and 2*standard error, per parameter; a parameter
+  # without a finite standard error (e.g. a variance at the EM floor) contributes only its
+  # eps band, without shrinking the other parameters' bounds
+  if (isTRUE(con$CI_union) && !is.null(mdl_h0$theta_se) &&
+      length(c(mdl_h0$theta_se)) == length(c(theta_0))){
+    se <- c(mdl_h0$theta_se)
+    se[!is.finite(se)] <- 0
+    theta_low <- pmin(c(theta_low), c(theta_0) - 2*se)
+    theta_upp <- pmax(c(theta_upp), c(theta_0) + 2*se)
   }
   # ----- Check that bounds respect admissible regions
   # correct lower bound of variances to be in admissible region
@@ -436,7 +451,8 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item mdl_h0_control: List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
 #'   \item mdl_h1_control: List with unrestricted model options. See \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
 #'   \item use_diff_init_sim: Value which determines the number of initial values to use when estimating models for null distribution. Default is set to use the same as specified in \code{mdl_h0_control} and \code{mdl_h1_control}.
-#'   \item optim_control: List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is \code{list()} (an empty list); the maximum number of optimizer iterations is instead controlled by the separate \code{maxit} argument (default \code{50}).
+#'   \item maxit: Int determining the budget of the nuisance-parameter search, as a cap on objective-function evaluations: passed as \code{maxf} to \code{pso} and as \code{max.call} to \code{GenSA} (both are evaluation counts, not iterations), and as \code{maxiter} to \code{GA} (generations, so roughly \code{popSize} times as many evaluations). Note that \code{GenSA} treats its cap as a soft bound and can substantially exceed it for higher-dimensional searches. Default is \code{50}.
+#'   \item optim_control: List with optimization algorithm options. See \code{\link[pso]{psoptim}}, \code{\link[GenSA]{GenSA}}, \code{\link[GA]{ga}}. Default is \code{list()} (an empty list); the search budget is instead controlled by the separate \code{maxit} control above.
 #' }
 #'
 #' @return List of class \code{MMCLRTest} (\code{S3} object) with attributes including:

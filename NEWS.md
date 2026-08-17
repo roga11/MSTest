@@ -1,3 +1,65 @@
+# MSTest 0.1.9.9004
+
+## EM estimation: corrected transition-matrix update and smoothed probabilities for Markov-switching AR/VAR models
+
+* The EM update of the transition matrix in `MSARmdl()`, `MSARXmdl()`, `MSVARmdl()`, and
+  `MSVARXmdl()` now computes the smoothed transition counts from the extended
+  (regime-history) state, as required when the conditional density depends on lagged
+  regimes (Hamilton 1994, sec. 22.4, eq. 22.4.16; Krolzig 1997, eq. 6.14 and sec. 9.3.5).
+  Previously the counts were computed from marginal single-regime probabilities, a formula
+  that is valid for hidden Markov models (p = 0) but not for switching-mean AR models;
+  this could cause the EM iteration to reduce the likelihood and converge to points that
+  are not likelihood optima.
+* The smoothed regime probabilities (`St`) returned by the same four model classes are now
+  the aggregate of the extended-state smoother over the date-t regime. Previously they were
+  computed by a separate marginal recursion subject to the same limitation.
+* `limP()` now guarantees a valid probability vector: at boundary or rank-deficient
+  transition matrices the least-squares solve could return tiny negative entries, which
+  corrupted the filter and smoother downstream; such solutions are now clipped at zero and
+  renormalized. The guard is conditional, so results are bit-identical whenever the
+  solution was already nonnegative (all interior transition matrices).
+* The EM drivers now execute exactly `maxit` iterations and the returned `iterations`
+  reports the true count (previously one additional iteration ran and the count was one
+  too low).
+* Louis (1982) standard errors: the expected transition counts now sum over the same
+  sample range as the EM update (an order 1/T correction to transition-probability
+  standard errors).
+* New control `em_best_iterate` (default `TRUE`) for the five Markov-switching model
+  classes: the EM returns the iterate with the highest log-likelihood visited, with the
+  smoothed probabilities, residuals, and log-likelihood evaluated at that iterate (one
+  additional E-step). Set to `FALSE` for the previous behavior (return the final iterate,
+  whose reported log-likelihood and smoothed probabilities lag the parameters by one
+  E-step). The new output element `descents` counts likelihood decreases observed along
+  the EM path.
+* The default of the `maxit_converge` control (maximum number of fresh starting values
+  attempted when an estimation attempt returns errors or non-finite values) is now `10`
+  (was `500`). The retry loop is silent and was never observed to need more than one
+  attempt in extensive testing; the old default allowed a pathological worst case of
+  hundreds of wasted estimations per start.
+* The `MMCLRTest()` nuisance-parameter search box now applies the `CI_union` rule per
+  parameter: each parameter's bounds are the union of its `eps` band and its plus/minus two
+  standard-error interval where the standard error is finite. Previously a single
+  non-finite standard error (for example a variance at the EM floor, whose standard error
+  is `NA` by design) discarded the standard-error information for every parameter,
+  shrinking the whole search box to the `eps` band.
+* If every starting value fails estimation (each exhausting its `maxit_converge`
+  attempts), the Markov-switching constructors now raise an informative error naming the
+  model class and the relevant controls; previously this crashed with an unrelated
+  low-level error (`replacement has length zero`) part-way through the multistart loop.
+* The `converged` flag of EM fits obtained through `estimMdl()` now reports convergence
+  under the criterion selected by the `conv` control, as the model constructors already
+  did; previously the dispatcher replaced it with the parameter-change test regardless of
+  the chosen criterion. MLE fits, which do not set the flag, keep the parameter-change
+  fallback.
+* New regression tests: EM likelihood ascent, `limP` validity at boundary transition
+  matrices, and smoothed-probability consistency with the extended-state smoother.
+* `HMmdl()` (p = 0) is unaffected: the marginal formulas are exact there and unchanged.
+  Fits with a common (non-switching) mean are numerically unaffected beyond floating-point
+  noise. Estimates for switching-mean fits change; attained log-likelihoods typically
+  increase (small decreases of order 1e-2 are possible on individual datasets because the
+  filter is initialized at the ergodic distribution implied by the transition matrix, whose
+  dependence on the transition probabilities the update does not account for).
+
 # MSTest 0.1.9.9002
 
 ## Pre-simulation freeze
