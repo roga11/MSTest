@@ -32,7 +32,7 @@ MSVARmdl(Y, p, k, control = list())
  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{10}.
  \item use_diff_init: integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.
  \item mle_stationary_constraint: Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.
- \item mle_variance_constraint: double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is \code{1e-3}.
+ \item mle_variance_constraint: Double used to determine the lower bound on the smallest eigenvalue of each regime covariance matrix. Value should be between \code{0} and \code{1} as it is multiplied by the average variance of the single regime fit (i.e., \code{tr(Sigma)/q}). Default is \code{0.01}. This is the \code{method = "MLE"} counterpart of \code{em_variance_constraint}, which imposes the same bound on the EM path.
  \item mle_theta_low: Vector with lower bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
  \item mle_theta_upp: Vector with upper bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
 }}

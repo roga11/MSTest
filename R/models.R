@@ -998,7 +998,7 @@ VARXmdl <- function(Y, p, Z, control = list()){
 #'  \item em_best_iterate: Boolean. If \code{TRUE} (the default), the EM returns the iterate with the highest log-likelihood visited along the iteration path, with the smoothed probabilities, residuals, and log-likelihood evaluated at that iterate. The filter is initialized at the ergodic distribution implied by the transition matrix, whose dependence on the transition probabilities the EM update does not account for, so individual iterations can reduce the log-likelihood slightly; this option makes the returned fit the best one visited. If \code{FALSE}, the final iterate is returned (the convention of earlier versions). The output element \code{descents} reports the number of likelihood decreases observed along the path.
 #'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{10}.
 #'  \item use_diff_init: integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.
-#'  \item mle_variance_constraint: double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is \code{1e-3}.
+#'  \item mle_variance_constraint: Double used to determine the lower bound on the smallest eigenvalue of each regime covariance matrix. Value should be between \code{0} and \code{1} as it is multiplied by the average variance of the single regime fit (i.e., \code{tr(Sigma)/q}). Default is \code{0.01}. This is the \code{method = "MLE"} counterpart of \code{em_variance_constraint}, which imposes the same bound on the EM path.
 #'  \item mle_theta_low: Vector with lower bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
 #'  \item mle_theta_upp: Vector with upper bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
 #' }
@@ -1070,7 +1070,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
               em_best_iterate = TRUE,
               maxit_converge = 10,
               use_diff_init = 1,
-              mle_variance_constraint = 1e-3,
+              mle_variance_constraint = 0.01,
               mle_theta_low = NULL,
               mle_theta_upp = NULL)
   # ----- Perform some checks for controls
@@ -1268,7 +1268,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
               theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind, 
               n = init_mdl$n, q = q, p = 0, k = k, control = con,
               P = output$P, pinf = output$pinf, St = output$St, logLike = output$logLike,  
-              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, theta_0 = output$theta_0,
+              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, convergence_code = output$convergence_code, theta_0 = output$theta_0,
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar, exog = (!is.null(Z)))
   # Define class
   class(out) <- "HMmdl"
@@ -1614,7 +1614,7 @@ MSARmdl <- function(Y, p, k, control = list()){
               theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind, 
               stationary = stationary, n = init_mdl$n, q = 1, p = p, k = k, control = con,
               P = output$P, pinf = output$pinf, St = output$St, logLike = output$logLike, 
-              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, theta_0 = output$theta_0, 
+              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, convergence_code = output$convergence_code, theta_0 = output$theta_0, 
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar)
   # Define class
   class(out) <- "MSARmdl"
@@ -1935,7 +1935,7 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
               theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind, 
               stationary = stationary, n = init_mdl$n, q = 1, p = p, k = k, control = con,
               P = output$P, pinf = output$pinf, St = output$St, logLike = output$logLike, 
-              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, theta_0 = output$theta_0, 
+              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, convergence_code = output$convergence_code, theta_0 = output$theta_0, 
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar)
   # Define class
   class(out) <- "MSARmdl"
@@ -2001,7 +2001,7 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
 #'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{10}.
 #'  \item use_diff_init: integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.
 #'  \item mle_stationary_constraint: Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.
-#'  \item mle_variance_constraint: double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is \code{1e-3}.
+#'  \item mle_variance_constraint: Double used to determine the lower bound on the smallest eigenvalue of each regime covariance matrix. Value should be between \code{0} and \code{1} as it is multiplied by the average variance of the single regime fit (i.e., \code{tr(Sigma)/q}). Default is \code{0.01}. This is the \code{method = "MLE"} counterpart of \code{em_variance_constraint}, which imposes the same bound on the EM path.
 #'  \item mle_theta_low: Vector with lower bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
 #'  \item mle_theta_upp: Vector with upper bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
 #' }
@@ -2078,7 +2078,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
               maxit_converge = 10,
               use_diff_init = 1,
               mle_stationary_constraint = TRUE,
-              mle_variance_constraint = 1e-3,
+              mle_variance_constraint = 0.01,
               mle_theta_low = NULL,
               mle_theta_upp = NULL)
   # ----- Perform some checks for controls
@@ -2265,7 +2265,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
               theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind, 
               stationary = stationary, n = init_mdl$n, q = q, p = p, k = k, control = con,
               P = output$P, pinf = output$pinf, St = output$St, logLike = output$logLike,  
-              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, theta_0 = output$theta_0,
+              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, convergence_code = output$convergence_code, theta_0 = output$theta_0,
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar)
   # Define class
   class(out) <- "MSVARmdl"
@@ -2336,7 +2336,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
 #'  \item maxit_converge: integer determining the maximum number of initial values attempted until solution is finite. For example, if parameters in \code{theta} or \code{logLike} are \code{NaN} another set of initial values (up to \code{maxit_converge}) is attempted until finite values are returned. This does not occur frequently for most types of data but may be useful in some cases. Once finite values are obtained, this counts as one iteration towards \code{use_diff_init}. Default is \code{10}.
 #'  \item use_diff_init: integer determining how many different initial values to try (that do not return \code{NaN}; see \code{maxit_converge}). Default is \code{1}.
 #'  \item mle_stationary_constraint: Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.
-#'  \item mle_variance_constraint: double used to determine the lower bound on the smallest eigenvalue for the covariance matrix of each regime. Default is \code{1e-3}.
+#'  \item mle_variance_constraint: Double used to determine the lower bound on the smallest eigenvalue of each regime covariance matrix. Value should be between \code{0} and \code{1} as it is multiplied by the average variance of the single regime fit (i.e., \code{tr(Sigma)/q}). Default is \code{0.01}. This is the \code{method = "MLE"} counterpart of \code{em_variance_constraint}, which imposes the same bound on the EM path.
 #'  \item mle_theta_low: Vector with lower bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
 #'  \item mle_theta_upp: Vector with upper bounds on parameters (Used only if method = "MLE"). Default is \code{NULL}.
 #' }
@@ -2414,7 +2414,7 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
               maxit_converge = 10,
               use_diff_init = 1,
               mle_stationary_constraint = TRUE,
-              mle_variance_constraint = 1e-3,
+              mle_variance_constraint = 0.01,
               mle_theta_low = NULL,
               mle_theta_upp = NULL)
   # ----- Perform some checks for controls
@@ -2602,7 +2602,7 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
               theta_sig_ind = theta_sig_ind, theta_var_ind = theta_var_ind, theta_P_ind = theta_P_ind, 
               stationary = stationary, n = init_mdl$n, q = q, p = p, k = k, control = con,
               P = output$P, pinf = output$pinf, St = output$St, logLike = output$logLike,  
-              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, theta_0 = output$theta_0,
+              deltath = output$deltath, iterations = output$iterations, converged = output$converged, descents = output$descents, convergence_code = output$convergence_code, theta_0 = output$theta_0,
               init_used = output$init_used, msmu = con$msmu, msvar = con$msvar)
   # Define class
   class(out) <- "MSVARmdl"

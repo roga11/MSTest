@@ -693,10 +693,45 @@ interMSVARmdl <- function(mdl){
   return(inter)
 }
 
+# Project an MLE starting vector into the user-supplied box [lo, up].
+# nloptr::slsqp() throws a hard error ("at least one element in x0 < lb") when the
+# starting value violates the box, which burns a 'maxit_converge' retry per draw.
+# The trailing k*k entries (transition matrix P, column-stochastic) are additionally
+# projected onto {column sums = 1} within the box by iterative proportional slack
+# redistribution (clip-and-renormalise alone can leave the box for k >= 3).
+# Returns theta_0 unchanged when both bounds are NULL or malformed.
+.mle_project_start <- function(theta_0, lo, up, k){
+  n <- length(theta_0)
+  if (is.null(lo) && is.null(up)) return(theta_0)
+  if (is.null(lo)) lo <- rep(-Inf, n)
+  if (is.null(up)) up <- rep(Inf, n)
+  if (length(lo) != n || length(up) != n) return(theta_0)  # malformed: let slsqp report it
+  th <- pmin(pmax(theta_0, lo), up)
+  Pidx <- (n - k*k + 1L):n
+  Plo <- matrix(lo[Pidx], k, k); Pup <- matrix(up[Pidx], k, k)
+  Pm  <- matrix(th[Pidx], k, k)
+  for (j in seq_len(k)){
+    lj <- pmax(Plo[, j], 0); uj <- pmin(Pup[, j], 1)
+    if (sum(lj) > 1 + 1e-12 || sum(uj) < 1 - 1e-12) next  # infeasible column box: keep clamped values
+    pj <- pmin(pmax(Pm[, j], lj), uj)
+    for (it in seq_len(3L*k)){
+      d <- 1 - sum(pj)
+      if (abs(d) < 1e-12) break
+      slack <- if (d > 0) uj - pj else pj - lj
+      tot <- sum(slack)
+      if (tot <= 0) break
+      pj <- pmin(pmax(pj + d*slack/tot, lj), uj)
+    }
+    Pm[, j] <- pj
+  }
+  th[Pidx] <- as.vector(Pm)
+  th
+}
+
 #' @title Hidden Markov model maximum likelihood estimation
-#' 
+#'
 #' @description This function computes estimate a Hidden Markov model using MLE.
-#' 
+#'
 #' @param theta_0 vector containing initial values to use in optimization
 #' @param mdl_in List with model properties (can be obtained from estimating linear model i.e., using \code{\link{ARmdl}})
 #' @param k integer determining the number of regimes
@@ -712,6 +747,9 @@ interMSVARmdl <- function(mdl){
 #' 
 #' @export
 HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
+  if (isTRUE(mdl_in$mle_variance_constraint >= 0) && is.null(mdl_in$sigma)) {
+    stop("mdl_in$sigma (one-regime fit covariance) is required when mle_variance_constraint >= 0.")
+  }
   # ----- Define function environment
   HMmdl_mle_env <- rlang::env()
   # set environment variables
@@ -721,6 +759,7 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   HMmdl_mle_env$msmu <- mdl_in$msmu
   HMmdl_mle_env$msvar <- mdl_in$msvar
   HMmdl_mle_env$var_k1 <- mdl_in$sigma
+  HMmdl_mle_env$betaZ <- mdl_in$betaZ
   HMmdl_mle_env$mle_variance_constraint <- mdl_in$mle_variance_constraint
   # ----------- HMmdl_mle equality constraint functions
   loglik_const_eq_HMmdl <- function(theta){
@@ -739,6 +778,7 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     msmu <- get("msmu", envir = HMmdl_mle_env)
     msvar <- get("msvar", envir = HMmdl_mle_env)
     var_k1 <- get("var_k1", envir = HMmdl_mle_env)
+    betaZ <- get("betaZ", envir = HMmdl_mle_env)
     mle_variance_constraint <- get("mle_variance_constraint", envir = HMmdl_mle_env)
     # ----- constraint
     # transition probabilities
@@ -747,7 +787,10 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     if (mle_variance_constraint>=0){
       Nsig <- (q*(q+1))/2
       eigen_vals <- c()
-      sig <- theta[c(rep(0, q + q*(k-1)*msmu), rep(1, Nsig + Nsig*(k-1)*msvar))==1]
+      # theta layout: [mu, betaZ (if exog), vech(sigma) x regimes, vec(P)]; the
+      # selector must skip betaZ and cover the full theta length (a short logical
+      # mask would be recycled by R into the P block)
+      sig <- theta[c(rep(0, q + q*(k-1)*msmu + length(betaZ)), rep(1, Nsig + Nsig*(k-1)*msvar), rep(0, k*k))==1]
       if (msvar==TRUE){
         for (xk in  1:k){
           sig_tmp <- sig[(Nsig*(xk-1)+1):(Nsig*(xk-1)+Nsig)]
@@ -758,11 +801,16 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
         sigma <- covar_unvech(sig, q)
         eigen_vals <- c(eigen_vals,eigen(sigma)[[1]])
       }
-      ineq_constraint = c(eigen_vals-mle_variance_constraint, ineq_constraint)
+      # relative floor: smallest eigenvalue >= c * tr(Sigma_lin)/q, the same
+      # anchoring as em_variance_constraint (var_k1 is the one-regime fit covariance)
+      sig_floor <- mle_variance_constraint * sum(diag(as.matrix(var_k1)))/q
+      ineq_constraint = c(eigen_vals - sig_floor, ineq_constraint)
     }
     return(-ineq_constraint)
   }
   loglike_wrapper <- function(theta) logLike_HMmdl_min(theta, mdl_in, k)
+  # project starting values into the user box (no-op when bounds are NULL)
+  theta_0 <- .mle_project_start(theta_0, optim_options$mle_theta_low, optim_options$mle_theta_upp, k)
   # use nloptr optimization to minimize (maximize) likelihood
   res <- nloptr::slsqp(x0 = theta_0,
                        fn = loglike_wrapper,
@@ -774,15 +822,40 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
                        nl.info = FALSE,
                        control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
                        deprecatedBehavior = FALSE) 
-  if (!isTRUE(res$status >= 0) || any(!is.finite(res$par))) {
-    warning("HMmdl MLE optimization failed (status=", res$status, "). Using initial values.")
+  ok <- isTRUE(res$convergence > 0) && all(is.finite(res$par))
+  if (!ok && all(is.finite(res$par))) {
+    # slsqp reported failure but returned a finite iterate (e.g. NLOPT_ROUNDOFF_LIMITED):
+    # keep it only if it improves on the starting value (objective is -logLike).
+    v_res <- suppressWarnings(tryCatch(loglike_wrapper(res$par), error=function(e) Inf))
+    v_0   <- suppressWarnings(tryCatch(loglike_wrapper(theta_0), error=function(e) Inf))
+    feas  <- all(loglik_const_ineq_HMmdl(res$par) <= 1e-8) &&
+             all(abs(loglik_const_eq_HMmdl(res$par)) <= 1e-6)
+    if (is.finite(v_res) && v_res < v_0 && feas) ok <- TRUE
+  }
+  if (!ok) {
+    warning("HMmdl MLE optimization failed (convergence=", res$convergence, "). Using initial values.")
     par_use <- theta_0
   } else {
     par_use <- res$par
+    if (!isTRUE(res$convergence > 0)) {
+      warning("HMmdl MLE optimization reported failure (convergence=", res$convergence,
+              ") but its iterate improves on the starting value; keeping it.")
+    }
+  }
+  # keep the transition block a valid column-stochastic matrix (slsqp honors its
+  # constraints only to tolerance); conditional, so clean fits are untouched
+  npar_use <- length(par_use); Pblk <- (npar_use - k*k + 1):npar_use
+  Pm <- matrix(par_use[Pblk], k, k)
+  if (any(Pm < 0) || any(Pm > 1) || any(abs(colSums(Pm) - 1) > 1e-8)) {
+    Pm[Pm < 0] <- 0; Pm[Pm > 1] <- 1
+    cs <- colSums(Pm); cs[cs <= 0] <- 1
+    par_use[Pblk] <- as.numeric(sweep(Pm, 2, cs, "/"))
   }
   output <- tryCatch(ExpectationM_HMmdl(par_use, mdl_in, k), error=function(e) NULL)
   if (is.null(output)) return(NULL)
   output$iterations <- res$iter
+  output$converged <- isTRUE(res$convergence %in% c(1, 2, 3, 4))
+  output$convergence_code <- res$convergence
   output$St <- output$xi_t_T
   return(output)
 }
@@ -806,6 +879,9 @@ HMmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 #' 
 #' @export
 MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
+  if (isTRUE(mdl_in$mle_variance_constraint >= 0) && is.null(mdl_in$sigma)) {
+    stop("mdl_in$sigma (one-regime fit covariance) is required when mle_variance_constraint >= 0.")
+  }
   # ----- Define function environment
   MSARmdl_mle_env         <- rlang::env()
   # set environment variables
@@ -863,9 +939,11 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     if (length(mdl_in$betaZ)>0){
       logLike_MSARXmdl_min(theta, mdl_in, k) 
     }else{
-      logLike_MSARmdl_min(theta, mdl_in, k) 
+      logLike_MSARmdl_min(theta, mdl_in, k)
     }
   }
+  # project starting values into the user box (no-op when bounds are NULL)
+  theta_0 <- .mle_project_start(theta_0, optim_options$mle_theta_low, optim_options$mle_theta_upp, k)
   # use nloptr optimization to minimize (maximize) likelihood
   res <- nloptr::slsqp(x0 = theta_0,
                        fn = loglike_wrapper,
@@ -877,11 +955,34 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
                        nl.info = FALSE,
                        control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
                        deprecatedBehavior = FALSE) 
-  if (!isTRUE(res$status >= 0) || any(!is.finite(res$par))) {
-    warning("MSARmdl MLE optimization failed (status=", res$status, "). Using initial values.")
+  ok <- isTRUE(res$convergence > 0) && all(is.finite(res$par))
+  if (!ok && all(is.finite(res$par))) {
+    # slsqp reported failure but returned a finite iterate (e.g. NLOPT_ROUNDOFF_LIMITED):
+    # keep it only if it improves on the starting value (objective is -logLike).
+    v_res <- suppressWarnings(tryCatch(loglike_wrapper(res$par), error=function(e) Inf))
+    v_0   <- suppressWarnings(tryCatch(loglike_wrapper(theta_0), error=function(e) Inf))
+    feas  <- all(loglik_const_ineq_MSARmdl(res$par) <= 1e-8) &&
+             all(abs(loglik_const_eq_MSARmdl(res$par)) <= 1e-6)
+    if (is.finite(v_res) && v_res < v_0 && feas) ok <- TRUE
+  }
+  if (!ok) {
+    warning("MSARmdl MLE optimization failed (convergence=", res$convergence, "). Using initial values.")
     par_use <- theta_0
   } else {
     par_use <- res$par
+    if (!isTRUE(res$convergence > 0)) {
+      warning("MSARmdl MLE optimization reported failure (convergence=", res$convergence,
+              ") but its iterate improves on the starting value; keeping it.")
+    }
+  }
+  # keep the transition block a valid column-stochastic matrix (slsqp honors its
+  # constraints only to tolerance); conditional, so clean fits are untouched
+  npar_use <- length(par_use); Pblk <- (npar_use - k*k + 1):npar_use
+  Pm <- matrix(par_use[Pblk], k, k)
+  if (any(Pm < 0) || any(Pm > 1) || any(abs(colSums(Pm) - 1) > 1e-8)) {
+    Pm[Pm < 0] <- 0; Pm[Pm > 1] <- 1
+    cs <- colSums(Pm); cs[cs <= 0] <- 1
+    par_use[Pblk] <- as.numeric(sweep(Pm, 2, cs, "/"))
   }
   if (length(mdl_in$betaZ)>0){
     output <- tryCatch(ExpectationM_MSARXmdl(par_use, mdl_in, k),
@@ -892,6 +993,8 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   }
   if (is.null(output)) return(NULL)
   output$iterations <- res$iter
+  output$converged <- isTRUE(res$convergence %in% c(1, 2, 3, 4))
+  output$convergence_code <- res$convergence
   output$St <- output$xi_t_T
   return(output)
 }
@@ -916,6 +1019,9 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
 #' 
 #' @export
 MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
+  if (isTRUE(mdl_in$mle_variance_constraint >= 0) && is.null(mdl_in$sigma)) {
+    stop("mdl_in$sigma (one-regime fit covariance) is required when mle_variance_constraint >= 0.")
+  }
   # ---------- Define function environment
   MSVARmdl_mle_env <- rlang::env()
   # set environment variables
@@ -928,6 +1034,7 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   MSVARmdl_mle_env$betaZ   <- mdl_in$betaZ
   MSVARmdl_mle_env$mle_stationary_constraint <- mdl_in$mle_stationary_constraint
   MSVARmdl_mle_env$mle_variance_constraint <- mdl_in$mle_variance_constraint
+  MSVARmdl_mle_env$var_k1 <- mdl_in$sigma
   # ---------- MSVARmdl_mle equality constraint functions
   loglik_const_eq_MSVARmdl <- function(theta){
     # ----- Load equality constraint parameters
@@ -948,17 +1055,21 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     betaZ   <- get("betaZ", envir = MSVARmdl_mle_env)
     mle_stationary_constraint <- get("mle_stationary_constraint", envir = MSVARmdl_mle_env)
     mle_variance_constraint <- get("mle_variance_constraint", envir = MSVARmdl_mle_env)
+    var_k1 <- get("var_k1", envir = MSVARmdl_mle_env)
     Nsig <- (q*(q+1))/2
     phi_len <- q*p*q
     # ----- constraint 
     Pvec = theta[(length(theta)-k*k+1):(length(theta))]
     ineq_constraint = c(Pvec, 1-Pvec)
     if (mle_stationary_constraint==TRUE){
-      # eigen values of companion matrix
+      # eigen values of companion matrix: stationarity requires all |eigenvalue| <= 1.
+      # (The previous form c(|m-1|, 1-|m-1|) only bounded |eigenvalue| to [0, 2],
+      # admitting explosive solutions.)
       phi <- t(matrix(theta[c(rep(0, q + q*(k-1)*msmu), rep(1, phi_len), rep(0, length(theta) - (q + q*(k-1)*msmu)-phi_len))==1], q*p, q))
       Fmat <- companionMat(phi,p,q)
-      stationary  <- abs(Mod(eigen(Fmat)[[1]]) - 1)
-      ineq_constraint = c(stationary, 1-stationary, ineq_constraint)
+      eig_mod <- Mod(eigen(Fmat)[[1]])
+      eig_mod[!is.finite(eig_mod)] <- 1e6  # finite penalty keeps slsqp's FD jacobian defined
+      ineq_constraint = c(1-eig_mod, ineq_constraint)
     }
     if (mle_variance_constraint>=0){
       # eigen values of covariance matrices
@@ -974,7 +1085,10 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
         sigma <- covar_unvech(sig, q)
         eigen_vals <- c(eigen_vals,eigen(sigma)[[1]])
       }
-      ineq_constraint = c(eigen_vals-mle_variance_constraint, ineq_constraint)
+      # relative floor: smallest eigenvalue >= c * tr(Sigma_lin)/q, the same
+      # anchoring as em_variance_constraint (var_k1 is the one-regime fit covariance)
+      sig_floor <- mle_variance_constraint * sum(diag(as.matrix(var_k1)))/q
+      ineq_constraint = c(eigen_vals - sig_floor, ineq_constraint)
     }
     return(-ineq_constraint)
   }
@@ -985,9 +1099,11 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     if (length(mdl_in$betaZ)>0){
       logLike_MSVARXmdl_min(theta, mdl_in, k) 
     }else{
-      logLike_MSVARmdl_min(theta, mdl_in, k) 
+      logLike_MSVARmdl_min(theta, mdl_in, k)
     }
   }
+  # project starting values into the user box (no-op when bounds are NULL)
+  theta_0 <- .mle_project_start(theta_0, optim_options$mle_theta_low, optim_options$mle_theta_upp, k)
   # use nloptr optimization to minimize (maximize) likelihood
   res <- nloptr::slsqp(x0 = theta_0,
                        fn = loglike_wrapper,
@@ -997,12 +1113,36 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
                        hin = loglik_const_ineq_MSVARmdl,
                        heq = loglik_const_eq_MSVARmdl,
                        nl.info = FALSE,
-                       control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol)) 
-  if (!isTRUE(res$status >= 0) || any(!is.finite(res$par))) {
-    warning("MSVARmdl MLE optimization failed (status=", res$status, "). Using initial values.")
+                       control = list(maxeval = optim_options$maxit, xtol_rel = optim_options$thtol),
+                       deprecatedBehavior = FALSE) 
+  ok <- isTRUE(res$convergence > 0) && all(is.finite(res$par))
+  if (!ok && all(is.finite(res$par))) {
+    # slsqp reported failure but returned a finite iterate (e.g. NLOPT_ROUNDOFF_LIMITED):
+    # keep it only if it improves on the starting value (objective is -logLike).
+    v_res <- suppressWarnings(tryCatch(loglike_wrapper(res$par), error=function(e) Inf))
+    v_0   <- suppressWarnings(tryCatch(loglike_wrapper(theta_0), error=function(e) Inf))
+    feas  <- all(loglik_const_ineq_MSVARmdl(res$par) <= 1e-8) &&
+             all(abs(loglik_const_eq_MSVARmdl(res$par)) <= 1e-6)
+    if (is.finite(v_res) && v_res < v_0 && feas) ok <- TRUE
+  }
+  if (!ok) {
+    warning("MSVARmdl MLE optimization failed (convergence=", res$convergence, "). Using initial values.")
     par_use <- theta_0
   } else {
     par_use <- res$par
+    if (!isTRUE(res$convergence > 0)) {
+      warning("MSVARmdl MLE optimization reported failure (convergence=", res$convergence,
+              ") but its iterate improves on the starting value; keeping it.")
+    }
+  }
+  # keep the transition block a valid column-stochastic matrix (slsqp honors its
+  # constraints only to tolerance); conditional, so clean fits are untouched
+  npar_use <- length(par_use); Pblk <- (npar_use - k*k + 1):npar_use
+  Pm <- matrix(par_use[Pblk], k, k)
+  if (any(Pm < 0) || any(Pm > 1) || any(abs(colSums(Pm) - 1) > 1e-8)) {
+    Pm[Pm < 0] <- 0; Pm[Pm > 1] <- 1
+    cs <- colSums(Pm); cs[cs <= 0] <- 1
+    par_use[Pblk] <- as.numeric(sweep(Pm, 2, cs, "/"))
   }
   if (length(mdl_in$betaZ)>0){
     output <- tryCatch(ExpectationM_MSVARXmdl(par_use, mdl_in, k), error=function(e) NULL)
@@ -1011,6 +1151,8 @@ MSVARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   }
   if (is.null(output)) return(NULL)
   output$iterations <- res$iter
+  output$converged <- isTRUE(res$convergence %in% c(1, 2, 3, 4))
+  output$convergence_code <- res$convergence
   output$St <- output$xi_t_T
   return(output)
 }

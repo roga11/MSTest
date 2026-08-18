@@ -1,3 +1,41 @@
+# MSTest 0.1.9.9005
+
+## MLE estimation (`method = "MLE"`): corrected optimizer-result handling and constraints
+
+* Fixed a defect that made every `method = "MLE"` fit return its starting values: the
+  result guard tested `res$status`, but `nloptr::slsqp()` returns `res$convergence`
+  (positive codes are successes). MLE fits now return the optimized solution. All five
+  Markov-switching classes were affected (`HMmdl()`, `MSARmdl()`, `MSARXmdl()`,
+  `MSVARmdl()`, `MSVARXmdl()`).
+* `MSVARmdl_mle()` now passes `deprecatedBehavior = FALSE` to `nloptr::slsqp()`, matching
+  the other classes; previously its inequality constraints were interpreted with the
+  reversed (deprecated) sign convention.
+* The MSVAR stationarity constraint now bounds the companion-matrix eigenvalue moduli by
+  1 (`1 - Mod(eigenvalue) >= 0`); the previous form permitted moduli up to 2, admitting
+  explosive solutions. Non-finite eigenvalues map to a finite penalty so the optimizer's
+  finite-difference Jacobian stays defined.
+* `HMmdl()` with exogenous regressors: the variance floor was applied to the `betaZ`
+  block of the parameter vector (pinning coefficients near zero) because the constraint
+  selector did not skip it; the selector now covers the full parameter layout.
+* `mle_variance_constraint` is now relative in every class: the smallest covariance
+  eigenvalue is bounded below by `mle_variance_constraint * tr(Sigma_lin)/q`, where
+  `Sigma_lin` is the one-regime fit covariance — the same anchoring as
+  `em_variance_constraint`. Previously `HMmdl()`, `MSVARmdl()`, and `MSVARXmdl()` used an
+  absolute floor (default `1e-3`); their defaults are now `0.01` on the relative scale.
+* Starting values are projected into the user box (`mle_theta_low`/`mle_theta_upp`)
+  before optimization, with the transition-probability block projected onto the
+  column-sum-to-one simplex inside the box; infeasible random starts no longer error and
+  burn retry attempts.
+* A failed `slsqp()` run whose final iterate is finite, feasible, and better than the
+  starting value is now kept (with a warning) instead of discarded.
+* Transition-probability entries returned by the optimizer are clipped into [0, 1] (with
+  column renormalization) before the final smoothing pass when boundary optima produce
+  entries a rounding error outside the interval.
+* MLE fits now return `converged` (codes 1-4) and `convergence_code` (the `nloptr`
+  status); `estimMdl()` with `converge_check` no longer errors on MLE fits.
+* The exported `HMmdl_mle()`, `MSARmdl_mle()`, and `MSVARmdl_mle()` raise an informative
+  error when `mdl_in$sigma` is missing and a variance floor is requested.
+
 # MSTest 0.1.9.9004
 
 ## EM estimation: corrected transition-matrix update and smoothed probabilities for Markov-switching AR/VAR models
