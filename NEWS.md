@@ -1,3 +1,33 @@
+# MSTest 0.1.9.9006
+
+## Constrained EM for the transition matrix (`em_transition_constraint`)
+
+* New control `em_transition_constraint` (default `0` = off) for the five
+  Markov-switching model classes (`HMmdl()`, `MSARmdl()`, `MSARXmdl()`,
+  `MSVARmdl()`, `MSVARXmdl()`): bounds every transition probability below by the
+  given value during EM estimation (`p_ij >= eps`; because columns sum to 1 this is
+  equivalent to the two-sided bound `eps <= p_ij <= 1-eps` used by Kasahara and
+  Shimotsu (2018) and Qu and Zhuo (2021)). The constrained update is the exact
+  maximizer of the expected complete-data log-likelihood over the bounded simplex
+  (a closed-form water-filling solution), so the EM monotone-ascent property is
+  preserved (restricted EM in the sense of Kim and Taylor, 1995). Starting values
+  are projected into the bound. The default `0` (or a negative value) disables the
+  constraint and is bit-identical to the previous behavior. Must be less than
+  `1/k`; note the bound implies each diagonal entry is at most
+  `1 - (k-1)*em_transition_constraint`, so choose it with this cap in mind for
+  `k > 2`.
+* New additive outputs: `em_transition_constraint` (echoed) and
+  `P_constraint_binding` (k x k logical, TRUE where a fitted entry sits at the
+  bound). Entries at the bound are boundary estimates and their standard errors
+  are `NA`. Both apply to `method = "EM"` only; MLE fits return
+  `P_constraint_binding = NULL` (use `mle_theta_low`/`mle_theta_upp` to bound the
+  MLE path).
+* A user-supplied `init_theta` is now validated: its transition-matrix block (the
+  last `k*k` entries, `vec(P)` column-major) must be finite, in `[0,1]`, and
+  column-stochastic (columns summing to 1). Previously malformed starting values
+  were accepted and could be returned as invalid "fitted" transition matrices;
+  they now raise an informative error.
+
 # MSTest 0.1.9.9005
 
 ## MLE estimation (`method = "MLE"`): corrected optimizer-result handling and constraints

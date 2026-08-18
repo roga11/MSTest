@@ -1389,3 +1389,45 @@ warmstart_theta <- function(mdl_h0, k1, msmu = NULL, msvar = NULL, c_pert = 0.5)
   }
   return(mdl)
 }
+
+# ------------------------------------------------------------------------------
+# EM transition-probability bound helpers (constrained EM for P)
+# ------------------------------------------------------------------------------
+# Validate the transition-matrix block of a user-supplied init_theta: the last
+# k*k entries are vec(P), column-major. Entries must lie in [0,1] and columns
+# must each sum to 1 (tolerance 1e-8, so validly stored columns summing to
+# 1 +- a few ulp pass). Raises an informative error otherwise.
+.validate_init_P <- function(init_theta, k){
+  th <- as.numeric(init_theta)
+  if (length(th) < k*k){
+    stop("init_theta is too short to contain the k x k transition matrix (its last k*k entries must be vec(P)).")
+  }
+  P <- matrix(th[(length(th)-k*k+1):length(th)], k, k)
+  if (any(!is.finite(P)) || any(P < 0) || any(P > 1)){
+    stop("init_theta transition probabilities (the last k*k entries, vec(P), column-major) must be finite and in [0,1].")
+  }
+  if (any(abs(colSums(P) - 1) > 1e-8)){
+    stop("init_theta transition matrix columns must each sum to 1 (column-stochastic; the last k*k entries are vec(P), column-major).")
+  }
+  invisible(TRUE)
+}
+
+# k x k logical matrix: TRUE where a fitted transition probability sits at the
+# em_transition_constraint bound (boundary estimate). NULL when the bound is off.
+.P_bound_binding <- function(P, eps){
+  if (!isTRUE(eps > 0) || is.null(P)) return(NULL)
+  Pm <- as.matrix(P)
+  matrix(Pm <= eps + pmax(1e-12, eps * 1e-9), nrow(Pm), ncol(Pm))
+}
+
+# Set the theta-SE entries of transition probabilities resting at the
+# em_transition_constraint bound to NA (boundary point: the asymptotic normal
+# approximation is invalid there).
+.P_bound_na_se <- function(mdl){
+  b <- mdl$P_constraint_binding
+  if (is.null(mdl$theta_se) || is.null(b) || !any(b, na.rm = TRUE)) return(mdl)
+  ind <- which(as.numeric(mdl$theta_P_ind) == 1)
+  if (length(ind) != length(b)) return(mdl)
+  mdl$theta_se[ind[as.vector(b)]] <- NA_real_
+  mdl
+}

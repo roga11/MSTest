@@ -915,6 +915,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// constrain_P_col
+arma::vec constrain_P_col(arma::vec counts, double eps, arma::vec fallback);
+RcppExport SEXP _MSTest_constrain_P_col(SEXP countsSEXP, SEXP epsSEXP, SEXP fallbackSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type counts(countsSEXP);
+    Rcpp::traits::input_parameter< double >::type eps(epsSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type fallback(fallbackSEXP);
+    rcpp_result_gen = Rcpp::wrap(constrain_P_col(counts, eps, fallback));
+    return rcpp_result_gen;
+END_RCPP
+}
 // EMaximization_HMmdl
 List EMaximization_HMmdl(arma::vec theta, List mdl, List MSloglik_output, int k);
 RcppExport SEXP _MSTest_EMaximization_HMmdl(SEXP thetaSEXP, SEXP mdlSEXP, SEXP MSloglik_outputSEXP, SEXP kSEXP) {
@@ -1189,6 +1202,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_ExpectationM_MSARXmdl", (DL_FUNC) &_MSTest_ExpectationM_MSARXmdl, 3},
     {"_MSTest_ExpectationM_MSVARmdl", (DL_FUNC) &_MSTest_ExpectationM_MSVARmdl, 3},
     {"_MSTest_ExpectationM_MSVARXmdl", (DL_FUNC) &_MSTest_ExpectationM_MSVARXmdl, 3},
+    {"_MSTest_constrain_P_col", (DL_FUNC) &_MSTest_constrain_P_col, 3},
     {"_MSTest_EMaximization_HMmdl", (DL_FUNC) &_MSTest_EMaximization_HMmdl, 4},
     {"_MSTest_EMaximization_MSARmdl", (DL_FUNC) &_MSTest_EMaximization_MSARmdl, 4},
     {"_MSTest_EMaximization_MSARXmdl", (DL_FUNC) &_MSTest_EMaximization_MSARXmdl, 4},

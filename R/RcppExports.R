@@ -1362,6 +1362,10 @@ ExpectationM_MSVARXmdl <- function(theta, mdl, k) {
     .Call(`_MSTest_ExpectationM_MSVARXmdl`, theta, mdl, k)
 }
 
+constrain_P_col <- function(counts, eps, fallback) {
+    .Call(`_MSTest_constrain_P_col`, counts, eps, fallback)
+}
+
 #' @title Maximization step of EM algorithm for Hidden Markov model
 #' 
 #' @description This function performs the maximization step of the Expectation Maximization algorithm for Hidden Markov models.

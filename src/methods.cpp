@@ -3674,6 +3674,82 @@ arma::vec project_theta_sigma_floor(arma::vec theta_0, List mdl, int k){
   return theta_0;
 }
 
+// ------------------------------------------------------------------------------
+// Transition-probability bound (constrained EM for P; control
+// em_transition_constraint). The bound eps is passed in the model list as
+// 'P_bound' (0 or absent = disabled).
+double get_P_bound(List mdl){
+  if (mdl.containsElementNamed("P_bound")){
+    Rcpp::RObject pb = mdl["P_bound"];
+    if (!pb.isNULL()){
+      double eps = Rcpp::as<double>(pb);
+      if (std::isfinite(eps) && (eps > 0.0)) return eps;
+    }
+  }
+  return 0.0;
+}
+
+// Exact constrained M-step for one transition-matrix column: maximizes
+// sum_j n_j log p_j subject to sum_j p_j = 1 and p_j >= eps (the upper bound
+// 1-eps is implied). KKT water-filling solution: entries with small counts pin
+// at eps, free entries stay proportional to their counts; the free set only
+// shrinks, so at most k passes are needed. Feasibility requires eps < 1/k.
+// Returns fallback when the counts are unusable (non-finite, non-positive sum)
+// or eps is out of range.
+// [[Rcpp::export]]
+arma::vec constrain_P_col(arma::vec counts, double eps, arma::vec fallback){
+  int k = counts.n_elem;
+  double s = arma::accu(counts);
+  if ((!counts.is_finite()) || (!std::isfinite(s)) || (!(s > 0.0)) || (!(eps > 0.0)) ||
+      (!(eps < 1.0/k)) || (arma::any(counts < 0.0))){
+    return fallback;
+  }
+  arma::vec q = counts / s;
+  if (arma::all(q >= eps)) return q;   // unconstrained optimum feasible => it is the solution
+  std::vector<bool> pinned(k, false);
+  int nb = 0;
+  for (int pass = 0; pass < k; pass++){
+    double nf = 0.0;
+    for (int j = 0; j < k; j++){ if (!pinned[j]) nf += counts(j); }
+    double mass = 1.0 - nb * eps;
+    bool changed = false;
+    for (int j = 0; j < k; j++){
+      // pin iff n_j / lambda < eps with lambda = nf / mass
+      if ((!pinned[j]) && (counts(j) * mass < eps * nf)){ pinned[j] = true; nb++; changed = true; }
+    }
+    if (!changed){
+      arma::vec pcol(k);
+      for (int j = 0; j < k; j++){ pcol(j) = pinned[j] ? eps : counts(j) * mass / nf; }
+      return pcol;
+    }
+  }
+  return fallback;  // unreachable for eps < 1/k (the free set cannot empty)
+}
+
+// Project the transition-matrix block of a parameter vector onto the P bound
+// (feasible starting values; the last k*k entries of theta are vec(P),
+// column-major). Non-finite columns fall back to the uniform column.
+arma::vec project_theta_P_bound(arma::vec theta_0, List mdl, int k){
+  double eps = get_P_bound(mdl);
+  if (!(eps > 0.0)) return theta_0;
+  int npar = theta_0.n_elem;
+  if (npar < k*k) return theta_0;   // unexpected layout: leave as-is
+  arma::vec unif(k);
+  unif.fill(1.0/k);
+  for (int xk = 0; xk < k; xk++){
+    int i0 = npar - k*k + xk*k;
+    arma::vec col = theta_0.subvec(i0, i0 + k - 1);
+    // feasible columns stay bitwise untouched (renormalizing a feasible start
+    // would perturb it by ~1 ulp and change the whole EM trajectory); feasible
+    // means a valid probability column within the bound, so malformed user
+    // starts (entries > 1, column sum away from 1) are repaired here
+    if (col.is_finite() && arma::all(col >= eps) && arma::all(col <= 1.0) &&
+        (std::abs(arma::accu(col) - 1.0) <= 1e-8)) continue;
+    theta_0.subvec(i0, i0 + k - 1) = constrain_P_col(col, eps, unif);
+  }
+  return theta_0;
+}
+
 //' @title Maximization step of EM algorithm for Hidden Markov model
 //' 
 //' @description This function performs the maximization step of the Expectation Maximization algorithm for Hidden Markov models.
@@ -3718,11 +3794,18 @@ List EMaximization_HMmdl(arma::vec theta, List mdl, List MSloglik_output, int k)
   }
   arma::mat P_new = trans(P);  // Initialize from previous P; degenerate regimes keep their column
   arma::mat p_ij_sums     = arma::sum(p_ij,0);
+  double P_bound = get_P_bound(mdl);
   for (int xk = 0 ; xk<k; xk++){
     arma::vec regime_prob = xi_t_T.submat(0,xk,(Tsize-2),xk);
     double regimesum      = sum(regime_prob);
     if (regimesum < 1e-6 * Tsize) continue;  // degenerate: keep previous P column
-    P_new.row(xk)         = p_ij_sums.submat(0,(xk*k),0,(xk*k+(k-1)))/regimesum;
+    arma::rowvec Pcol_uc  = p_ij_sums.submat(0,(xk*k),0,(xk*k+(k-1)))/regimesum;
+    if ((P_bound > 0.0) && Pcol_uc.is_finite() && arma::any(vectorise(Pcol_uc) < P_bound)){
+      // exact constrained M-step for this column (see constrain_P_col)
+      P_new.row(xk) = trans(constrain_P_col(trans(Pcol_uc), P_bound, trans(P_new.row(xk))));
+    } else {
+      P_new.row(xk) = Pcol_uc;
+    }
   }
   P_new = trans(P_new);
   // Guard against NaN in P_new (can occur when p_ij numerator is also 0)
@@ -3913,10 +3996,17 @@ List EMaximization_MSARmdl(arma::vec theta, List mdl, List MSloglik_output, int 
     counts(reg_i0, reg_i1) += arma::accu(xi_t_T_AR.submat(1, xn, Tsize-1, xn));
   }
   arma::mat P_new = P;  // degenerate regimes keep their previous column
+  double P_bound = get_P_bound(mdl);
   for (int xk = 0; xk < k; xk++){
     double countsum = arma::accu(counts.col(xk));
     if (std::isfinite(countsum) && countsum >= 1e-6 * Tsize && counts.col(xk).is_finite()){
-      P_new.col(xk) = counts.col(xk) / countsum;
+      arma::vec Pcol_uc = counts.col(xk) / countsum;
+      if ((P_bound > 0.0) && arma::any(Pcol_uc < P_bound)){
+        // exact constrained M-step for this column (see constrain_P_col)
+        P_new.col(xk) = constrain_P_col(counts.col(xk), P_bound, P.col(xk));
+      } else {
+        P_new.col(xk) = Pcol_uc;
+      }
     }
   }
   // Floating-point guard: keep P_new a valid column-stochastic matrix.
@@ -4135,10 +4225,17 @@ List EMaximization_MSARXmdl(arma::vec theta, List mdl, List MSloglik_output, int
     counts(reg_i0, reg_i1) += arma::accu(xi_t_T_AR.submat(1, xn, Tsize-1, xn));
   }
   arma::mat P_new = P;  // degenerate regimes keep their previous column
+  double P_bound = get_P_bound(mdl);
   for (int xk = 0; xk < k; xk++){
     double countsum = arma::accu(counts.col(xk));
     if (std::isfinite(countsum) && countsum >= 1e-6 * Tsize && counts.col(xk).is_finite()){
-      P_new.col(xk) = counts.col(xk) / countsum;
+      arma::vec Pcol_uc = counts.col(xk) / countsum;
+      if ((P_bound > 0.0) && arma::any(Pcol_uc < P_bound)){
+        // exact constrained M-step for this column (see constrain_P_col)
+        P_new.col(xk) = constrain_P_col(counts.col(xk), P_bound, P.col(xk));
+      } else {
+        P_new.col(xk) = Pcol_uc;
+      }
     }
   }
   // Floating-point guard: keep P_new a valid column-stochastic matrix.
@@ -4364,10 +4461,17 @@ List EMaximization_MSVARmdl(arma::vec theta, List mdl, List MSloglik_output, int
     counts(reg_i0, reg_i1) += arma::accu(xi_t_T_AR.submat(1, xn, Tsize-1, xn));
   }
   arma::mat P_new = P;  // degenerate regimes keep their previous column
+  double P_bound = get_P_bound(mdl);
   for (int xk = 0; xk < k; xk++){
     double countsum = arma::accu(counts.col(xk));
     if (std::isfinite(countsum) && countsum >= 1e-6 * Tsize && counts.col(xk).is_finite()){
-      P_new.col(xk) = counts.col(xk) / countsum;
+      arma::vec Pcol_uc = counts.col(xk) / countsum;
+      if ((P_bound > 0.0) && arma::any(Pcol_uc < P_bound)){
+        // exact constrained M-step for this column (see constrain_P_col)
+        P_new.col(xk) = constrain_P_col(counts.col(xk), P_bound, P.col(xk));
+      } else {
+        P_new.col(xk) = Pcol_uc;
+      }
     }
   }
   // Floating-point guard: keep P_new a valid column-stochastic matrix.
@@ -4646,10 +4750,17 @@ List EMaximization_MSVARXmdl(arma::vec theta, List mdl, List MSloglik_output, in
     counts(reg_i0, reg_i1) += arma::accu(xi_t_T_AR.submat(1, xn, Tsize-1, xn));
   }
   arma::mat P_new = P;  // degenerate regimes keep their previous column
+  double P_bound = get_P_bound(mdl);
   for (int xk = 0; xk < k; xk++){
     double countsum = arma::accu(counts.col(xk));
     if (std::isfinite(countsum) && countsum >= 1e-6 * Tsize && counts.col(xk).is_finite()){
-      P_new.col(xk) = counts.col(xk) / countsum;
+      arma::vec Pcol_uc = counts.col(xk) / countsum;
+      if ((P_bound > 0.0) && arma::any(Pcol_uc < P_bound)){
+        // exact constrained M-step for this column (see constrain_P_col)
+        P_new.col(xk) = constrain_P_col(counts.col(xk), P_bound, P.col(xk));
+      } else {
+        P_new.col(xk) = Pcol_uc;
+      }
     }
   }
   // Floating-point guard: keep P_new a valid column-stochastic matrix.
@@ -5223,6 +5334,7 @@ List HMmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   List EMest_output;
   // ----- Start from a feasible point w.r.t. the EM variance floor
   theta_0 = project_theta_sigma_floor(theta_0, mdl, k);
+  theta_0 = project_theta_P_bound(theta_0, mdl, k);
   EMest_output["theta"] = theta_0;  // initial values for parameters
   EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_HMmdl(mdl, EMest_output, k);
@@ -5315,6 +5427,7 @@ List MSARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   List EMest_output;
   // ----- Start from a feasible point w.r.t. the EM variance floor
   theta_0 = project_theta_sigma_floor(theta_0, mdl, k);
+  theta_0 = project_theta_P_bound(theta_0, mdl, k);
   EMest_output["theta"] = theta_0;  // initial values for parameters
   EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_MSARmdl(mdl, EMest_output, k);
@@ -5406,6 +5519,7 @@ List MSARXmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   List EMest_output;
   // ----- Start from a feasible point w.r.t. the EM variance floor
   theta_0 = project_theta_sigma_floor(theta_0, mdl, k);
+  theta_0 = project_theta_P_bound(theta_0, mdl, k);
   EMest_output["theta"] = theta_0;  // initial values for parameters
   EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_MSARXmdl(mdl, EMest_output, k);
@@ -5498,6 +5612,7 @@ List MSVARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   List EMest_output;
   // ----- Start from a feasible point w.r.t. the EM variance floor
   theta_0 = project_theta_sigma_floor(theta_0, mdl, k);
+  theta_0 = project_theta_P_bound(theta_0, mdl, k);
   EMest_output["theta"] = theta_0;  // initial values for parameters
   EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_MSVARmdl(mdl, EMest_output, k);
@@ -5588,6 +5703,7 @@ List MSVARXmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   List EMest_output;
   // ----- Start from a feasible point w.r.t. the EM variance floor
   theta_0 = project_theta_sigma_floor(theta_0, mdl, k);
+  theta_0 = project_theta_P_bound(theta_0, mdl, k);
   EMest_output["theta"] = theta_0;  // initial values for parameters
   EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_MSVARXmdl(mdl, EMest_output, k);
