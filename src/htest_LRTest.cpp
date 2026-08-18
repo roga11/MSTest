@@ -23,7 +23,7 @@ using namespace Rcpp;
 // [[Rcpp::export]]
 List simuMdl(List mdl_h0, int p, int q, int k, int burnin, bool exog){
   // ---------- Load R functions
-  Rcpp::Environment mstest("package:MSTest");
+  Rcpp::Environment mstest = Rcpp::Environment::namespace_env("MSTest");
   Rcpp::Function MSARmdl = mstest["MSARmdl"];
   Rcpp::Function MSVARmdl = mstest["MSVARmdl"];
   Rcpp::Function ARmdl = mstest["ARmdl"];
@@ -285,7 +285,7 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
                        Rcpp::Nullable<List> predrawn_eps = R_NilValue,
                        Rcpp::Nullable<Rcpp::NumericMatrix> predrawn_state_rand = R_NilValue){
   // ---------- Load R functions
-  Rcpp::Environment mstest("package:MSTest");
+  Rcpp::Environment mstest = Rcpp::Environment::namespace_env("MSTest");
   Rcpp::Function estimMdl = mstest["estimMdl"];
   // ---------- Define required parameters
   int k0  = mdl_h0["k"];
@@ -480,7 +480,7 @@ double MMCLRpval_fun(arma::vec theta_h0, List mdl_h0, int k1, double LRT_0,
                      Rcpp::Nullable<arma::mat> Z, bool exog, List mdl_h0_control, List mdl_h1_control,
                      Rcpp::Nullable<List> predrawn_eps = R_NilValue,
                      Rcpp::Nullable<Rcpp::NumericMatrix> predrawn_state_rand = R_NilValue){
-  Rcpp::Environment mstest("package:MSTest");
+  Rcpp::Environment mstest = Rcpp::Environment::namespace_env("MSTest");
   Rcpp::Function LR_samp_dist_par = mstest["LR_samp_dist_par"];
   Rcpp::Function estimMdl = mstest["estimMdl"];
   // ----- define required variables from inputs

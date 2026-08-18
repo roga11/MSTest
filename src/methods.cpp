@@ -242,6 +242,14 @@ List ts_lagged(arma::mat Y, int p){
 }
 
 // ==============================================================================
+// Autoregressive moment grid and extended transition matrix (C++ ports) —
+// definitions in argrid_ports.cpp; declarations here for the call sites.
+List argrid_MSARmdl_cpp(arma::vec mu, arma::vec sig, int k, int ar);
+List argrid_MSVARmdl_cpp(arma::mat mu, List sigma, int k, int ar);
+arma::mat arP_cpp(arma::mat P, int k, int ar);
+
+
+// ==============================================================================
 //' @title Parameter list for Markov-switching autoregressive model
 //' 
 //' @description This function takes the parameter vector of interest and converts it to a list with specific parameter vectors needed for univariate Markov-switching functions.
@@ -259,9 +267,6 @@ List ts_lagged(arma::mat Y, int p){
 //' @export
 // [[Rcpp::export]]
 List paramList_MSARmdl(arma::vec theta, int p, int k, bool msmu, bool msvar){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function argrid_MSARmdl = mstest["argrid_MSARmdl"];
-  Rcpp::Function arP  = mstest["arP"];
   // ----- Mean for each regime 
   arma::vec mu        = theta.subvec(0, msmu*(k-1));
   // ----- Phi vector
@@ -273,12 +278,12 @@ List paramList_MSARmdl(arma::vec theta, int p, int k, bool msmu, bool msvar){
   // Regime limiting probabilities
   arma::vec pinf      = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
-  List musig_out      = argrid_MSARmdl(mu, sig, k, p, msmu, msvar);
+  List musig_out      = argrid_MSARmdl_cpp(mu, sig, k, p);
   arma::mat muAR      = as<arma::mat>(musig_out["mu"]);
   arma::mat sigAR     = as<arma::mat>(musig_out["sig"]);
   arma::vec state_ind = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
-  arma::mat P_AR      = as<arma::mat>(arP(P, k, p));
+  arma::mat P_AR      = arP_cpp(P, k, p);
   arma::mat pinf_AR   = limP(P_AR);
   // ----- Organize output
   List param_out;
@@ -315,9 +320,6 @@ List paramList_MSARmdl(arma::vec theta, int p, int k, bool msmu, bool msvar){
 //' @export
 // [[Rcpp::export]]
 List paramList_MSARXmdl(arma::vec theta, int p, int k, int qz, bool msmu, bool msvar){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function argrid_MSARmdl = mstest["argrid_MSARmdl"];
-  Rcpp::Function arP    = mstest["arP"];
   // ----- Mean for each regime 
   arma::vec mu          = theta.subvec(0, msmu*(k-1));
   // ----- Phi vector
@@ -331,12 +333,12 @@ List paramList_MSARXmdl(arma::vec theta, int p, int k, int qz, bool msmu, bool m
   // Regime limiting probabilities
   arma::vec pinf        = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
-  List musig_out        = argrid_MSARmdl(mu, sig, k, p, msmu, msvar);
+  List musig_out        = argrid_MSARmdl_cpp(mu, sig, k, p);
   arma::mat muAR        = as<arma::mat>(musig_out["mu"]);
   arma::mat sigAR       = as<arma::mat>(musig_out["sig"]);
   arma::vec state_ind   = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
-  arma::mat P_AR        = as<arma::mat>(arP(P, k, p));
+  arma::mat P_AR        = arP_cpp(P, k, p);
   arma::mat pinf_AR     = limP(P_AR);
   // ----- Organize output
   List param_out;
@@ -372,9 +374,6 @@ List paramList_MSARXmdl(arma::vec theta, int p, int k, int qz, bool msmu, bool m
 //' @export
 // [[Rcpp::export]]
 List paramList_MSVARmdl(arma::vec theta, int q, int p, int k, bool msmu, bool msvar){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function argrid_MSVARmdl = mstest["argrid_MSVARmdl"];
-  Rcpp::Function arP = mstest["arP"];
   // ----- Mean for each regime 
   arma::mat mu_k(k, q, arma::fill::zeros);
   arma::vec mu = theta.subvec(0, q+q*msmu*(k-1)-1);
@@ -410,13 +409,13 @@ List paramList_MSVARmdl(arma::vec theta, int q, int p, int k, bool msmu, bool ms
   // Regime limiting probabilities
   arma::vec pinf = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
-  List musig_out = argrid_MSVARmdl(mu_k, sigma, k, p, msmu, msvar);
+  List musig_out = argrid_MSVARmdl_cpp(mu_k, sigma, k, p);
   List muAR = musig_out["mu"];
   List sigAR = musig_out["sig"];
   arma::vec state_ind = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
   //int M = pow(k, ar+1);
-  arma::mat P_AR = as<arma::mat>(arP(P, k, p));
+  arma::mat P_AR = arP_cpp(P, k, p);
   arma::mat pinf_AR = limP(P_AR);
   // ----- Organize output
   List param_out;
@@ -452,9 +451,6 @@ List paramList_MSVARmdl(arma::vec theta, int q, int p, int k, bool msmu, bool ms
 //' @export
 // [[Rcpp::export]]
 List paramList_MSVARXmdl(arma::vec theta, int q, int p, int k, int qz, bool msmu, bool msvar){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function argrid_MSVARmdl = mstest["argrid_MSVARmdl"];
-  Rcpp::Function arP             = mstest["arP"];
   // ----- Mean for each regime 
   arma::mat mu_k(k, q, arma::fill::zeros);
   arma::vec mu = theta.subvec(0, q + q*msmu*(k-1)-1);
@@ -493,13 +489,13 @@ List paramList_MSVARXmdl(arma::vec theta, int q, int p, int k, int qz, bool msmu
   // Regime limiting probabilities
   arma::vec pinf = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
-  List musig_out = argrid_MSVARmdl(mu_k, sigma, k, p, msmu, msvar);
+  List musig_out = argrid_MSVARmdl_cpp(mu_k, sigma, k, p);
   List muAR = musig_out["mu"];
   List sigAR = musig_out["sig"];
   arma::vec state_ind = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
   //int M = pow(k, ar+1);
-  arma::mat P_AR = as<arma::mat>(arP(P, k, p));
+  arma::mat P_AR = arP_cpp(P, k, p);
   arma::mat pinf_AR = limP(P_AR);
   // ----- Organize output
   List param_out;
@@ -2339,9 +2335,6 @@ double logLike_HMmdl_min(arma::vec theta, List mdl, int k){
 //' @export
 // [[Rcpp::export]]
 double logLike_MSARmdl(arma::vec theta, List mdl, int k){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function arP            = mstest["arP"];
-  Rcpp::Function argrid_MSARmdl = mstest["argrid_MSARmdl"];
   // ---------- Initialize parameters
   arma::vec y     = mdl["y"];
   arma::mat x     = mdl["x"];
@@ -2361,12 +2354,12 @@ double logLike_MSARmdl(arma::vec theta, List mdl, int k){
   // Regime limiting probabilities
   arma::vec pinf  = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
-  List musig_out  = argrid_MSARmdl(mu, sig, k, ar, msmu, msvar);
+  List musig_out  = argrid_MSARmdl_cpp(mu, sig, k, ar);
   arma::mat muAR  = as<arma::mat>(musig_out["mu"]);
   arma::mat sigAR = as<arma::mat>(musig_out["sig"]);
   arma::vec state_ind = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
-  arma::mat P_AR = as<arma::mat>(arP(P, k, ar));
+  arma::mat P_AR = arP_cpp(P, k, ar);
   arma::mat pinf_AR = limP(P_AR);
   // ----- Compute residuals in each regime
   arma::mat repvec(1, M, arma::fill::ones);
@@ -2427,9 +2420,6 @@ double logLike_MSARmdl(arma::vec theta, List mdl, int k){
 //' @export
 // [[Rcpp::export]]
 double logLike_MSARXmdl(arma::vec theta, List mdl, int k){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function arP            = mstest["arP"];
-  Rcpp::Function argrid_MSARmdl = mstest["argrid_MSARmdl"];
   // ---------- Initialize parameters
   arma::vec y     = mdl["y"];
   arma::mat x     = mdl["x"];
@@ -2455,12 +2445,12 @@ double logLike_MSARXmdl(arma::vec theta, List mdl, int k){
   // Regime limiting probabilities
   arma::vec pinf        = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
-  List musig_out        = argrid_MSARmdl(mu, sig, k, ar, msmu, msvar);
+  List musig_out        = argrid_MSARmdl_cpp(mu, sig, k, ar);
   arma::mat muAR        = as<arma::mat>(musig_out["mu"]);
   arma::mat sigAR       = as<arma::mat>(musig_out["sig"]);
   arma::vec state_ind   = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
-  arma::mat P_AR        = as<arma::mat>(arP(P, k, ar));
+  arma::mat P_AR        = arP_cpp(P, k, ar);
   arma::mat pinf_AR     = limP(P_AR);
   // ----- Compute residuals in each regime
   arma::rowvec zbar  = arma::mean(Z,0);
@@ -2564,9 +2554,6 @@ double logLike_MSARXmdl_min(arma::vec theta, List mdl, int k){
 //' @export
 // [[Rcpp::export]]
 double logLike_MSVARmdl(arma::vec theta, List mdl, int k){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function arP = mstest["arP"];
-  Rcpp::Function argrid_MSVARmdl = mstest["argrid_MSVARmdl"];
   // ---------- Initialize parameters
   arma::mat y = mdl["y"];
   arma::mat x = mdl["x"];
@@ -2611,12 +2598,12 @@ double logLike_MSVARmdl(arma::vec theta, List mdl, int k){
   // Regime limiting probabilities
   arma::vec pinf = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
-  List musig_out = argrid_MSVARmdl(mu_k, sigma, k, ar, msmu, msvar);
+  List musig_out = argrid_MSVARmdl_cpp(mu_k, sigma, k, ar);
   List muAR = musig_out["mu"];
   List sigAR = musig_out["sig"];
   arma::vec state_ind = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
-  arma::mat PAR = as<arma::mat>(arP(P, k, ar));
+  arma::mat PAR = arP_cpp(P, k, ar);
   arma::mat pinfAR = limP(PAR);
   // ----- Compute residuals in each regime
   arma::mat repmu(Tsize, 1, arma::fill::ones);
@@ -2703,9 +2690,6 @@ double logLike_MSVARmdl(arma::vec theta, List mdl, int k){
 //' @export
 // [[Rcpp::export]]
 double logLike_MSVARXmdl(arma::vec theta, List mdl, int k){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function arP = mstest["arP"];
-  Rcpp::Function argrid_MSVARmdl = mstest["argrid_MSVARmdl"];
   // ---------- Initialize parameters
   arma::mat y   = mdl["y"];
   arma::mat x   = mdl["x"];
@@ -2757,12 +2741,12 @@ double logLike_MSVARXmdl(arma::vec theta, List mdl, int k){
   // Regime limiting probabilities
   arma::vec pinf = limP(P);
   // ----- Obtain AR consistent grid of Mu, Sigma and State indicators
-  List musig_out = argrid_MSVARmdl(mu_k, sigma, k, ar, msmu, msvar);
+  List musig_out = argrid_MSVARmdl_cpp(mu_k, sigma, k, ar);
   List muAR = musig_out["mu"];
   List sigAR = musig_out["sig"];
   arma::vec state_ind = as<arma::vec>(musig_out["state_ind"]);
   // ----- Obtain AR consistent P and pinf
-  arma::mat PAR = as<arma::mat>(arP(P, k, ar));
+  arma::mat PAR = arP_cpp(P, k, ar);
   arma::mat pinfAR = limP(PAR);
   // ----- Compute residuals in each regime
   arma::rowvec zbar  = arma::mean(Z,0);
@@ -3766,8 +3750,6 @@ arma::vec project_theta_P_bound(arma::vec theta_0, List mdl, int k){
 //' @export
 // [[Rcpp::export]]
 List EMaximization_HMmdl(arma::vec theta, List mdl, List MSloglik_output, int k){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function argrid_MSVARmdl = mstest["argrid_MSVARmdl"];
   // ---------- Initialize parameters
   arma::mat y = mdl["y"];
   int q       = mdl["q"];
@@ -3964,8 +3946,6 @@ List EMaximization_HMmdl(arma::vec theta, List mdl, List MSloglik_output, int k)
 //' @export
 // [[Rcpp::export]]
 List EMaximization_MSARmdl(arma::vec theta, List mdl, List MSloglik_output, int k){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function argrid_MSARmdl = mstest["argrid_MSARmdl"];
   // ---------- Initialize parameters
   arma::vec y = mdl["y"];
   arma::mat x = mdl["x"];
@@ -4085,7 +4065,7 @@ List EMaximization_MSARmdl(arma::vec theta, List mdl, List MSloglik_output, int 
   // ----- Update estimates for phi
   arma::mat muAR(M, ar+1,arma::fill::zeros);
   arma::vec sigAR(M, 1,arma::fill::zeros);
-  List mugrid = argrid_MSARmdl(mu, sig, k, ar, msmu, msvar); // new mu & old sigma are used
+  List mugrid = argrid_MSARmdl_cpp(mu, sig, k, ar); // new mu & old sigma are used
   muAR        = as<arma::mat>(mugrid["mu"]);
   sigAR       = as<arma::vec>(mugrid["sig"]);
   arma::vec repmu(Tsize,arma::fill::ones);
@@ -4187,8 +4167,6 @@ List EMaximization_MSARmdl(arma::vec theta, List mdl, List MSloglik_output, int 
 //' @export
 // [[Rcpp::export]]
 List EMaximization_MSARXmdl(arma::vec theta, List mdl, List MSloglik_output, int k){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function argrid_MSARmdl = mstest["argrid_MSARmdl"];
   // ---------- Initialize parameters
   arma::vec y   = mdl["y"];
   arma::mat x   = mdl["x"];
@@ -4315,7 +4293,7 @@ List EMaximization_MSARXmdl(arma::vec theta, List mdl, List MSloglik_output, int
   // ----- Update estimates for beta (phi & betaZ)
   arma::mat muAR(M, ar+1,arma::fill::zeros);
   arma::vec sigAR(M, 1,arma::fill::zeros);
-  List mugrid   = argrid_MSARmdl(mu, sig, k, ar, msmu, msvar); // new mu & old sigma are used
+  List mugrid   = argrid_MSARmdl_cpp(mu, sig, k, ar); // new mu & old sigma are used
   muAR          = as<arma::mat>(mugrid["mu"]);
   sigAR         = as<arma::vec>(mugrid["sig"]);
   // (repmu and zdm already computed above) 
@@ -4425,8 +4403,6 @@ List EMaximization_MSARXmdl(arma::vec theta, List mdl, List MSloglik_output, int
 //' @export
 // [[Rcpp::export]]
 List EMaximization_MSVARmdl(arma::vec theta, List mdl, List MSloglik_output, int k){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function argrid_MSVARmdl = mstest["argrid_MSVARmdl"];
   // ---------- Initialize parameters
   arma::mat y = mdl["y"];
   arma::mat x = mdl["x"];
@@ -4568,7 +4544,7 @@ List EMaximization_MSVARmdl(arma::vec theta, List mdl, List MSloglik_output, int
     }
   }
   // --------------- Update estimates for phi
-  List mugrid = argrid_MSVARmdl(mu_k, sig, k, ar, msmu, msvar);
+  List mugrid = argrid_MSVARmdl_cpp(mu_k, sig, k, ar);
   List muAR   = mugrid["mu"];
   List sigAR  = mugrid["sig"];
   arma::vec repmu(Tsize, arma::fill::ones);
@@ -4708,8 +4684,6 @@ List EMaximization_MSVARmdl(arma::vec theta, List mdl, List MSloglik_output, int
 //' @export
 // [[Rcpp::export]]
 List EMaximization_MSVARXmdl(arma::vec theta, List mdl, List MSloglik_output, int k){
-  Rcpp::Environment mstest("package:MSTest");
-  Rcpp::Function argrid_MSVARmdl = mstest["argrid_MSVARmdl"];
   // ---------- Initialize parameters
   arma::mat y   = mdl["y"];
   arma::mat x   = mdl["x"];
@@ -4854,7 +4828,7 @@ List EMaximization_MSVARXmdl(arma::vec theta, List mdl, List MSloglik_output, in
     }
   }
   // ----- Update estimates for beta (phi & betaZ)
-  List mugrid = argrid_MSVARmdl(mu_k, sig, k, ar, msmu, msvar);
+  List mugrid = argrid_MSVARmdl_cpp(mu_k, sig, k, ar);
   List muAR   = mugrid["mu"];
   List sigAR  = mugrid["sig"];
   // (repmu and zdm already computed above) 

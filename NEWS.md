@@ -1,3 +1,20 @@
+# MSTest 0.1.9.9007
+
+## Performance and namespace-only usage
+
+* The autoregressive moment grid and extended transition matrix helpers
+  (`argrid_MSARmdl`, `argrid_MSVARmdl`, `arP`) are now computed in C++ inside the
+  estimation code instead of being fetched and called as R functions from C++ on
+  every likelihood evaluation and EM iteration. Results are bit-identical; typical
+  speedups are 10-20% for EM estimation and the Monte Carlo LR tests, and 1.6-2x
+  for univariate `method = "MLE"` fits. The R helpers remain exported and are the
+  reference implementations; C++ counterparts are available as
+  `argrid_MSARmdl_cpp()`, `argrid_MSVARmdl_cpp()`, and `arP_cpp()`.
+* The package no longer needs to be attached to estimate models: internal C++ code
+  previously looked up R helpers on the search path (`library(MSTest)` required,
+  and namespace-only usage such as `MSTest::MSARmdl()` or some parallel-worker
+  setups failed); lookups now resolve through the package namespace.
+
 # MSTest 0.1.9.9006
 
 ## Constrained EM for the transition matrix (`em_transition_constraint`)

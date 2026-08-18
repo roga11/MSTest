@@ -11,6 +11,47 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
+// argrid_MSARmdl_cpp
+List argrid_MSARmdl_cpp(arma::vec mu, arma::vec sig, int k, int ar);
+RcppExport SEXP _MSTest_argrid_MSARmdl_cpp(SEXP muSEXP, SEXP sigSEXP, SEXP kSEXP, SEXP arSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type sig(sigSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< int >::type ar(arSEXP);
+    rcpp_result_gen = Rcpp::wrap(argrid_MSARmdl_cpp(mu, sig, k, ar));
+    return rcpp_result_gen;
+END_RCPP
+}
+// argrid_MSVARmdl_cpp
+List argrid_MSVARmdl_cpp(arma::mat mu, List sigma, int k, int ar);
+RcppExport SEXP _MSTest_argrid_MSVARmdl_cpp(SEXP muSEXP, SEXP sigmaSEXP, SEXP kSEXP, SEXP arSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< List >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< int >::type ar(arSEXP);
+    rcpp_result_gen = Rcpp::wrap(argrid_MSVARmdl_cpp(mu, sigma, k, ar));
+    return rcpp_result_gen;
+END_RCPP
+}
+// arP_cpp
+arma::mat arP_cpp(arma::mat P, int k, int ar);
+RcppExport SEXP _MSTest_arP_cpp(SEXP PSEXP, SEXP kSEXP, SEXP arSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type P(PSEXP);
+    Rcpp::traits::input_parameter< int >::type k(kSEXP);
+    Rcpp::traits::input_parameter< int >::type ar(arSEXP);
+    rcpp_result_gen = Rcpp::wrap(arP_cpp(P, k, ar));
+    return rcpp_result_gen;
+END_RCPP
+}
 // calc_mu2t_mv
 arma::vec calc_mu2t_mv(List mdl, double rho, List ltmt, arma::vec hv);
 RcppExport SEXP _MSTest_calc_mu2t_mv(SEXP mdlSEXP, SEXP rhoSEXP, SEXP ltmtSEXP, SEXP hvSEXP) {
@@ -1135,6 +1176,9 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_MSTest_argrid_MSARmdl_cpp", (DL_FUNC) &_MSTest_argrid_MSARmdl_cpp, 4},
+    {"_MSTest_argrid_MSVARmdl_cpp", (DL_FUNC) &_MSTest_argrid_MSVARmdl_cpp, 4},
+    {"_MSTest_arP_cpp", (DL_FUNC) &_MSTest_arP_cpp, 3},
     {"_MSTest_calc_mu2t_mv", (DL_FUNC) &_MSTest_calc_mu2t_mv, 4},
     {"_MSTest_calc_mu2t", (DL_FUNC) &_MSTest_calc_mu2t, 3},
     {"_MSTest_chpStat", (DL_FUNC) &_MSTest_chpStat, 4},

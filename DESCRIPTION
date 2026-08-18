@@ -2,7 +2,7 @@ Package: MSTest
 Type: Package
 Title: Hypothesis Testing for Markov Switching Models
 Date: 2026-08-14
-Version: 0.1.9.9006
+Version: 0.1.9.9007
 Authors@R:
   c(person(given = "Gabriel", 
            family = "Rodriguez-Rondon",
@@ -39,6 +39,7 @@ Depends:
   R (>= 4.0.0)
 Suggests:
   testthat (>= 3.0.0),
+  callr,
   knitr,
   rmarkdown
 VignetteBuilder: knitr
