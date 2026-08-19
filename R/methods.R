@@ -1152,26 +1152,6 @@ print.MMCLRTest <- function(x, digits = getOption("digits"), ...){
 }
 
 
-#' @title Print summary of a \code{BootLRTest} object
-#'
-#' @description This is a method for the function \code{print()} for objects of the class \code{BootLRTest}.
-#' 
-#' @inheritParams base::print
-#' @param digits Integer determining the number of significant digits to print.
-#'
-#' @return The \code{BootLRTest} object is returned invisibly.
-#' 
-#' @keywords internal
-#' 
-#' @export
-print.BootLRTest <- function(x, digits = getOption("digits"), ...){
-  cat("Bootstrap Likelihood Ratio Test\n")
-  out <- data.frame(t(as.matrix(c(x$LRT_0, x$LRN_cv, x$pval))))
-  colnames(out) <- c(names(x$LRT_0), names(x$LRN_cv), "p-value")
-  rownames(out) <- "Boot_LRT"
-  print(format(signif(out, max(1L, digits - 2L))))
-  invisible(x)
-}
 
 
 
@@ -1620,48 +1600,6 @@ summary.MMCLRTest <- function(object, digits = getOption("digits"), ...){
 }
 
 
-#' @title Summary of a \code{BootLRTest} object
-#'
-#' @description This is a method for the function \code{summary()} for objects of the class \code{BootLRTest}.
-#' 
-#' @inheritParams base::summary
-#' @param digits Integer determining the number of significant digits to print.
-#'
-#' @return The \code{BootLRTest} object is returned invisibly.
-#' 
-#' @keywords internal
-#' 
-#' @export
-summary.BootLRTest <- function(object, digits = getOption("digits"), ...){
-  cat("Restricted Model\n") 
-  frame_h0_tmp <- data.frame(coef = object$mdl_h0$theta)
-  if (object$mdl_h0$control$getSE==TRUE){
-    frame_h0_tmp["s.e."] <- object$mdl_h0$theta_se
-  }
-  rownames(frame_h0_tmp) <- names(object$mdl_h0$theta)
-  print(format(signif(frame_h0_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),object$mdl_h0$logLike)
-  cat(paste("\nAIC = "),object$mdl_h0$AIC)
-  cat(paste("\nBIC = "),object$mdl_h0$BIC)
-  cat("\n")
-  cat("\nUnrestricted Model\n") 
-  frame_h1_tmp <- data.frame(coef = object$mdl_h1$theta)
-  if (object$mdl_h1$control$getSE==TRUE){
-    frame_h1_tmp["s.e."] <- object$mdl_h1$theta_se
-  }
-  rownames(frame_h1_tmp) <- names(object$mdl_h1$theta)
-  print(format(signif(frame_h1_tmp, max(1L, digits - 2L))))
-  cat(paste("\nlog-likelihood = "),object$mdl_h1$logLike)
-  cat(paste("\nAIC = "),object$mdl_h1$AIC)
-  cat(paste("\nBIC = "),object$mdl_h1$BIC)
-  cat("\n")
-  cat("\nBootstrap Likelihood Ratio Test\n")
-  out <- data.frame(t(as.matrix(c(object$LRT_0, object$LRN_cv, object$pval))))
-  colnames(out) <- c(names(object$LRT_0), names(object$LRN_cv), "p-value")
-  rownames(out) <- "Boot_LRT"
-  print(format(signif(out, max(1L, digits - 2L))))
-  invisible(object)
-}
 
 
 

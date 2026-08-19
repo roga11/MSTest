@@ -2673,7 +2673,7 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
     stationary    <- all(Mod(eigen(output$Fmat)$values)<1)  
   )
   # ----- Output
-  out <- list(y = init_mdl$y, X = init_mdl$X, x = init_mdl$x, resid = output$resid, 
+  out <- list(y = init_mdl$y, X = init_mdl$X, x = init_mdl$x, Z = Z[(p+1):nrow(Z),,drop=F], resid = output$resid, 
               mu = output$mu, intercept = inter, phi = output$phi, betaZ = betaZ, beta = beta,
               stdev = stdev, sigma = output$sigma, theta = output$theta, 
               theta_mu_ind = theta_mu_ind, theta_phi_ind = theta_phi_ind, theta_x_ind = theta_x_ind, theta_beta_ind = theta_beta_ind,

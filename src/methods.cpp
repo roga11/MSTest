@@ -1213,8 +1213,8 @@ List simuMSAR_cpp(List mdl_h0, int burnin = 100){
   }
   // ----- Perform checks on DGP
   arma::vec check_Pcolsum = trans(arma::sum(P,0));
-  if (max(abs(check_Pcolsum-1))>1e-8){
-    stop("Columns of transition matrix 'P' must sum to 1.");
+  if ((!P.is_finite()) || (max(abs(check_Pcolsum-1))>1e-8)){
+    stop("Transition matrix 'P' must be finite with columns summing to 1.");
   }
   // ----- Start Simulation
   // pre-define variables
@@ -1327,8 +1327,8 @@ List simuMSARX_cpp(List mdl_h0, int burnin = 100){
   }
   // ----- Perform checks on DGP
   arma::vec check_Pcolsum = trans(arma::sum(P,0));
-  if (max(abs(check_Pcolsum-1))>1e-8){
-    stop("Columns of transition matrix 'P' must sum to 1.");
+  if ((!P.is_finite()) || (max(abs(check_Pcolsum-1))>1e-8)){
+    stop("Transition matrix 'P' must be finite with columns summing to 1.");
   }
   // ----- Start Simulation
   // pre-define variables
@@ -1592,8 +1592,8 @@ List simuMSVAR_cpp(List mdl_h0, int burnin = 100){
   arma::mat F = join_cols(phimat,Mn);
   // ----- Perform checks on DGP
   arma::vec check_Pcolsum = trans(arma::sum(P,0));
-  if (max(abs(check_Pcolsum-1))>1e-8){
-    stop("Columns of transition matrix 'P' must sum to 1.");
+  if ((!P.is_finite()) || (max(abs(check_Pcolsum-1))>1e-8)){
+    stop("Transition matrix 'P' must be finite with columns summing to 1.");
   }
   // ----- Start Simulation
   // pre-define variables
@@ -1721,8 +1721,8 @@ List simuMSVARX_cpp(List mdl_h0, int burnin = 100){
    arma::mat F = join_cols(phimat,Mn);
    // ----- Perform checks on DGP
    arma::vec check_Pcolsum = trans(arma::sum(P,0));
-   if (max(abs(check_Pcolsum-1))>1e-8){
-     stop("Columns of transition matrix 'P' must sum to 1.");
+   if ((!P.is_finite()) || (max(abs(check_Pcolsum-1))>1e-8)){
+     stop("Transition matrix 'P' must be finite with columns summing to 1.");
    }
    // ----- Start Simulation
    // pre-define variables
@@ -1911,8 +1911,8 @@ List simuHMM_cpp(List mdl_h0, int burnin = 100, bool exog = false){
   }
   // ----- Perform checks on DGP
   arma::vec check_Pcolsum = trans(arma::sum(P,0));
-  if (max(abs(check_Pcolsum-1))>1e-8){
-    stop("Columns of transition matrix 'P' must sum to 1.");
+  if ((!P.is_finite()) || (max(abs(check_Pcolsum-1))>1e-8)){
+    stop("Transition matrix 'P' must be finite with columns summing to 1.");
   }
   // ----- Start Simulation
   // pre-define variables

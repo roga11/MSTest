@@ -1,3 +1,36 @@
+# MSTest 0.1.9.9008
+
+## Simulation of the null distribution: parameter propagation and guards
+
+* `MMCLRTest()` now simulates each candidate null distribution from the candidate's
+  own transition matrix. The internal routine that builds a simulation model from a
+  candidate parameter vector wrote the means, variances, autoregressive coefficients
+  and exogenous coefficients but never the transition matrix, so every candidate with
+  `k0 > 1` was simulated from the fitted transition matrix instead. The limiting
+  probabilities of the simulation model are refreshed with it.
+* The transition-matrix constraint in the maximized Monte Carlo objective is now at
+  least as strict as the simulators' own requirement, so a candidate that passes the
+  constraint can always be simulated.
+* `MSVARXmdl()` now returns the exogenous regressors in `Z`, as the other models with
+  exogenous regressors do. Their absence made the Monte Carlo tests unusable with a
+  Markov-switching vector autoregressive null with exogenous regressors.
+* Hidden Markov nulls with a single time series are now simulated correctly inside
+  `MMCLRTest()`: the candidate model's variances are passed in the form the hidden
+  Markov simulator reads.
+* Simulated draws from a hidden Markov model with exogenous regressors now include the
+  contribution of those regressors, which was previously dropped.
+* All five Markov-switching simulators now reject a transition matrix containing
+  non-finite entries. Such a matrix previously passed the column-sum check (which
+  ignores missing values) and produced a series that never left its initial regime.
+* `MMCLRTest()` now reports an informative error when the nuisance-parameter search
+  evaluates no admissible candidate, instead of returning the internal penalty value
+  as a p-value. This can happen when user-supplied search bounds exclude the null
+  model's own parameter values.
+* The number of initial values for simulated draws is no longer passed to the null
+  model's control list when the null has one regime, where it is not a valid option.
+* The `print` and `summary` methods for the class `BootLRTest` are removed. No
+  function in the package ever created an object of that class.
+
 # MSTest 0.1.9.9007
 
 ## Performance and namespace-only usage

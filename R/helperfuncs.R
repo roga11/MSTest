@@ -1390,9 +1390,9 @@ warmstart_theta <- function(mdl_h0, k1, msmu = NULL, msvar = NULL, c_pert = 0.5)
   return(mdl)
 }
 
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------- #
 # EM transition-probability bound helpers (constrained EM for P)
-# ------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------- #
 # Validate the transition-matrix block of a user-supplied init_theta: the last
 # k*k entries are vec(P), column-major. Entries must lie in [0,1] and columns
 # must each sum to 1 (tolerance 1e-8, so validly stored columns summing to

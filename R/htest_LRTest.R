@@ -304,7 +304,9 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   mdl_h0_null_cont <- con$mdl_h0_control
   mdl_h1_null_cont <- con$mdl_h1_control
   if (is.null(con$use_diff_init_sim)==FALSE){
-    mdl_h0_null_cont$use_diff_init <- con$use_diff_init_sim
+    # k0 = 1 nulls are linear models fitted in closed form and do not take
+    # 'use_diff_init'; passing it there would warn once per simulated draw.
+    if (k0>1) mdl_h0_null_cont$use_diff_init <- con$use_diff_init_sim
     mdl_h1_null_cont$use_diff_init <- con$use_diff_init_sim
   }
   # Tell LR_samp_dist to warm-start each draw's alternative fit from that draw's
@@ -590,7 +592,9 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   mdl_h0_null_cont <- con$mdl_h0_control
   mdl_h1_null_cont <- con$mdl_h1_control
   if (is.null(con$use_diff_init_sim)==FALSE){
-    mdl_h0_null_cont$use_diff_init <- con$use_diff_init_sim
+    # k0 = 1 nulls are linear models fitted in closed form and do not take
+    # 'use_diff_init'; passing it there would warn once per simulated draw.
+    if (k0>1) mdl_h0_null_cont$use_diff_init <- con$use_diff_init_sim
     mdl_h1_null_cont$use_diff_init <- con$use_diff_init_sim
   }
   # Tell LR_samp_dist to warm-start each draw's alternative fit from that draw's
@@ -774,6 +778,9 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     stop("'type' must be one of 'pso', 'GenSA', or 'GA'.")
   }
   # ----- get test output using optimization output params
+  if (pval < 0){
+    stop("MMCLRTest: the nuisance-parameter search evaluated no admissible candidate (every candidate violated the transition-matrix or stationarity constraint, or could not be simulated), so no p-value is defined. Check that the search bounds admit the null model's parameter values.")
+  }
   theta_h0 <- theta
   theta_h1 <- mdl_h1$theta
   names(theta_h0) <- names(mdl_h0$theta)

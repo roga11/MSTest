@@ -56,6 +56,12 @@ test_that("malformed inputs error instead of crashing", {
 test_that("estimation works namespace-only (no attach)", {
   skip_on_cran()
   skip_if_not_installed("callr")
+  # the child process resolves MSTest from .libPaths(); skip when that is a
+  # different build than the one under test rather than compare across builds
+  child_ver <- tryCatch(callr::r(function() as.character(utils::packageVersion("MSTest")),
+                                 libpath = .libPaths()), error = function(e) NA_character_)
+  skip_if_not(identical(child_ver, as.character(utils::packageVersion("MSTest"))),
+              "callr child resolves a different MSTest build")
   set.seed(9104)
   y <- as.numeric(arima.sim(list(ar = 0.3), n = 120)) + rep(c(0, 2), each = 60)
   fit_child <- callr::r(function(y){

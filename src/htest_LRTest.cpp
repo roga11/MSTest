@@ -35,7 +35,7 @@ List simuMdl(List mdl_h0, int p, int q, int k, int burnin, bool exog){
     simu_mdl = simuNorm_cpp(mdl_h0, burnin);
   }else if ((k>1) & (p==0)){
     // Hidden Markov model
-    simu_mdl = simuHMM_cpp(mdl_h0, burnin);
+    simu_mdl = simuHMM_cpp(mdl_h0, burnin, exog);
   }else if ((k==1) & (q==1) & (p>0)){
     // Autoregressive model
     if (exog==FALSE){
@@ -136,6 +136,17 @@ List mdledit(List mdl_h0, arma::vec theta_h0, int p, int q, int k0, bool exog){
       arma::vec theta_phi_ind_h0 = mdl_h0["theta_phi_ind"];
       arma::vec phi_new = theta_h0.elem(find(theta_phi_ind_h0));
       mdl_h0_tmp["phi"] = phi_new;
+    }else if (k0>1){
+      // Hidden Markov route: the simulator reads sigma as a list of (q x q)
+      // matrices for every q, matching how the fitted model stores it.
+      arma::vec sig_uv = mdl_h0_tmp["sigma"];
+      List sig_uv_list(k0);
+      for (int xk = 0; xk<k0; xk++){
+        arma::mat sig_uv_k(1, 1);
+        sig_uv_k(0,0) = sig_uv(xk);
+        sig_uv_list[xk] = sig_uv_k;
+      }
+      mdl_h0_tmp["sigma"] = sig_uv_list;
     }
   }else if (q>1){
     if (k0==1){
@@ -179,6 +190,15 @@ List mdledit(List mdl_h0, arma::vec theta_h0, int p, int q, int k0, bool exog){
       arma::mat phi_h0 = trans(reshape(phi_vec_h0, q*p, q));
       mdl_h0_tmp["phi"] = phi_h0;
     } 
+  }
+  // Transition matrix: the candidate's P block (the last k0*k0 entries of theta,
+  // column-major) is what the simulators read from the named field.
+  if (k0>1){
+    arma::vec theta_P_ind_h0 = mdl_h0["theta_P_ind"];
+    arma::vec theta_P_h0 = theta_h0.elem(find(theta_P_ind_h0));
+    arma::mat P_h0_new = reshape(theta_P_h0, k0, k0);
+    mdl_h0_tmp["P"] = P_h0_new;
+    mdl_h0_tmp["pinf"] = limP(P_h0_new);
   }
   return(mdl_h0_tmp);
 }
@@ -525,7 +545,10 @@ double MMCLRpval_fun(arma::vec theta_h0, List mdl_h0, int k1, double LRT_0,
     arma::vec theta_P_ind_h0 = mdl_h0["theta_P_ind"];
     arma::vec P_vec_h0 = theta_h0.elem(find(theta_P_ind_h0));
     P_h0 = reshape(P_vec_h0, k0, k0);
-    P_h0_colsum_const = any(abs(arma::sum(P_h0,0)-1)>thtol);
+    // The simulators reject a transition matrix whose columns deviate from 1 by
+    // more than 1e-8, so the constraint is at least that strict: a candidate that
+    // passes here is simulable.
+    P_h0_colsum_const = any(abs(arma::sum(P_h0,0)-1)>std::min(thtol, 1e-8));
   }
   // ----- Compute pval
   if ((P_h0_colsum_const==TRUE) or (non_stationary_const==TRUE)){
