@@ -2,7 +2,7 @@ Package: MSTest
 Type: Package
 Title: Hypothesis Testing for Markov Switching Models
 Date: 2026-08-20
-Version: 0.1.9.9010
+Version: 0.1.9.9011
 Authors@R:
   c(person(given = "Gabriel", 
            family = "Rodriguez-Rondon",

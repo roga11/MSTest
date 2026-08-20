@@ -1,3 +1,16 @@
+# MSTest 0.1.9.9011
+
+## Maximized Monte Carlo LR test: transition-matrix search
+
+* The null model's transition matrix is now correctly carried through the
+  nuisance-parameter search via a new reduced-coordinate parameterization.
+  Results-affecting for `k0 >= 2`.
+
+## New function: canonical regime labeling
+
+* `canonicalize_regimes()` relabels a fitted model's regimes in ascending order
+  of persistence. New exported primitive; opt-in, never called automatically.
+
 # MSTest 0.1.9.9009
 
 ## Monte Carlo LR tests: the alternative follows the null's specification

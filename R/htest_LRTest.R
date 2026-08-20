@@ -376,29 +376,21 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
 
 
 # ---------------------------------------------------------------------------- #
-# Phase 2: column-stochastic parameterization of the MMC transition-matrix search.
+# Column-stochastic parameterization of the MMC transition-matrix search.
 #
-# The optimizer perturbs the k0^2 entries of P independently, so a candidate
-# satisfies "every column sums to 1" only by a measure-zero coincidence; in
-# practice essentially every candidate fails the colsum gate in MMCLRpval_fun and
-# is rejected, so for k0 >= 2 the search degenerates to evaluating theta_0 alone.
-# The fix searches only the free entries of each column (k0-1 of them) and
-# derives the remaining one as 1 - sum(free); theta itself, theta_P_ind, SEs,
-# names, mdledit and every reported field stay in full k0^2 coordinates -- only
-# the optimizer's search vector is reduced.
+# The optimizer would otherwise perturb the k0^2 entries of P independently, so
+# a candidate satisfies "every column sums to 1" only by a measure-zero
+# coincidence and nearly every candidate fails the colsum gate. Instead, only
+# the free entries of each column (k0-1 of them) are searched; the remaining
+# entry is derived as 1 - sum(free). theta itself, theta_P_ind, SEs, names, and
+# every reported field stay in full k0^2 coordinates -- only the optimizer's
+# search vector is reduced.
 
-# For each column of the k0 x k0 P block, choose the entry to derive (never
-# searched) rather than the k0-1 free entries. Chosen ONCE from theta_0 and
-# frozen for the whole search: recomputing it per candidate would change what
-# the reduced coordinates mean mid-search. The LARGEST entry in the column is
-# derived (usually the diagonal at a persistent P): this maximizes the room the
-# free entries have before the derived entry leaves [0,1], which matters
-# increasingly as k0 grows (at k0=4, deriving the last row instead admits only
-# 6.8% of uniform draws vs 100% for the largest-entry rule). 'fixed_full_idx'
-# excludes positions that a future caller has pinned (e.g. a boundary-augmented
-# search fixing one face of P) from being eligible, so the derived entry is
-# always chosen from among the coordinates that are actually free to move; it
-# is unused (and every position is eligible) until such a caller exists.
+# Choose the entry of each P column to derive (never searched), fixed from
+# theta_0 for the whole search. The largest entry in the column is derived,
+# which maximizes the room the free entries have before it leaves [0,1].
+# 'fixed_full_idx' excludes positions a caller has pinned elsewhere from being
+# eligible; unused until such a caller exists.
 .mmc_derived_P_index <- function(theta_0, theta_P_ind, k0, fixed_full_idx = integer(0)){
   full_idx <- which(as.numeric(theta_P_ind) == 1)
   if (length(full_idx) != k0*k0){
@@ -465,18 +457,12 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
 }
 # ---------------------------------------------------------------------------- #
 
-# Phase 4: 'eps' may be a scalar (recycled to every coordinate, the original and
-# still-default behaviour) or a vector of length(theta_0), so the search half-width
-# can differ per parameter -- tighter for transition probabilities, wider for means,
-# say. The bounds arithmetic below already vectorizes by ordinary recycling either
-# way; what a bare recycling check would miss is a length that divides length(theta_0)
-# evenly (e.g. 3 for a 9-parameter model): R recycles that silently, with no warning,
-# so a user thinking in per-block terms who supplies too-short a vector gets a valid-
-# looking box that is not the one they asked for. Requiring EXACTLY 1 or
-# length(theta_0) closes that. A zero-width entry is also rejected outright: it still
-# costs the optimizer a search dimension (unlike an actually fixed coordinate), and
-# hard-errors GenSA specifically ("Lower and upper bounds are not consistent"),
-# reproducible today even with the scalar default at eps = 0.
+# 'eps' may be a scalar (recycled to every coordinate) or a vector of
+# length(theta_0), so the search half-width can differ per parameter. A length
+# that merely divides length(theta_0) evenly would recycle silently with no
+# warning, so only exactly 1 or length(theta_0) is accepted. A zero-width entry
+# is rejected: it still costs the optimizer a search dimension and hard-errors
+# GenSA ("Lower and upper bounds are not consistent").
 .validate_mmc_eps <- function(eps, n_theta){
   if (!is.numeric(eps) || !(length(eps) %in% c(1L, n_theta))){
     stop("MMC_bounds: 'eps' must have length 1 or length(theta_0) = ", n_theta,
@@ -634,7 +620,7 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item theta_h0: Maximizing nuisance parameter vector for the restricted model.
 #'   \item theta_h1: Parameter vector of the unrestricted model.
 #'   \item control: List with test procedure options used.
-#'   \item mmc_optimout: Optimization output object returned by the selected optimizer (\code{pso}, \code{GenSA}, or \code{GA}). For \code{k0 >= 2} the search itself runs over a reduced parameter vector (the transition matrix contributes only its free entries; see the package's Phase 2 notes), and the optimizer's reported solution (\code{$par} for \code{pso}/\code{GenSA}, \code{@solution} for \code{GA}) is mapped back to the full \code{theta} coordinates used everywhere else in the return value; other diagnostic fields inside \code{mmc_optimout} (e.g. \code{pso}'s \code{trace.stats$x}, \code{GenSA}'s \code{trace.mat}) are left in the reduced search coordinates.
+#'   \item mmc_optimout: Optimization output object returned by the selected optimizer (\code{pso}, \code{GenSA}, or \code{GA}). For \code{k0 >= 2} the search itself runs over a reduced parameter vector (the transition matrix contributes only its free entries), and the optimizer's reported solution (\code{$par} for \code{pso}/\code{GenSA}, \code{@solution} for \code{GA}) is mapped back to the full \code{theta} coordinates used everywhere else in the return value; other diagnostic fields inside \code{mmc_optimout} (e.g. \code{pso}'s \code{trace.stats$x}, \code{GenSA}'s \code{trace.mat}) are left in the reduced search coordinates.
 #'   \item pval_0: Monte Carlo p-value at the initial (estimated) nuisance parameter values \code{theta_0} (the Local MC point of the search). The reported \code{pval} satisfies \code{pval >= pval_0} by construction (enforced directly, not merely relied on from the optimizer's own search).
 #' }
 #'
@@ -770,12 +756,9 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   mmc_bounds <- MMC_bounds(mdl_h0, con)
   theta_low <- mmc_bounds$theta_low
   theta_upp <- mmc_bounds$theta_upp
-  # ----- Phase 2: reduce the search vector for k0 >= 2 to the free entries of P
-  # (see the block above MMC_bounds). k0 = 1 has no P block and is untouched --
-  # 'reduced_idx' is then every position, so every downstream use of the
-  # '_search' vectors below is identical to using theta_low/theta_upp/theta_0
-  # directly, and MMC_bounds' own pre-flight checks above already guarantee
-  # theta_0 lies inside [theta_low, theta_upp] for every position.
+  # ----- Reduce the search vector for k0 >= 2 to the free entries of P (see the
+  # block above MMC_bounds). k0 = 1 has no P block; 'reduced_idx' is then every
+  # position, so the '_search' vectors below equal theta_low/theta_upp/theta_0.
   if (k0 > 1){
     mmc_rp <- .mmc_derived_P_index(theta_0, mdl_h0$theta_P_ind, k0)
     reduced_idx <- setdiff(seq_along(theta_0), mmc_rp$derived_full_idx)
@@ -891,11 +874,11 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   }
   obj_min <- crn_wrap(MMCLRpval_fun_min)   # pso / GenSA (minimize the negative p-value)
   obj_max <- crn_wrap(MMCLRpval_fun)       # GA (maximize the p-value) and p_seed below
-  # ----- Phase 2: the optimizer sees the REDUCED search vector, so its objective
-  # must reassemble to full theta before calling the underlying (already
-  # CRN-wrapped) objective; an infeasible derived entry is penalized WITHOUT that
-  # call, so it costs no random draws (see .mmc_reduced_wrap above). k0 = 1 has no
-  # P block, so the objective is used unwrapped -- identical to before Phase 2.
+  # ----- The optimizer sees the reduced search vector, so its objective must
+  # reassemble to full theta before calling the underlying (already CRN-wrapped)
+  # objective; an infeasible derived entry is penalized without that call, so it
+  # costs no random draws (see .mmc_reduced_wrap above). k0 = 1 has no P block,
+  # so the objective is used unwrapped.
   if (k0 > 1){
     obj_min_search <- .mmc_reduced_wrap(obj_min, reduced_idx, mmc_rp$derived_full_idx,
                                         mmc_rp$pos_mat, length(theta_0), theta_low, theta_upp,
@@ -1004,10 +987,10 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   }else{
     stop("'type' must be one of 'pso', 'GenSA', or 'GA'.")
   }
-  # ----- Phase 2: map the optimizer's answer back to full theta coordinates. The
-  # optimizer itself (mmc_out$par / @solution) still reports in the REDUCED
+  # ----- Map the optimizer's answer back to full theta coordinates. The
+  # optimizer itself (mmc_out$par / @solution) still reports in the reduced
   # search space for k0 >= 2; iteration-level diagnostics inside mmc_out (e.g.
-  # pso's trace.stats$x, GenSA's trace.mat) are NOT remapped and remain in
+  # pso's trace.stats$x, GenSA's trace.mat) are not remapped and remain in
   # reduced coordinates, documented in the return value below.
   if (k0 > 1 && !is_early_stop){
     theta <- .mmc_reassemble_theta(theta, reduced_idx, mmc_rp$derived_full_idx, mmc_rp$pos_mat, length(theta_0))

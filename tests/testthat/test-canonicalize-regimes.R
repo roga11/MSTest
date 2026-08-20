@@ -22,11 +22,12 @@ test_that("k = 1 and non-Markov-switching objects are rejected", {
 })
 
 test_that("an already-canonical fit has unchanged VALUES, and the input is not mutated", {
-  # Values are unchanged (identity permutation is a no-op on the numbers), but the
-  # returned object's field shapes are not required to match the input's incidental
-  # shape (e.g. pinf is always a plain vector on the way out, never conditionally a
-  # matrix depending on whether anything actually moved) -- see the code comment on
-  # the removed early-return in canonicalize_regimes for why that uniformity matters.
+  # Values are unchanged (identity permutation is a no-op on the numbers). Every
+  # field's SHAPE is also unconditional on whether anything actually moved --
+  # pinf is a (k x 1) matrix on both an already-canonical and a genuinely
+  # relabeled call, never a matrix on one path and a flattened vector on the
+  # other -- see the code comment on the removed early-return in
+  # canonicalize_regimes for why that uniformity matters.
   skip_on_cran()
   m <- .canon_swap_fit(1)   # confirmed already ascending-persistence at this seed
   expect_true(diff(diag(m$P)) >= 0)
@@ -36,6 +37,8 @@ test_that("an already-canonical fit has unchanged VALUES, and the input is not m
   expect_identical(.Random.seed, seed_before)   # no RNG side effect
   expect_equal(as.numeric(m2$theta), as.numeric(m$theta))
   expect_identical(m$P, P_before)   # m itself untouched (not mutated by reference)
+  expect_true(is.matrix(m2$pinf))   # the exact shape the removed early-return got wrong
+  expect_equal(dim(m2$pinf), dim(m$pinf))
 })
 
 test_that("every field is permuted (or invariant) correctly on a real, non-canonical fit", {
@@ -52,7 +55,8 @@ test_that("every field is permuted (or invariant) correctly on a real, non-canon
   expect_equal(m2$stdev, m$stdev[perm])
   expect_equal(m2$intercept, m$intercept[perm, , drop = FALSE])
   expect_equal(m2$beta, m$beta[perm])
-  expect_equal(m2$pinf, m$pinf[perm])
+  expect_equal(m2$pinf, m$pinf[perm, , drop = FALSE])
+  expect_true(is.matrix(m2$pinf))   # shape preserved, not flattened
   expect_equal(m2$St, m$St[, perm, drop = FALSE])
 
   # Carried unchanged: the likelihood-affecting and bookkeeping fields.
