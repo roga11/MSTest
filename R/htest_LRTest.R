@@ -375,7 +375,7 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
 }
 
 
-# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------- #
 # Phase 2: column-stochastic parameterization of the MMC transition-matrix search.
 #
 # The optimizer perturbs the k0^2 entries of P independently, so a candidate
@@ -463,7 +463,7 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     objfn_full(theta_full, ...)
   }
 }
-# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------- #
 
 # Phase 4: 'eps' may be a scalar (recycled to every coordinate, the original and
 # still-default behaviour) or a vector of length(theta_0), so the search half-width

@@ -1,4 +1,4 @@
-# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------- #
 # Phase 3: canonical regime labeling.
 #
 # A fitted model's regime labels are arbitrary: estimation is invariant to
@@ -12,7 +12,7 @@
 # persistent, so that convention is well defined. Never called automatically --
 # an automatic relabeling would reorder St, theta and P for every existing user
 # and every stored result, for no benefit outside this specific use.
-# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------------- #
 
 # Index permutation of a FULL theta vector implementing a regime relabeling.
 # theta's shared layout (see .theta_len_ms) is mu | phi | betaZ | sigma | vec(P):
