@@ -138,10 +138,19 @@ test_that("the M-step never lowers the part of Q it controls", {
     Zdm <- if (exog) scale(Z, TRUE, FALSE) else matrix(0, Tn, 1)
     mdl <- list(y = y, q = q, msmu = msmu, msvar = FALSE, exog = exog)
     if (exog) mdl$Z <- Z
-    # start at the fitted optimum, where a correct M-step is stationary
-    fit <- HMmdl(y, k, Z, control = list(msmu = msmu, msvar = FALSE, getSE = FALSE,
-                                         use_diff_init = 3, maxit = 400))
-    th <- as.numeric(fit$theta); nmu <- if (msmu) 4L else 2L
+    # start at the fitted optimum, where a correct M-step is stationary. HMmdl()
+    # itself refuses a (msmu = FALSE, msvar = FALSE) specification -- no
+    # regime-dependent parameter at all -- so the optimum is reached by iterating
+    # the same E/M primitives under test from a sane starting point, rather than
+    # through the guarded constructor.
+    mu0 <- if (msmu) c(0, 0, 3, -2) else c(1.5, -1)
+    bz0 <- if (exog) rep(0, 4) else numeric(0)
+    th  <- c(mu0, bz0, c(2, 0, 2), as.numeric(cbind(c(.9, .1), c(.15, .85))))
+    for (warm in 1:300) {
+      Ew <- MSTest:::ExpectationM_HMmdl(matrix(th, ncol = 1), mdl, k)
+      th <- as.numeric(MSTest:::EMaximization_HMmdl(matrix(th, ncol = 1), mdl, Ew, k)$theta)
+    }
+    nmu <- if (msmu) 4L else 2L
     worst <- 0
     for (it in 1:8) {
       E <- MSTest:::ExpectationM_HMmdl(matrix(th, ncol = 1), mdl, k)

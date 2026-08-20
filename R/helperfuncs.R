@@ -1399,7 +1399,7 @@ warmstart_theta <- function(mdl_h0, k1, msmu = NULL, msvar = NULL, c_pert = 0.5)
 # 1 +- a few ulp pass). Raises an informative error otherwise.
 # Length of theta implied by a model's dimensions and switching flags. One
 # expression covers all five Markov-switching classes because they share the
-# layout mu | betaZ | phi | sigma | vec(P): a univariate model has q = 1, a model
+# layout mu | phi | betaZ | sigma | vec(P): a univariate model has q = 1, a model
 # without exogenous regressors has qz = 0, and a model without lags has p = 0.
 .theta_len_ms <- function(k, q, p, qz, msmu, msvar){
   msmu  <- isTRUE(as.logical(msmu))
@@ -1418,8 +1418,8 @@ warmstart_theta <- function(mdl_h0, k1, msmu = NULL, msvar = NULL, c_pert = 0.5)
   if (length(as.numeric(init_theta)) != n_exp){
     stop(sprintf(paste0("init_theta has %d entries but this model has %d parameters ",
                         "(k = %d, q = %d, p = %d, msmu = %s, msvar = %s). The order is ",
-                        "mu, then any exogenous coefficients, then the autoregressive ",
-                        "terms, then the variances, then vec(P)."),
+                        "mu, then the autoregressive terms, then any exogenous ",
+                        "coefficients, then the variances, then vec(P)."),
                  length(as.numeric(init_theta)), n_exp, k, q, p,
                  isTRUE(as.logical(msmu)), isTRUE(as.logical(msvar))))
   }

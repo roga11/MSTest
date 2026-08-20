@@ -105,7 +105,8 @@ test_that("warm starts of the wrong length are reported, not silently dropped", 
                     sigma = list(diag(2), 2 * diag(2)),
                     P = cbind(c(.9, .1), c(.15, .85))))
   mdl_ct <- list(getSE = FALSE, use_diff_init = 1, maxit = 100)
-  local_mocked_bindings(warmstart_theta = function(...) list(rep(0.5, 3)))
+  local_mocked_bindings(warmstart_theta = function(...) list(rep(0.5, 3)),
+                        .package = "MSTest")
   seen <- character()
   withCallingHandlers(
     LMCLRTest(S$y, p = 0, k0 = 2, k1 = 3,
