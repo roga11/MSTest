@@ -214,8 +214,12 @@ test_that("MMCLRTest reports when the search box admits no candidate", {
   s <- simuMSAR(list(n = 200, k = 2, mu = c(-1, 1.5), sigma = c(1, 1), phi = 0.3, P = P2),
                 burnin = 100)
   y <- matrix(s$y, ncol = 1)
-  # bounds that admit only non-stationary autoregressive parameters: no candidate the
-  # optimizer can see is admissible, so there is no p-value to report
+  # bounds that admit only non-stationary autoregressive parameters, and exclude the
+  # fitted phi itself: MMC_bounds()'s own pre-flight check now catches this before the
+  # optimizer runs at all (a strictly earlier, cheaper rejection of the same box), so
+  # the error surfaces there rather than as a post-search "no admissible candidate";
+  # that guard remains a defensive backstop for the cases this pre-flight check does
+  # not cover, e.g. a box containing theta_0 where every OTHER candidate is infeasible.
   for (ty in c("pso", "GenSA")) {
     expect_error(
       suppressWarnings(suppressMessages(MMCLRTest(y, p = 1, k0 = 1, k1 = 2,
@@ -224,7 +228,7 @@ test_that("MMCLRTest reports when the search box admits no candidate", {
                        silence = TRUE,
                        mdl_h0_control = list(getSE = FALSE),
                        mdl_h1_control = list(getSE = FALSE, use_diff_init = 1))))),
-      "no admissible candidate", info = ty)
+      "falls outside the search box", info = ty)
   }
   # and it does not fire under the default bounds, where theta_0 is always inside the box
   # (k0 = 2 is the tightest case: only theta_0 itself satisfies the column-sum constraint)

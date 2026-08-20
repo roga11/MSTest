@@ -237,6 +237,9 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   }else{
     stop("Observations Y must be a (T x q) matrix.")
   }
+  if (k1 <= k0){
+    stop("LMCLRTest: k1 must be greater than k0 (received k0 = ", k0, ", k1 = ", k1, ").")
+  }
   # ----- Seed RNG for reproducible estimation (random initial values in EM)
   if (!is.null(con$mc_seed)) set.seed(con$mc_seed)
   # ----- Estimate models using observed data
@@ -372,23 +375,146 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
 }
 
 
-#' @title MMC nuisance parameter bounds 
-#' 
+# ---------------------------------------------------------------------------
+# Phase 2: column-stochastic parameterization of the MMC transition-matrix search.
+#
+# The optimizer perturbs the k0^2 entries of P independently, so a candidate
+# satisfies "every column sums to 1" only by a measure-zero coincidence; in
+# practice essentially every candidate fails the colsum gate in MMCLRpval_fun and
+# is rejected, so for k0 >= 2 the search degenerates to evaluating theta_0 alone.
+# The fix searches only the free entries of each column (k0-1 of them) and
+# derives the remaining one as 1 - sum(free); theta itself, theta_P_ind, SEs,
+# names, mdledit and every reported field stay in full k0^2 coordinates -- only
+# the optimizer's search vector is reduced.
+
+# For each column of the k0 x k0 P block, choose the entry to derive (never
+# searched) rather than the k0-1 free entries. Chosen ONCE from theta_0 and
+# frozen for the whole search: recomputing it per candidate would change what
+# the reduced coordinates mean mid-search. The LARGEST entry in the column is
+# derived (usually the diagonal at a persistent P): this maximizes the room the
+# free entries have before the derived entry leaves [0,1], which matters
+# increasingly as k0 grows (at k0=4, deriving the last row instead admits only
+# 6.8% of uniform draws vs 100% for the largest-entry rule). 'fixed_full_idx'
+# excludes positions that a future caller has pinned (e.g. a boundary-augmented
+# search fixing one face of P) from being eligible, so the derived entry is
+# always chosen from among the coordinates that are actually free to move; it
+# is unused (and every position is eligible) until such a caller exists.
+.mmc_derived_P_index <- function(theta_0, theta_P_ind, k0, fixed_full_idx = integer(0)){
+  full_idx <- which(as.numeric(theta_P_ind) == 1)
+  if (length(full_idx) != k0*k0){
+    stop("MMC_bounds: theta_P_ind does not mark k0^2 entries of theta; cannot reduce the transition-matrix search.")
+  }
+  # vec(P) is stored column-major in theta, so filling a k0 x k0 matrix
+  # column-major with these positions recovers exactly which theta index is
+  # column j, row i of P.
+  pos_mat <- matrix(full_idx, k0, k0)
+  derived_full_idx <- integer(k0)
+  for (j in seq_len(k0)){
+    col_positions <- pos_mat[, j]
+    eligible <- setdiff(col_positions, fixed_full_idx)
+    if (length(eligible) == 0L){
+      stop("MMC_bounds: every entry of column ", j, " of P is fixed; nothing is left to derive from or search.")
+    }
+    derived_full_idx[j] <- eligible[which.max(theta_0[eligible])]
+  }
+  list(pos_mat = pos_mat, derived_full_idx = derived_full_idx, full_idx = full_idx)
+}
+
+# Full-length theta from a reduced (free-coordinates-only) vector: copy the free
+# entries into place, then set each column's derived entry to 1 - sum(the OTHER
+# free entries of that column). A column all of whose non-derived entries are
+# free (the ordinary case) reassembles exactly, to machine precision (verified
+# at 0.0 over 200k random draws at k0 in {3,4,5,8} during the spec's stage-0
+# review); a column with a fixed entry (once such a caller exists) sums the
+# free entries only, which is what "derive one entry per column" means there too.
+.mmc_reassemble_theta <- function(theta_reduced, reduced_idx, derived_full_idx, pos_mat, npar){
+  theta_full <- numeric(npar)
+  theta_full[reduced_idx] <- as.numeric(theta_reduced)
+  for (j in seq_len(ncol(pos_mat))){
+    col_positions <- pos_mat[, j]
+    free_in_col <- setdiff(col_positions, derived_full_idx[j])
+    theta_full[derived_full_idx[j]] <- 1 - sum(theta_full[free_in_col])
+  }
+  theta_full
+}
+
+# Wraps an already-CRN-wrapped MMC objective (obj_min, which returns -pval, or
+# obj_max, which returns pval) so it accepts the REDUCED search vector: reassemble
+# to full theta, and if a derived entry falls outside the admissible region OR
+# its own eps/CI box (the box MMC_bounds already built for that position, so no
+# separate computation is needed), penalize the candidate WITHOUT calling the
+# wrapped objective -- consuming no random numbers, at the ~10-flop cost the
+# spec anticipated, exactly mirroring the colsum-gate rejection this replaces.
+# A naive clamp instead of a penalty would not just move the candidate but break
+# the column-sum identity itself (free entries can sum to more than 1, driving
+# the clamped derived entry negative), which trips the simulators' own hard
+# check and burns simulation draws before being penalized anyway; unreachable in
+# practice under the largest-entry rule, so penalizing costs nothing.
+.mmc_reduced_wrap <- function(objfn_full, reduced_idx, derived_full_idx, pos_mat, npar,
+                              theta_low, theta_upp, P_low, P_upp, penalty_value){
+  force(objfn_full); force(reduced_idx); force(derived_full_idx); force(pos_mat)
+  force(npar); force(theta_low); force(theta_upp); force(P_low); force(P_upp); force(penalty_value)
+  function(theta_reduced, ...){
+    theta_full <- .mmc_reassemble_theta(theta_reduced, reduced_idx, derived_full_idx, pos_mat, npar)
+    dv <- theta_full[derived_full_idx]
+    infeasible <- any(dv < P_low) || any(dv > P_upp) ||
+      any(dv < theta_low[derived_full_idx]) || any(dv > theta_upp[derived_full_idx])
+    if (infeasible) return(penalty_value)
+    objfn_full(theta_full, ...)
+  }
+}
+# ---------------------------------------------------------------------------
+
+# Phase 4: 'eps' may be a scalar (recycled to every coordinate, the original and
+# still-default behaviour) or a vector of length(theta_0), so the search half-width
+# can differ per parameter -- tighter for transition probabilities, wider for means,
+# say. The bounds arithmetic below already vectorizes by ordinary recycling either
+# way; what a bare recycling check would miss is a length that divides length(theta_0)
+# evenly (e.g. 3 for a 9-parameter model): R recycles that silently, with no warning,
+# so a user thinking in per-block terms who supplies too-short a vector gets a valid-
+# looking box that is not the one they asked for. Requiring EXACTLY 1 or
+# length(theta_0) closes that. A zero-width entry is also rejected outright: it still
+# costs the optimizer a search dimension (unlike an actually fixed coordinate), and
+# hard-errors GenSA specifically ("Lower and upper bounds are not consistent"),
+# reproducible today even with the scalar default at eps = 0.
+.validate_mmc_eps <- function(eps, n_theta){
+  if (!is.numeric(eps) || !(length(eps) %in% c(1L, n_theta))){
+    stop("MMC_bounds: 'eps' must have length 1 or length(theta_0) = ", n_theta,
+         " (received length ", length(eps), "). A length that merely divides ",
+         n_theta, " evenly is not accepted: it would recycle silently rather than ",
+         "apply to the parameter block a user likely intended.")
+  }
+  if (any(!is.finite(eps))){
+    stop("MMC_bounds: 'eps' must be finite (received ",
+         paste(eps[!is.finite(eps)], collapse = ", "), ").")
+  }
+  if (any(eps <= 0)){
+    stop("MMC_bounds: 'eps' must be strictly positive (received ",
+         paste(eps[eps <= 0], collapse = ", "), "); a zero-width entry hard-errors ",
+         "GenSA and still costs the optimizer a search dimension. Use a small ",
+         "positive value instead.")
+  }
+  invisible(TRUE)
+}
+
+#' @title MMC nuisance parameter bounds
+#'
 #' @description This function is used to determine the lower and upper bounds for the MMC LRT parameter search.
-#' 
+#'
 #' @param mdl_h0 List with restricted model properties.
-#' @param con List with control options provided to MMC LRT procedure.
-#' 
+#' @param con List with control options provided to MMC LRT procedure. \code{con$eps} may be a scalar, recycled to every coordinate, or a vector of length \code{length(mdl_h0$theta)} giving a different search half-width per parameter, in the same order as \code{names(mdl_h0$theta)}. Every entry must be finite and strictly positive.
+#'
 #' @return List with \code{theta_low}, vector of parameter lower bounds, and \code{theta_upp}, vector of parameter upper bounds.
-#' 
+#'
 #' @keywords internal
-#' 
+#'
 #' @references Rodriguez-Rondon, G., & Dufour, J.-M. 2026a. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-23. doi: 10.34989/swp-2026-23.
-#' 
+#'
 #' @export
 MMC_bounds <- function(mdl_h0, con){
   theta_0   <- mdl_h0$theta
   k0        <- mdl_h0$k
+  .validate_mmc_eps(con$eps, length(theta_0))
   # ----- Define lower & upper bounds for search
   theta_low = theta_0 - con$eps
   theta_upp = theta_0 + con$eps
@@ -425,7 +551,34 @@ MMC_bounds <- function(mdl_h0, con){
     }  
   }
   # ----- output
-  mmc_bounds <- list(theta_low = theta_low, theta_upp = theta_upp)
+  # A lower bound above its upper bound is unusable by any of the three optimizers:
+  # GenSA errors, GA dies on a degenerate population, and pso silently searches the
+  # inverted interval and returns a p-value for it. Reachable from 'eps' alone, and
+  # more easily from an asymmetric 'phi_low'/'phi_upp'/'P_low'/'P_upp' clamp (only
+  # one side of the pair is adjusted above), so this is caught here, once, right
+  # after the box is built and before any simulation or search.
+  if (any(theta_low > theta_upp)){
+    bad <- which(theta_low > theta_upp)
+    nm  <- names(theta_0)[bad]
+    if (is.null(nm)) nm <- paste("position", bad)
+    stop("MMC_bounds: the search box has a lower bound above its upper bound for ",
+         paste(sprintf("%s (%.6g > %.6g)", nm, theta_low[bad], theta_upp[bad]), collapse = ", "),
+         ". Widen 'eps', or check 'phi_low'/'phi_upp'/'P_low'/'P_upp'.")
+  }
+  # A fitted parameter outside its own search box means the observed fit is not a
+  # point the search can return, so the reported p-value would not be a supremum
+  # over a region containing theta_0 (and pso, whose 'par' seed must lie in the box,
+  # would silently drop it). Reachable through 'phi_low'/'phi_upp' or
+  # 'P_low'/'P_upp' set narrower than the fitted value, not just through 'eps'.
+  if (any(theta_0 < theta_low | theta_0 > theta_upp)){
+    bad <- which(theta_0 < theta_low | theta_0 > theta_upp)
+    nm  <- names(theta_0)[bad]
+    if (is.null(nm)) nm <- paste("position", bad)
+    stop("MMC_bounds: the fitted parameter vector falls outside the search box for ",
+         paste(sprintf("%s (%.6g, box [%.6g, %.6g])", nm, theta_0[bad], theta_low[bad], theta_upp[bad]), collapse = ", "),
+         ". Widen 'eps', or check 'phi_low'/'phi_upp'/'P_low'/'P_upp'.")
+  }
+  mmc_bounds <- list(theta_low = as.numeric(theta_low), theta_upp = as.numeric(theta_upp))
   return(mmc_bounds)
 }
 
@@ -452,7 +605,7 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item init_method: String determining how the alternative (\code{k1}-regime) model is initialized. \code{"warmstart"} (the default) adds deterministic warm starts built by embedding the null-model fit into the \code{k1}-regime space (see \code{\link{warmstart_theta}}) to the \code{use_diff_init} random starts, applied identically to the observed data and to every simulated draw. \code{"random"} reproduces the legacy behavior.
 #'   \item crn: Boolean determining whether common random numbers are used across the nuisance-parameter search (default \code{TRUE}): an identical estimation-RNG stream (EM starting values; master and worker streams) is replayed at every candidate theta evaluation, so that together with the pre-drawn innovations the MC p-value is a deterministic function of theta (Dufour 2006, Prop. 4.2, with the estimation randomness folded into the fixed disturbance vector). This removes optimizer objective noise and guarantees \code{pval >= pval_0} exactly. Set to \code{FALSE} for the legacy behavior (estimation randomness evolves across evaluations; still valid, but the objective is noisy and the reported maximum tends to be conservative). Note: with \code{init_method = "random"}, \code{crn = FALSE}, \code{workers = 0} and no \code{mc_seed}, a script-seeded call reproduces version 0.1.9 bit-for-bit.
 #'   \item type: String that determines the type of optimization algorithm used. Arguments allowed are: \code{"pso"}, \code{"GenSA"}, and \code{"GA"}. Default is \code{"pso"}.
-#'   \item eps: Double determining the constant value that defines a consistent set for search. Default is \code{0.1}.
+#'   \item eps: Double, or a vector of length \code{length(mdl_h0$theta)}, determining the half-width of the search box around \code{theta_0} for each parameter (a scalar is recycled to every coordinate; a vector lets the search be narrower for some parameters, e.g. transition probabilities, and wider for others, e.g. means -- entries are matched to \code{names(mdl_h0$theta)} positionally, i.e. in \code{theta}'s own order, so mind that a transition-probability entry named \code{p_12} is matrix entry \code{P[2,1]}). Every entry must be finite and strictly positive; a variance coordinate whose lower bound would reach zero is overridden by \code{variance_constraint} regardless of \code{eps}. Default is \code{0.1}.
 #'   \item CI_union: Boolean determining if union of set determined by \code{eps} and confidence set should be used to define consistent set for search. Default is \code{TRUE}.
 #'   \item lambda: Double determining penalty on nonlinear constraint. Default is \code{100}.
 #'   \item stationary_constraint: Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.
@@ -481,8 +634,8 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item theta_h0: Maximizing nuisance parameter vector for the restricted model.
 #'   \item theta_h1: Parameter vector of the unrestricted model.
 #'   \item control: List with test procedure options used.
-#'   \item mmc_optimout: Optimization output object returned by the selected optimizer (\code{pso}, \code{GenSA}, or \code{GA}).
-#'   \item pval_0: Monte Carlo p-value at the initial (estimated) nuisance parameter values \code{theta_0} (the Local MC point of the search). Under \code{crn = TRUE} the reported \code{pval} satisfies \code{pval >= pval_0} by construction.
+#'   \item mmc_optimout: Optimization output object returned by the selected optimizer (\code{pso}, \code{GenSA}, or \code{GA}). For \code{k0 >= 2} the search itself runs over a reduced parameter vector (the transition matrix contributes only its free entries; see the package's Phase 2 notes), and the optimizer's reported solution (\code{$par} for \code{pso}/\code{GenSA}, \code{@solution} for \code{GA}) is mapped back to the full \code{theta} coordinates used everywhere else in the return value; other diagnostic fields inside \code{mmc_optimout} (e.g. \code{pso}'s \code{trace.stats$x}, \code{GenSA}'s \code{trace.mat}) are left in the reduced search coordinates.
+#'   \item pval_0: Monte Carlo p-value at the initial (estimated) nuisance parameter values \code{theta_0} (the Local MC point of the search). The reported \code{pval} satisfies \code{pval >= pval_0} by construction (enforced directly, not merely relied on from the optimizer's own search).
 #' }
 #'
 #' @section Numerical policy for the LR statistic: For nested models the LR statistic is non-negative by construction (the null fit embeds into the alternative parameter space with equal likelihood), so a negative computed value can only be a numerical optimization artifact. Both the observed statistic and every simulated statistic are therefore floored at 0 (identically on both sides, which preserves the exchangeability underlying the Monte Carlo p-value); a warning reports the magnitude when it is non-negligible. For \code{k0 > 1}, the null log-likelihood is additionally floored at the one-regime (linear) fit on both sides. Ties at 0 are handled by the randomized tie-breaking rule of Dufour (2006) already implemented in \code{\link{MCpval}}; ties at the bottom of the support can only make the test conservative. The regime variances are bounded away from zero during estimation (control \code{em_variance_constraint} of the model constructors, default \code{0.01} of the one-regime fit variance), because the Markov-switching likelihood is otherwise unbounded and degenerate solutions produce spurious likelihood-ratio spikes; the statistic is therefore a constrained-likelihood ratio, computed by the same rule for the observed and the simulated samples, which is all the Monte Carlo argument requires. Transition probabilities are not constrained.
@@ -533,6 +686,9 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     q <- ncol(Y)
   }else{
     stop("Observations Y must be a (T x q) matrix.")
+  }
+  if (k1 <= k0){
+    stop("MMCLRTest: k1 must be greater than k0 (received k0 = ", k0, ", k1 = ", k1, ").")
   }
   if ((con$CI_union==TRUE) & ((con$mdl_h0_control$getSE==FALSE) | (con$mdl_h1_control$getSE==FALSE))){
     con$mdl_h0_control$getSE <- TRUE
@@ -614,6 +770,30 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   mmc_bounds <- MMC_bounds(mdl_h0, con)
   theta_low <- mmc_bounds$theta_low
   theta_upp <- mmc_bounds$theta_upp
+  # ----- Phase 2: reduce the search vector for k0 >= 2 to the free entries of P
+  # (see the block above MMC_bounds). k0 = 1 has no P block and is untouched --
+  # 'reduced_idx' is then every position, so every downstream use of the
+  # '_search' vectors below is identical to using theta_low/theta_upp/theta_0
+  # directly, and MMC_bounds' own pre-flight checks above already guarantee
+  # theta_0 lies inside [theta_low, theta_upp] for every position.
+  if (k0 > 1){
+    mmc_rp <- .mmc_derived_P_index(theta_0, mdl_h0$theta_P_ind, k0)
+    reduced_idx <- setdiff(seq_along(theta_0), mmc_rp$derived_full_idx)
+  } else {
+    mmc_rp <- NULL
+    reduced_idx <- seq_along(theta_0)
+  }
+  theta_0_search   <- theta_0[reduced_idx]
+  theta_low_search <- theta_low[reduced_idx]
+  theta_upp_search <- theta_upp[reduced_idx]
+  if (length(theta_0_search) != length(theta_low_search) ||
+      length(theta_0_search) != length(theta_upp_search)){
+    # Defensive: pso accepts mismatched par/lower/upper lengths silently
+    # (recycling or truncating); GenSA and GA already error loudly on this.
+    stop("MMCLRTest: internal error building the nuisance-parameter search vector -- ",
+         "lengths differ (par ", length(theta_0_search), ", lower ", length(theta_low_search),
+         ", upper ", length(theta_upp_search), ").")
+  }
   # ----- Search for Max p-value within bounds
   mdl_h0_null_cont <- con$mdl_h0_control
   mdl_h1_null_cont <- con$mdl_h1_control
@@ -711,6 +891,22 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   }
   obj_min <- crn_wrap(MMCLRpval_fun_min)   # pso / GenSA (minimize the negative p-value)
   obj_max <- crn_wrap(MMCLRpval_fun)       # GA (maximize the p-value) and p_seed below
+  # ----- Phase 2: the optimizer sees the REDUCED search vector, so its objective
+  # must reassemble to full theta before calling the underlying (already
+  # CRN-wrapped) objective; an infeasible derived entry is penalized WITHOUT that
+  # call, so it costs no random draws (see .mmc_reduced_wrap above). k0 = 1 has no
+  # P block, so the objective is used unwrapped -- identical to before Phase 2.
+  if (k0 > 1){
+    obj_min_search <- .mmc_reduced_wrap(obj_min, reduced_idx, mmc_rp$derived_full_idx,
+                                        mmc_rp$pos_mat, length(theta_0), theta_low, theta_upp,
+                                        con$P_low, con$P_upp, penalty_value = con$lambda)
+    obj_max_search <- .mmc_reduced_wrap(obj_max, reduced_idx, mmc_rp$derived_full_idx,
+                                        mmc_rp$pos_mat, length(theta_0), theta_low, theta_upp,
+                                        con$P_low, con$P_upp, penalty_value = -(con$lambda))
+  } else {
+    obj_min_search <- obj_min
+    obj_max_search <- obj_max
+  }
   # ----- Verify the seed theta_0 (= the LMC point) yields a computable null distribution.
   #       theta_0 is exempt from the degenerate-candidate penalty inside MMCLRpval_fun, so if its
   #       null is fully degenerate (all draws fail even after the buffer + retry safety) the p-value
@@ -734,6 +930,9 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   # optimizer and estimation randomness continue the ambient (script-seeded)
   # stream, so script-seeded legacy runs reproduce 0.1.9 bit-for-bit.
   if (need_early_seeds) set.seed(internal_seeds[1L])
+  # Tracked separately from mmc_out, whose type differs by branch (a plain list
+  # here and for pso/GenSA, an S4 'ga' object for GA, which does not support $).
+  is_early_stop <- FALSE
   if (p_seed >= con$threshold_stop){
     # ----- Early stop: the p-value at theta_0 already meets threshold_stop, so the
     # search cannot change the test decision (pval >= pval_0 >= threshold_stop by
@@ -745,6 +944,7 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     pval    <- p_seed
     mmc_out <- list(early_stop = TRUE,
                     message = "threshold_stop reached at theta_0 (pval_0 >= threshold_stop); nuisance-parameter search skipped.")
+    is_early_stop <- TRUE
     if (!isTRUE(con$silence)) message("MMCLRTest: threshold_stop reached at theta_0; skipping the nuisance-parameter search.")
   }else if (con$type=="pso"){
     # Set PSO specific controls
@@ -754,7 +954,7 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     con$optim_control$maxf <- con$maxit
     con$optim_control$REPORT <- 1
     # begin optimization
-    mmc_out   <- pso::psoptim(par = theta_0, fn = obj_min, lower = theta_low, upper = theta_upp,
+    mmc_out   <- pso::psoptim(par = theta_0_search, fn = obj_min_search, lower = theta_low_search, upper = theta_upp_search,
                               gr = NULL, control = con$optim_control,
                               mdl_h0 = mdl_h0, k1 = k1, LRT_0 = LRT_0, N = con$N, burnin = con$burnin, workers = con$workers,
                               lambda = con$lambda, stationary_constraint = con$stationary_constraint,
@@ -770,7 +970,7 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     con$optim_control$threshold.stop <- -con$threshold_stop
     con$optim_control$max.call <- con$maxit
     # begin optimization
-    mmc_out   <- GenSA::GenSA(par = theta_0, fn = obj_min, lower = theta_low, upper = theta_upp,
+    mmc_out   <- GenSA::GenSA(par = theta_0_search, fn = obj_min_search, lower = theta_low_search, upper = theta_upp_search,
                               control = con$optim_control,
                               mdl_h0 = mdl_h0, k1 = k1, LRT_0 = LRT_0, N = con$N, burnin = con$burnin, workers = con$workers,
                               lambda = con$lambda, stationary_constraint = con$stationary_constraint,
@@ -787,16 +987,16 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     ga_ctrl <- con$optim_control
     if (is.null(ga_ctrl)) ga_ctrl <- list()
     if (is.null(ga_ctrl$popSize)) ga_ctrl$popSize <- 10
-    ga_fixed <- list(type = "real-valued", fitness = obj_max,
+    ga_fixed <- list(type = "real-valued", fitness = obj_max_search,
                      mdl_h0 = mdl_h0, k1 = k1, LRT_0 = LRT_0, N = con$N, burnin = con$burnin, workers = con$workers,
                      lambda = con$lambda, stationary_constraint = con$stationary_constraint,
                      thtol = mdl_h1$control$thtol, Z = Zsim, exog = exog, mdl_h0_control = mdl_h0_null_cont,
                      mdl_h1_control = mdl_h1_null_cont,
                      predrawn_eps = predrawn_eps, predrawn_state_rand = predrawn_state_rand,
-                     lower = theta_low, upper = theta_upp,
+                     lower = theta_low_search, upper = theta_upp_search,
                      maxiter = con$maxit, maxFitness = con$threshold_stop,
                      monitor = (con$silence==FALSE),
-                     suggestions = if (all(theta_0 >= theta_low) && all(theta_0 <= theta_upp)) t(theta_0) else NULL)
+                     suggestions = if (all(theta_0_search >= theta_low_search) && all(theta_0_search <= theta_upp_search)) t(theta_0_search) else NULL)
     ga_ctrl   <- ga_ctrl[setdiff(names(ga_ctrl), names(ga_fixed))]
     mmc_out   <- do.call(GA::ga, c(ga_fixed, ga_ctrl))
     theta     <- as.matrix(mmc_out@solution[1,])
@@ -804,7 +1004,26 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   }else{
     stop("'type' must be one of 'pso', 'GenSA', or 'GA'.")
   }
+  # ----- Phase 2: map the optimizer's answer back to full theta coordinates. The
+  # optimizer itself (mmc_out$par / @solution) still reports in the REDUCED
+  # search space for k0 >= 2; iteration-level diagnostics inside mmc_out (e.g.
+  # pso's trace.stats$x, GenSA's trace.mat) are NOT remapped and remain in
+  # reduced coordinates, documented in the return value below.
+  if (k0 > 1 && !is_early_stop){
+    theta <- .mmc_reassemble_theta(theta, reduced_idx, mmc_rp$derived_full_idx, mmc_rp$pos_mat, length(theta_0))
+    if (con$type %in% c("pso", "GenSA")) mmc_out$par <- theta
+    if (con$type == "GA") mmc_out@solution <- matrix(theta, nrow = 1)
+  } else {
+    theta <- as.numeric(theta)
+  }
   # ----- get test output using optimization output params
+  # theta_0 is guaranteed inside [theta_low, theta_upp] by MMC_bounds' own
+  # pre-flight checks above, so the search always evaluates at least that point
+  # (pso and GenSA both evaluate their 'par' starting value; GA is seeded there
+  # when in-box, which it now always is): the reported pval is therefore never
+  # below p_seed by construction, but is enforced explicitly rather than relied
+  # on, since an optimizer's internal bookkeeping is not a contract.
+  pval <- max(pval, p_seed)
   if (pval < 0){
     stop("MMCLRTest: the nuisance-parameter search evaluated no admissible candidate (every candidate violated the transition-matrix or stationarity constraint, or could not be simulated), so no p-value is defined. Check that the search bounds admit the null model's parameter values.")
   }

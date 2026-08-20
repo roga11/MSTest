@@ -47,3 +47,14 @@ test_that("init_theta must have the length its model implies", {
   expect_error(MSARmdl(y1, p = 1, k = 2, control = c(ct, list(init_theta = bad_P))),
                "sum to 1")
 })
+
+test_that("the alternative must have more regimes than the null", {
+  # Fires before any estimation, so garbage data is fine: neither function reaches
+  # estimMdl() for k1 <= k0.
+  y1 <- matrix(rnorm(50), 50, 1)
+  msg <- "k1 must be greater than k0"
+  expect_error(LMCLRTest(y1, p = 1, k0 = 2, k1 = 2), msg)
+  expect_error(LMCLRTest(y1, p = 1, k0 = 2, k1 = 1), msg)
+  expect_error(MMCLRTest(y1, p = 1, k0 = 2, k1 = 2), msg)
+  expect_error(MMCLRTest(y1, p = 1, k0 = 2, k1 = 1), msg)
+})

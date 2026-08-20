@@ -9,7 +9,7 @@ MMC_bounds(mdl_h0, con)
 \arguments{
 \item{mdl_h0}{List with restricted model properties.}
 
-\item{con}{List with control options provided to MMC LRT procedure.}
+\item{con}{List with control options provided to MMC LRT procedure. \code{con$eps} may be a scalar, recycled to every coordinate, or a vector of length \code{length(mdl_h0$theta)} giving a different search half-width per parameter, in the same order as \code{names(mdl_h0$theta)}. Every entry must be finite and strictly positive.}
 }
 \value{
 List with \code{theta_low}, vector of parameter lower bounds, and \code{theta_upp}, vector of parameter upper bounds.
