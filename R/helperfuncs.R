@@ -1397,6 +1397,45 @@ warmstart_theta <- function(mdl_h0, k1, msmu = NULL, msvar = NULL, c_pert = 0.5)
 # k*k entries are vec(P), column-major. Entries must lie in [0,1] and columns
 # must each sum to 1 (tolerance 1e-8, so validly stored columns summing to
 # 1 +- a few ulp pass). Raises an informative error otherwise.
+# Length of theta implied by a model's dimensions and switching flags. One
+# expression covers all five Markov-switching classes because they share the
+# layout mu | betaZ | phi | sigma | vec(P): a univariate model has q = 1, a model
+# without exogenous regressors has qz = 0, and a model without lags has p = 0.
+.theta_len_ms <- function(k, q, p, qz, msmu, msvar){
+  msmu  <- isTRUE(as.logical(msmu))
+  msvar <- isTRUE(as.logical(msvar))
+  Nsig  <- q * (q + 1) / 2
+  return(q * (1 + msmu * (k - 1)) + qz * q + q * q * p +
+         Nsig * (1 + msvar * (k - 1)) + k * k)
+}
+
+# A supplied starting vector must describe the model that was asked for. Without
+# this a mismatch either dies inside the estimator with a dimension message that
+# names no parameter, or, for the classes that read the transition block from the
+# end of the vector, is silently misread as a different parameterization.
+.validate_init_theta <- function(init_theta, k, q, p, qz, msmu, msvar){
+  n_exp <- .theta_len_ms(k, q, p, qz, msmu, msvar)
+  if (length(as.numeric(init_theta)) != n_exp){
+    stop(sprintf(paste0("init_theta has %d entries but this model has %d parameters ",
+                        "(k = %d, q = %d, p = %d, msmu = %s, msvar = %s). The order is ",
+                        "mu, then any exogenous coefficients, then the autoregressive ",
+                        "terms, then the variances, then vec(P)."),
+                 length(as.numeric(init_theta)), n_exp, k, q, p,
+                 isTRUE(as.logical(msmu)), isTRUE(as.logical(msvar))))
+  }
+  .validate_init_P(init_theta, k)
+  invisible(TRUE)
+}
+
+.validate_switching <- function(k, msmu, msvar){
+  if ((k > 1) && !isTRUE(as.logical(msmu)) && !isTRUE(as.logical(msvar))){
+    stop("a ", k, "-regime model needs at least one regime-dependent parameter: ",
+         "set 'msmu' or 'msvar' to TRUE, or estimate a one-regime model.",
+         call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
 .validate_init_P <- function(init_theta, k){
   th <- as.numeric(init_theta)
   if (length(th) < k*k){
@@ -1410,6 +1449,39 @@ warmstart_theta <- function(mdl_h0, k1, msmu = NULL, msvar = NULL, c_pert = 0.5)
     stop("init_theta transition matrix columns must each sum to 1 (column-stochastic; the last k*k entries are vec(P), column-major).")
   }
   invisible(TRUE)
+}
+
+# Regime means as a (k x q) matrix with regimes in rows, read from the leading
+# block of theta. When the mean does not switch, theta holds it once and the
+# single row is repeated across regimes.
+.theta_mu_kq <- function(theta, k, q, msmu){
+  # The estimation code reads this flag as a C++ bool, so a numeric 1 means a
+  # switching mean there; convert the same way rather than testing for TRUE.
+  msmu   <- isTRUE(as.logical(msmu))
+  mu_len <- q * (1 + msmu * (k - 1))
+  mu_blk <- as.numeric(theta)[seq_len(mu_len)]
+  if (msmu) t(matrix(mu_blk, q, k)) else matrix(mu_blk, k, q, byrow = TRUE)
+}
+
+# The alternative inherits a switching restriction stated for the null unless the
+# flag is stated for the alternative too, so the test varies the regime count alone
+# rather than the regime count and the switching structure together. Names are
+# matched exactly: `$` partial matching would let a mistyped control name pass as
+# the flag. A linear null carries no flags, so nothing is inherited there.
+.inherit_ms_flags <- function(mdl_h1_control, mdl_h0){
+  for (flag in c("msmu", "msvar")){
+    if (flag %in% names(mdl_h1_control)) next
+    # The estimation code reads this flag as a C++ bool, so a numeric 0 is a
+    # restriction there; convert the same way rather than testing for FALSE.
+    h0_flag <- suppressWarnings(as.logical(mdl_h0[[flag]]))
+    if ((length(h0_flag) != 1L) || !isFALSE(h0_flag)) next
+    mdl_h1_control[[flag]] <- FALSE
+    warning(sprintf(paste0("'%s = FALSE' was specified for the null and has been ",
+                           "applied to the alternative; set '%s' in 'mdl_h1_control' ",
+                           "to fit the alternative differently."), flag, flag),
+            call. = FALSE)
+  }
+  return(mdl_h1_control)
 }
 
 # k x k logical matrix: TRUE where a fitted transition probability sits at the

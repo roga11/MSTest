@@ -241,16 +241,29 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   if (!is.null(con$mc_seed)) set.seed(con$mc_seed)
   # ----- Estimate models using observed data
   mdl_h0 <- estimMdl(Y, p, q, k0, Z, con$mdl_h0_control)
+  # Resolve the alternative's switching flags before the warm starts are built and
+  # before the alternative is estimated, so the two cannot disagree.
+  con$mdl_h1_control <- .inherit_ms_flags(con$mdl_h1_control, mdl_h0)
   if ((con$init_method == "warmstart") && (k1 > 1)){
     # Warm-start the alternative model from the null fit (regime-duplication
     # embedding, see warmstart_theta); deterministic, so the RNG stream and the
     # random starts are unaffected. The same rule is applied per draw when
     # simulating the null distribution (see LR_samp_dist).
+    # `[[` rather than `$`: the latter partial-matches, so a mistyped control name
+    # would be read as the flag and silently build a warm start for the wrong space.
     con$mdl_h1_control$init_theta_extra <- warmstart_theta(mdl_h0, k1,
-                                                           msmu = con$mdl_h1_control$msmu,
-                                                           msvar = con$mdl_h1_control$msvar)
+                                                           msmu = con$mdl_h1_control[["msmu"]],
+                                                           msvar = con$mdl_h1_control[["msvar"]])
   }
   mdl_h1 <- estimMdl(Y, p, q, k1, Z, con$mdl_h1_control)
+  # The flags are a proxy; what has to hold is that a warm start has the length the
+  # alternative expects, which catches any future cause of a mismatch.
+  ws_extra <- con$mdl_h1_control$init_theta_extra
+  if (!is.null(ws_extra) && (length(ws_extra) > 0) &&
+      any(vapply(ws_extra, length, 0L) != length(mdl_h1$theta))){
+    warning("the warm starts did not match the alternative model's parameter vector ",
+            "and were discarded.", call. = FALSE)
+  }
   con$mdl_h0_control <- mdl_h0$control
   con$mdl_h1_control <- mdl_h1$control
   # Strip the observed-data warm starts from the stored control: they are specific
@@ -530,16 +543,29 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   if (!is.null(con$mc_seed)) set.seed(con$mc_seed)
   # ----- Estimate models using observed data
   mdl_h0 <- estimMdl(Y, p, q, k0, Z, con$mdl_h0_control)
+  # Resolve the alternative's switching flags before the warm starts are built and
+  # before the alternative is estimated, so the two cannot disagree.
+  con$mdl_h1_control <- .inherit_ms_flags(con$mdl_h1_control, mdl_h0)
   if ((con$init_method == "warmstart") && (k1 > 1)){
     # Warm-start the alternative model from the null fit (regime-duplication
     # embedding, see warmstart_theta); deterministic, so the RNG stream and the
     # random starts are unaffected. The same rule is applied per draw when
     # simulating the null distribution (see LR_samp_dist).
+    # `[[` rather than `$`: the latter partial-matches, so a mistyped control name
+    # would be read as the flag and silently build a warm start for the wrong space.
     con$mdl_h1_control$init_theta_extra <- warmstart_theta(mdl_h0, k1,
-                                                           msmu = con$mdl_h1_control$msmu,
-                                                           msvar = con$mdl_h1_control$msvar)
+                                                           msmu = con$mdl_h1_control[["msmu"]],
+                                                           msvar = con$mdl_h1_control[["msvar"]])
   }
   mdl_h1 <- estimMdl(Y, p, q, k1, Z, con$mdl_h1_control)
+  # The flags are a proxy; what has to hold is that a warm start has the length the
+  # alternative expects, which catches any future cause of a mismatch.
+  ws_extra <- con$mdl_h1_control$init_theta_extra
+  if (!is.null(ws_extra) && (length(ws_extra) > 0) &&
+      any(vapply(ws_extra, length, 0L) != length(mdl_h1$theta))){
+    warning("the warm starts did not match the alternative model's parameter vector ",
+            "and were discarded.", call. = FALSE)
+  }
   con$mdl_h0_control <- mdl_h0$control
   con$mdl_h1_control <- mdl_h1$control
   # Strip the observed-data warm starts from the stored control: they are specific
@@ -769,7 +795,8 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
                      predrawn_eps = predrawn_eps, predrawn_state_rand = predrawn_state_rand,
                      lower = theta_low, upper = theta_upp,
                      maxiter = con$maxit, maxFitness = con$threshold_stop,
-                     monitor = (con$silence==FALSE), suggestions = t(theta_0))
+                     monitor = (con$silence==FALSE),
+                     suggestions = if (all(theta_0 >= theta_low) && all(theta_0 <= theta_upp)) t(theta_0) else NULL)
     ga_ctrl   <- ga_ctrl[setdiff(names(ga_ctrl), names(ga_fixed))]
     mmc_out   <- do.call(GA::ga, c(ga_fixed, ga_ctrl))
     theta     <- as.matrix(mmc_out@solution[1,])
@@ -780,6 +807,17 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   # ----- get test output using optimization output params
   if (pval < 0){
     stop("MMCLRTest: the nuisance-parameter search evaluated no admissible candidate (every candidate violated the transition-matrix or stationarity constraint, or could not be simulated), so no p-value is defined. Check that the search bounds admit the null model's parameter values.")
+  }
+  # The reported p-value must belong to the reported parameter vector: an optimizer
+  # can return a maximizer that was never the point its reported value came from.
+  if (!all(is.finite(theta))){
+    stop("MMCLRTest: the nuisance-parameter search returned a non-finite parameter vector, so the reported p-value would not correspond to it.")
+  }
+  if (k0>1){
+    P_returned <- matrix(as.numeric(theta)[as.numeric(mdl_h0$theta_P_ind)==1], k0, k0)
+    if (any(abs(colSums(P_returned) - 1) > min(mdl_h1$control$thtol, 1e-8))){
+      stop("MMCLRTest: the nuisance-parameter search returned a transition matrix whose columns do not sum to 1, so the reported p-value would not correspond to it.")
+    }
   }
   theta_h0 <- theta
   theta_h1 <- mdl_h1$theta

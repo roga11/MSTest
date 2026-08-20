@@ -53,3 +53,74 @@ test_that("smoothed probabilities equal the extended-state aggregation", {
   expect_lt(max(abs(E$xi_t_T - agg)), 1e-12)
   expect_lt(max(abs(rowSums(m$St) - 1)), 1e-8)
 })
+
+test_that("EM does not descend the likelihood for any switching model or variant", {
+  # Full coverage of the five Markov-switching classes against the three switching
+  # specifications that matter. The mean update, the variance update and the
+  # transition update are each exercised alone (one flag off) and together.
+  #
+  # The tolerance is not arbitrary: the M-step maximizes the observation and
+  # transition parts of Q but not the term in the initial distribution, which is
+  # reset to the ergodic distribution of the new P. That channel can lose a small
+  # amount of likelihood per iteration at interior parameters, which is why the
+  # designs below keep the transition matrix away from its boundary.
+  skip_on_cran()
+  set.seed(8801)
+  Tn <- 200L
+  P2 <- cbind(c(0.90, 0.10), c(0.15, 0.85))
+  uni <- simuMSAR(list(n = Tn, k = 2, mu = c(0, 3), sigma = c(1, 4), phi = 0.4, P = P2),
+                  burnin = 100)
+  biv <- simuMSVAR(list(n = Tn, p = 1, q = 2, k = 2, mu = rbind(c(0, 0), c(3, -2)),
+                        sigma = list(diag(2), 2 * diag(2)),
+                        phi = matrix(c(0.3, 0, 0, 0.3), 2, 2), P = P2), burnin = 100)
+  hm  <- simuHMM(list(n = Tn, q = 2, k = 2, mu = rbind(c(0, 0), c(3, -2)),
+                      sigma = list(diag(2), 2 * diag(2)), P = P2), burnin = 100)
+  y1 <- matrix(uni$y, ncol = 1)
+  y2 <- biv$y
+  yh <- hm$y
+  Z1 <- matrix(rnorm(Tn), Tn, 1)
+  Z2 <- matrix(rnorm(Tn * 2), Tn, 2)
+  y1x <- y1 + Z1 * 0.8
+  y2x <- y2 + Z2 %*% matrix(c(0.6, -0.4, 0.3, 0.5), 2, 2)
+  yhx <- yh + Z2 %*% matrix(c(0.7, -0.5, 0.4, 0.6), 2, 2)
+
+  # HMmdl carries the exogenous case itself rather than through a separate class, so
+  # it appears twice: without regressors, and with them.
+  fits <- list(
+    HMmdl     = function(ct) HMmdl(yh, k = 2, control = ct),
+    HMmdlZ    = function(ct) HMmdl(yhx, k = 2, Z = Z2, control = ct),
+    MSARmdl   = function(ct) MSARmdl(y1, p = 1, k = 2, control = ct),
+    MSARXmdl  = function(ct) MSARXmdl(y1x, p = 1, k = 2, Z = Z1, control = ct),
+    MSVARmdl  = function(ct) MSVARmdl(y2, p = 1, k = 2, control = ct),
+    MSVARXmdl = function(ct) MSVARXmdl(y2x, p = 1, k = 2, Z = Z2, control = ct)
+  )
+  lls <- list(
+    HMmdl     = MSTest:::logLike_HMmdl,     HMmdlZ    = MSTest:::logLike_HMmdl,
+    MSARmdl   = MSTest:::logLike_MSARmdl,
+    MSARXmdl  = MSTest:::logLike_MSARXmdl,  MSVARmdl  = MSTest:::logLike_MSVARmdl,
+    MSVARXmdl = MSTest:::logLike_MSVARXmdl
+  )
+  variants <- list(c(msmu = TRUE,  msvar = FALSE),
+                   c(msmu = FALSE, msvar = TRUE),
+                   c(msmu = TRUE,  msvar = TRUE))
+
+  for (cls in names(fits)) for (v in variants) {
+    base_ct <- list(getSE = FALSE, msmu = unname(v["msmu"]), msvar = unname(v["msvar"]),
+                    use_diff_init = 1, em_best_iterate = FALSE)
+    m <- fits[[cls]](c(base_ct, list(maxit = 100)))
+    cur <- as.numeric(m$theta); ll <- -Inf; worst <- 0; n_fin <- 0L
+    for (i in 1:6) {
+      f <- fits[[cls]](c(base_ct, list(maxit = 1, conv = "theta", thtol = 0,
+                                       init_theta = cur)))
+      ll_new <- lls[[cls]](matrix(as.numeric(f$theta), ncol = 1), f, 2L)
+      if (is.finite(ll) && is.finite(ll_new)) {
+        worst <- min(worst, ll_new - ll); n_fin <- n_fin + 1L
+      }
+      cur <- as.numeric(f$theta); ll <- ll_new
+    }
+    lab <- paste(cls, paste(v, collapse = "/"))
+    # without this the assertion below would hold vacuously on an all-NaN build
+    expect_gt(n_fin, 4L, label = lab)
+    expect_gt(worst, -1e-2, label = lab)
+  }
+})

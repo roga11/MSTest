@@ -1,5 +1,40 @@
 # MSTest 0.1.9.9009
 
+## Monte Carlo LR tests: the alternative follows the null's specification
+
+* When the null model restricts the mean or the variance to be regime invariant and
+  `mdl_h1_control` does not name that flag, `LMCLRTest()` and `MMCLRTest()` now apply
+  the same restriction to the alternative, with a warning. The test then varies the
+  number of regimes alone; equality of means or variances can be tested separately.
+  Previously the alternative was estimated with switching means and variances while
+  its warm starts were built for the restricted model, so the warm starts were
+  discarded for the observed data but kept for every simulated draw, and the two
+  sides of the test were computed by different rules. Results change for that
+  configuration under every initialization method, since the alternative model itself
+  changes and not only its starting values. Stating the flag in `mdl_h1_control`
+  keeps the previous behaviour.
+
+## Reported regime means and standard deviations
+
+* `HMmdl()`, `MSVARmdl()` and `MSVARXmdl()` reported the regime means as a
+  transposed matrix when both the number of regimes and the number of series
+  exceeded one, which also affected `intercept`, `beta`, `fitted`, the simulated null
+  distribution of the Monte Carlo LR tests, and the warm starts built from a fitted
+  null. Means are now read from the parameter vector, which is the form the
+  estimation code and `mdledit()` already use. Parameter estimates and log
+  likelihoods are unchanged.
+
+* `HMmdl()` with a single series returned the variance in `stdev`. It now returns the
+  standard deviation, as documented and as the other model classes do.
+
+## Maximized Monte Carlo LR test
+
+* `MMCLRTest()` no longer seeds the genetic algorithm with the fitted parameter
+  vector when that vector lies outside the search box, and validates the parameter
+  vector the optimizer returns before reporting a p-value for it. A search that
+  returns a non-finite vector, or a transition matrix whose columns do not sum to
+  one, is now an error rather than a reported result.
+
 ## Hidden Markov EM: mean update
 
 * The maximization step for the mean in `HMmdl()` is now the exact conditional

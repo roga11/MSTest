@@ -1117,7 +1117,12 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
     stop("em_transition_constraint must be less than 1/k.")
   }
   init_mdl$P_bound <- if (isTRUE(con$em_transition_constraint > 0)) con$em_transition_constraint else 0
-  if (!is.null(con$init_theta)) .validate_init_P(con$init_theta, k)
+  .validate_switching(k, con$msmu, con$msvar)
+  if (!is.null(con$init_theta)){
+    .validate_init_theta(con$init_theta, k, init_mdl$q, init_mdl$p,
+                         if (is.null(init_mdl$Z)) 0L else ncol(init_mdl$Z),
+                         con$msmu, con$msvar)
+  }
   # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
   # They are attempted first and compete with the random starts on logLike; a
   # failing extra start falls back to a random draw on retry (see loop below).
@@ -1232,7 +1237,14 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
   }
   # ----- Obtain variables of interest
   q <- ncol(Y)
-  mu_kq  <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE)  # ensure k×q for msmu=FALSE (scalar) and msmu=TRUE
+  if (is.null(output$mu)) {
+    stop("HMmdl estimation failed for every starting value (each start exhausted 'maxit_converge' attempts). ",
+         "Verify the data or increase 'use_diff_init'/'maxit_converge'.")
+  }
+  # regime means come from the leading block of theta, which is the canonical
+  # source used everywhere else (see mdledit): rows are regimes, and a
+  # non-switching mean is the same row repeated.
+  mu_kq  <- .theta_mu_kq(output$theta, k, q, con$msmu)
   inter  <- mu_kq
   if (!is.null(Z)){
     inter <- mu_kq - matrix(1,k,1)%*%(matrix(colMeans(Z),1,ncol(Z))%*%output$betaZ)
@@ -1249,7 +1261,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
       stdev[[xk]] = diag(sqrt(diag(output$sigma[[xk]])))
     }  
   }else{
-    stdev <- as.matrix(unlist(output$sigma))
+    stdev <- sqrt(as.matrix(unlist(output$sigma)))
     if (!is.null(Z)){
       beta <- rbind(t(inter),output$betaZ%*%matrix(1,1,k))
     }else{
@@ -1263,12 +1275,8 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
   theta_sig_ind   <- c(rep(0, q + q*(k-1)*con$msmu + length(output$betaZ)), rep(1, Nsig + Nsig*(k-1)*con$msvar), rep(0, k*k))
   theta_var_ind   <- c(rep(0, q + q*(k-1)*con$msmu + length(output$betaZ)), rep(t(covar_vech(diag(q))), 1+(k-1)*con$msvar), rep(0, k*k))
   theta_P_ind     <- c(rep(0, length(output$theta) - (k*k)), rep(1, k*k))
-  if (is.null(output$mu)) {
-    stop("HMmdl estimation failed for every starting value (each start exhausted 'maxit_converge' attempts). ",
-         "Verify the data or increase 'use_diff_init'/'maxit_converge'.")
-  }
   if (con$msmu==FALSE){
-    output$mu     <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
+    output$mu     <- .theta_mu_kq(output$theta, k, q, con$msmu)
   }
   # ----- Output
   out <- list(y = init_mdl$y, Z = Z, resid = output$resid, 
@@ -1494,7 +1502,12 @@ MSARmdl <- function(Y, p, k, control = list()){
     stop("em_transition_constraint must be less than 1/k.")
   }
   init_mdl$P_bound <- if (isTRUE(con$em_transition_constraint > 0)) con$em_transition_constraint else 0
-  if (!is.null(con$init_theta)) .validate_init_P(con$init_theta, k)
+  .validate_switching(k, con$msmu, con$msvar)
+  if (!is.null(con$init_theta)){
+    .validate_init_theta(con$init_theta, k, init_mdl$q, init_mdl$p,
+                         if (is.null(init_mdl$Z)) 0L else ncol(init_mdl$Z),
+                         con$msmu, con$msvar)
+  }
   # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
   # They are attempted first and compete with the random starts on logLike; a
   # failing extra start falls back to a random draw on retry (see loop below).
@@ -1836,7 +1849,12 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
     stop("em_transition_constraint must be less than 1/k.")
   }
   init_mdl$P_bound <- if (isTRUE(con$em_transition_constraint > 0)) con$em_transition_constraint else 0
-  if (!is.null(con$init_theta)) .validate_init_P(con$init_theta, k)
+  .validate_switching(k, con$msmu, con$msvar)
+  if (!is.null(con$init_theta)){
+    .validate_init_theta(con$init_theta, k, init_mdl$q, init_mdl$p,
+                         if (is.null(init_mdl$Z)) 0L else ncol(init_mdl$Z),
+                         con$msmu, con$msvar)
+  }
   # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
   # They are attempted first and compete with the random starts on logLike; a
   # failing extra start falls back to a random draw on retry (see loop below).
@@ -2174,7 +2192,12 @@ MSVARmdl <- function(Y, p, k, control = list()){
     stop("em_transition_constraint must be less than 1/k.")
   }
   init_mdl$P_bound <- if (isTRUE(con$em_transition_constraint > 0)) con$em_transition_constraint else 0
-  if (!is.null(con$init_theta)) .validate_init_P(con$init_theta, k)
+  .validate_switching(k, con$msmu, con$msvar)
+  if (!is.null(con$init_theta)){
+    .validate_init_theta(con$init_theta, k, init_mdl$q, init_mdl$p,
+                         if (is.null(init_mdl$Z)) 0L else ncol(init_mdl$Z),
+                         con$msmu, con$msvar)
+  }
   # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
   # They are attempted first and compete with the random starts on logLike; a
   # failing extra start falls back to a random draw on retry (see loop below).
@@ -2291,7 +2314,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
          "Verify the data or increase 'use_diff_init'/'maxit_converge'.")
   }
   if (con$msmu==FALSE){
-    output$mu     <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
+    output$mu     <- .theta_mu_kq(output$theta, k, q, con$msmu)
   }
   output$Fmat    <- companionMat(output$phi, p, q)
   inter <- matrix(0,k,q)
@@ -2528,7 +2551,12 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
     stop("em_transition_constraint must be less than 1/k.")
   }
   init_mdl$P_bound <- if (isTRUE(con$em_transition_constraint > 0)) con$em_transition_constraint else 0
-  if (!is.null(con$init_theta)) .validate_init_P(con$init_theta, k)
+  .validate_switching(k, con$msmu, con$msvar)
+  if (!is.null(con$init_theta)){
+    .validate_init_theta(con$init_theta, k, init_mdl$q, init_mdl$p,
+                         if (is.null(init_mdl$Z)) 0L else ncol(init_mdl$Z),
+                         con$msmu, con$msvar)
+  }
   # ----- Deterministic extra starting values (e.g., warm starts from a null fit).
   # They are attempted first and compete with the random starts on logLike; a
   # failing extra start falls back to a random draw on retry (see loop below).
@@ -2645,7 +2673,7 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
          "Verify the data or increase 'use_diff_init'/'maxit_converge'.")
   }
   if (con$msmu==FALSE){
-    output$mu     <- matrix(output$mu, nrow=k, ncol=q, byrow=TRUE) 
+    output$mu     <- .theta_mu_kq(output$theta, k, q, con$msmu)
   }
   output$Fmat    <- companionMat(output$phi, p, q)
   inter <- matrix(0,k,q)
