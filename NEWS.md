@@ -1,3 +1,27 @@
+# MSTest 0.1.9.9009
+
+## Hidden Markov EM: mean update
+
+* The maximization step for the mean in `HMmdl()` is now the exact conditional
+  maximizer in every configuration. Two defects are fixed. When the mean does not
+  switch (`msmu = FALSE`), the update accumulated onto the previous iterate instead of
+  replacing it, so it converged to the sample mean inflated by a factor `T/(T-1)`
+  (one percent at `T = 100`); and it used an unweighted mean, whereas with
+  regime-specific covariances the maximizer is precision weighted,
+  `mu = [sum_k w_k Sigma_k^-1]^-1 [sum_k Sigma_k^-1 sum_t xi_t(k) y_t]`
+  (Krolzig 1997, Table 9.15). Separately, neither branch removed the contribution of
+  exogenous regressors before computing the mean, so `HMmdl(Y, k, Z)` lost likelihood
+  on every iteration in its default configuration. The mean now conditions on the
+  previous `betaZ`, matching the ordering used by `MSARXmdl()` and `MSVARXmdl()`.
+  Estimates change for `HMmdl()` fits with `msmu = FALSE` or with exogenous
+  regressors; all other classes, the maximum-likelihood path, and `HMmdl()` with a
+  switching mean and no exogenous regressors are unchanged.
+
+* Two guards against malformed input reaching the maximization step directly: a
+  non-finite exogenous coefficient in a supplied `init_theta` no longer propagates
+  into the mean, and a per-regime covariance list shorter than the number of regimes
+  now raises an error instead of reading past the end of the list.
+
 # MSTest 0.1.9.9008
 
 ## Simulation of the null distribution: parameter propagation and guards

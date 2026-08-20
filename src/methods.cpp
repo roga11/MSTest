@@ -3762,6 +3762,8 @@ List EMaximization_HMmdl(arma::vec theta, List mdl, List MSloglik_output, int k)
   arma::mat xi_t_t    = MSloglik_output["xi_t_t"];
   arma::mat xi_tp1_t  = MSloglik_output["xi_tp1_t"];
   List sig            = MSloglik_output["sigma"];
+  // sig is indexed per regime below; Rcpp::List has no bounds check of its own
+  if (sig.size() != k) Rcpp::stop("EMaximization_HMmdl: 'sigma' must hold one covariance matrix per regime.");
   // Length of Time-Series (T) and number of variables
   int Tsize   = y.n_rows;
   arma::mat repq(1,q, arma::fill::ones);
@@ -3813,28 +3815,14 @@ List EMaximization_HMmdl(arma::vec theta, List mdl, List MSloglik_output, int k)
   int mu_len = q * (1 + msmu*(k-1));
   arma::mat mu = arma::reshape(theta.head(mu_len), q, 1 + msmu*(k-1)).t();
   arma::mat mu_k(k, q, arma::fill::zeros);
-  // ----- Compute updated mu
-  if (msmu == TRUE){
-    for (int xk = 0 ; xk<k; xk++){
-      double mu_denom = sum(xi_t_T.col(xk));
-      if (mu_denom < 1e-6 * Tsize) continue;  // degenerate: keep previous mu
-      mu.row(xk) = arma::sum(y%(xi_t_T.col(xk)*repq),0)/mu_denom;
-    }
-    mu_k = mu;
-  }else{
-    for (int xk = 0 ; xk<k; xk++){
-      mu = mu + arma::sum(y%(xi_t_T.col(xk)*repq),0);
-    }
-    mu = mu/Tsize;
-    for (int xk = 0 ; xk<k; xk++){
-      mu_k.row(xk) = mu;
-    }
-  }
-  // --------------- Update estimates params of exogenous regressors (if present)
+  // ----- The mean is a conditional maximizer given the PREVIOUS betaZ, so the
+  // exogenous contribution is removed before the mean update (same ordering as
+  // EMaximization_MSARXmdl)
   int qz = 0;
   arma::mat repmu(Tsize, 1, arma::fill::ones);
   arma::mat Zdm(Tsize,1,arma::fill::zeros);
   arma::mat betaZ_new(1,q,arma::fill::zeros);
+  arma::mat ytilde = y;
   if (exog==TRUE){
     arma::mat Z = as<arma::mat>(mdl["Z"]);
     qz = Z.n_cols;
@@ -3842,6 +3830,48 @@ List EMaximization_HMmdl(arma::vec theta, List mdl, List MSloglik_output, int k)
     betaZ_new = reshape(theta.subvec(mu_len, mu_len + qz*q - 1), qz, q);
     arma::rowvec zbar  = arma::mean(Z,0);
     Zdm = Z - (repmu*zbar);
+    // betaZ_new still holds the previous iterate at this point
+    ytilde = y - Zdm*betaZ_new;
+  }
+  // ----- Compute updated mu (Krolzig 1997, Table 9.15)
+  if (msmu == TRUE){
+    // Switching mean: the normal equations are block diagonal across regimes, so each
+    // block is a smoothed-probability weighted average and the covariances cancel.
+    for (int xk = 0 ; xk<k; xk++){
+      double mu_denom = sum(xi_t_T.col(xk));
+      if (mu_denom < 1e-6 * Tsize) continue;  // degenerate: keep previous mu
+      arma::rowvec mu_row = arma::sum(ytilde%(xi_t_T.col(xk)*repq),0)/mu_denom;
+      if (mu_row.is_finite()) mu.row(xk) = mu_row;  // else keep previous mu
+    }
+    mu_k = mu;
+  }else{
+    // Common mean across regime-specific covariances is precision weighted:
+    //   mu = [sum_k w_k*Sigma_k^-1]^-1 [sum_k Sigma_k^-1 * sum_t xi_t(k)*ytilde_t]
+    // With msvar = FALSE the precisions cancel and this is the sample mean.
+    arma::mat A_lsys(q, q, arma::fill::zeros);
+    arma::vec b_vec(q, arma::fill::zeros);
+    for (int xk = 0 ; xk<k; xk++){
+      arma::mat sigma_m = sig[xk];
+      arma::mat sigma_inv = arma::solve(sigma_m, arma::eye(q,q), arma::solve_opts::allow_ugly);
+      // Only an unusable precision is dropped; allow_ugly returns a finite
+      // approximate inverse for a singular Sigma_k, which stays in the system.
+      if (!sigma_inv.is_finite()) continue;
+      A_lsys += arma::sum(xi_t_T.col(xk)) * sigma_inv;
+      b_vec  += sigma_inv * (trans(ytilde) * xi_t_T.col(xk));
+    }
+    // Solve A*mu = b; fall back to the previous mu if A is near-singular
+    if (A_lsys.is_finite() && b_vec.is_finite() && arma::rcond(A_lsys) > 1e-12){
+      try {
+        arma::vec mu_new = arma::solve(A_lsys, b_vec, arma::solve_opts::allow_ugly);
+        if (mu_new.is_finite()) mu.row(0) = trans(mu_new);
+      } catch (...) { /* keep previous mu */ }
+    }
+    for (int xk = 0 ; xk<k; xk++){
+      mu_k.row(xk) = mu.row(0);
+    }
+  }
+  // --------------- Update estimates params of exogenous regressors (if present)
+  if (exog==TRUE){
     arma::mat denom(q*qz, q*qz, arma::fill::zeros);
     arma::mat num(q*qz, 1, arma::fill::zeros);
     for (int xk = 0; xk<k; xk++){
