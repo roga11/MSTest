@@ -52,50 +52,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// calc_mu2t_mv
-arma::vec calc_mu2t_mv(List mdl, double rho, List ltmt, arma::vec hv);
-RcppExport SEXP _MSTest_calc_mu2t_mv(SEXP mdlSEXP, SEXP rhoSEXP, SEXP ltmtSEXP, SEXP hvSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< List >::type mdl(mdlSEXP);
-    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
-    Rcpp::traits::input_parameter< List >::type ltmt(ltmtSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type hv(hvSEXP);
-    rcpp_result_gen = Rcpp::wrap(calc_mu2t_mv(mdl, rho, ltmt, hv));
-    return rcpp_result_gen;
-END_RCPP
-}
-// calc_mu2t
-arma::vec calc_mu2t(List mdl, double rho, List ltmt);
-RcppExport SEXP _MSTest_calc_mu2t(SEXP mdlSEXP, SEXP rhoSEXP, SEXP ltmtSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< List >::type mdl(mdlSEXP);
-    Rcpp::traits::input_parameter< double >::type rho(rhoSEXP);
-    Rcpp::traits::input_parameter< List >::type ltmt(ltmtSEXP);
-    rcpp_result_gen = Rcpp::wrap(calc_mu2t(mdl, rho, ltmt));
-    return rcpp_result_gen;
-END_RCPP
-}
 // chpStat
-arma::vec chpStat(List mdl, double rho_b, List ltmt, bool msvar);
-RcppExport SEXP _MSTest_chpStat(SEXP mdlSEXP, SEXP rho_bSEXP, SEXP ltmtSEXP, SEXP msvarSEXP) {
+arma::vec chpStat(List mdl, double rho_b, bool msvar);
+RcppExport SEXP _MSTest_chpStat(SEXP mdlSEXP, SEXP rho_bSEXP, SEXP msvarSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< List >::type mdl(mdlSEXP);
     Rcpp::traits::input_parameter< double >::type rho_b(rho_bSEXP);
-    Rcpp::traits::input_parameter< List >::type ltmt(ltmtSEXP);
     Rcpp::traits::input_parameter< bool >::type msvar(msvarSEXP);
-    rcpp_result_gen = Rcpp::wrap(chpStat(mdl, rho_b, ltmt, msvar));
+    rcpp_result_gen = Rcpp::wrap(chpStat(mdl, rho_b, msvar));
     return rcpp_result_gen;
 END_RCPP
 }
 // CHPbootCV
-arma::mat CHPbootCV(List mdl, double rho_b, int N, bool msvar);
-RcppExport SEXP _MSTest_CHPbootCV(SEXP mdlSEXP, SEXP rho_bSEXP, SEXP NSEXP, SEXP msvarSEXP) {
+arma::mat CHPbootCV(List mdl, double rho_b, int N, bool msvar, int burnin);
+RcppExport SEXP _MSTest_CHPbootCV(SEXP mdlSEXP, SEXP rho_bSEXP, SEXP NSEXP, SEXP msvarSEXP, SEXP burninSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -103,7 +75,8 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type rho_b(rho_bSEXP);
     Rcpp::traits::input_parameter< int >::type N(NSEXP);
     Rcpp::traits::input_parameter< bool >::type msvar(msvarSEXP);
-    rcpp_result_gen = Rcpp::wrap(CHPbootCV(mdl, rho_b, N, msvar));
+    Rcpp::traits::input_parameter< int >::type burnin(burninSEXP);
+    rcpp_result_gen = Rcpp::wrap(CHPbootCV(mdl, rho_b, N, msvar, burnin));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1179,10 +1152,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_argrid_MSARmdl_cpp", (DL_FUNC) &_MSTest_argrid_MSARmdl_cpp, 4},
     {"_MSTest_argrid_MSVARmdl_cpp", (DL_FUNC) &_MSTest_argrid_MSVARmdl_cpp, 4},
     {"_MSTest_arP_cpp", (DL_FUNC) &_MSTest_arP_cpp, 3},
-    {"_MSTest_calc_mu2t_mv", (DL_FUNC) &_MSTest_calc_mu2t_mv, 4},
-    {"_MSTest_calc_mu2t", (DL_FUNC) &_MSTest_calc_mu2t, 3},
-    {"_MSTest_chpStat", (DL_FUNC) &_MSTest_chpStat, 4},
-    {"_MSTest_CHPbootCV", (DL_FUNC) &_MSTest_CHPbootCV, 4},
+    {"_MSTest_chpStat", (DL_FUNC) &_MSTest_chpStat, 3},
+    {"_MSTest_CHPbootCV", (DL_FUNC) &_MSTest_CHPbootCV, 5},
     {"_MSTest_simuMdl", (DL_FUNC) &_MSTest_simuMdl, 6},
     {"_MSTest_mdledit", (DL_FUNC) &_MSTest_mdledit, 6},
     {"_MSTest_compu_tstat", (DL_FUNC) &_MSTest_compu_tstat, 7},

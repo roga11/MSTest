@@ -3,277 +3,273 @@
 //[[Rcpp::depends(RcppArmadillo)]]
 using namespace Rcpp;
 
-//  ==============================================================================
-//' @title Test statistic for switch in mean and variance
-//'
-//' @description This function computes part of the test statistic given by 
-//' eq. 2.5 of CHP 2014 when the alternative has switching mean and variance. 
-//' The output is used in \code{\link{chpStat}} which computes the full test
-//' statistics.
-//'
-//' @param mdl List containing model attributes (see \code{\link{ARmdl}}).
-//' @param rho Number determining value of \code{rho}.
-//' @param ltmt List containing derivatives output from \code{\link{chpDmat}}.
-//' @param hv Number determining value of \code{h}.
-//' 
-//' @return Part of test statistic given \code{rho} and \code{hv} value. 
-//' 
-//' @keywords internal
-//' 
-//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
-//' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
-//' 
-//' @export
-// [[Rcpp::export]]
-arma::vec calc_mu2t_mv(List mdl, double rho, List ltmt, arma::vec hv){
-  // calc mu2t (eq. 2.5) for test with switch in mean and variance 
-  int nn              = mdl["n"];
-  int nar             = mdl["p"];
-  double mu0          = mdl["mu"];
-  arma::mat xtj       = mdl["x"];
-  arma::mat ltmx      = ltmt["ltmx"];
-  double mtmu         = ltmt["mtmu"];
-  arma::vec mtmusig2  = ltmt["mtmusig2"];
-  arma::mat mtmuphi   = ltmt["mtmuphi"];
-  arma::mat mtphisig2 = ltmt["mtphisig2"];
-  arma::vec mtsig2    = ltmt["mtsig2"];
-  arma::vec mu2t(nn,arma::fill::zeros);
-  arma::mat xs(nn,nar+2,arma::fill::zeros);
-  xs.row(1)           = rho * ltmx.row(0);
-  mu2t.row(1)         = arma::trans(hv) * arma::trans(ltmx.row(1)) * xs.row(1) * hv;
-  for (int xi=0; xi<nn; xi++){
-    arma::mat m(nar+2,nar+2,arma::fill::zeros);
-    arma::mat mtphi = arma::trans(-(xtj.row(0)-mu0)) * (xtj.row(0)-mu0);
-    
-    int lst = nar + 1;
-    m.submat(0,0,0,0) = mtmu;
-    m.submat(0,1,0,nar) = mtmuphi.row(xi);
-    m.submat(0,lst,0,lst) = mtmusig2(xi);
-    
-    m.submat(1,0,nar,0) = arma::trans(mtmuphi.row(xi));
-    m.submat(1,1,nar,nar) = mtphi;
-    m.submat(1,lst,nar,lst) = arma::trans(mtphisig2.row(xi));
-    
-    m.submat(lst,0,lst,0) = mtmusig2(xi);
-    m.submat(lst,1,lst,nar) = mtphisig2.row(xi);
-    m.submat(lst,lst,lst,lst) = mtsig2(xi);
-    
-    arma::mat lx = arma::trans(ltmx.row(xi)) * ltmx.row(xi);
-    mu2t(xi) = arma::as_scalar(mu2t(xi) + arma::trans(hv) * (m + lx) * hv) / 2.0;
-    
-    if (xi > 2){
-      xs.row(xi) = rho * (xs.row(xi- 1) + ltmx.row(xi- 1));
-      mu2t(xi) = mu2t(xi) + arma::as_scalar(arma::trans(hv) * arma::trans(ltmx.row(xi)) * xs.row(xi) * hv);
+// =============================================================================
+// Carrasco, Hu & Ploberger (2014) parameter stability test.
+//
+// The nuisance direction h = (hu(1), 0, ..., 0, hu(2)) always has zero entries
+// at the AR-coefficient positions (Section 6.2 of CHP: "the other elements are
+// all set to be 0" -- phi is a nuisance parameter under H0 but is not itself
+// tested for switching). Sandwiching any (mu, phi, sigma2)-indexed matrix by
+// such an h therefore only ever picks out its (mu, sigma2) block; the phi
+// cross-terms cancel identically regardless of their value. mu2t below is
+// built directly from that reduced (mu, sigma2) block rather than assembling
+// and sandwiching the full matrix, which both simplifies the code and removes
+// its dominant cost. The AR-coefficient score (ltphi) is still needed and
+// still computed in full: mu2t is projected onto the full nuisance score space
+// (mu, phi, sigma2) via ltmx, which is what actually orthogonalizes the
+// statistic against phi.
+// =============================================================================
+
+// ---- lean AR(p) OLS fit (no standard errors, no S3 bookkeeping) -----------
+struct ARfit {
+  arma::vec phi;
+  double mu;
+  double stdev;
+  arma::vec resid;
+  arma::mat x;
+};
+
+ARfit ar_ols_fit(const arma::vec& Y, int p){
+  List lagged = ts_lagged(arma::mat(Y), p);
+  arma::vec y = lagged["y"];
+  arma::mat x = lagged["X"];
+  int n = y.n_elem;
+  arma::mat zz = arma::join_rows(arma::ones(n, 1), x);
+  arma::vec beta = arma::solve(zz.t() * zz, zz.t() * y, arma::solve_opts::allow_ugly);
+  double inter = beta(0);
+  arma::vec phi = beta.subvec(1, p);
+  arma::vec resid = y - zz * beta;
+  double stdev = std::sqrt(arma::as_scalar(resid.t() * resid) / n);
+  ARfit out;
+  out.phi = phi;
+  out.mu = inter / (1.0 - arma::sum(phi));
+  out.stdev = stdev;
+  out.resid = resid;
+  out.x = x;
+  return out;
+}
+
+// ---- mu2t sandwich, per (rho, hu1, hu2), across the whole sample -----------
+// Recurrence follows Carrasco, Hu & Ploberger (2014), Section 6, eq. (3.3):
+//   self term (t) = ( hu'*M_t*hu + (hu.l_t)^2 ) / 2
+//   cross term (t > 1, i.e. Gauss's second sample point onward) accumulates
+//   an exponentially-weighted (by rho) sum of earlier scores.
+// mtmu, ltmu, mtmusig2, mtsig2, ltsig2 are all length nn (or mtmu a scalar);
+// with msvar = false, hu2 = 0 and the sigma2 terms drop out identically.
+arma::vec mu2t_vec(double rho, double hu1, double hu2, double mtmu,
+                   const arma::vec& ltmu, const arma::vec& mtmusig2,
+                   const arma::vec& mtsig2, const arma::vec& ltsig2, int nn){
+  arma::vec mu2t(nn, arma::fill::zeros);
+  arma::vec l(nn);   // hu . (score at t), t = 0..nn-1
+  for (int t = 0; t < nn; t++){
+    double lt = hu1 * ltmu(t) + hu2 * (ltsig2.n_elem ? ltsig2(t) : 0.0);
+    l(t) = lt;
+    double mt = hu1 * hu1 * mtmu;
+    if (mtmusig2.n_elem){
+      mt += 2.0 * hu1 * hu2 * mtmusig2(t) + hu2 * hu2 * mtsig2(t);
     }
+    mu2t(t) = (mt + lt * lt) / 2.0;
   }
-  return(mu2t);
+  // cross term: xs(t) = rho * (xs(t-1) + l(t-1)) for t >= 2 (Gauss 1-indexed),
+  // with xs(1) preset to rho*l(0) and its contribution added at t = 1 only.
+  double xs = rho * l(0);
+  if (nn > 1) mu2t(1) += l(1) * xs;
+  for (int t = 2; t < nn; t++){
+    xs = rho * (xs + l(t - 1));
+    mu2t(t) += l(t) * xs;
+  }
+  return mu2t;
 }
 
-//  ==============================================================================
-//' @title Test statistic for switch in mean only 
-//'
-//' @description This function computes part of the test statistic given by 
-//' eq. 2.5 of CHP 2014 when the alternative has switching mean only. The output 
-//' is used in \code{\link{chpStat}} which computes the full test statistics.
-//'
-//' @param mdl List containing model attributes (see \code{\link{ARmdl}}).
-//' @param rho Number determining value of \code{rho}.
-//' @param ltmt List containing derivatives output from \code{\link{chpDmat}}.
-//' 
-//' @return Part of test statistic given \code{rho} and \code{hv} value. 
-//' 
-//' @keywords internal
-//' 
-//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
-//' 
-//' @export
-// [[Rcpp::export]]
-arma::vec calc_mu2t(List mdl, double rho, List ltmt){
-  int nn              = mdl["n"];
-  arma::mat ltmx      = ltmt["ltmx"];
-  double mtmu         = ltmt["mtmu"];
-  arma::vec ltmu      = ltmx.col(0);
-  arma::vec mu2t(nn,arma::fill::zeros);
-  arma::vec xs(nn,arma::fill::zeros);
-  xs(1)               = rho * ltmu(0);
-  mu2t(1)             = ltmu(1) * xs(1);
-  for (int xi=2; xi<nn; xi++){
-    xs(xi) = rho * (xs(xi- 1) + ltmu(xi- 1));
-    mu2t(xi) = ltmu(xi) * xs(xi);
-  }
-  mu2t = (mtmu+pow(ltmu,2.0))/2.0+mu2t;
-  return(mu2t);
+// sqrt(2*pi) * exp(z^2/2) * Phi(z), z = tspe - 1 -- the expTS integrand.
+// Computed in log-space: for very negative z, exp(z^2/2) overflows to Inf
+// while Phi(z) underflows to 0, and the naive product evaluates to Inf*0 =
+// NaN even though the true limit is a small finite number (the two terms
+// cancel at the same rate, per the standard Mills-ratio tail expansion of the
+// normal CDF). R::pnorm's own log.p path is accurate in that tail.
+double exp_ts_term(double tspe){
+  double z = tspe - 1.0;
+  double log_term = 0.5 * std::log(2.0 * M_PI) + z * z / 2.0 + R::pnorm(z, 0.0, 1.0, 1, 1);
+  return std::exp(log_term);
 }
 
-//  ==============================================================================
-//' @title Test statistic for CHP 2014 parameter stability test
-//' 
-//' @description This function computes the supTS and expTS test-statistics 
-//' proposed in CHP 2014.
-//'
-//' @param mdl List containing model attributes (see \code{\link{ARmdl}}).
-//' @param rho_b Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).
-//' @param ltmt List containing derivatives output from \code{\link{chpDmat}}.
-//' @param msvar Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
-//' 
-//' @return A (\code{2 x 1}) vector with supTS test statistic as first element and expTS test-statistics as second element.
-//' 
-//' @keywords internal
-//' 
-//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
-//' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
-//' 
-//' @export
-// [[Rcpp::export]]
-arma::vec chpStat(List mdl, double rho_b, List ltmt,bool msvar){
-  int nn              = mdl["n"];
-  int nar             = mdl["p"];
-  int tt              = nn + nar;
-  arma::mat ltmx      = ltmt["ltmx"];
-  double seqlen       = (rho_b-(-rho_b))*100 + 1;
-  arma::vec chps(2,arma::fill::zeros);
-  if (msvar==0){
-    // If only Mean can Switch
-    arma::vec cv(seqlen,1,arma::fill::zeros); // stores supTS critical values for each rho
-    arma::vec cv2(seqlen,1,arma::fill::zeros); // stores expTS critical values for each rho
-    arma::vec rhotmp = arma::linspace<arma::vec>(-rho_b,rho_b,seqlen);
-    for (int ir=0; ir<seqlen; ir++){
-      double rhotmp2 = arma::as_scalar(rhotmp(ir));
-      arma::vec mu2t = calc_mu2t(mdl,rhotmp2,ltmt);
-      double gamma_e = sum(mu2t)/sqrt(tt);
-      // error from mu2t - projection of mu2t on lt1
-      arma::mat tmp = arma::trans(ltmx) * ltmx;
-      arma::vec sol = arma::solve(tmp, arma::trans(ltmx) * mu2t, arma::solve_opts::allow_ugly);
-      arma::vec epsilont = mu2t - ltmx * sol;
-      double esqe = mean(arma::square(epsilont));
-      double tspe = gamma_e/sqrt(esqe);
-      double tol = 0.00001; 
-      if (esqe<tol){
-        cv(ir) = 0.0;
-        cv2(ir) = 1.0;
-      }else {
-        // supTS test statistic 
-        arma::vec tspetmp(2,arma::fill::zeros);
-        tspetmp(0) = tspe;
-        cv(ir) = pow(max(tspetmp),2.0)/2.0;
-        // expTS test statistic  
-        double tspetmp2 = tspe - 1.0;
-        cv2(ir) = sqrt(2.0*arma::datum::pi)*exp(pow(tspetmp2,2.0)/2.0)*arma::normcdf(tspetmp2);
+// ---- supTS/expTS from a fitted AR(p) model -------------------------------
+arma::vec chp_stat_core(const arma::vec& resid, const arma::mat& x, double mu,
+                        const arma::vec& phi, double stdev, double rho_b, bool msvar){
+  int nn  = resid.n_elem;
+  int nar = phi.n_elem;
+  int tt  = nn + nar;
+  double v2 = stdev * stdev;
+  double phisum = arma::sum(phi);
+
+  arma::vec ltmu = resid * (1.0 - phisum) / v2;
+  double mtmu = -std::pow(1.0 - phisum, 2.0) / v2;
+  arma::mat ltphi(nn, nar);
+  for (int j = 0; j < nar; j++) ltphi.col(j) = (resid % (x.col(j) - mu)) / v2;
+
+  // ltsig2 (the sigma2 score) is needed in the projection matrix ltmx below
+  // regardless of msvar -- CHP (2014), Remark 1, p. 770: epsilon-hat is the
+  // residual from projecting mu2t on the WHOLE score vector l_t^(1), including
+  // the coefficients not under test. mtmusig2/mtsig2 (curvature terms) are only
+  // needed for the mu2t sandwich itself, which only has a sigma2 component when
+  // msvar = TRUE (hu2 = 0 otherwise, so they never contribute either way).
+  arma::vec ltsig2 = arma::square(resid) / (2.0 * v2 * v2) - 1.0 / (2.0 * v2);
+  arma::vec mtmusig2, mtsig2;
+  if (msvar){
+    mtmusig2 = -resid * (1.0 - phisum) / (v2 * v2);
+    mtsig2   = 1.0 / (2.0 * v2 * v2) - arma::square(resid) / (v2 * v2 * v2);
+  }
+
+  int ncol = nar + 2;
+  arma::mat ltmx(nn, ncol);
+  ltmx.col(0) = ltmu;
+  ltmx.cols(1, nar) = ltphi;
+  ltmx.col(nar + 1) = ltsig2;
+
+  arma::mat A = ltmx.t() * ltmx;
+  arma::mat Ainv;
+  bool inv_ok = arma::inv_sympd(Ainv, A);
+  if (!inv_ok) Ainv = arma::pinv(A);
+
+  int seqlen = static_cast<int>(std::round((rho_b - (-rho_b)) * 100)) + 1;
+  arma::vec rhogrid = arma::linspace<arma::vec>(-rho_b, rho_b, seqlen);
+  double tol = 1e-5;
+
+  double supTS;
+  double expTS;
+
+  if (!msvar){
+    arma::vec cv(seqlen), cv2(seqlen);
+    for (int ir = 0; ir < seqlen; ir++){
+      arma::vec mu2t = mu2t_vec(rhogrid(ir), 1.0, 0.0, mtmu, ltmu, mtmusig2, mtsig2, ltsig2, nn);
+      double gamma_e = arma::sum(mu2t) / std::sqrt((double) tt);
+      arma::vec sol = Ainv * (ltmx.t() * mu2t);
+      arma::vec eps = mu2t - ltmx * sol;
+      double esqe = arma::mean(arma::square(eps));
+      if (esqe < tol){
+        cv(ir) = 0.0; cv2(ir) = 1.0;
+      } else {
+        double tspe = gamma_e / std::sqrt(esqe);
+        cv(ir)  = std::pow(std::max(tspe, 0.0), 2.0) / 2.0;
+        cv2(ir) = exp_ts_term(tspe);
       }
-      chps(0) = arma::as_scalar(max(cv));
-      chps(1) = arma::as_scalar(mean(cv2));
     }
-  }else{
-    // If both Mean and Variance can Switch
-    arma::vec mtmusig2  = ltmt["mtmusig2"];
-    arma::mat mtmuphi   = ltmt["mtmuphi"];
-    arma::mat mtphisig2 = ltmt["mtphisig2"];
-    arma::vec mtsig2    = ltmt["mtsig2"];
-    arma::mat cv(seqlen,100,arma::fill::zeros); // stores supTS critical values for each rho
-    arma::mat cv2(seqlen,100,arma::fill::zeros); // stores expTS critical values for each rho
-    arma::mat h(100,2,arma::fill::randn);
-    // loop  over h 
-    for (int ih=0; ih<100; ih++){
-      arma::vec hv((nar + 2),arma::fill::zeros);
-      arma::mat h2 = h.row(ih)%h.row(ih);
-      if (!arma::all(arma::vectorise(h2) > 1e-10)) continue;  // degenerate h: skip
-      arma::mat hu = h.row(ih) / h2;   // h-vector uniformly over the unit sphere
-      hv(0) = hu(0,0);
-      hv(nar + 1) = hu(0,1);
-      arma::vec rhotmp = arma::linspace<arma::vec>(-rho_b,rho_b,seqlen);
-      for (int ir=0; ir<seqlen; ir++){
-        double rhotmp2 = arma::as_scalar(rhotmp(ir));
-        arma::vec mu2t = calc_mu2t_mv(mdl,rhotmp2,ltmt,hv);
-        double gamma_e = sum(mu2t)/sqrt(tt);
-        // error from mu2t - projection of mu2t on lt1
-        arma::mat tmp = arma::trans(ltmx) * ltmx;
-        arma::vec epsilont = mu2t - (ltmx * arma::inv(tmp) * arma::trans(ltmx) * mu2t);
-        double esqe = mean(arma::square(epsilont));
-        double tspe = gamma_e/sqrt(esqe);
-        double tol = 0.00001; 
-        if (esqe<tol){
-          cv(ir,ih) = 0.0;
-          cv2(ir,ih) = 1.0;
-        }else {
-          // supTS test statistic 
-          arma::vec tspetmp(2,arma::fill::zeros);
-          tspetmp(0) = tspe;
-          cv(ir,ih) = pow(max(tspetmp),2.0)/2.0;
-          // expTS test statistic  
-          double tspetmp2 = tspe - 1.0;
-          cv2(ir,ih) = sqrt(2.0*arma::datum::pi)*exp(pow(tspetmp2,2.0)/2.0)*arma::normcdf(tspetmp2);
+    supTS = cv.max();
+    expTS = arma::mean(cv2);
+  } else {
+    arma::vec cv(100 * seqlen), cv2(100 * seqlen);
+    int idx = 0;
+    for (int ih = 0; ih < 100; ih++){
+      double hu1, hu2, sumsq;
+      do {
+        arma::vec draw = arma::randn(2);
+        sumsq = arma::as_scalar(draw.t() * draw);
+        hu1 = draw(0) / sumsq;
+        hu2 = draw(1) / sumsq;
+      } while (!std::isfinite(hu1) || !std::isfinite(hu2) || sumsq < 1e-10);
+      for (int ir = 0; ir < seqlen; ir++){
+        arma::vec mu2t = mu2t_vec(rhogrid(ir), hu1, hu2, mtmu, ltmu, mtmusig2, mtsig2, ltsig2, nn);
+        double gamma_e = arma::sum(mu2t) / std::sqrt((double) tt);
+        arma::vec sol = Ainv * (ltmx.t() * mu2t);
+        arma::vec eps = mu2t - ltmx * sol;
+        double esqe = arma::mean(arma::square(eps));
+        if (esqe < tol){
+          cv(idx) = 0.0; cv2(idx) = 1.0;
+        } else {
+          double tspe = gamma_e / std::sqrt(esqe);
+          cv(idx)  = std::pow(std::max(tspe, 0.0), 2.0) / 2.0;
+          cv2(idx) = exp_ts_term(tspe);
         }
+        idx++;
       }
     }
-    arma::vec cvtmp =  arma::vectorise(cv);
-    arma::vec cv2tmp =  arma::vectorise(cv2);
-    chps(0) = arma::as_scalar(max(cvtmp));
-    chps(1) = arma::as_scalar(mean(cv2tmp));
+    supTS = cv.max();
+    expTS = arma::mean(cv2);
   }
-  return(chps);
+
+  arma::vec out(2);
+  out(0) = supTS;
+  out(1) = expTS;
+  return out;
 }
 
-//  ==============================================================================
+//' @title Test statistic for CHP 2014 parameter stability test
+//'
+//' @description Computes the supTS and expTS test statistics of Carrasco, Hu
+//'   & Ploberger (2014) for a fitted AR(p) model under the null of parameter
+//'   constancy.
+//'
+//' @param mdl List containing model attributes (see \code{\link{ARmdl}}):
+//'   \code{resid}, \code{x}, \code{mu}, \code{phi}, \code{stdev}.
+//' @param rho_b Number determining bounds for the grid search over \code{rho}
+//'   (i.e. \code{rho} in \code{[-rho_b, rho_b]}, step \code{0.01}).
+//' @param msvar Boolean. If \code{TRUE}, the alternative has switching mean
+//'   and variance; if \code{FALSE}, switching mean only.
+//'
+//' @return A (\code{2 x 1}) vector with the supTS statistic first and the
+//'   expTS statistic second.
+//'
+//' @keywords internal
+//'
+//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal
+//'   test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
+//'
+//' @export
+// [[Rcpp::export]]
+arma::vec chpStat(List mdl, double rho_b, bool msvar){
+  arma::vec resid = mdl["resid"];
+  arma::mat x      = mdl["x"];
+  double mu        = mdl["mu"];
+  arma::vec phi    = mdl["phi"];
+  double stdev     = mdl["stdev"];
+  return chp_stat_core(resid, x, mu, phi, stdev, rho_b, msvar);
+}
+
 //' @title Bootstrap critical values for CHP 2014 parameter stability test
 //'
-//' @description This bootstrap procedure is described on pg. 771 of CHP 2014.
+//' @description Parametric bootstrap described on p. 771 of Carrasco, Hu &
+//'   Ploberger (2014): simulate under the null at the fitted parameters,
+//'   re-estimate, and recompute the test statistic, entirely in C++ (no calls
+//'   back into R per replication).
 //'
+//' @param mdl List containing model attributes (see \code{\link{ARmdl}}):
+//'   \code{n}, \code{mu}, \code{sigma}, \code{phi}.
+//' @param rho_b Number determining bounds for the grid search over \code{rho}.
+//' @param N Number of bootstrap replications.
+//' @param msvar Boolean. If \code{TRUE}, the alternative has switching mean
+//'   and variance; if \code{FALSE}, switching mean only.
+//' @param burnin Burn-in length used to simulate each bootstrap sample from
+//'   its stationary distribution. Default is \code{100}.
 //'
-//' @param mdl List containing model attributes (see \code{\link{ARmdl}}).
-//' @param rho_b Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).
-//' @param N Number of bootstrap simulations.
-//' @param msvar Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
-//' 
-//' @return Bootstrap critical values
-//' 
-//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
-//' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
-//' 
+//' @return A (\code{N x 2}) matrix with the bootstrapped supTS statistic in
+//'   the first column and expTS in the second.
+//'
+//' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal
+//'   test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
+//'
 //' @export
 // [[Rcpp::export]]
-arma::mat CHPbootCV(List mdl, double rho_b, int N, bool msvar){
-  // calling required R functions 
-  Function simuAR("simuAR");
-  Function ARmdl("ARmdl");
-  Function chpDmat("chpDmat");
-  // define vars from Model list
-  int ar =  mdl["p"];
-  arma::vec supb(N,arma::fill::zeros);  // stores the bootstrapped supTS critical value
-  arma::vec expb(N,arma::fill::zeros);  // stores the bootstrapped expTS critical value
-  List y_out_tmp;
-  arma::vec y0;
-  List Mdl_tmp;
-  List ltmtb;
-  arma::vec cv4;
-  List armdl_con;
-  bool const_con = TRUE;
-  bool getSE_con = FALSE;
-  armdl_con["const"] = const_con;
-  armdl_con["getSE"] = getSE_con;
+arma::mat CHPbootCV(List mdl, double rho_b, int N, bool msvar, int burnin = 100){
+  int ar = mdl["p"];
+  // mdl$n (from ARmdl) is the AR-adjusted observation count, T - p, not the
+  // original series length T; each bootstrap draw is simulated at the full T
+  // so that re-estimating AR(p) on it recovers the same T - p usable
+  // observations the original fit used.
+  List sim_dgp = clone(mdl);
+  int Tfull = as<int>(mdl["n"]) + ar;
+  sim_dgp["n"] = Tfull;
+  arma::vec supb(N), expb(N);
   int itb = 0;
-  while (itb<N){
-    // simulate the series N times according to ML estimators 
-    y_out_tmp = simuAR(mdl);
-    y0        = as<arma::vec>(y_out_tmp["y"]);
-    Mdl_tmp   = ARmdl(y0,ar,armdl_con);
-    ltmtb     = chpDmat(Mdl_tmp, msvar);
-    cv4       = chpStat(Mdl_tmp, rho_b, ltmtb, msvar);
-    if (cv4.has_nan()==FALSE){
-      supb(itb)   = cv4(0);
-      expb(itb)   = cv4(1);
-      itb = itb + 1;
+  while (itb < N){
+    List sim = simuAR_cpp(sim_dgp, burnin);
+    arma::vec y0 = sim["y"];
+    ARfit fit = ar_ols_fit(y0, ar);
+    arma::vec cv4 = chp_stat_core(fit.resid, fit.x, fit.mu, fit.phi, fit.stdev, rho_b, msvar);
+    if (cv4.is_finite()){
+      supb(itb) = cv4(0);
+      expb(itb) = cv4(1);
+      itb++;
     }
   }
-  arma::mat boot_out = join_rows(supb,expb);
-  return(boot_out);  
+  return arma::join_rows(supb, expb);
 }
-
-
-
-
-
-
-
-
-
-

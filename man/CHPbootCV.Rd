@@ -4,24 +4,33 @@
 \alias{CHPbootCV}
 \title{Bootstrap critical values for CHP 2014 parameter stability test}
 \usage{
-CHPbootCV(mdl, rho_b, N, msvar)
+CHPbootCV(mdl, rho_b, N, msvar, burnin = 100L)
 }
 \arguments{
-\item{mdl}{List containing model attributes (see \code{\link{ARmdl}}).}
+\item{mdl}{List containing model attributes (see \code{\link{ARmdl}}):
+\code{n}, \code{mu}, \code{sigma}, \code{phi}.}
 
-\item{rho_b}{Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).}
+\item{rho_b}{Number determining bounds for the grid search over \code{rho}.}
 
-\item{N}{Number of bootstrap simulations.}
+\item{N}{Number of bootstrap replications.}
 
-\item{msvar}{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
+\item{msvar}{Boolean. If \code{TRUE}, the alternative has switching mean
+and variance; if \code{FALSE}, switching mean only.}
+
+\item{burnin}{Burn-in length used to simulate each bootstrap sample from
+its stationary distribution. Default is \code{100}.}
 }
 \value{
-Bootstrap critical values
+A (\code{N x 2}) matrix with the bootstrapped supTS statistic in
+  the first column and expTS in the second.
 }
 \description{
-This bootstrap procedure is described on pg. 771 of CHP 2014.
+Parametric bootstrap described on p. 771 of Carrasco, Hu &
+  Ploberger (2014): simulate under the null at the fitted parameters,
+  re-estimate, and recompute the test statistic, entirely in C++ (no calls
+  back into R per replication).
 }
 \references{
-Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
-test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
+Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal
+  test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 }

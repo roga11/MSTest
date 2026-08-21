@@ -65,91 +65,57 @@ arP_cpp <- function(P, k, ar) {
     .Call(`_MSTest_arP_cpp`, P, k, ar)
 }
 
-#' @title Test statistic for switch in mean and variance
-#'
-#' @description This function computes part of the test statistic given by 
-#' eq. 2.5 of CHP 2014 when the alternative has switching mean and variance. 
-#' The output is used in \code{\link{chpStat}} which computes the full test
-#' statistics.
-#'
-#' @param mdl List containing model attributes (see \code{\link{ARmdl}}).
-#' @param rho Number determining value of \code{rho}.
-#' @param ltmt List containing derivatives output from \code{\link{chpDmat}}.
-#' @param hv Number determining value of \code{h}.
-#' 
-#' @return Part of test statistic given \code{rho} and \code{hv} value. 
-#' 
-#' @keywords internal
-#' 
-#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
-#' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
-#' 
-#' @export
-calc_mu2t_mv <- function(mdl, rho, ltmt, hv) {
-    .Call(`_MSTest_calc_mu2t_mv`, mdl, rho, ltmt, hv)
-}
-
-#' @title Test statistic for switch in mean only 
-#'
-#' @description This function computes part of the test statistic given by 
-#' eq. 2.5 of CHP 2014 when the alternative has switching mean only. The output 
-#' is used in \code{\link{chpStat}} which computes the full test statistics.
-#'
-#' @param mdl List containing model attributes (see \code{\link{ARmdl}}).
-#' @param rho Number determining value of \code{rho}.
-#' @param ltmt List containing derivatives output from \code{\link{chpDmat}}.
-#' 
-#' @return Part of test statistic given \code{rho} and \code{hv} value. 
-#' 
-#' @keywords internal
-#' 
-#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
-#' 
-#' @export
-calc_mu2t <- function(mdl, rho, ltmt) {
-    .Call(`_MSTest_calc_mu2t`, mdl, rho, ltmt)
-}
-
 #' @title Test statistic for CHP 2014 parameter stability test
-#' 
-#' @description This function computes the supTS and expTS test-statistics 
-#' proposed in CHP 2014.
 #'
-#' @param mdl List containing model attributes (see \code{\link{ARmdl}}).
-#' @param rho_b Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).
-#' @param ltmt List containing derivatives output from \code{\link{chpDmat}}.
-#' @param msvar Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
-#' 
-#' @return A (\code{2 x 1}) vector with supTS test statistic as first element and expTS test-statistics as second element.
-#' 
+#' @description Computes the supTS and expTS test statistics of Carrasco, Hu
+#'   & Ploberger (2014) for a fitted AR(p) model under the null of parameter
+#'   constancy.
+#'
+#' @param mdl List containing model attributes (see \code{\link{ARmdl}}):
+#'   \code{resid}, \code{x}, \code{mu}, \code{phi}, \code{stdev}.
+#' @param rho_b Number determining bounds for the grid search over \code{rho}
+#'   (i.e. \code{rho} in \code{[-rho_b, rho_b]}, step \code{0.01}).
+#' @param msvar Boolean. If \code{TRUE}, the alternative has switching mean
+#'   and variance; if \code{FALSE}, switching mean only.
+#'
+#' @return A (\code{2 x 1}) vector with the supTS statistic first and the
+#'   expTS statistic second.
+#'
 #' @keywords internal
-#' 
-#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
-#' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
-#' 
+#'
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal
+#'   test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
+#'
 #' @export
-chpStat <- function(mdl, rho_b, ltmt, msvar) {
-    .Call(`_MSTest_chpStat`, mdl, rho_b, ltmt, msvar)
+chpStat <- function(mdl, rho_b, msvar) {
+    .Call(`_MSTest_chpStat`, mdl, rho_b, msvar)
 }
 
 #' @title Bootstrap critical values for CHP 2014 parameter stability test
 #'
-#' @description This bootstrap procedure is described on pg. 771 of CHP 2014.
+#' @description Parametric bootstrap described on p. 771 of Carrasco, Hu &
+#'   Ploberger (2014): simulate under the null at the fitted parameters,
+#'   re-estimate, and recompute the test statistic, entirely in C++ (no calls
+#'   back into R per replication).
 #'
+#' @param mdl List containing model attributes (see \code{\link{ARmdl}}):
+#'   \code{n}, \code{mu}, \code{sigma}, \code{phi}.
+#' @param rho_b Number determining bounds for the grid search over \code{rho}.
+#' @param N Number of bootstrap replications.
+#' @param msvar Boolean. If \code{TRUE}, the alternative has switching mean
+#'   and variance; if \code{FALSE}, switching mean only.
+#' @param burnin Burn-in length used to simulate each bootstrap sample from
+#'   its stationary distribution. Default is \code{100}.
 #'
-#' @param mdl List containing model attributes (see \code{\link{ARmdl}}).
-#' @param rho_b Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).
-#' @param N Number of bootstrap simulations.
-#' @param msvar Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.
-#' 
-#' @return Bootstrap critical values
-#' 
-#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
-#' test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
-#' 
+#' @return A (\code{N x 2}) matrix with the bootstrapped supTS statistic in
+#'   the first column and expTS in the second.
+#'
+#' @references Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal
+#'   test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
+#'
 #' @export
-CHPbootCV <- function(mdl, rho_b, N, msvar) {
-    .Call(`_MSTest_CHPbootCV`, mdl, rho_b, N, msvar)
+CHPbootCV <- function(mdl, rho_b, N, msvar, burnin = 100L) {
+    .Call(`_MSTest_CHPbootCV`, mdl, rho_b, N, msvar, burnin)
 }
 
 #' @title Likelihood ratio test statistic sample distribution

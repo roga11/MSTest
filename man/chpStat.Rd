@@ -4,26 +4,29 @@
 \alias{chpStat}
 \title{Test statistic for CHP 2014 parameter stability test}
 \usage{
-chpStat(mdl, rho_b, ltmt, msvar)
+chpStat(mdl, rho_b, msvar)
 }
 \arguments{
-\item{mdl}{List containing model attributes (see \code{\link{ARmdl}}).}
+\item{mdl}{List containing model attributes (see \code{\link{ARmdl}}):
+\code{resid}, \code{x}, \code{mu}, \code{phi}, \code{stdev}.}
 
-\item{rho_b}{Number determining bounds for distribution of \code{rh0} (i.e. \code{rho} ~ \code{[-rho_b,rho_b]}).}
+\item{rho_b}{Number determining bounds for the grid search over \code{rho}
+(i.e. \code{rho} in \code{[-rho_b, rho_b]}, step \code{0.01}).}
 
-\item{ltmt}{List containing derivatives output from \code{\link{chpDmat}}.}
-
-\item{msvar}{Boolean indicator. If \code{TRUE}, there is a switch in variance. If \code{FALSE} only switch in mean is considered.}
+\item{msvar}{Boolean. If \code{TRUE}, the alternative has switching mean
+and variance; if \code{FALSE}, switching mean only.}
 }
 \value{
-A (\code{2 x 1}) vector with supTS test statistic as first element and expTS test-statistics as second element.
+A (\code{2 x 1}) vector with the supTS statistic first and the
+  expTS statistic second.
 }
 \description{
-This function computes the supTS and expTS test-statistics 
-proposed in CHP 2014.
+Computes the supTS and expTS test statistics of Carrasco, Hu
+  & Ploberger (2014) for a fitted AR(p) model under the null of parameter
+  constancy.
 }
 \references{
-Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal 
-test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
+Carrasco, Marine, Liang Hu, and Werner Ploberger. 2014. “Optimal
+  test for Markov switching parameters.” \emph{Econometrica} 82 (2): 765–784.
 }
 \keyword{internal}

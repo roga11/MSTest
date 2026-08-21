@@ -54,16 +54,36 @@ test_that("eps of the wrong length errors, naming both lengths -- including leng
   expect_error(MMC_bounds(mdl9, .eps_con(rep(0.1, 3))), "length 1 or length\\(theta_0\\) = 9")
 })
 
-test_that("non-finite or non-positive eps entries are rejected, not silently accepted", {
+test_that("non-finite or negative eps entries are rejected, not silently accepted", {
   mdl <- .eps_mdl()
   expect_error(MMC_bounds(mdl, .eps_con(NA_real_)), "finite")
   expect_error(MMC_bounds(mdl, .eps_con(Inf)), "finite")
-  expect_error(MMC_bounds(mdl, .eps_con(-0.1)), "strictly positive")
-  expect_error(MMC_bounds(mdl, .eps_con(0)), "strictly positive")
-  ev <- rep(0.1, length(mdl$theta)); ev[3] <- 0
-  expect_error(MMC_bounds(mdl, .eps_con(ev)), "strictly positive")
+  expect_error(MMC_bounds(mdl, .eps_con(-0.1)), "non-negative")
+  ev <- rep(0.1, length(mdl$theta)); ev[3] <- -0.1
+  expect_error(MMC_bounds(mdl, .eps_con(ev)), "non-negative")
   ev2 <- rep(0.1, length(mdl$theta)); ev2[3] <- NA_real_
   expect_error(MMC_bounds(mdl, .eps_con(ev2)), "finite")
+})
+
+test_that("eps = 0 is valid: a zero-width box with no optimizer specified, nudged for GenSA", {
+  mdl <- .eps_mdl()
+  # No 'type' in .eps_con(): eps = 0 gives a genuinely zero-width box, no error.
+  out <- expect_silent(MMC_bounds(mdl, .eps_con(0)))
+  expect_equal(out$theta_low, as.numeric(mdl$theta))
+  expect_equal(out$theta_upp, as.numeric(mdl$theta))
+  # A single zero entry in a vector behaves the same way, coordinate-wise.
+  ev <- rep(0.1, length(mdl$theta)); ev[3] <- 0
+  out2 <- expect_silent(MMC_bounds(mdl, .eps_con(ev)))
+  expect_equal(out2$theta_low[3], as.numeric(mdl$theta)[3])
+  expect_equal(out2$theta_upp[3], as.numeric(mdl$theta)[3])
+  # type = "GenSA": a zero entry is nudged to 1e-8 (GenSA errors on a genuinely
+  # zero-width bound; pso/GA do not, so they are left alone).
+  con_gensa <- utils::modifyList(.eps_con(0), list(type = "GenSA"))
+  out3 <- expect_silent(MMC_bounds(mdl, con_gensa))
+  expect_equal(out3$theta_upp - out3$theta_low, rep(2e-8, length(mdl$theta)))
+  con_pso <- utils::modifyList(.eps_con(0), list(type = "pso"))
+  out4 <- expect_silent(MMC_bounds(mdl, con_pso))
+  expect_equal(out4$theta_low, as.numeric(mdl$theta))   # pso: not nudged, stays zero-width
 })
 
 test_that("a vector eps composes correctly with the P clamp", {
@@ -109,6 +129,39 @@ test_that("a vector eps composes correctly with the CI union and a per-coordinat
   expect_equal(out$theta_upp[2], th[2] + 0.1)
 })
 
+test_that("a non-finite phi_low/phi_upp/P_low/P_upp/variance_constraint errors by name, not with an opaque crash", {
+  mdl <- .eps_mdl()
+  expect_error(MMC_bounds(mdl, utils::modifyList(.eps_con(0.1), list(phi_low = NA_real_))),
+               "'phi_low' must be finite")
+  expect_error(MMC_bounds(mdl, utils::modifyList(.eps_con(0.1), list(phi_upp = NA_real_))),
+               "'phi_upp' must be finite")
+  expect_error(MMC_bounds(mdl, utils::modifyList(.eps_con(0.1), list(P_low = NA_real_))),
+               "'P_low' must be finite")
+  expect_error(MMC_bounds(mdl, utils::modifyList(.eps_con(0.1), list(P_upp = NA_real_))),
+               "'P_upp' must be finite")
+  expect_error(MMC_bounds(mdl, utils::modifyList(.eps_con(0.1), list(variance_constraint = NA_real_))),
+               "'variance_constraint' must be finite")
+  expect_error(MMC_bounds(mdl, utils::modifyList(.eps_con(0.1), list(variance_constraint = NULL))),
+               "'variance_constraint' must not be NULL")
+  # the phi_low/phi_upp checks above fire despite .eps_mdl() having p = 0L, where
+  # phi_low/phi_upp would never otherwise be read downstream in this call -- proof
+  # the validation is unconditional, not gated behind mdl_h0$p > 0
+  expect_true(mdl$p == 0L)
+})
+
+test_that("phi_low/phi_upp/P_low/P_upp stay optional: NULL is not an error", {
+  mdl <- .eps_mdl()
+  out <- expect_silent(MMC_bounds(mdl, .eps_con(0.1)))
+  expect_true(all(is.finite(out$theta_low)))
+})
+
+test_that("a non-finite theta_0 (a pathological upstream fit) errors informatively instead of crashing on if(NA)", {
+  mdl <- .eps_mdl()
+  mdl$theta["x_1"] <- NaN
+  expect_error(MMC_bounds(mdl, .eps_con(0.1)),
+               "MMC_bounds: the search box is non-finite for x_1")
+})
+
 test_that("MMCLRTest itself rejects a bad eps before any simulation or search", {
   skip_on_cran()
   set.seed(4141)
@@ -117,6 +170,6 @@ test_that("MMCLRTest itself rejects a bad eps before any simulation or search", 
     MMCLRTest(y, p = 1, k0 = 1, k1 = 2, control = list(N = 9, mc_seed = 4141, eps = c(0.1, 0.2))),
     "length 1 or length\\(theta_0\\)")
   expect_error(
-    MMCLRTest(y, p = 1, k0 = 1, k1 = 2, control = list(N = 9, mc_seed = 4141, eps = 0)),
-    "strictly positive")
+    MMCLRTest(y, p = 1, k0 = 1, k1 = 2, control = list(N = 9, mc_seed = 4141, eps = -0.1)),
+    "non-negative")
 })

@@ -1,3 +1,28 @@
+# MSTest 0.1.9.9012
+
+## Carrasco, Hu & Ploberger (2014) parameter stability test
+
+* `CHPTest()` is about 30x faster for the switching-variance alternative,
+  after moving the statistic and bootstrap into C++.
+* Three defects fixed in the switching-variance alternative: an accumulated
+  curvature total was halved again on every iteration instead of only its
+  newly added term; a recursive cross term started one sample point late;
+  and a random direction vector used the wrong normalization formula.
+  Verified against Carrasco, Hu & Ploberger (2014), Table III, on
+  `hamilton84GNP` and `chp10GNP`. The switching-mean-only alternative was
+  not affected.
+
+## MMC and DLMMC nuisance-parameter search box
+
+* `eps = 0` is now a valid search half-width for `MMCLRTest()` and
+  `DLMMCTest()`; `GenSA` nudges a zero entry to `1e-8` since it does not
+  accept a literal zero-width bound, unlike `pso`/`GA`.
+* `DLMMC_bounds()` now falls back to `eps` per coefficient when its standard
+  error is non-finite, instead of discarding the confidence-interval
+  widening for every coefficient because of one, matching `MMC_bounds()`.
+* `phi_low`, `phi_upp`, `P_low`, `P_upp`, and `variance_constraint` are
+  validated before use; a non-finite value now errors by name.
+
 # MSTest 0.1.9.9011
 
 ## Maximized Monte Carlo LR test: transition-matrix search

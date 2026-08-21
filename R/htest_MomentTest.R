@@ -122,37 +122,78 @@ DLMCTest <- function(Y, p, control = list()){
 
 
 #' @title MMC nuisance parameter bounds for Moment-based test
-#' 
+#'
 #' @description This function is used to determine the lower and upper bounds for the MMC LRT parameter search.
-#' 
+#'
 #' @param mdl_h0 List with restricted model properties.
-#' @param con List with control options provided to \code{DLMMCTest} procedure.
-#' 
+#' @param con List with control options provided to \code{DLMMCTest} procedure. \code{con$eps} may be a scalar, recycled to every coordinate, or a vector of length \code{length(mdl_h0$phi)} giving a different search half-width per autoregressive coefficient. Every entry must be finite and non-negative; \code{eps = 0} relies entirely on \code{CI_union} to widen the box, and when \code{con$optim_type = "GenSA"} a zero entry is nudged to \code{1e-8} (GenSA treats a genuinely zero-width bound as invalid, unlike \code{pso}/\code{GA}). \code{con$phi_low}/\code{con$phi_upp}, if not \code{NULL}, must be finite.
+#'
 #' @return List with \code{theta_low}, vector of parameter lower bounds, and \code{theta_upp}, vector of parameter upper bounds.
-#' 
+#'
 #' @keywords internal
-#' 
+#'
 #' @export
 DLMMC_bounds <- function(mdl_h0, con){
   theta_0 <- mdl_h0$phi
+  eps <- .validate_mmc_eps(con$eps, length(theta_0), fn_name = "DLMMC_bounds", method = con$optim_type)
+  con$phi_low <- .validate_box_control(con$phi_low, "phi_low", "DLMMC_bounds")
+  con$phi_upp <- .validate_box_control(con$phi_upp, "phi_upp", "DLMMC_bounds")
   # ----- Define lower & upper bounds for MMC search
-  theta_low <- theta_0 - con$eps
-  theta_upp <- theta_0 + con$eps
-  # if CI_union==TRUE use union of eps & 2*standard error to define bounds
+  theta_low <- theta_0 - eps
+  theta_upp <- theta_0 + eps
+  # create ball around the union of eps and 2*standard error, per coefficient; a
+  # coefficient without a finite standard error contributes only its eps band,
+  # without shrinking the other coefficients' bounds
   phi_ind <- mdl_h0$theta_phi_ind
   phiSE <- mdl_h0$theta_se[phi_ind==1]
-  if ((con$CI_union==TRUE) & all(is.finite(phiSE))){
-    theta_low <- apply(cbind(as.matrix(theta_0 - 2*phiSE), as.matrix(theta_low)), 1, FUN = min)
-    theta_upp <- apply(cbind(as.matrix(theta_0 + 2*phiSE), as.matrix(theta_upp)), 1, FUN = max)
+  if (isTRUE(con$CI_union) && !is.null(mdl_h0$theta_se) &&
+      length(c(phiSE)) == length(c(theta_0))){
+    se <- c(phiSE)
+    se[!is.finite(se)] <- 0
+    theta_low <- pmin(c(theta_low), c(theta_0) - 2*se)
+    theta_upp <- pmax(c(theta_upp), c(theta_0) + 2*se)
   }
   if (is.null(con$phi_low)==FALSE){
     theta_low <- apply(cbind(as.matrix(theta_low),as.matrix(con$phi_low)), 1, function(x) max(x))
-  }  
+  }
   if (is.null(con$phi_upp)==FALSE){
     theta_upp <- apply(cbind(as.matrix(theta_upp),as.matrix(con$phi_upp)), 1, function(x) min(x))
-  }  
+  }
   # ----- output
-  mmc_bounds <- list(theta_low = theta_low, theta_upp = theta_upp)
+  # Same rationale as MMC_bounds(): theta_low, theta_upp and theta_0 should all be
+  # finite by this point, but a pathological fit can still hand this function a
+  # non-finite theta_0 having only triggered a warning upstream, and `if (any(NA >
+  # x))` throws an opaque generic error instead of an informative one. Caught
+  # explicitly, once, so the two checks below can assume everything is finite.
+  if (any(!is.finite(theta_low)) || any(!is.finite(theta_upp)) || any(!is.finite(theta_0))){
+    bad <- which(!is.finite(theta_low) | !is.finite(theta_upp) | !is.finite(theta_0))
+    nm  <- names(theta_0)[bad]
+    if (is.null(nm)) nm <- paste("position", bad)
+    stop("DLMMC_bounds: the search box is non-finite for ", paste(nm, collapse = ", "),
+         " -- theta_0, theta_low, or theta_upp has a non-finite entry there. This ",
+         "usually means the null model's own fit produced a non-finite parameter estimate.")
+  }
+  # A lower bound above its upper bound is unusable by any of the three optimizers,
+  # and a fitted value outside its own box means the reported p-value would not be
+  # a supremum over a region containing theta_0. Both are caught here, once,
+  # before any search runs.
+  if (any(theta_low > theta_upp)){
+    bad <- which(theta_low > theta_upp)
+    nm  <- names(theta_0)[bad]
+    if (is.null(nm)) nm <- paste("position", bad)
+    stop("DLMMC_bounds: the search box has a lower bound above its upper bound for ",
+         paste(sprintf("%s (%.6g > %.6g)", nm, theta_low[bad], theta_upp[bad]), collapse = ", "),
+         ". Widen 'eps', or check 'phi_low'/'phi_upp'.")
+  }
+  if (any(theta_0 < theta_low | theta_0 > theta_upp)){
+    bad <- which(theta_0 < theta_low | theta_0 > theta_upp)
+    nm  <- names(theta_0)[bad]
+    if (is.null(nm)) nm <- paste("position", bad)
+    stop("DLMMC_bounds: the fitted parameter vector falls outside the search box for ",
+         paste(sprintf("%s (%.6g, box [%.6g, %.6g])", nm, theta_0[bad], theta_low[bad], theta_upp[bad]), collapse = ", "),
+         ". Widen 'eps', or check 'phi_low'/'phi_upp'.")
+  }
+  mmc_bounds <- list(theta_low = as.numeric(theta_low), theta_upp = as.numeric(theta_upp))
   return(mmc_bounds)
 }
 
@@ -171,8 +212,8 @@ DLMMC_bounds <- function(mdl_h0, con){
 #'   \item N: Integer determining the number of Monte Carlo simulations. Default is set to \code{99} as in paper.
 #'   \item simdist_N: Integer determining the number of simulations for CDF distribution approximation. Default is set to \code{10000}.
 #'   \item getSE: Boolean indicator. If \code{TRUE}, standard errors for restricted model are estimated. If \code{FALSE} no standard errors are estimated. Default is \code{TRUE}.
-#'   \item eps: Fixed positive constant that does not depend on \code{T} used to determine lower and upper bounds on consistent set considered for nuisance parameter space.
-#'   \item CI_union: Boolean indicator determining if union between \code{eps} and confidence interval is used to determine lower and upper bound on consistent set considered for nuisance parameter space. If \code{TRUE} union is used and if \code{FALSE} only \code{eps} is used. Note that if standard errors obtained are not finite then only \code{eps} is used. Default is \code{FALSE}.       
+#'   \item eps: Fixed non-negative constant that does not depend on \code{T}, or a vector of length \code{p} giving a different value per autoregressive coefficient, used to determine lower and upper bounds on consistent set considered for nuisance parameter space. Every entry must be finite and non-negative; \code{eps = 0} is valid and typically relies on \code{CI_union} to widen the box (with \code{optim_type = "GenSA"}, a zero entry is nudged to \code{1e-8}, since GenSA treats a genuinely zero-width bound as invalid, unlike \code{pso}/\code{GA}).
+#'   \item CI_union: Boolean indicator determining if union between \code{eps} and confidence interval is used to determine lower and upper bound on consistent set considered for nuisance parameter space. If \code{TRUE} union is used and if \code{FALSE} only \code{eps} is used. A coefficient whose standard error is not finite falls back to \code{eps} alone for that coefficient only; other coefficients still use the union. Default is \code{FALSE}.       
 #'   \item lambda: Numeric value for penalty on stationary constraint not being met. Default is \code{100}.
 #'   \item stationary_ind: Boolean indicator determining if only stationary solutions should be considered if \code{TRUE} or any solution can be considered if \code{FALSE}. Default is \code{TRUE}.
 #'   \item phi_low: Vector with lower bound for autoregressive parameters when optimizing. Default is \code{NULL}.

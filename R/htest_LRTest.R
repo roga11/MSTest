@@ -460,27 +460,51 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
 # 'eps' may be a scalar (recycled to every coordinate) or a vector of
 # length(theta_0), so the search half-width can differ per parameter. A length
 # that merely divides length(theta_0) evenly would recycle silently with no
-# warning, so only exactly 1 or length(theta_0) is accepted. A zero-width entry
-# is rejected: it still costs the optimizer a search dimension and hard-errors
-# GenSA ("Lower and upper bounds are not consistent").
-.validate_mmc_eps <- function(eps, n_theta){
+# warning, so only exactly 1 or length(theta_0) is accepted. eps = 0 is valid
+# (typically relying entirely on CI_union to widen the box) but GenSA specifically
+# treats a genuinely zero-width bound as invalid ("Lower and upper bounds are not
+# consistent"), unlike pso/GA, which handle it fine; when the chosen optimizer is
+# GenSA and CI_union (or a phi_low/P_low-type clamp) hasn't already widened a
+# zero entry by the time the final box is built, that entry is nudged to 1e-8,
+# which GenSA accepts. Returns the (possibly nudged) eps, so callers must use
+# the return value, not the original input.
+.validate_mmc_eps <- function(eps, n_theta, fn_name = "MMC_bounds", method = NULL){
   if (!is.numeric(eps) || !(length(eps) %in% c(1L, n_theta))){
-    stop("MMC_bounds: 'eps' must have length 1 or length(theta_0) = ", n_theta,
+    stop(fn_name, ": 'eps' must have length 1 or length(theta_0) = ", n_theta,
          " (received length ", length(eps), "). A length that merely divides ",
          n_theta, " evenly is not accepted: it would recycle silently rather than ",
          "apply to the parameter block a user likely intended.")
   }
   if (any(!is.finite(eps))){
-    stop("MMC_bounds: 'eps' must be finite (received ",
+    stop(fn_name, ": 'eps' must be finite (received ",
          paste(eps[!is.finite(eps)], collapse = ", "), ").")
   }
-  if (any(eps <= 0)){
-    stop("MMC_bounds: 'eps' must be strictly positive (received ",
-         paste(eps[eps <= 0], collapse = ", "), "); a zero-width entry hard-errors ",
-         "GenSA and still costs the optimizer a search dimension. Use a small ",
-         "positive value instead.")
+  if (any(eps < 0)){
+    stop(fn_name, ": 'eps' must be non-negative (received ",
+         paste(eps[eps < 0], collapse = ", "), ").")
   }
-  invisible(TRUE)
+  if (isTRUE(method == "GenSA") && any(eps == 0)){
+    eps[eps == 0] <- 1e-8
+  }
+  eps
+}
+
+# A box-shaping control (phi_low/phi_upp/P_low/P_upp/variance_constraint) that is
+# non-finite -- an NA typo, most plausibly -- would otherwise flow silently into
+# theta_low/theta_upp and only surface later as an opaque `if (NA)` crash in the
+# box-shape checks below, far from the actual mistake. allow_null = FALSE is for
+# controls that always carry a real default (e.g. variance_constraint = 0.01) and
+# are unconditionally used, so NULL itself is also a mistake, not a "skip" signal.
+.validate_box_control <- function(x, nm, fn_name, allow_null = TRUE){
+  if (is.null(x)){
+    if (allow_null) return(x)
+    stop(fn_name, ": '", nm, "' must not be NULL.")
+  }
+  if (!is.numeric(x) || any(!is.finite(x))){
+    stop(fn_name, ": '", nm, "' must be finite (received ",
+         paste(x, collapse = ", "), ").")
+  }
+  x
 }
 
 #' @title MMC nuisance parameter bounds
@@ -488,7 +512,7 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
 #' @description This function is used to determine the lower and upper bounds for the MMC LRT parameter search.
 #'
 #' @param mdl_h0 List with restricted model properties.
-#' @param con List with control options provided to MMC LRT procedure. \code{con$eps} may be a scalar, recycled to every coordinate, or a vector of length \code{length(mdl_h0$theta)} giving a different search half-width per parameter, in the same order as \code{names(mdl_h0$theta)}. Every entry must be finite and strictly positive.
+#' @param con List with control options provided to MMC LRT procedure. \code{con$eps} may be a scalar, recycled to every coordinate, or a vector of length \code{length(mdl_h0$theta)} giving a different search half-width per parameter, in the same order as \code{names(mdl_h0$theta)}. Every entry must be finite and non-negative; \code{eps = 0} relies entirely on \code{CI_union} to widen the box, and when \code{con$type = "GenSA"} a zero entry is nudged to \code{1e-8} (GenSA treats a genuinely zero-width bound as invalid, unlike \code{pso}/\code{GA}). \code{con$phi_low}/\code{con$phi_upp}/\code{con$P_low}/\code{con$P_upp}, if not \code{NULL}, and \code{con$variance_constraint} must all be finite.
 #'
 #' @return List with \code{theta_low}, vector of parameter lower bounds, and \code{theta_upp}, vector of parameter upper bounds.
 #'
@@ -500,10 +524,15 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
 MMC_bounds <- function(mdl_h0, con){
   theta_0   <- mdl_h0$theta
   k0        <- mdl_h0$k
-  .validate_mmc_eps(con$eps, length(theta_0))
+  eps <- .validate_mmc_eps(con$eps, length(theta_0), method = con$type)
+  con$phi_low <- .validate_box_control(con$phi_low, "phi_low", "MMC_bounds")
+  con$phi_upp <- .validate_box_control(con$phi_upp, "phi_upp", "MMC_bounds")
+  con$P_low   <- .validate_box_control(con$P_low, "P_low", "MMC_bounds")
+  con$P_upp   <- .validate_box_control(con$P_upp, "P_upp", "MMC_bounds")
+  con$variance_constraint <- .validate_box_control(con$variance_constraint, "variance_constraint", "MMC_bounds", allow_null = FALSE)
   # ----- Define lower & upper bounds for search
-  theta_low = theta_0 - con$eps
-  theta_upp = theta_0 + con$eps
+  theta_low = theta_0 - eps
+  theta_upp = theta_0 + eps
   # create ball around the union of eps and 2*standard error, per parameter; a parameter
   # without a finite standard error (e.g. a variance at the EM floor) contributes only its
   # eps band, without shrinking the other parameters' bounds
@@ -537,6 +566,22 @@ MMC_bounds <- function(mdl_h0, con){
     }  
   }
   # ----- output
+  # theta_low, theta_upp and theta_0 should all be finite by this point (eps and
+  # every box-shaping control are validated above, and theta_0 comes from an
+  # already-fitted model) -- but a pathological fit can still hand this function a
+  # non-finite theta_0 having only triggered a warning upstream (the 'silent NaN
+  # theta' check in the model constructors), and `if (any(NA > x))` throws R's own
+  # generic "missing value where TRUE/FALSE needed" instead of an informative
+  # message. Caught explicitly, once, so the failure names what's actually wrong;
+  # the two checks below can then assume everything reaching them is finite.
+  if (any(!is.finite(theta_low)) || any(!is.finite(theta_upp)) || any(!is.finite(theta_0))){
+    bad <- which(!is.finite(theta_low) | !is.finite(theta_upp) | !is.finite(theta_0))
+    nm  <- names(theta_0)[bad]
+    if (is.null(nm)) nm <- paste("position", bad)
+    stop("MMC_bounds: the search box is non-finite for ", paste(nm, collapse = ", "),
+         " -- theta_0, theta_low, or theta_upp has a non-finite entry there. This ",
+         "usually means the null model's own fit produced a non-finite parameter estimate.")
+  }
   # A lower bound above its upper bound is unusable by any of the three optimizers:
   # GenSA errors, GA dies on a degenerate population, and pso silently searches the
   # inverted interval and returns a p-value for it. Reachable from 'eps' alone, and
@@ -591,7 +636,7 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item init_method: String determining how the alternative (\code{k1}-regime) model is initialized. \code{"warmstart"} (the default) adds deterministic warm starts built by embedding the null-model fit into the \code{k1}-regime space (see \code{\link{warmstart_theta}}) to the \code{use_diff_init} random starts, applied identically to the observed data and to every simulated draw. \code{"random"} reproduces the legacy behavior.
 #'   \item crn: Boolean determining whether common random numbers are used across the nuisance-parameter search (default \code{TRUE}): an identical estimation-RNG stream (EM starting values; master and worker streams) is replayed at every candidate theta evaluation, so that together with the pre-drawn innovations the MC p-value is a deterministic function of theta (Dufour 2006, Prop. 4.2, with the estimation randomness folded into the fixed disturbance vector). This removes optimizer objective noise and guarantees \code{pval >= pval_0} exactly. Set to \code{FALSE} for the legacy behavior (estimation randomness evolves across evaluations; still valid, but the objective is noisy and the reported maximum tends to be conservative). Note: with \code{init_method = "random"}, \code{crn = FALSE}, \code{workers = 0} and no \code{mc_seed}, a script-seeded call reproduces version 0.1.9 bit-for-bit.
 #'   \item type: String that determines the type of optimization algorithm used. Arguments allowed are: \code{"pso"}, \code{"GenSA"}, and \code{"GA"}. Default is \code{"pso"}.
-#'   \item eps: Double, or a vector of length \code{length(mdl_h0$theta)}, determining the half-width of the search box around \code{theta_0} for each parameter (a scalar is recycled to every coordinate; a vector lets the search be narrower for some parameters, e.g. transition probabilities, and wider for others, e.g. means -- entries are matched to \code{names(mdl_h0$theta)} positionally, i.e. in \code{theta}'s own order, so mind that a transition-probability entry named \code{p_12} is matrix entry \code{P[2,1]}). Every entry must be finite and strictly positive; a variance coordinate whose lower bound would reach zero is overridden by \code{variance_constraint} regardless of \code{eps}. Default is \code{0.1}.
+#'   \item eps: Double, or a vector of length \code{length(mdl_h0$theta)}, determining the half-width of the search box around \code{theta_0} for each parameter (a scalar is recycled to every coordinate; a vector lets the search be narrower for some parameters, e.g. transition probabilities, and wider for others, e.g. means -- entries are matched to \code{names(mdl_h0$theta)} positionally, i.e. in \code{theta}'s own order, so mind that a transition-probability entry named \code{p_12} is matrix entry \code{P[2,1]}). Every entry must be finite and non-negative; a variance coordinate whose lower bound would reach zero is overridden by \code{variance_constraint} regardless of \code{eps}. \code{eps = 0} is valid and typically relies on \code{CI_union} to widen the box; with \code{type = "GenSA"} a zero entry is nudged to \code{1e-8} (GenSA errors on a genuinely zero-width bound; \code{pso}/\code{GA} do not). Default is \code{0.1}.
 #'   \item CI_union: Boolean determining if union of set determined by \code{eps} and confidence set should be used to define consistent set for search. Default is \code{TRUE}.
 #'   \item lambda: Double determining penalty on nonlinear constraint. Default is \code{100}.
 #'   \item stationary_constraint: Boolean determining if only stationary solutions are considered (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{TRUE}.

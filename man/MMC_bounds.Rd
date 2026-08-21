@@ -9,7 +9,7 @@ MMC_bounds(mdl_h0, con)
 \arguments{
 \item{mdl_h0}{List with restricted model properties.}
 
-\item{con}{List with control options provided to MMC LRT procedure. \code{con$eps} may be a scalar, recycled to every coordinate, or a vector of length \code{length(mdl_h0$theta)} giving a different search half-width per parameter, in the same order as \code{names(mdl_h0$theta)}. Every entry must be finite and strictly positive.}
+\item{con}{List with control options provided to MMC LRT procedure. \code{con$eps} may be a scalar, recycled to every coordinate, or a vector of length \code{length(mdl_h0$theta)} giving a different search half-width per parameter, in the same order as \code{names(mdl_h0$theta)}. Every entry must be finite and non-negative; \code{eps = 0} relies entirely on \code{CI_union} to widen the box, and when \code{con$type = "GenSA"} a zero entry is nudged to \code{1e-8} (GenSA treats a genuinely zero-width bound as invalid, unlike \code{pso}/\code{GA}). \code{con$phi_low}/\code{con$phi_upp}/\code{con$P_low}/\code{con$P_upp}, if not \code{NULL}, and \code{con$variance_constraint} must all be finite.}
 }
 \value{
 List with \code{theta_low}, vector of parameter lower bounds, and \code{theta_upp}, vector of parameter upper bounds.

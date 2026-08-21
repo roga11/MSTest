@@ -9,7 +9,7 @@ DLMMC_bounds(mdl_h0, con)
 \arguments{
 \item{mdl_h0}{List with restricted model properties.}
 
-\item{con}{List with control options provided to \code{DLMMCTest} procedure.}
+\item{con}{List with control options provided to \code{DLMMCTest} procedure. \code{con$eps} may be a scalar, recycled to every coordinate, or a vector of length \code{length(mdl_h0$phi)} giving a different search half-width per autoregressive coefficient. Every entry must be finite and non-negative; \code{eps = 0} relies entirely on \code{CI_union} to widen the box, and when \code{con$optim_type = "GenSA"} a zero entry is nudged to \code{1e-8} (GenSA treats a genuinely zero-width bound as invalid, unlike \code{pso}/\code{GA}). \code{con$phi_low}/\code{con$phi_upp}, if not \code{NULL}, must be finite.}
 }
 \value{
 List with \code{theta_low}, vector of parameter lower bounds, and \code{theta_upp}, vector of parameter upper bounds.
