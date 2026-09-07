@@ -305,8 +305,18 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
                        Rcpp::Nullable<List> predrawn_eps = R_NilValue,
                        Rcpp::Nullable<Rcpp::NumericMatrix> predrawn_state_rand = R_NilValue){
   // ---------- Load R functions
+  // Estimation goes through the quiet wrapper (.estimMdl_quiet: tryCatch to
+  // NULL) rather than estimMdl directly: a failed per-draw fit here means
+  // "skip/retry", but an R error raised through Rcpp::Function would run
+  // every calling handler up the caller's stack before the catch below
+  // absorbs the unwind, so condition-recording callers (testthat, logging
+  // harnesses) would record hundreds of phantom errors per penalized
+  // candidate -- and the swallowed longjump is itself undefined behavior
+  // territory. With the wrapper, failure is an ordinary NULL return: nothing
+  // escapes, and the local throw below reaches the existing catch as a plain
+  // C++ exception.
   Rcpp::Environment mstest = Rcpp::Environment::namespace_env("MSTest");
-  Rcpp::Function estimMdl = mstest["estimMdl"];
+  Rcpp::Function estimMdl_quiet = mstest[".estimMdl_quiet"];
   // ---------- Define required parameters
   int k0  = mdl_h0["k"];
   int p   = mdl_h0["p"];
@@ -358,6 +368,14 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
   if (has_predrawn) {
     mdl_h0_sim = clone(mdl_h0);
   }
+  // One fit through the quiet wrapper; a NULL (failed fit) becomes a local
+  // C++ exception, which the per-draw catch below treats exactly as the old
+  // R-error unwind did -- same control flow, no escaping condition.
+  auto fit_or_throw = [&](arma::mat& y, int kk, List& ctl) -> List {
+    Rcpp::RObject fit_obj = estimMdl_quiet(y, p, q, kk, Z, ctl);
+    if (fit_obj.isNULL()) throw std::runtime_error("estimation failed");
+    return List(fit_obj);
+  };
   // ---------- Simulate test statistic under null hypothesis
   double LRT_i;
   List mdl_h0_tmp;
@@ -379,18 +397,18 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
     try {
       List simu_mdl = simuMdl(mdl_h0_sim, p, q, k0, burnin, exog);
       arma::mat y0 = simu_mdl["y"];
-      mdl_h0_tmp = estimMdl(y0, p, q, k0, Z, mdl_h0_control_tmp);
+      mdl_h0_tmp = fit_or_throw(y0, k0, mdl_h0_control_tmp);
       if (do_warmstart) {
         mdl_h1_control_tmp["init_theta_extra"] = warmstart_theta_fun(mdl_h0_tmp, k1, ws_msmu, ws_msvar);
       }
-      mdl_h1_tmp = estimMdl(y0, p, q, k1, Z, mdl_h1_control_tmp);
+      mdl_h1_tmp = fit_or_throw(y0, k1, mdl_h1_control_tmp);
       double l_0 = mdl_h0_tmp["logLike"];
       double l_1 = mdl_h1_tmp["logLike"];
       if (k0 > 1) {
         // H0 linear floor: the one-regime fit is a feasible point of the null space;
         // protects the statistic against a poor k0-regime local optimum (applied
         // identically to the observed statistic in LMCLRTest/MMCLRTest).
-        List mdl_lin_tmp = estimMdl(y0, p, q, 1, Z, mdl_lin_control);
+        List mdl_lin_tmp = fit_or_throw(y0, 1, mdl_lin_control);
         double l_lin = mdl_lin_tmp["logLike"];
         if (std::isfinite(l_lin) && (l_lin > l_0)) l_0 = l_lin;
       }
@@ -425,16 +443,16 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
       try {
         List simu_mdl = simuMdl(mdl_h0, p, q, k0, burnin, exog);
         arma::mat y0 = simu_mdl["y"];
-        mdl_h0_tmp = estimMdl(y0, p, q, k0, Z, mdl_h0_control_tmp);
+        mdl_h0_tmp = fit_or_throw(y0, k0, mdl_h0_control_tmp);
         if (do_warmstart) {
           mdl_h1_control_tmp["init_theta_extra"] = warmstart_theta_fun(mdl_h0_tmp, k1, ws_msmu, ws_msvar);
         }
-        mdl_h1_tmp = estimMdl(y0, p, q, k1, Z, mdl_h1_control_tmp);
+        mdl_h1_tmp = fit_or_throw(y0, k1, mdl_h1_control_tmp);
         double l_0 = mdl_h0_tmp["logLike"];
         double l_1 = mdl_h1_tmp["logLike"];
         if (k0 > 1) {
           // H0 linear floor (see pre-drawn loop above)
-          List mdl_lin_tmp = estimMdl(y0, p, q, 1, Z, mdl_lin_control);
+          List mdl_lin_tmp = fit_or_throw(y0, 1, mdl_lin_control);
           double l_lin = mdl_lin_tmp["logLike"];
           if (std::isfinite(l_lin) && (l_lin > l_0)) l_0 = l_lin;
         }

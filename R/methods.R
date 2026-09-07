@@ -1152,6 +1152,102 @@ print.MMCLRTest <- function(x, digits = getOption("digits"), ...){
 }
 
 
+#' @title Print summary of an \code{aURfixLMCTest} object
+#'
+#' @description This is a method for the function \code{print()} for objects of the class \code{aURfixLMCTest}.
+#'
+#' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
+#'
+#' @return The \code{aURfixLMCTest} object is returned invisibly.
+#'
+#' @keywords internal
+#'
+#' @export
+print.aURfixLMCTest <- function(x, digits = getOption("digits"), ...){
+  cat("Rodriguez-Rondon & Dufour (2026) Unit-Root-Augmented (fix) LMC-LRT\n")
+  out <- data.frame(LRT_0 = rep(unname(x$LRT_0), 3),
+                    `p-value` = c(x$pval_lmc, x$pval_fix, x$pval),
+                    check.names = FALSE)
+  rownames(out) <- c("LMC_LRT", "LMC_LRT (unit root fixed)", "composition (max)")
+  print(format(signif(out, max(1L, digits - 2L))))
+  cat("Reject only if the composition p-value is below the chosen level.\n")
+  invisible(x)
+}
+
+
+#' @title Print summary of an \code{aBfixLMCTest} object
+#'
+#' @description This is a method for the function \code{print()} for objects of the class \code{aBfixLMCTest}.
+#'
+#' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
+#'
+#' @return The \code{aBfixLMCTest} object is returned invisibly.
+#'
+#' @keywords internal
+#'
+#' @export
+print.aBfixLMCTest <- function(x, digits = getOption("digits"), ...){
+  cat("Rodriguez-Rondon & Dufour (2026) Boundary-Augmented (fix) LMC-LRT\n")
+  out <- data.frame(LRT_0 = rep(unname(x$LRT_0), 3),
+                    `p-value` = c(x$pval_lmc, x$pval_fix, x$pval),
+                    check.names = FALSE)
+  rownames(out) <- c("LMC_LRT", "LMC_LRT (absorbing regime fixed)", "composition (max)")
+  print(format(signif(out, max(1L, digits - 2L))))
+  cat("Reject only if the composition p-value is below the chosen level.\n")
+  invisible(x)
+}
+
+
+#' @title Print summary of an \code{aURdiffLMCTest} object
+#'
+#' @description This is a method for the function \code{print()} for objects of the class \code{aURdiffLMCTest}.
+#'
+#' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
+#'
+#' @return The \code{aURdiffLMCTest} object is returned invisibly.
+#'
+#' @keywords internal
+#'
+#' @export
+print.aURdiffLMCTest <- function(x, digits = getOption("digits"), ...){
+  cat("Rodriguez-Rondon & Dufour (2026) Unit-Root-Augmented (differencing) LMC-LRT\n")
+  out <- data.frame(LRT_0 = c(unname(x$lmc_levels$LRT_0), unname(x$lmc_diff$LRT_0), NA),
+                    `p-value` = c(x$pval_levels, x$pval_diff, x$pval),
+                    check.names = FALSE)
+  rownames(out) <- c("LMC_LRT (levels)", "LMC_LRT (differences)", "composition (max)")
+  print(format(signif(out, max(1L, digits - 2L))))
+  cat("Reject only if the composition p-value is below the chosen level.\n")
+  invisible(x)
+}
+
+
+#' @title Print summary of an \code{aURdiffMMCTest} object
+#'
+#' @description This is a method for the function \code{print()} for objects of the class \code{aURdiffMMCTest}.
+#'
+#' @inheritParams base::print
+#' @param digits Integer determining the number of significant digits to print.
+#'
+#' @return The \code{aURdiffMMCTest} object is returned invisibly.
+#'
+#' @keywords internal
+#'
+#' @export
+print.aURdiffMMCTest <- function(x, digits = getOption("digits"), ...){
+  cat("Rodriguez-Rondon & Dufour (2026) Unit-Root-Augmented (differencing) MMC-LRT\n")
+  out <- data.frame(LRT_0 = c(unname(x$mmc_levels$LRT_0), unname(x$mmc_diff$LRT_0), NA),
+                    `p-value` = c(x$pval_levels, x$pval_diff, x$pval),
+                    check.names = FALSE)
+  rownames(out) <- c("MMC_LRT (levels)", "MMC_LRT (differences)", "composition (max)")
+  print(format(signif(out, max(1L, digits - 2L))))
+  cat("Reject only if the composition p-value is below the chosen level.\n")
+  invisible(x)
+}
+
+
 
 
 
@@ -1596,6 +1692,114 @@ summary.MMCLRTest <- function(object, digits = getOption("digits"), ...){
   colnames(out) <- c(names(object$LRT_0), "p-value")
   rownames(out) <- "MMC_LRT"
   print(format(signif(out, max(1L, digits - 2L))))
+  invisible(object)
+}
+
+
+# Shared body for the augmented "fix" test summaries: the two model summaries
+# (as in summary.LMCLRTest) followed by the component/composition table.
+.summary_aug_fix <- function(object, digits, title, fix_label){
+  cat("Restricted Model\n")
+  frame_h0_tmp <- data.frame(coef = object$mdl_h0$theta)
+  if (object$mdl_h0$control$getSE==TRUE){
+    frame_h0_tmp["s.e."] <- object$mdl_h0$theta_se
+  }
+  rownames(frame_h0_tmp) <- names(object$mdl_h0$theta)
+  print(format(signif(frame_h0_tmp, max(1L, digits - 2L))))
+  cat(paste("\nlog-likelihood = "),object$mdl_h0$logLike)
+  cat("\n")
+  cat("\nUnrestricted Model\n")
+  frame_h1_tmp <- data.frame(coef = object$mdl_h1$theta)
+  if (object$mdl_h1$control$getSE==TRUE){
+    frame_h1_tmp["s.e."] <- object$mdl_h1$theta_se
+  }
+  rownames(frame_h1_tmp) <- names(object$mdl_h1$theta)
+  print(format(signif(frame_h1_tmp, max(1L, digits - 2L))))
+  cat(paste("\nlog-likelihood = "),object$mdl_h1$logLike)
+  cat("\n")
+  cat("\n", title, "\n", sep = "")
+  out <- data.frame(LRT_0 = rep(unname(object$LRT_0), 3),
+                    `p-value` = c(object$pval_lmc, object$pval_fix, object$pval),
+                    check.names = FALSE)
+  rownames(out) <- c("LMC_LRT", fix_label, "composition (max)")
+  print(format(signif(out, max(1L, digits - 2L))))
+  cat("Reject only if the composition p-value is below the chosen level.\n")
+  invisible(object)
+}
+
+
+#' @title Summary of an \code{aURfixLMCTest} object
+#'
+#' @description This is a method for the function \code{summary()} for objects of the class \code{aURfixLMCTest}.
+#'
+#' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
+#'
+#' @return The \code{aURfixLMCTest} object is returned invisibly.
+#'
+#' @keywords internal
+#'
+#' @export
+summary.aURfixLMCTest <- function(object, digits = getOption("digits"), ...){
+  .summary_aug_fix(object, digits,
+                   "Rodriguez-Rondon & Dufour (2026) Unit-Root-Augmented (fix) LMC-LRT",
+                   "LMC_LRT (unit root fixed)")
+}
+
+
+#' @title Summary of an \code{aBfixLMCTest} object
+#'
+#' @description This is a method for the function \code{summary()} for objects of the class \code{aBfixLMCTest}.
+#'
+#' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
+#'
+#' @return The \code{aBfixLMCTest} object is returned invisibly.
+#'
+#' @keywords internal
+#'
+#' @export
+summary.aBfixLMCTest <- function(object, digits = getOption("digits"), ...){
+  .summary_aug_fix(object, digits,
+                   "Rodriguez-Rondon & Dufour (2026) Boundary-Augmented (fix) LMC-LRT",
+                   "LMC_LRT (absorbing regime fixed)")
+}
+
+
+#' @title Summary of an \code{aURdiffLMCTest} object
+#'
+#' @description This is a method for the function \code{summary()} for objects of the class \code{aURdiffLMCTest}.
+#'
+#' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
+#'
+#' @return The \code{aURdiffLMCTest} object is returned invisibly.
+#'
+#' @keywords internal
+#'
+#' @export
+summary.aURdiffLMCTest <- function(object, digits = getOption("digits"), ...){
+  print.aURdiffLMCTest(object, digits = digits)
+  cat("Component models: see summary(x$lmc_levels) and summary(x$lmc_diff).\n")
+  invisible(object)
+}
+
+
+#' @title Summary of an \code{aURdiffMMCTest} object
+#'
+#' @description This is a method for the function \code{summary()} for objects of the class \code{aURdiffMMCTest}.
+#'
+#' @inheritParams base::summary
+#' @param digits Integer determining the number of significant digits to print.
+#'
+#' @return The \code{aURdiffMMCTest} object is returned invisibly.
+#'
+#' @keywords internal
+#'
+#' @export
+summary.aURdiffMMCTest <- function(object, digits = getOption("digits"), ...){
+  print.aURdiffMMCTest(object, digits = digits)
+  cat("Component tests: see summary(x$mmc_levels) and summary(x$mmc_diff).\n")
   invisible(object)
 }
 

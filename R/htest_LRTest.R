@@ -172,6 +172,19 @@ estimMdl <- function(Y, p, q, k, Z = NULL, control = list()){
 }
 
 
+# Estimation for the SIMULATED side of the Monte Carlo tests, wrapped so a
+# failed fit returns NULL instead of signaling an R error: the per-draw retry
+# machinery in LR_samp_dist treats failure as "skip/retry", but an error
+# raised through the C++ callback would still run every calling handler up
+# the caller's stack before being absorbed, so condition-recording callers
+# (testthat, logging harnesses built on withCallingHandlers) would record
+# hundreds of phantom errors per penalized candidate. tryCatch's exiting
+# handler pre-empts outer calling handlers, so nothing escapes.
+.estimMdl_quiet <- function(Y, p, q, k, Z = NULL, control = list()){
+  tryCatch(estimMdl(Y, p, q, k, Z, control), error = function(e) NULL)
+}
+
+
 #' @title Monte Carlo Likelihood Ratio Test
 #' 
 #' @description This function performs the Local Monte Carlo likelihood ratio 
@@ -389,8 +402,11 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
 # Choose the entry of each P column to derive (never searched), fixed from
 # theta_0 for the whole search. The largest entry in the column is derived,
 # which maximizes the room the free entries have before it leaves [0,1].
-# 'fixed_full_idx' excludes positions a caller has pinned elsewhere from being
-# eligible; unused until such a caller exists.
+# 'fixed_full_idx' excludes positions a caller has pinned (the boundary face
+# search pins the absorbing column and the clean block) from being eligible.
+# A column ALL of whose entries are pinned needs no derived entry -- its
+# values come from the pins, and the caller asserts once that they sum to 1
+# -- so it is marked NA and skipped by the reassembly and feasibility steps.
 .mmc_derived_P_index <- function(theta_0, theta_P_ind, k0, fixed_full_idx = integer(0)){
   full_idx <- which(as.numeric(theta_P_ind) == 1)
   if (length(full_idx) != k0*k0){
@@ -400,29 +416,34 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   # column-major with these positions recovers exactly which theta index is
   # column j, row i of P.
   pos_mat <- matrix(full_idx, k0, k0)
-  derived_full_idx <- integer(k0)
+  derived_full_idx <- rep(NA_integer_, k0)
   for (j in seq_len(k0)){
     col_positions <- pos_mat[, j]
     eligible <- setdiff(col_positions, fixed_full_idx)
-    if (length(eligible) == 0L){
-      stop("MMC_bounds: every entry of column ", j, " of P is fixed; nothing is left to derive from or search.")
+    if (length(eligible) > 0L){
+      derived_full_idx[j] <- eligible[which.max(theta_0[eligible])]
     }
-    derived_full_idx[j] <- eligible[which.max(theta_0[eligible])]
   }
   list(pos_mat = pos_mat, derived_full_idx = derived_full_idx, full_idx = full_idx)
 }
 
-# Full-length theta from a reduced (free-coordinates-only) vector: copy the free
-# entries into place, then set each column's derived entry to 1 - sum(the OTHER
-# free entries of that column). A column all of whose non-derived entries are
-# free (the ordinary case) reassembles exactly, to machine precision (verified
-# at 0.0 over 200k random draws at k0 in {3,4,5,8} during the spec's stage-0
-# review); a column with a fixed entry (once such a caller exists) sums the
-# free entries only, which is what "derive one entry per column" means there too.
-.mmc_reassemble_theta <- function(theta_reduced, reduced_idx, derived_full_idx, pos_mat, npar){
+# Full-length theta from a reduced (free-coordinates-only) vector: write any
+# pinned coordinates first, copy the free entries into place, then set each
+# column's derived entry to 1 - sum(the OTHER entries of that column, pinned
+# included -- the loop sums every non-derived position, so writing pins first
+# is sufficient). A column all of whose non-derived entries are free (the
+# ordinary case) reassembles exactly, to machine precision (verified at 0.0
+# over 200k random draws at k0 in {3,4,5,8} during the spec's stage-0 review).
+# A column with no derived entry (NA: every entry pinned, boundary face mode)
+# is skipped -- its values are the pins, asserted to sum to 1 where they are
+# constructed. Defaults reproduce the pre-pinning behavior exactly.
+.mmc_reassemble_theta <- function(theta_reduced, reduced_idx, derived_full_idx, pos_mat, npar,
+                                  pinned_idx = integer(0), pinned_vals = numeric(0)){
   theta_full <- numeric(npar)
+  if (length(pinned_idx) > 0) theta_full[pinned_idx] <- pinned_vals
   theta_full[reduced_idx] <- as.numeric(theta_reduced)
   for (j in seq_len(ncol(pos_mat))){
+    if (is.na(derived_full_idx[j])) next
     col_positions <- pos_mat[, j]
     free_in_col <- setdiff(col_positions, derived_full_idx[j])
     theta_full[derived_full_idx[j]] <- 1 - sum(theta_full[free_in_col])
@@ -443,16 +464,68 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
 # check and burns simulation draws before being penalized anyway; unreachable in
 # practice under the largest-entry rule, so penalizing costs nothing.
 .mmc_reduced_wrap <- function(objfn_full, reduced_idx, derived_full_idx, pos_mat, npar,
-                              theta_low, theta_upp, P_low, P_upp, penalty_value){
+                              theta_low, theta_upp, P_low, P_upp, penalty_value,
+                              pinned_idx = integer(0), pinned_vals = numeric(0)){
   force(objfn_full); force(reduced_idx); force(derived_full_idx); force(pos_mat)
   force(npar); force(theta_low); force(theta_upp); force(P_low); force(P_upp); force(penalty_value)
+  force(pinned_idx); force(pinned_vals)
+  # Columns with no derived entry (NA: fully pinned, boundary face mode) carry
+  # no feasibility check here -- their values are constants asserted to sum to
+  # 1 where they are constructed. Indexing with the NA left in would propagate
+  # NA into the feasibility comparison and crash `if (infeasible)`.
+  derived_chk <- derived_full_idx[!is.na(derived_full_idx)]
   function(theta_reduced, ...){
-    theta_full <- .mmc_reassemble_theta(theta_reduced, reduced_idx, derived_full_idx, pos_mat, npar)
-    dv <- theta_full[derived_full_idx]
+    theta_full <- .mmc_reassemble_theta(theta_reduced, reduced_idx, derived_full_idx, pos_mat, npar,
+                                        pinned_idx, pinned_vals)
+    dv <- theta_full[derived_chk]
     infeasible <- any(dv < P_low) || any(dv > P_upp) ||
-      any(dv < theta_low[derived_full_idx]) || any(dv > theta_upp[derived_full_idx])
+      any(dv < theta_low[derived_chk]) || any(dv > theta_upp[derived_chk])
     if (infeasible) return(penalty_value)
     objfn_full(theta_full, ...)
+  }
+}
+
+# A per-coordinate box cannot express positive definiteness, so for a
+# multivariate model the searched set is the box intersected with the
+# admissible parameter space: a candidate whose assembled regime covariance is
+# not positive definite is excluded from the sup -- penalized like the other
+# inadmissible-candidate gates (correct sign for the objective's direction,
+# never a value that can win the max), before any simulation and consuming no
+# random numbers. This wraps the FULL-coordinate objective, so the reduced-
+# search layer reassembles first and this check sees complete vech segments.
+# The reference evaluations (the fitted theta, the face projection) bypass the
+# search wrappers entirely and are exempt, as they are for the other gates.
+.mmc_admissible_wrap <- function(objfn, psd_blocks, q, penalty_value, count_env){
+  force(objfn); force(psd_blocks); force(q); force(penalty_value); force(count_env)
+  function(theta_full, ...){
+    for (bidx in psd_blocks){
+      Sig <- covar_unvech(as.numeric(theta_full)[bidx], q)
+      lam <- eigen((Sig + t(Sig)) / 2, symmetric = TRUE, only.values = TRUE)$values
+      if (min(lam) <= .mmc_psd_tol(max(lam))){
+        count_env$pd_hits <- count_env$pd_hits + 1L
+        return(penalty_value)
+      }
+    }
+    objfn(theta_full, ...)
+  }
+}
+
+# Records every candidate the optimizer evaluates (reduced coordinates) and its
+# objective value into 'rec_env' before delegating. A pure bookkeeping closure:
+# consumes no random numbers and changes no numeric result, so it runs
+# unconditionally and the harvest fields (feval, evaluated_range) are exact for
+# every optimizer -- pso's own trace stores candidates only when trace > 0
+# (i.e. never under silence = TRUE, exactly the batch configuration), and
+# GenSA/GA never store them at all.
+.mmc_record_wrap <- function(objfn, rec_env){
+  force(objfn); force(rec_env)
+  function(theta_reduced, ...){
+    val <- objfn(theta_reduced, ...)
+    n <- rec_env$n + 1L
+    rec_env$n <- n
+    rec_env$X[[n]] <- as.numeric(theta_reduced)
+    rec_env$v[n] <- as.numeric(val)[1L]
+    val
   }
 }
 # ---------------------------------------------------------------------------- #
@@ -507,6 +580,293 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   x
 }
 
+# 'box_include' supplies per-parameter values the search box must contain (NA =
+# leave that coordinate alone). Length must be exactly length(theta_0) -- no
+# recycling of any kind, since a stretch aimed at the wrong coordinate is the
+# failure mode -- and every non-NA entry finite.
+.validate_box_include <- function(x, n_theta, fn_name = "MMC_bounds"){
+  if (is.null(x)) return(x)
+  # rep(NA, n) is logical, and the natural way to write an all-NA vector;
+  # accept it as the numeric all-NA no-op it clearly means.
+  if (is.logical(x) && all(is.na(x))) x <- as.numeric(x)
+  if (!is.numeric(x)){
+    stop(fn_name, ": 'box_include' must be a numeric vector (received ",
+         class(x)[1], "), with NA for coordinates that are not stretched.")
+  }
+  if (length(x) != n_theta){
+    stop(fn_name, ": 'box_include' must have length(theta_0) = ",
+         n_theta, " (received length ", length(x), "), with NA for coordinates ",
+         "that are not stretched.")
+  }
+  if (any(is.infinite(x) | is.nan(x))){
+    stop(fn_name, ": 'box_include' entries must be finite or NA (received ",
+         paste(x[is.infinite(x) | is.nan(x)], collapse = ", "), ").")
+  }
+  x
+}
+
+# The moment-anchored ranges R for the boundary search's rough block. Kept
+# overridable but never auto-narrowed: the size bound of the boundary theory is
+# alpha + Pr[theta_r0 outside R], so a too-narrow R errs anti-conservative.
+.validate_boundary_R <- function(bR, fn_name = "MMCLRTest"){
+  def <- list(mu_mult = 5, sigma_mult = 4, p_range = c(0.05, 0.95))
+  if (is.null(bR)) bR <- list()
+  if (!is.list(bR)) stop(fn_name, ": 'boundary_R' must be a list.")
+  bad <- setdiff(names(bR), names(def))
+  if (length(bad) > 0) stop(fn_name, ": unknown names in boundary_R: ", paste(bad, collapse = ", "))
+  bR <- utils::modifyList(def, bR)
+  if (!is.numeric(bR$mu_mult) || length(bR$mu_mult) != 1 || !is.finite(bR$mu_mult) || bR$mu_mult <= 0)
+    stop(fn_name, ": boundary_R$mu_mult must be a single finite positive number.")
+  if (!is.numeric(bR$sigma_mult) || length(bR$sigma_mult) != 1 || !is.finite(bR$sigma_mult) || bR$sigma_mult <= 0)
+    stop(fn_name, ": boundary_R$sigma_mult must be a single finite positive number.")
+  if (!is.numeric(bR$p_range) || length(bR$p_range) != 2 || any(!is.finite(bR$p_range)) ||
+      bR$p_range[1] <= 0 || bR$p_range[2] >= 1 || bR$p_range[1] >= bR$p_range[2])
+    stop(fn_name, ": boundary_R$p_range must be two increasing values strictly inside (0, 1).")
+  bR
+}
+
+# Index sets for the boundary search's blocks, on a CANONICALIZED fit
+# (canonicalize_regimes: transient regime first, absorbing regime last).
+# The rough block is what only the transient era identifies: the SWITCHING
+# parameters' transient entries plus the transient column of P. Parameters the
+# whole sample identifies -- a non-switching common mean/variance, the AR
+# coefficients, the exogenous-regressor coefficients (betaZ never switches),
+# and the absorbing regime's own parameters -- are clean. For a multivariate
+# fit the switching blocks are per-regime vech(Sigma) segments; the transient
+# segment's internal structure (which entries are variances, and which series
+# pair each covariance couples) is returned so the moment-anchored ranges can
+# be built per coordinate.
+.mmc_boundary_blocks <- function(mdl_h0){
+  k0 <- mdl_h0$k
+  q  <- mdl_h0$q
+  Nsig <- q * (q + 1) / 2
+  P_idx <- which(as.numeric(mdl_h0$theta_P_ind) == 1)
+  pos_mat <- matrix(P_idx, k0, k0)
+  mu_idx  <- which(as.numeric(mdl_h0$theta_mu_ind) == 1)
+  sig_idx <- which(as.numeric(mdl_h0$theta_sig_ind) == 1)
+  rough_mu <- integer(0); rough_sig <- integer(0); clean_idx <- integer(0)
+  if (isTRUE(mdl_h0$msmu)){
+    rough_mu  <- mu_idx[seq_len((k0 - 1) * q)]
+    clean_idx <- c(clean_idx, mu_idx[((k0 - 1) * q + 1):(k0 * q)])
+  } else {
+    clean_idx <- c(clean_idx, mu_idx)
+  }
+  if (isTRUE(mdl_h0$msvar)){
+    rough_sig <- sig_idx[seq_len((k0 - 1) * Nsig)]
+    clean_idx <- c(clean_idx, sig_idx[((k0 - 1) * Nsig + 1):(k0 * Nsig)])
+  } else {
+    clean_idx <- c(clean_idx, sig_idx)
+  }
+  if (mdl_h0$p > 0){
+    clean_idx <- c(clean_idx, which(as.numeric(mdl_h0$theta_phi_ind) == 1))
+  }
+  if (!is.null(mdl_h0$theta_x_ind)){
+    clean_idx <- c(clean_idx, which(as.numeric(mdl_h0$theta_x_ind) == 1))
+  }
+  # vech(Sigma) stacks the lower triangle column by column (covar_vech), so
+  # the r-th entry of a regime's segment couples the series pair vech_pairs[r, ].
+  # theta_var_ind marks the variance (diagonal) entries within each segment.
+  # For every rough off-diagonal entry, the theta POSITIONS of the two
+  # variances it couples are resolved within that entry's OWN segment, so the
+  # Cauchy-Schwarz ranges downstream are per-regime by construction, for any
+  # number of transient regimes.
+  vech_pairs <- which(lower.tri(diag(q), diag = TRUE), arr.ind = TRUE)
+  vech_pairs <- vech_pairs[order(vech_pairs[, "col"], vech_pairs[, "row"]), , drop = FALSE]
+  var_ind <- as.numeric(mdl_h0$theta_var_ind)
+  rough_sig_diag <- rough_sig[var_ind[rough_sig] == 1]
+  rough_sig_off  <- rough_sig[var_ind[rough_sig] == 0]
+  diag_within <- which(vech_pairs[, 1] == vech_pairs[, 2])   # vech position of (i,i), i = 1..q
+  off_within  <- which(vech_pairs[, 1] != vech_pairs[, 2])
+  n_seg <- length(rough_sig) %/% Nsig
+  off_diag_i <- integer(0); off_diag_j <- integer(0)
+  for (m in seq_len(n_seg)){
+    seg <- rough_sig[((m - 1) * Nsig + 1):(m * Nsig)]
+    off_diag_i <- c(off_diag_i, seg[diag_within[vech_pairs[off_within, 1]]])
+    off_diag_j <- c(off_diag_j, seg[diag_within[vech_pairs[off_within, 2]]])
+  }
+  list(rough_mu = rough_mu, rough_sig = rough_sig,
+       rough_sig_diag = rough_sig_diag, rough_sig_off = rough_sig_off,
+       off_diag_i = off_diag_i, off_diag_j = off_diag_j,
+       Nsig = Nsig, n_transient_seg = n_seg, clean_idx = clean_idx,
+       trans_P_idx = as.integer(pos_mat[, seq_len(k0 - 1)]),
+       abs_diag_idx = pos_mat[k0, k0],
+       abs_off_idx  = pos_mat[seq_len(k0 - 1), k0],
+       pos_mat = pos_mat)
+}
+
+# The moment anchors themselves, from the observed estimation sample, per
+# series. The variance lower end is the EM regime-variance floor (already the
+# admissible lower bound of the estimation itself; for q > 1 the package
+# anchors it at em_variance_constraint * tr(Sigma_lin)/q, one scalar); when
+# the floor is disabled it is stored as 0, and the fallback is the same
+# variance_constraint * theta_0 lower bound the ordinary box enforces (per
+# coordinate, computed by the caller, so this returns NA there and the caller
+# substitutes). Covariance off-diagonal ranges are NOT built here: they are
+# +/- sqrt(U_i * U_j) with U_i the REALIZED diagonal upper ends, so they are
+# derived by the caller after the diagonal ranges are final -- under a common
+# multiplier that equals sigma_mult * s_i * s_j, but it stays the correct
+# Cauchy-Schwarz object when the realized uppers differ per coordinate. Any
+# positive semi-definite matrix whose diagonals lie within their ranges then
+# has its off-diagonals within these automatically, so the maintained
+# containment assumption for the covariance block reduces to the diagonal
+# statement.
+.mmc_R_ranges <- function(mdl_h0, bR, fn_name = "MMC_bounds"){
+  ym <- as.matrix(mdl_h0$y)
+  ybar <- colMeans(ym)
+  s_y  <- apply(ym, 2, stats::sd)
+  sig_low <- if (isTRUE(mdl_h0$sigma_floor > 0)) mdl_h0$sigma_floor else NA_real_
+  sig_upp <- bR$sigma_mult * s_y^2
+  if (is.finite(sig_low) && any(sig_low > sig_upp)){
+    stop(fn_name, ": the regime-variance floor (", signif(sig_low, 6),
+         ") exceeds a transient-variance range upper end (",
+         paste(signif(sig_upp[sig_low > sig_upp], 6), collapse = ", "),
+         "); the moment-anchored variance range is empty. This can only happen ",
+         "on a degenerate sample or with a very small boundary_R$sigma_mult.")
+  }
+  list(mu_low = ybar - bR$mu_mult * s_y, mu_upp = ybar + bR$mu_mult * s_y,
+       sig_low = sig_low, sig_upp = sig_upp,
+       p_low = bR$p_range[1], p_upp = bR$p_range[2])
+}
+
+# Smallest-eigenvalue admissibility tolerance for an assembled covariance
+# candidate: strictly positive and scaled to the matrix, sitting just above the
+# Cholesky feasibility boundary -- anything admitted is simulable, and only
+# nearly-singular candidates at rounding level are excluded. Deliberately NOT
+# the EM eigenvalue floor: the floor is an estimation-space device the true
+# covariance need not satisfy (a matrix with in-range diagonals can have a
+# smallest eigenvalue far below it), and gating on it would silently
+# strengthen the maintained containment assumption beyond the diagonal
+# statement the size bound reports.
+.mmc_psd_tol <- function(lam_max){
+  1e-12 * max(lam_max, .Machine$double.xmin)
+}
+
+# Deterministic positive-definiteness repair by off-diagonal shrinkage:
+# Sigma(s) = D + s * O with D the (positive, in-range) diagonal part and O the
+# off-diagonal part. The repaired matrix must CLEAR THE SEARCH GATE'S OWN
+# admissibility criterion (.mmc_admissible_wrap tests the smallest eigenvalue
+# against .mmc_psd_tol of the largest), with an interior safety margin --
+# landing merely on the positive side of singular would hand the optimizer a
+# seed its first evaluation rejects. lambda_min(Sigma(s)) is concave in s and
+# lambda_max convex (each an extremum over linear functions of s), so the
+# margin criterion g(s) = lambda_min - margin * tol(lambda_max) is concave
+# with g(0) > 0 for any positive diagonal: the admissible s form an interval
+# containing 0, and the largest admissible s is found by bisection. Shrinking
+# toward the diagonal keeps every coordinate inside its own range (the
+# off-diagonal ranges are symmetric about 0 and the diagonals are untouched),
+# which an eigenvalue clip would not.
+.psd_repair_shrink <- function(Sig, iter = 60L, margin = 10){
+  D <- diag(diag(Sig))
+  O <- Sig - D
+  clears_gate <- function(s){
+    m <- D + s * O
+    lam <- eigen((m + t(m)) / 2, symmetric = TRUE, only.values = TRUE)$values
+    min(lam) > margin * .mmc_psd_tol(max(lam))
+  }
+  if (clears_gate(1)) return(list(Sigma = Sig, s = 1))
+  lo <- 0; hi <- 1
+  for (i in seq_len(iter)){
+    mid <- (lo + hi) / 2
+    if (clears_gate(mid)) lo <- mid else hi <- mid
+  }
+  list(Sigma = D + lo * O, s = lo)
+}
+
+# The boundary projection of a (canonicalized) fitted theta: the absorbing
+# diagonal set to exactly 1 and its column's off-diagonals to exactly 0,
+# everything else at its estimate. Shared by the face-mode search reference
+# point and aBfixLMCTest's second component so the two can never drift apart.
+.theta_boundary_projection <- function(theta_0, blocks){
+  th <- as.numeric(theta_0)
+  th[blocks$abs_diag_idx] <- 1
+  th[blocks$abs_off_idx]  <- 0
+  names(th) <- names(theta_0)
+  th
+}
+
+# Face-mode box: the face set alone -- rough block over R, clean block pinned
+# at its estimates, absorbing column pinned at (1, 0s). Does NOT go through
+# MMC_bounds' eps/CI construction (none of it applies here); runs the same
+# finiteness and inverted-box checks, with the in-box reference point being
+# the CLAMPED projection (theta_hat itself legitimately lies outside the face).
+.mmc_face_bounds <- function(mdl_h0, con){
+  theta_0 <- mdl_h0$theta
+  blocks  <- .mmc_boundary_blocks(mdl_h0)
+  R <- .mmc_R_ranges(mdl_h0, con$boundary_R, fn_name = "MMCLRTest")
+  theta_low <- as.numeric(theta_0)
+  theta_upp <- as.numeric(theta_0)
+  theta_low[blocks$rough_mu] <- R$mu_low
+  theta_upp[blocks$rough_mu] <- R$mu_upp
+  sig_low <- if (is.finite(R$sig_low)) rep(R$sig_low, length(blocks$rough_sig_diag))
+             else con$variance_constraint * as.numeric(theta_0)[blocks$rough_sig_diag]
+  theta_low[blocks$rough_sig_diag] <- sig_low
+  theta_upp[blocks$rough_sig_diag] <- R$sig_upp
+  # Covariance off-diagonals: +/- sqrt(U_i * U_j) from the coupled variances'
+  # upper ends, resolved within each entry's own regime segment
+  # (Cauchy-Schwarz; see .mmc_R_ranges).
+  if (length(blocks$rough_sig_off) > 0){
+    off_bound <- sqrt(theta_upp[blocks$off_diag_i] * theta_upp[blocks$off_diag_j])
+    theta_low[blocks$rough_sig_off] <- -off_bound
+    theta_upp[blocks$rough_sig_off] <-  off_bound
+  }
+  theta_low[blocks$trans_P_idx] <- R$p_low
+  theta_upp[blocks$trans_P_idx] <- R$p_upp
+  pinned_idx  <- c(blocks$clean_idx, blocks$abs_diag_idx, blocks$abs_off_idx)
+  pinned_vals <- c(as.numeric(theta_0)[blocks$clean_idx], 1, rep(0, length(blocks$abs_off_idx)))
+  theta_low[pinned_idx] <- pinned_vals
+  theta_upp[pinned_idx] <- pinned_vals
+  # The pinned absorbing column must sum to 1: the reassembly and feasibility
+  # layers rely on it and no longer check it per evaluation, so it is asserted
+  # once here, from the constructed values themselves (protects against any
+  # future edit to the pin construction above).
+  abs_col_sum <- sum(theta_low[c(blocks$abs_diag_idx, blocks$abs_off_idx)])
+  if (abs(abs_col_sum - 1) > 1e-12){
+    stop("MMCLRTest: internal error -- the pinned absorbing column does not sum to 1.")
+  }
+  proj_unclamped <- .theta_boundary_projection(theta_0, blocks)
+  proj_clamped   <- pmin(pmax(proj_unclamped, theta_low), theta_upp)
+  # Coordinate-wise clamping can hand the optimizer a non-positive-definite
+  # transient covariance as its starting point (pso silently drops an
+  # inadmissible seed), so the clamped seed's transient block is repaired
+  # deterministically by off-diagonal shrinkage, which stays inside the box.
+  # The unclamped projection is untouched: it is an EM estimate's boundary
+  # projection, admissible by construction.
+  seed_repair <- list(repaired = FALSE, shrink = 1)
+  q <- mdl_h0$q
+  if (q > 1 && length(blocks$rough_sig) > 0){
+    for (m in seq_len(blocks$n_transient_seg)){
+      seg <- blocks$rough_sig[((m - 1) * blocks$Nsig + 1):(m * blocks$Nsig)]
+      Sig_seed <- covar_unvech(proj_clamped[seg], q)
+      lam <- eigen((Sig_seed + t(Sig_seed)) / 2, symmetric = TRUE, only.values = TRUE)$values
+      if (min(lam) <= .mmc_psd_tol(max(lam))){
+        rep_out <- .psd_repair_shrink(Sig_seed)
+        proj_clamped[seg] <- covar_vech(rep_out$Sigma)
+        seed_repair <- list(repaired = TRUE,
+                            shrink = min(seed_repair$shrink, rep_out$s))
+      }
+    }
+  }
+  names(proj_clamped) <- names(theta_0)
+  if (any(!is.finite(theta_low)) || any(!is.finite(theta_upp))){
+    bad <- which(!is.finite(theta_low) | !is.finite(theta_upp))
+    nm  <- names(theta_0)[bad]; if (is.null(nm)) nm <- paste("position", bad)
+    stop("MMCLRTest: the face search box is non-finite for ", paste(nm, collapse = ", "), ".")
+  }
+  if (any(theta_low > theta_upp)){
+    bad <- which(theta_low > theta_upp)
+    nm  <- names(theta_0)[bad]; if (is.null(nm)) nm <- paste("position", bad)
+    stop("MMCLRTest: the face search box has a lower bound above its upper bound for ",
+         paste(nm, collapse = ", "), "; check 'boundary_R'.")
+  }
+  if (any(proj_clamped < theta_low - 1e-12 | proj_clamped > theta_upp + 1e-12)){
+    stop("MMCLRTest: internal error -- the clamped face projection falls outside the face box.")
+  }
+  list(theta_low = theta_low, theta_upp = theta_upp,
+       pinned_idx = pinned_idx, pinned_vals = pinned_vals,
+       proj_unclamped = proj_unclamped, proj_clamped = proj_clamped,
+       seed_repair = seed_repair)
+}
+
 #' @title MMC nuisance parameter bounds
 #'
 #' @description This function is used to determine the lower and upper bounds for the MMC LRT parameter search.
@@ -543,6 +903,18 @@ MMC_bounds <- function(mdl_h0, con){
     theta_low <- pmin(c(theta_low), c(theta_0) - 2*se)
     theta_upp <- pmax(c(theta_upp), c(theta_0) + 2*se)
   }
+  # 'box_include': per-parameter values the box must contain (NA = untouched),
+  # applied after the eps/CI union -- it only widens, and only where the union
+  # does not already reach the value. The admissible-region clamps below keep
+  # their existing semantics and can still remove an inadmissible value; that
+  # contradiction is caught loudly after the clamps rather than silently
+  # overridden (checked at the end of this function).
+  box_inc <- .validate_box_include(con$box_include, length(theta_0))
+  if (!is.null(box_inc)){
+    inc_idx <- which(!is.na(box_inc))
+    theta_low[inc_idx] <- pmin(c(theta_low)[inc_idx], box_inc[inc_idx])
+    theta_upp[inc_idx] <- pmax(c(theta_upp)[inc_idx], box_inc[inc_idx])
+  }
   # ----- Check that bounds respect admissible regions
   # correct lower bound of variances to be in admissible region
   sigma_ind <- mdl_h0$theta_var_ind
@@ -560,10 +932,85 @@ MMC_bounds <- function(mdl_h0, con){
     phi_ind <- mdl_h0$theta_phi_ind
     if (is.null(con$phi_low)==FALSE){
       theta_low[phi_ind==1] <- apply(cbind(as.matrix(theta_low[phi_ind==1]),as.matrix(con$phi_low)), 1, function(x) max(x))
-    }  
+    }
     if (is.null(con$phi_upp)==FALSE){
       theta_upp[phi_ind==1] <- apply(cbind(as.matrix(theta_upp[phi_ind==1]),as.matrix(con$phi_upp)), 1, function(x) min(x))
-    }  
+    }
+  }
+  # Boundary "union" stretch (C^bound_T-MMC): applied AFTER every clamp above,
+  # deliberately -- the moment-anchored ranges R are load-bearing for the size
+  # bound (alpha + Pr[theta_r0 outside R]) and must never be narrowed by the
+  # conditional variance rewrite or the P/phi clamps. A user clamp that
+  # contradicts the stretch (P_upp < 1, P_low > 0) is rejected by the caller's
+  # scope checks before this point. The rough block's ranges are the hull of
+  # the ordinary box and R; the clean block keeps its ordinary box; the
+  # absorbing column is stretched so the face (p_AA = 1, off-diagonals 0) is
+  # reachable whichever entry the reduced-P search derives.
+  if (isTRUE(con$box_boundary == "union")){
+    con$boundary_R <- .validate_boundary_R(con$boundary_R, "MMC_bounds")
+    if (k0 < 2){
+      stop("MMC_bounds: box_boundary = \"union\" requires k0 >= 2 (a one-regime null has no transition matrix, so the boundary face is undefined).")
+    }
+    bb <- .mmc_boundary_blocks(mdl_h0)
+    # The block split assumes canonical regime order (absorbing = largest
+    # fitted persistence = LAST). MMCLRTest canonicalizes before calling here;
+    # a direct caller on a raw fit would otherwise silently stretch the wrong
+    # column as "absorbing".
+    pjj_chk <- diag(matrix(c(theta_0)[as.numeric(mdl_h0$theta_P_ind) == 1], k0, k0))
+    if (max(pjj_chk) > pjj_chk[k0]){
+      stop("MMC_bounds: box_boundary = \"union\" requires the fit in canonical regime order ",
+           "(absorbing regime last -- largest fitted persistence in the final position); ",
+           "apply canonicalize_regimes() first.")
+    }
+    R  <- .mmc_R_ranges(mdl_h0, con$boundary_R)
+    theta_low[bb$rough_mu] <- pmin(theta_low[bb$rough_mu], R$mu_low)
+    theta_upp[bb$rough_mu] <- pmax(theta_upp[bb$rough_mu], R$mu_upp)
+    sig_low_R <- if (is.finite(R$sig_low)) rep(R$sig_low, length(bb$rough_sig_diag))
+                 else con$variance_constraint * c(theta_0)[bb$rough_sig_diag]
+    theta_low[bb$rough_sig_diag] <- pmin(theta_low[bb$rough_sig_diag], sig_low_R)
+    theta_upp[bb$rough_sig_diag] <- pmax(theta_upp[bb$rough_sig_diag], R$sig_upp)
+    # Covariance off-diagonals: +/- sqrt(U_i * U_j) from the coupled
+    # variances' REALIZED upper ends, resolved within each entry's own regime
+    # segment, so any positive semi-definite matrix whose diagonals fit the
+    # box has its off-diagonals inside it (Cauchy-Schwarz); built after the
+    # diagonal ranges are final so per-coordinate widening propagates.
+    if (length(bb$rough_sig_off) > 0){
+      off_bound <- sqrt(theta_upp[bb$off_diag_i] * theta_upp[bb$off_diag_j])
+      theta_low[bb$rough_sig_off] <- pmin(theta_low[bb$rough_sig_off], -off_bound)
+      theta_upp[bb$rough_sig_off] <- pmax(theta_upp[bb$rough_sig_off],  off_bound)
+    }
+    theta_low[bb$trans_P_idx] <- pmin(theta_low[bb$trans_P_idx], R$p_low)
+    theta_upp[bb$trans_P_idx] <- pmax(theta_upp[bb$trans_P_idx], R$p_upp)
+    theta_upp[bb$abs_diag_idx] <- 1
+    theta_low[bb$abs_off_idx]  <- 0
+    # Loud post-assertion: the final box must contain R on every rough
+    # coordinate and reach the face on the absorbing column.
+    reach_ok <- all(theta_low[bb$rough_mu] <= R$mu_low, theta_upp[bb$rough_mu] >= R$mu_upp,
+                    theta_low[bb$rough_sig_diag] <= sig_low_R, theta_upp[bb$rough_sig_diag] >= R$sig_upp,
+                    theta_low[bb$trans_P_idx] <= R$p_low, theta_upp[bb$trans_P_idx] >= R$p_upp,
+                    theta_upp[bb$abs_diag_idx] >= 1, theta_low[bb$abs_off_idx] <= 0)
+    if (!isTRUE(reach_ok)){
+      stop("MMC_bounds: the boundary-stretched box failed to cover its own R ranges or the face; ",
+           "this indicates contradictory box controls.")
+    }
+  }
+  # 'box_include' containment check: if an admissible-region clamp removed a
+  # requested value, the caller's controls are contradictory -- error naming
+  # the coordinate rather than silently searching a box that excludes the
+  # point the caller asked for.
+  if (!is.null(box_inc)){
+    inc_idx <- which(!is.na(box_inc))
+    out_inc <- inc_idx[box_inc[inc_idx] < c(theta_low)[inc_idx] - 1e-12 |
+                       box_inc[inc_idx] > c(theta_upp)[inc_idx] + 1e-12]
+    if (length(out_inc) > 0){
+      nm <- names(theta_0)[out_inc]
+      if (is.null(nm)) nm <- paste("position", out_inc)
+      stop("MMC_bounds: 'box_include' asks for ",
+           paste(sprintf("%s = %.6g", nm, box_inc[out_inc]), collapse = ", "),
+           " but an admissible-region control (variance_constraint / P_low / P_upp / ",
+           "phi_low / phi_upp) excludes it from the box. The controls are contradictory; ",
+           "relax the clamp or drop the box_include entry.")
+    }
   }
   # ----- output
   # theta_low, theta_upp and theta_0 should all be finite by this point (eps and
@@ -645,6 +1092,9 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item P_low: Value with lower bound for transition probabilities when optimizing. Default is \code{0}.
 #'   \item P_upp: Value with upper bound for transition probabilities when optimizing. Default is \code{1}.
 #'   \item variance_constraint: Double used to determine the lower bound for variance in parameter set for search. Value should be between \code{0} and \code{1} as it is multiplied by consistent point estimates of variances. Default is \code{0.01} (i.e., \code{1\%} of consistent point estimates.
+#'   \item box_include: Optional numeric vector of length \code{length(mdl_h0$theta)} giving, per parameter, a value the search box must contain (\code{NA} entries are left untouched). Applied after the \code{eps}/\code{CI_union} construction, so it only ever widens the box, and only where the ordinary construction does not already reach the value. The widening is TWO-SIDED: the coordinate's interval becomes the convex hull of the ordinary interval and the requested value, \code{[min(lower, v), max(upper, v)]}, so the value is covered even when the fitted estimate lies entirely on its far side -- under a true unit root the fitted autoregressive coefficient exceeds 1 in a non-negligible fraction of samples, and raising only the upper endpoint would then leave the unit root outside the box. The admissible-region controls (\code{variance_constraint}, \code{P_low}/\code{P_upp}, \code{phi_low}/\code{phi_upp}) keep their usual meaning; if one of them excludes a requested value the call errors (the controls are contradictory) rather than silently searching a box that misses the requested point. The main use is unit-root testing: with \code{stationary_constraint = FALSE} and \code{phi_upp} not binding below 1, setting the autoregressive coordinate(s) of \code{box_include} to the unit-root point guarantees the search set contains it in every sample, per Rodriguez-Rondon & Dufour (2026a); for \code{p > 1} pass the coefficients obtained by moving the long-run coefficient \code{sum(phi)} to 1 while holding the short-run (augmented Dickey-Fuller) coefficients fixed, as computed e.g. by \code{\link{aURfixLMCTest}}'s reported \code{theta_fix}. In this configuration keep the box tight above 1 (a small \code{eps}, e.g. \code{0.02}, or \code{phi_upp} slightly above 1, e.g. \code{1.02}): a box reaching far into the explosive region admits candidates whose simulated series overflow, so every one of their draws fails estimation and the candidate is only penalized after the full per-draw retry budget -- valid, but a large waste of computation per such candidate. Default is \code{NULL}.
+#'   \item box_boundary: Optional string enabling the boundary-setting search box for a null with \code{k0 >= 2} regimes, one of which may be absorbing. Requires \code{burnin = 0}: the boundary family simulates every candidate transient-start with no burn-in, and the regimes are relabeled canonically first via \code{\link{canonicalize_regimes}} so the absorbing regime is last. The family's initial condition is part of its definition: every candidate's chain is initialized in \strong{canonical state 1 of the fitted null} -- the least persistent transient regime at the fit -- and over the search box that initial state is inherited by index (candidates are never re-sorted, even where a candidate's persistence ordering differs from the fit's). With \code{k0 = 2} the transient regime is unique, so this pins the initial state with no choice made; with \code{k0 >= 3} it is a fixed-vertex family definition -- a maintained modeling statement about the data, on the same footing as transient-start itself -- and the procedure's finite-sample validity is conditional on it. At \code{p = 0} the chain is initialized in the transient regime at time 0 (the first observation's state is a draw from that state's transition distribution). Multivariate models are supported -- the transient block's ranges are built per series, and since a per-coordinate box cannot express positive definiteness, the search runs over the box intersected with the admissible parameter space (a candidate whose assembled regime covariance is not positive definite is excluded before simulation; see \code{pd_penalty_hits} in the output). Exogenous regressors are supported: their common coefficients belong to the clean block (identified by the whole sample, like the autoregressive coefficients), so they keep their ordinary range in \code{"union"} mode and are held at their estimates in \code{"face"} mode; \code{Z} must be fixed (deterministic) or strictly exogenous regressors -- dummy variables are deterministic and fully supported. One scope note for the clean-block ranges: the consistency argument behind them attaches per coefficient, to coefficients whose regressor's information grows with the sample; a coefficient identified only by a fixed observation window (e.g. a short-lived dummy) is instead covered through the maintained containment of its range, so widen that coordinate's range if it matters. \code{"union"} stretches the ordinary search box per coordinate: the transient (rough) block's ranges are widened to the moment-anchored ranges of \code{boundary_R}, and the absorbing regime's transition-matrix column is stretched so the boundary face (its diagonal equal to 1) is inside the box; one ordinary search runs over the stretched box. \code{"face"} searches the boundary face alone: the transient block over the \code{boundary_R} ranges with everything else fixed (the absorbing diagonal at exactly 1, the remaining parameters at their estimates); the reported \code{pval_proj} is then the evaluation at the (unclamped) boundary projection of the fitted parameters, and the search seed is that projection clamped into the box (for a multivariate model the clamped seed's transient covariance is repaired to positive definiteness by deterministic off-diagonal shrinkage when needed, reported in \code{seed_repair}). Default is \code{NULL} (off; the ordinary search).
+#'   \item boundary_R: List of moment-anchored ranges for the transient block when \code{box_boundary} is used: \code{mu_mult} (default \code{5}; each transient mean searched over its own series' \code{mean(y_i) +/- mu_mult * sd(y_i)}), \code{sigma_mult} (default \code{4}; each transient variance up to \code{sigma_mult * var(y_i)} and down to the EM regime-variance floor; transient covariances range over \code{+/- sqrt(U_i * U_j)} with \code{U_i} the realized variance upper ends, so any positive semi-definite covariance matrix whose variances fit the box has its covariances inside it automatically), and \code{p_range} (default \code{c(0.05, 0.95)}; transient-column transition probabilities). These ranges do the theory's coverage work for the parameters the pre-absorption era identifies, so a too-narrow choice loosens the size control; widen rather than narrow them.
 #'   \item silence: Boolean determining if optimization steps should be silenced (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{FALSE}.
 #'   \item threshold_stop: Double determining the p-value level at which the nuisance-parameter search stops early (the search seeks the maximum p-value, so once a candidate reaches this level the test decision at any smaller significance level is settled). If the p-value at the initial values already satisfies \code{pval_0 >= threshold_stop}, the optimizer is skipped entirely and \code{pval = pval_0} is returned (with \code{mmc_optimout} set to an early-stop marker). Default is \code{1} (no early stopping).
 #'   \item mdl_h0_control: List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
@@ -666,7 +1116,10 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item theta_h1: Parameter vector of the unrestricted model.
 #'   \item control: List with test procedure options used.
 #'   \item mmc_optimout: Optimization output object returned by the selected optimizer (\code{pso}, \code{GenSA}, or \code{GA}). For \code{k0 >= 2} the search itself runs over a reduced parameter vector (the transition matrix contributes only its free entries), and the optimizer's reported solution (\code{$par} for \code{pso}/\code{GenSA}, \code{@solution} for \code{GA}) is mapped back to the full \code{theta} coordinates used everywhere else in the return value; other diagnostic fields inside \code{mmc_optimout} (e.g. \code{pso}'s \code{trace.stats$x}, \code{GenSA}'s \code{trace.mat}) are left in the reduced search coordinates.
-#'   \item pval_0: Monte Carlo p-value at the initial (estimated) nuisance parameter values \code{theta_0} (the Local MC point of the search). The reported \code{pval} satisfies \code{pval >= pval_0} by construction (enforced directly, not merely relied on from the optimizer's own search).
+#'   \item pval_0: Monte Carlo p-value at the initial (estimated) nuisance parameter values \code{theta_0} -- the Local MC point of the search. Present for every estimate-centered search; the reported \code{pval} satisfies \code{pval >= pval_0} by construction (enforced directly, not merely relied on from the optimizer's own search). With \code{box_boundary = "face"} the fitted point lies outside the searched set, so this field is replaced by \code{pval_proj}: the evaluation at the unclamped boundary projection of the fitted parameters (reported as \code{theta_face_proj}), with \code{pval >= pval_proj} enforced the same way.
+#'   \item theta_low, theta_upp: The realized search box (full parameter coordinates, named) after every widening and clamp -- stored so it can be verified from saved output whether the box contained a target value.
+#'   \item optim_diagnostics: List with \code{type} (the optimizer, or \code{"early_stop"}), \code{convergence} (the optimizer's own exit code where it reports one), \code{feval} (exact number of objective evaluations, counted directly), \code{optimizer_feval} (the optimizer's own reported call count where one exists, as a cross-check), \code{pd_penalty_hits} (number of candidates excluded because an assembled regime covariance was not positive definite; \code{NA} when that gate is not active, i.e. for univariate models or when neither \code{box_boundary} nor \code{box_include} is in use), and \code{evaluated_range} (per-coordinate min/max of the candidates the optimizer evaluated, in the reduced search coordinates, named by the searched positions; \code{NULL} when the search was skipped by \code{threshold_stop}).
+#'   \item boundary_mode, absorbing_regime, theta_face_proj, seed_repair: Present only when \code{box_boundary} is used -- the mode, the absorbing regime's index after canonical labeling (always \code{k0}), and (face mode) the unclamped boundary projection whose evaluation is \code{pval_proj} together with \code{seed_repair} (whether the clamped search seed's transient covariance needed the positive-definiteness repair, and the off-diagonal shrinkage factor applied). With \code{box_boundary} set, \code{mdl_h0} is returned in canonical regime order (see \code{\link{canonicalize_regimes}}).
 #' }
 #'
 #' @section Numerical policy for the LR statistic: For nested models the LR statistic is non-negative by construction (the null fit embeds into the alternative parameter space with equal likelihood), so a negative computed value can only be a numerical optimization artifact. Both the observed statistic and every simulated statistic are therefore floored at 0 (identically on both sides, which preserves the exchangeability underlying the Monte Carlo p-value); a warning reports the magnitude when it is non-negligible. For \code{k0 > 1}, the null log-likelihood is additionally floored at the one-regime (linear) fit on both sides. Ties at 0 are handled by the randomized tie-breaking rule of Dufour (2006) already implemented in \code{\link{MCpval}}; ties at the bottom of the support can only make the test conservative. The regime variances are bounded away from zero during estimation (control \code{em_variance_constraint} of the model constructors, default \code{0.01} of the one-regime fit variance), because the Markov-switching likelihood is otherwise unbounded and degenerate solutions produce spurious likelihood-ratio spikes; the statistic is therefore a constrained-likelihood ratio, computed by the same rule for the observed and the simulated samples, which is all the Monte Carlo argument requires. Transition probabilities are not constrained.
@@ -695,6 +1148,9 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
               threshold_stop = 1,
               init_method = "warmstart",
               crn = TRUE,
+              box_include = NULL,
+              box_boundary = NULL,
+              boundary_R = NULL,
               mdl_h0_control = list(getSE = TRUE),
               mdl_h1_control = list(getSE = TRUE),
               use_diff_init_sim = NULL,
@@ -726,10 +1182,39 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     con$mdl_h1_control$getSE <- TRUE
     warning("getSE was changed to be 'TRUE' because CI_union is 'TRUE'.")
   }
+  # ----- Boundary box toggle: scope checks before any estimation. The boundary
+  # family convention (transient-start simulation, burnin 0, canonical regime
+  # labeling) is a different maintained model of the data, so a call that
+  # contradicts it errors rather than being silently adjusted.
+  if (!is.null(con$box_boundary)){
+    con$box_boundary <- match.arg(con$box_boundary, c("union", "face"))
+    if (k0 < 2){
+      stop("MMCLRTest: 'box_boundary' requires a null with k0 >= 2 regimes (a one-regime null has no transition matrix, so the boundary face is undefined).")
+    }
+    if (con$burnin != 0){
+      stop("MMCLRTest: 'box_boundary' requires burnin = 0 -- the boundary family simulates every candidate transient-start (the chain initialized in the transient regime), and a burnin would consume the transient era and compare against the wrong process. Set control$burnin = 0 explicitly.")
+    }
+    if (con$P_upp < 1 || con$P_low > 0){
+      stop("MMCLRTest: 'box_boundary' requires P_low = 0 and P_upp = 1 -- the stretched box must reach the absorbing face (p = 1 and 0 entries), and a tighter clamp contradicts it.")
+    }
+    if (identical(con$box_boundary, "face") && !is.null(con$box_include)){
+      stop("MMCLRTest: 'box_include' is not meaningful with box_boundary = \"face\" -- the face set is defined by the boundary_R ranges and the pinned coordinates, not by the eps/CI box that box_include stretches.")
+    }
+    con$boundary_R <- .validate_boundary_R(con$boundary_R)
+  }
   # ----- Seed RNG for reproducible estimation (random initial values in EM)
   if (!is.null(con$mc_seed)) set.seed(con$mc_seed)
   # ----- Estimate models using observed data
   mdl_h0 <- estimMdl(Y, p, q, k0, Z, con$mdl_h0_control)
+  # ----- Boundary modes work in canonical regime coordinates: transient
+  # regimes first, absorbing regime last (ascending fitted persistence, with
+  # canonicalize_regimes' deterministic tie-break). Deterministic and RNG-free,
+  # so the stream layout below is unchanged; everything downstream (warm
+  # starts, bounds, search, simulation, the returned mdl_h0) uses this
+  # labeling.
+  if (!is.null(con$box_boundary)){
+    mdl_h0 <- canonicalize_regimes(mdl_h0, by = "persistence")
+  }
   # Resolve the alternative's switching flags before the warm starts are built and
   # before the alternative is estimated, so the two cannot disagree.
   con$mdl_h1_control <- .inherit_ms_flags(con$mdl_h1_control, mdl_h0)
@@ -797,21 +1282,45 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     LRT_0 <- 0
   }
   names(LRT_0) <- c("LRT_0")
-  # ----- Define lower & upper bounds for search
-  mmc_bounds <- MMC_bounds(mdl_h0, con)
-  theta_low <- mmc_bounds$theta_low
-  theta_upp <- mmc_bounds$theta_upp
+  # ----- Define lower & upper bounds for search. "face" mode builds the face
+  # set directly (rough block over R, everything else pinned) and does not go
+  # through MMC_bounds' eps/CI construction; its in-box reference point is the
+  # CLAMPED boundary projection, since theta_hat itself legitimately lies
+  # outside the face (p_hat_AA < 1).
+  is_face <- isTRUE(con$box_boundary == "face")
+  if (is_face){
+    fb <- .mmc_face_bounds(mdl_h0, con)
+    theta_low <- fb$theta_low
+    theta_upp <- fb$theta_upp
+    pinned_idx  <- fb$pinned_idx
+    pinned_vals <- fb$pinned_vals
+  } else {
+    mmc_bounds <- MMC_bounds(mdl_h0, con)
+    theta_low <- mmc_bounds$theta_low
+    theta_upp <- mmc_bounds$theta_upp
+    fb <- NULL
+    pinned_idx  <- integer(0)
+    pinned_vals <- numeric(0)
+  }
   # ----- Reduce the search vector for k0 >= 2 to the free entries of P (see the
-  # block above MMC_bounds). k0 = 1 has no P block; 'reduced_idx' is then every
-  # position, so the '_search' vectors below equal theta_low/theta_upp/theta_0.
+  # block above MMC_bounds), minus any pinned coordinates (face mode: the clean
+  # block and the absorbing column are constants and are dropped from the
+  # optimizer's dimensions entirely -- no zero-width bounds reach GenSA). k0 = 1
+  # has no P block; 'reduced_idx' is then every position, so the '_search'
+  # vectors below equal theta_low/theta_upp/theta_0.
   if (k0 > 1){
-    mmc_rp <- .mmc_derived_P_index(theta_0, mdl_h0$theta_P_ind, k0)
-    reduced_idx <- setdiff(seq_along(theta_0), mmc_rp$derived_full_idx)
+    mmc_rp <- .mmc_derived_P_index(theta_0, mdl_h0$theta_P_ind, k0, fixed_full_idx = pinned_idx)
+    derived_nonNA <- mmc_rp$derived_full_idx[!is.na(mmc_rp$derived_full_idx)]
+    reduced_idx <- setdiff(seq_along(theta_0), c(derived_nonNA, pinned_idx))
   } else {
     mmc_rp <- NULL
     reduced_idx <- seq_along(theta_0)
   }
-  theta_0_search   <- theta_0[reduced_idx]
+  # The search starts at the fitted theta_0 (in-box by MMC_bounds' pre-flight
+  # checks), except in face mode, where it starts at the clamped projection
+  # (in-box by construction; pso silently drops an out-of-box 'par').
+  theta_start      <- if (is_face) fb$proj_clamped else theta_0
+  theta_0_search   <- theta_start[reduced_idx]
   theta_low_search <- theta_low[reduced_idx]
   theta_upp_search <- theta_upp[reduced_idx]
   if (length(theta_0_search) != length(theta_low_search) ||
@@ -924,17 +1433,46 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   # objective; an infeasible derived entry is penalized without that call, so it
   # costs no random draws (see .mmc_reduced_wrap above). k0 = 1 has no P block,
   # so the objective is used unwrapped.
-  if (k0 > 1){
-    obj_min_search <- .mmc_reduced_wrap(obj_min, reduced_idx, mmc_rp$derived_full_idx,
-                                        mmc_rp$pos_mat, length(theta_0), theta_low, theta_upp,
-                                        con$P_low, con$P_upp, penalty_value = con$lambda)
-    obj_max_search <- .mmc_reduced_wrap(obj_max, reduced_idx, mmc_rp$derived_full_idx,
-                                        mmc_rp$pos_mat, length(theta_0), theta_low, theta_upp,
-                                        con$P_low, con$P_upp, penalty_value = -(con$lambda))
-  } else {
-    obj_min_search <- obj_min
-    obj_max_search <- obj_max
+  # ----- Search bookkeeping environment: the candidate recorder (exact
+  # evaluation counts and evaluated ranges for the harvest fields) and the
+  # positive-definiteness exclusion counter both write here. Pure bookkeeping
+  # -- no RNG, no numeric change.
+  mmc_rec <- new.env(parent = emptyenv())
+  mmc_rec$n <- 0L; mmc_rec$X <- list(); mmc_rec$v <- numeric(0); mmc_rec$pd_hits <- 0L
+  # ----- Positive-definiteness gate for multivariate covariance candidates:
+  # a per-coordinate box (the boundary stretch, or a box_include hull on vech
+  # coordinates) cannot express positive definiteness, so the searched set is
+  # box-intersect-admissible-space, enforced by the wrapper. Enabled only when
+  # one of those box-shaping controls is in use: the plain search keeps its
+  # long-standing behavior (an inadmissible candidate fails in simulation and
+  # is penalized there).
+  mmc_rec$pd_active <- q > 1 && (!is.null(con$box_boundary) || !is.null(con$box_include))
+  obj_min_full <- obj_min
+  obj_max_full <- obj_max
+  if (mmc_rec$pd_active){
+    sig_pos <- which(as.numeric(mdl_h0$theta_sig_ind) == 1)
+    Nsig <- q * (q + 1) / 2
+    psd_blocks <- split(sig_pos, rep(seq_len(length(sig_pos) / Nsig), each = Nsig))
+    obj_min_full <- .mmc_admissible_wrap(obj_min, psd_blocks, q, con$lambda, mmc_rec)
+    obj_max_full <- .mmc_admissible_wrap(obj_max, psd_blocks, q, -(con$lambda), mmc_rec)
   }
+  if (k0 > 1){
+    obj_min_search <- .mmc_reduced_wrap(obj_min_full, reduced_idx, mmc_rp$derived_full_idx,
+                                        mmc_rp$pos_mat, length(theta_0), theta_low, theta_upp,
+                                        con$P_low, con$P_upp, penalty_value = con$lambda,
+                                        pinned_idx = pinned_idx, pinned_vals = pinned_vals)
+    obj_max_search <- .mmc_reduced_wrap(obj_max_full, reduced_idx, mmc_rp$derived_full_idx,
+                                        mmc_rp$pos_mat, length(theta_0), theta_low, theta_upp,
+                                        con$P_low, con$P_upp, penalty_value = -(con$lambda),
+                                        pinned_idx = pinned_idx, pinned_vals = pinned_vals)
+  } else {
+    obj_min_search <- obj_min_full
+    obj_max_search <- obj_max_full
+  }
+  # ----- Candidate recorder for the harvest fields: runs unconditionally for
+  # every optimizer, recording each evaluated candidate into mmc_rec above.
+  obj_min_search <- .mmc_record_wrap(obj_min_search, mmc_rec)
+  obj_max_search <- .mmc_record_wrap(obj_max_search, mmc_rec)
   # ----- Verify the seed theta_0 (= the LMC point) yields a computable null distribution.
   #       theta_0 is exempt from the degenerate-candidate penalty inside MMCLRpval_fun, so if its
   #       null is fully degenerate (all draws fail even after the buffer + retry safety) the p-value
@@ -944,9 +1482,28 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   #       reported MMC p-value satisfies pval >= pval_0 by construction. Done BEFORE the optimizer
   #       seed is set below so it does not disturb the reproducible search trajectory.
   p_seed_workers <- if (isTRUE(con$crn)) con$workers else 0L
-  p_seed <- obj_max(theta_0, mdl_h0, k1, LRT_0, con$N, con$burnin, p_seed_workers, con$lambda,
+  # In face mode the reference evaluation is at the UNCLAMPED boundary
+  # projection (theta_hat with the absorbing column at exactly (1, 0s)): an
+  # evaluation needs no box membership, and this point is the same one
+  # aBfixLMCTest evaluates its second component at (the two p-values differ
+  # through their estimation-stream positions, but the point never silently
+  # moves to the clamped one). Bypasses the reduced/recorded wrappers by
+  # design (it is not a search evaluation).
+  p_seed_point <- if (is_face) fb$proj_unclamped else theta_0
+  p_seed <- obj_max(p_seed_point, mdl_h0, k1, LRT_0, con$N, con$burnin, p_seed_workers, con$lambda,
                     con$stationary_constraint, mdl_h1$control$thtol, Zsim, exog,
                     mdl_h0_null_cont, mdl_h1_null_cont, predrawn_eps, predrawn_state_rand)
+  if (is_face && is.finite(p_seed) && p_seed < 0){
+    # The projection is not the exempt seed inside MMCLRpval_fun, so an
+    # unsimulable projection returns the raw penalty (-lambda). A classed
+    # condition lets an outer simulation harness catch this and RECORD the
+    # replication rather than redraw it -- redrawing on this error would
+    # condition the sample on {projection simulable}, a silent selection
+    # effect.
+    stop(errorCondition(
+      "MMCLRTest: the evaluation at the boundary face projection was penalized (its null distribution failed even after the re-draw safety, or it violated a constraint), so the face-mode p-value is not defined for this fit. Record this outcome rather than redrawing the sample.",
+      class = "MSTest_face_unsimulable"))
+  }
   if (!is.finite(p_seed)) {
     stop("MMCLRTest: the null distribution could not be simulated at the initial parameter values (theta_0); the MMC p-value cannot be computed. Increase 'use_diff_init' or inspect the observed model fit.")
   }
@@ -962,18 +1519,22 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   # here and for pso/GenSA, an S4 'ga' object for GA, which does not support $).
   is_early_stop <- FALSE
   if (p_seed >= con$threshold_stop){
-    # ----- Early stop: the p-value at theta_0 already meets threshold_stop, so the
-    # search cannot change the test decision (pval >= pval_0 >= threshold_stop by
+    # ----- Early stop: the p-value at the seed evaluation point (theta_0, or the
+    # boundary face projection in face mode) already meets threshold_stop, so the
+    # search cannot change the test decision (pval >= p_seed >= threshold_stop by
     # construction). Skip the optimizer entirely -- exactly the threshold-stopping
     # semantics, at the cost of a single (LMC-type) evaluation. Note the reported
-    # pval is then pval_0 itself (an optimizer run crossing the threshold could
-    # report a weakly larger value; both are valid and imply the same decision).
-    theta   <- theta_0
+    # pval is then the seed p-value itself (an optimizer run crossing the threshold
+    # could report a weakly larger value; both are valid and imply the same decision).
+    # The reported theta must be the point the p-value belongs to: in face mode
+    # that is the unclamped projection p_seed was evaluated at, not theta_0.
+    theta   <- p_seed_point
     pval    <- p_seed
+    seed_desc <- if (is_face) "the boundary face projection (pval_proj >= threshold_stop)" else "theta_0 (pval_0 >= threshold_stop)"
     mmc_out <- list(early_stop = TRUE,
-                    message = "threshold_stop reached at theta_0 (pval_0 >= threshold_stop); nuisance-parameter search skipped.")
+                    message = paste0("threshold_stop reached at ", seed_desc, "; nuisance-parameter search skipped."))
     is_early_stop <- TRUE
-    if (!isTRUE(con$silence)) message("MMCLRTest: threshold_stop reached at theta_0; skipping the nuisance-parameter search.")
+    if (!isTRUE(con$silence)) message("MMCLRTest: threshold_stop reached at ", if (is_face) "the boundary face projection" else "theta_0", "; skipping the nuisance-parameter search.")
   }else if (con$type=="pso"){
     # Set PSO specific controls
     con$optim_control$trace.stats <- TRUE
@@ -1038,19 +1599,30 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   # pso's trace.stats$x, GenSA's trace.mat) are not remapped and remain in
   # reduced coordinates, documented in the return value below.
   if (k0 > 1 && !is_early_stop){
-    theta <- .mmc_reassemble_theta(theta, reduced_idx, mmc_rp$derived_full_idx, mmc_rp$pos_mat, length(theta_0))
+    theta <- .mmc_reassemble_theta(theta, reduced_idx, mmc_rp$derived_full_idx, mmc_rp$pos_mat, length(theta_0),
+                                   pinned_idx, pinned_vals)
     if (con$type %in% c("pso", "GenSA")) mmc_out$par <- theta
     if (con$type == "GA") mmc_out@solution <- matrix(theta, nrow = 1)
   } else {
     theta <- as.numeric(theta)
   }
   # ----- get test output using optimization output params
-  # theta_0 is guaranteed inside [theta_low, theta_upp] by MMC_bounds' own
-  # pre-flight checks above, so the search always evaluates at least that point
-  # (pso and GenSA both evaluate their 'par' starting value; GA is seeded there
-  # when in-box, which it now always is): the reported pval is therefore never
-  # below p_seed by construction, but is enforced explicitly rather than relied
-  # on, since an optimizer's internal bookkeeping is not a contract.
+  # The search's starting point is always inside the box (theta_0 by
+  # MMC_bounds' pre-flight checks; in face mode the clamped projection by the
+  # face builder's own assertion), so the search always evaluates at least
+  # that point (pso and GenSA both evaluate their 'par' starting value; GA is
+  # seeded there when in-box, which it now always is). Under CRN the reported
+  # pval is therefore never below p_seed by construction (in face mode p_seed
+  # is the unclamped projection's evaluation, an extra member of the evaluated
+  # set); enforced explicitly rather than relied on, since an optimizer's
+  # internal bookkeeping is not a contract.
+  # In face mode the evaluated set is the face box plus the unclamped
+  # projection, and the reported theta must be the point the reported p-value
+  # belongs to: when the projection's evaluation strictly beats the search, the
+  # projection is the maximizer (ties go to the search point).
+  if (is_face && !is_early_stop && p_seed > pval){
+    theta <- p_seed_point
+  }
   pval <- max(pval, p_seed)
   if (pval < 0){
     stop("MMCLRTest: the nuisance-parameter search evaluated no admissible candidate (every candidate violated the transition-matrix or stationarity constraint, or could not be simulated), so no p-value is defined. Check that the search bounds admit the null model's parameter values.")
@@ -1079,12 +1651,60 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   }
   # ----- Reported test statistic: the FIXED observed LRT_0 computed above from the
   #       observed-data fits (Dufour 2006), NOT recomputed at the optimized nuisance value.
+  # ----- Search diagnostics (harvest): the realized box, an exact evaluation
+  # count, and the per-coordinate range of evaluated candidates (reduced search
+  # coordinates, named by the searched positions), from the recorder -- exact
+  # for every optimizer and independent of 'silence'.
+  search_names <- names(mdl_h0$theta)[reduced_idx]
+  eval_range <- NULL
+  if (mmc_rec$n > 0){
+    Xm <- do.call(rbind, mmc_rec$X)
+    eval_range <- rbind(min = apply(Xm, 2, min), max = apply(Xm, 2, max))
+    colnames(eval_range) <- search_names
+  }
+  optim_convergence <- if (is_early_stop) NA_integer_
+    else if (con$type == "pso") mmc_out$convergence
+    else if (con$type == "GA") as.integer(mmc_out@iter)
+    else NA_integer_
+  # The optimizer's own reported call count, where one exists, as a
+  # cross-check against the recorder's exact count (GA reports iterations,
+  # not calls, so it has none).
+  optimizer_feval <- if (is_early_stop) 0L
+    else if (con$type == "pso") as.integer(mmc_out$counts[["function"]])
+    else if (con$type == "GenSA") as.integer(mmc_out$counts)
+    else NA_integer_
+  optim_diagnostics <- list(type = if (is_early_stop) "early_stop" else con$type,
+                            convergence = optim_convergence,
+                            feval = mmc_rec$n,
+                            optimizer_feval = optimizer_feval,
+                            pd_penalty_hits = if (isTRUE(mmc_rec$pd_active)) mmc_rec$pd_hits else NA_integer_,
+                            evaluated_range = eval_range)
+  names(theta_low) <- names(mdl_h0$theta)
+  names(theta_upp) <- names(mdl_h0$theta)
   # ----- organize test output
   MMCLRTest_output <- list(mdl_h0 = mdl_h0, mdl_h1 = mdl_h1, mdl_h0_mmc = mdl_h0_mmc, mdl_h1_mmc = mdl_h1,
                            LRT_0 = LRT_0, pval = pval,
                            theta_h0 = theta_h0, theta_h1 = theta_h1, control = con,
                            mmc_optimout = mmc_out,
-                           pval_0 = p_seed)
+                           theta_low = theta_low, theta_upp = theta_upp,
+                           optim_diagnostics = optim_diagnostics)
+  # The reference evaluation is reported under the name that says what it is:
+  # pval_0 is the Local MC p-value at the fitted theta_0, which exists for
+  # every estimate-centered search; the face set does not contain theta_0, so
+  # its reference evaluation -- at the boundary projection -- is pval_proj.
+  if (is_face){
+    MMCLRTest_output$pval_proj <- p_seed
+  } else {
+    MMCLRTest_output$pval_0 <- p_seed
+  }
+  if (!is.null(con$box_boundary)){
+    MMCLRTest_output$boundary_mode <- con$box_boundary
+    MMCLRTest_output$absorbing_regime <- k0
+    if (is_face){
+      MMCLRTest_output$theta_face_proj <- fb$proj_unclamped
+      MMCLRTest_output$seed_repair <- fb$seed_repair
+    }
+  }
   class(MMCLRTest_output) <- "MMCLRTest"
   return(MMCLRTest_output)
 }

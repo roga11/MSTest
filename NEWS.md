@@ -1,3 +1,48 @@
+# MSTest 0.1.9.9013
+
+## Unit-root and boundary testing primitives
+
+* `MMCLRTest()` gains three additive controls for testing near the parameter
+  boundary of the null family. `box_include` guarantees supplied parameter
+  values (for example the unit root) are inside the nuisance-parameter search
+  box, as the two-sided convex hull of the ordinary interval and the value.
+  `box_boundary` (`"union"` or `"face"`) builds the search box for a null of
+  two or more regimes, one possibly absorbing: regimes are relabeled
+  canonically (absorbing last), every candidate is simulated with the chain
+  initialized in canonical state 1 of the fitted null (the least persistent
+  transient regime; with more than one transient regime this fixed initial
+  state is part of the family's definition) with no burn-in, and the box
+  either stretches to cover the absorbing face (`"union"`) or is the face
+  itself (`"face"`, whose reference evaluation is reported as `pval_proj`). `boundary_R` sets the moment-anchored search ranges for the
+  parameters only the transient era identifies -- built per series for
+  multivariate models, with the transient covariances ranging over the
+  Cauchy-Schwarz bounds implied by the variance ranges; since a
+  per-coordinate box cannot express positive definiteness, the search runs
+  over the box intersected with the admissible parameter space (inadmissible
+  covariance candidates are excluded before simulation). Exogenous regressors
+  are supported throughout: their common coefficients are part of the
+  consistently identified block. Defaults leave all of this off, and the
+  default search is unchanged.
+* Four new augmented tests, each an intersection-union composition (reject
+  only if both component p-values are below the level): `aURfixLMCTest()`
+  (LMC twice, second time simulating with the long-run autoregressive
+  coefficient at exactly 1), `aBfixLMCTest()` (LMC twice, second time at the
+  boundary projection with the absorbing regime's self-transition at exactly
+  1), `aURdiffLMCTest()` and `aURdiffMMCTest()` (levels and first-differenced
+  series with one fewer lag; exogenous regressors stay in levels for the
+  differenced component). The two components of a fix pair share the same
+  pre-drawn innovations and the same estimation-stream randomness, so they
+  differ only through the simulation parameter. With `mc_seed` set,
+  `aURfixLMCTest()`'s first component reproduces `LMCLRTest()` exactly;
+  `aBfixLMCTest()`'s first component is the LMC of the transient-start family
+  (canonical regime order, no burn-in), which coincides with `LMCLRTest()`
+  only when the fitted labels are already canonical.
+* `MMCLRTest()` output gains search diagnostics: the realized box
+  (`theta_low`/`theta_upp`) and `optim_diagnostics` (exact evaluation count,
+  the range of candidates the optimizer evaluated, and the number of
+  candidates excluded by the positive-definiteness gate, for every optimizer
+  and independently of `silence`).
+
 # MSTest 0.1.9.9012
 
 ## Carrasco, Hu & Ploberger (2014) parameter stability test

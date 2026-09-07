@@ -60,12 +60,18 @@ test_that("a fixed coordinate is never chosen as the derived entry", {
   expect_true(rp$derived_full_idx[1] %in% setdiff(col1, largest_pos))
 })
 
-test_that("a column with every entry fixed errors instead of silently deriving nothing", {
+test_that("a column with every entry fixed is skipped (NA), not derived", {
+  # This used to assert an error: when no caller pinned whole columns, a fully
+  # fixed column could only be a mistake. The boundary face search pins the
+  # absorbing column deliberately (its values sum to 1 by construction,
+  # asserted once where they are built), so the helper now marks such a column
+  # NA and the reassembly/feasibility layers skip it.
   k0 <- 2
   fx <- .make_theta_P(k0, other_len = 0, seed = 11)
   col1 <- MSTest:::.mmc_derived_P_index(fx$theta, fx$theta_P_ind, k0)$pos_mat[, 1]
-  expect_error(MSTest:::.mmc_derived_P_index(fx$theta, fx$theta_P_ind, k0, fixed_full_idx = col1),
-              "fixed")
+  rp <- MSTest:::.mmc_derived_P_index(fx$theta, fx$theta_P_ind, k0, fixed_full_idx = col1)
+  expect_true(is.na(rp$derived_full_idx[1]))
+  expect_false(is.na(rp$derived_full_idx[2]))
 })
 
 test_that("reassembly reproduces column sums of exactly 1, for random free vectors", {
