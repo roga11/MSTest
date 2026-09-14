@@ -1669,6 +1669,21 @@ warmstart_theta <- function(mdl_h0, k1, msmu = NULL, msvar = NULL, c_pert = 0.5)
   return(mdl_h1_control)
 }
 
+# Estimation-method control of the Markov-switching constructors: exactly "EM"
+# or "MLE". Anything else (a misspelling, a lowercase variant, NULL) errors here
+# by name instead of falling through the method dispatch to an undefined fit.
+.validate_method <- function(method, fn_name){
+  # A factor or a one-element list holding the string compared equal to "EM"/
+  # "MLE" under the previous dispatch, so they remain accepted; the canonical
+  # character string is what is stored.
+  m <- if (is.null(method)) NULL else as.character(unlist(method))
+  if (is.null(m) || length(m) != 1L || !(m %in% c("EM", "MLE"))){
+    stop(fn_name, ": 'method' must be \"EM\" or \"MLE\" (received ",
+         if (is.null(m) || length(m) == 0L) "NULL" else paste0("\"", paste(m, collapse = "\", \""), "\""), ").")
+  }
+  m
+}
+
 # When the null control carries a stationarity margin and the alternative
 # control is silent about it, the alternative inherits the same margin: the
 # statistic is a constrained-likelihood ratio only if both fits obey the same

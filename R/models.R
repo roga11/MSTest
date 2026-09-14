@@ -1088,7 +1088,7 @@ VARXmdl <- function(Y, p, Z, control = list()){
 #'    Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
 #'  \item em_transition_constraint: Double bounding the transition probabilities away from the boundary during EM estimation: \code{p_ij >= em_transition_constraint} for every entry of the transition matrix (which implies \code{p_ij <= 1 - em_transition_constraint}). Must be less than \code{1/k}; \code{0} (the default) or a negative value disables the constraint and reproduces the unconstrained update. Applies to \code{method = "EM"} only; \code{P_constraint_binding} is \code{NULL} for MLE fits. Because columns sum to 1, the bound implies each transition-matrix diagonal entry is at most \code{1 - (k-1)*em_transition_constraint}; at \code{k > 2} choose the bound with this cap in mind (a bound of 0.05 caps diagonal persistence at 0.90 for \code{k = 3}). The constrained update is the exact maximizer of the expected complete-data log-likelihood over the bounded simplex (a water-filling solution), so
 #'    the EM monotone-ascent property is preserved (Kim and Taylor, 1995). Intended for comparability with procedures that require transition probabilities bounded away from 0 and 1 (Kasahara and Shimotsu, 2018; Qu and Zhuo, 2021). Applies to the EM path only; for \code{method = "MLE"} use \code{mle_theta_low}/\code{mle_theta_upp}. Fitted entries at the bound are reported in \code{P_constraint_binding} and their standard errors are set to \code{NA} (boundary estimates).
-#'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation. Default is \code{'EM'}.
+#'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation. Default is \code{'EM'}. Any other value is an error.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
 #'  \item ltol: double determining the convergence criterion for the relative change in the log-likelihood between iterations (used when \code{conv} is \code{"loglik"}, \code{"both"}, \code{"loglik-A"}, or \code{"both-A"}). Default is \code{1e-7}.
@@ -1181,6 +1181,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
   if(length(noNms <- namc[!namc %in% nmsC])){
     warning("unknown names in control: ", paste(noNms,collapse=", "))
   }
+  con$method <- .validate_method(con[["method"]], "HMmdl")
   con[names(con) == "stationarity_constraint"] <- NULL
   if (k<2){
     stop("value for 'k' must be greater than or equal to 2.")
@@ -1479,7 +1480,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
 #'  \item stationarity_constraint: Double giving a stationarity margin \code{delta} on the (common, non-switching) autoregressive coefficients: the fitted process satisfies companion spectral radius \code{<= 1 - delta}. \code{0} (the default) or a negative value disables the constraint and reproduces the long-standing unconstrained update, including its margin-0 stationarity guard, decision-for-decision. At \code{p = 1} the constrained EM update is exact (the clip of the weighted-least-squares solve is the constrained maximizer of the expected complete-data log-likelihood, with the exogenous coefficients -- when present -- re-solved exactly at the clipped value); for \code{p >= 2} the update uses a root-scaling projection accepted only when it does not lower the M-step objective, so the autoregressive step never lowers the expected complete-data log-likelihood. Starting values are projected into
 #'    the margin region when the constraint is enabled. Intended for comparability with procedures whose validity theory assumes stationarity, such as parametric bootstrap tests (Basawa, Mallik, McCormick, Reeves and Taylor, 1991); the Monte Carlo likelihood-ratio tests themselves do not require it. Distinct from \code{MMCLRTest}'s \code{stationary_constraint} (the search's stationarity penalty); by default \code{MMCLRTest} aligns its nuisance search set with the margin (control \code{box_match_constraints}). A binding fit is flagged in \code{phi_constraint_binding} and the autoregressive block's standard errors are set to \code{NA}. For \code{method = "MLE"} the margin imposes the characteristic-root bound moduli \code{>= 1/(1 - delta)} whenever it is set (independently of \code{mle_stationary_constraint}), and a fit the solver leaves marginally outside the bound
 #'    (its constraint tolerance) is projected onto it.
-#'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
+#'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}. Any other value is an error.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
 #'  \item ltol: double determining the convergence criterion for the relative change in the log-likelihood between iterations (used when \code{conv} is \code{"loglik"}, \code{"both"}, \code{"loglik-A"}, or \code{"both-A"}). Default is \code{1e-7}.
@@ -1576,6 +1577,7 @@ MSARmdl <- function(Y, p, k, control = list()){
   if(length(noNms <- namc[!namc %in% nmsC])){
     warning("unknown names in control: ", paste(noNms,collapse=", ")) 
   }
+  con$method <- .validate_method(con[["method"]], "MSARmdl")
   if (k<2){
     stop("value for 'k' must be greater than or equal to 2.")
   }
@@ -1844,7 +1846,7 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'  \item stationarity_constraint: Double giving a stationarity margin \code{delta} on the (common, non-switching) autoregressive coefficients: the fitted process satisfies companion spectral radius \code{<= 1 - delta}. \code{0} (the default) or a negative value disables the constraint and reproduces the long-standing unconstrained update, including its margin-0 stationarity guard, decision-for-decision. At \code{p = 1} the constrained EM update is exact (the clip of the weighted-least-squares solve is the constrained maximizer of the expected complete-data log-likelihood, with the exogenous coefficients -- when present -- re-solved exactly at the clipped value); for \code{p >= 2} the update uses a root-scaling projection accepted only when it does not lower the M-step objective, so the autoregressive step never lowers the expected complete-data log-likelihood. Starting values are projected into
 #'    the margin region when the constraint is enabled. Intended for comparability with procedures whose validity theory assumes stationarity, such as parametric bootstrap tests (Basawa, Mallik, McCormick, Reeves and Taylor, 1991); the Monte Carlo likelihood-ratio tests themselves do not require it. Distinct from \code{MMCLRTest}'s \code{stationary_constraint} (the search's stationarity penalty); by default \code{MMCLRTest} aligns its nuisance search set with the margin (control \code{box_match_constraints}). A binding fit is flagged in \code{phi_constraint_binding} and the autoregressive block's standard errors are set to \code{NA}. For \code{method = "MLE"} the margin imposes the characteristic-root bound moduli \code{>= 1/(1 - delta)} whenever it is set (independently of \code{mle_stationary_constraint}), and a fit the solver leaves marginally outside the bound
 #'    (its constraint tolerance) is projected onto it.
-#'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
+#'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}. Any other value is an error.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
 #'  \item ltol: double determining the convergence criterion for the relative change in the log-likelihood between iterations (used when \code{conv} is \code{"loglik"}, \code{"both"}, \code{"loglik-A"}, or \code{"both-A"}). Default is \code{1e-7}.
@@ -1942,6 +1944,7 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
   if(length(noNms <- namc[!namc %in% nmsC])){
     warning("unknown names in control: ", paste(noNms,collapse=", ")) 
   }
+  con$method <- .validate_method(con[["method"]], "MSARXmdl")
   if (k<2){
     stop("value for 'k' must be greater than or equal to 2.")
   }
@@ -2205,7 +2208,7 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
 #'    Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
 #'  \item em_transition_constraint: Double bounding the transition probabilities away from the boundary during EM estimation: \code{p_ij >= em_transition_constraint} for every entry of the transition matrix (which implies \code{p_ij <= 1 - em_transition_constraint}). Must be less than \code{1/k}; \code{0} (the default) or a negative value disables the constraint and reproduces the unconstrained update. Applies to \code{method = "EM"} only; \code{P_constraint_binding} is \code{NULL} for MLE fits. Because columns sum to 1, the bound implies each transition-matrix diagonal entry is at most \code{1 - (k-1)*em_transition_constraint}; at \code{k > 2} choose the bound with this cap in mind (a bound of 0.05 caps diagonal persistence at 0.90 for \code{k = 3}). The constrained update is the exact maximizer of the expected complete-data log-likelihood over the bounded simplex (a water-filling solution), so
 #'    the EM monotone-ascent property is preserved (Kim and Taylor, 1995). Intended for comparability with procedures that require transition probabilities bounded away from 0 and 1 (Kasahara and Shimotsu, 2018; Qu and Zhuo, 2021). Applies to the EM path only; for \code{method = "MLE"} use \code{mle_theta_low}/\code{mle_theta_upp}. Fitted entries at the bound are reported in \code{P_constraint_binding} and their standard errors are set to \code{NA} (boundary estimates).
-#'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
+#'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}. Any other value is an error.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
 #'  \item ltol: double determining the convergence criterion for the relative change in the log-likelihood between iterations (used when \code{conv} is \code{"loglik"}, \code{"both"}, \code{"loglik-A"}, or \code{"both-A"}). Default is \code{1e-7}.
@@ -2302,6 +2305,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
   if(length(noNms <- namc[!namc %in% nmsC])){
     warning("unknown names in control: ", paste(noNms,collapse=", ")) 
   }
+  con$method <- .validate_method(con[["method"]], "MSVARmdl")
   if (k<2){
     stop("value for 'k' must be greater than or equal to 2.")
   }
@@ -2568,7 +2572,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
 #'    Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
 #'  \item em_transition_constraint: Double bounding the transition probabilities away from the boundary during EM estimation: \code{p_ij >= em_transition_constraint} for every entry of the transition matrix (which implies \code{p_ij <= 1 - em_transition_constraint}). Must be less than \code{1/k}; \code{0} (the default) or a negative value disables the constraint and reproduces the unconstrained update. Applies to \code{method = "EM"} only; \code{P_constraint_binding} is \code{NULL} for MLE fits. Because columns sum to 1, the bound implies each transition-matrix diagonal entry is at most \code{1 - (k-1)*em_transition_constraint}; at \code{k > 2} choose the bound with this cap in mind (a bound of 0.05 caps diagonal persistence at 0.90 for \code{k = 3}). The constrained update is the exact maximizer of the expected complete-data log-likelihood over the bounded simplex (a water-filling solution), so
 #'    the EM monotone-ascent property is preserved (Kim and Taylor, 1995). Intended for comparability with procedures that require transition probabilities bounded away from 0 and 1 (Kasahara and Shimotsu, 2018; Qu and Zhuo, 2021). Applies to the EM path only; for \code{method = "MLE"} use \code{mle_theta_low}/\code{mle_theta_upp}. Fitted entries at the bound are reported in \code{P_constraint_binding} and their standard errors are set to \code{NA} (boundary estimates).
-#'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
+#'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}. Any other value is an error.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
 #'  \item ltol: double determining the convergence criterion for the relative change in the log-likelihood between iterations (used when \code{conv} is \code{"loglik"}, \code{"both"}, \code{"loglik-A"}, or \code{"both-A"}). Default is \code{1e-7}.
@@ -2666,6 +2670,7 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
   if(length(noNms <- namc[!namc %in% nmsC])){
     warning("unknown names in control: ", paste(noNms,collapse=", ")) 
   }
+  con$method <- .validate_method(con[["method"]], "MSVARXmdl")
   if (k<2){
     stop("value for 'k' must be greater than or equal to 2.")
   }

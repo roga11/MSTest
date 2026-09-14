@@ -1,3 +1,10 @@
+# MSTest 0.1.9.9015
+
+* The Markov-switching constructors (`HMmdl()`, `MSARmdl()`, `MSARXmdl()`,
+  `MSVARmdl()`, `MSVARXmdl()`) validate `control$method` up front: it must be
+  exactly `"EM"` or `"MLE"`; any other value (a misspelling, a lowercase
+  variant) errors by name instead of failing later with an unrelated message.
+
 # MSTest 0.1.9.9014
 
 ## Stationarity margin for estimation
