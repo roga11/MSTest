@@ -210,7 +210,8 @@ estimMdl <- function(Y, p, q, k, Z = NULL, control = list()){
 #'   \item use_diff_init_sim: Value which determines the number of initial values to use when estimating models for null distribution. Default is set to use the same as specified in \code{mdl_h0_control} and \code{mdl_h1_control}.
 #' }
 #'
-#' @section Numerical policy for the LR statistic: For nested models the LR statistic is non-negative by construction (the null fit embeds into the alternative parameter space with equal likelihood), so a negative computed value can only be a numerical optimization artifact. Both the observed statistic and every simulated statistic are therefore floored at 0 (identically on both sides, which preserves the exchangeability underlying the Monte Carlo p-value); a warning reports the magnitude when it is non-negligible. For \code{k0 > 1}, the null log-likelihood is additionally floored at the one-regime (linear) fit on both sides. Ties at 0 are handled by the randomized tie-breaking rule of Dufour (2006) already implemented in \code{\link{MCpval}}; ties at the bottom of the support can only make the test conservative. The regime variances are bounded away from zero during estimation (control \code{em_variance_constraint} of the model constructors, default \code{0.01} of the one-regime fit variance), because the Markov-switching likelihood is otherwise unbounded and degenerate solutions produce spurious likelihood-ratio spikes; the statistic is therefore a constrained-likelihood ratio, computed by the same rule for the observed and the simulated samples, which is all the Monte Carlo argument requires. Transition probabilities are not constrained.
+#' @section Numerical policy for the LR statistic: For nested models the LR statistic is non-negative by construction (the null fit embeds into the alternative parameter space with equal likelihood), so a negative computed value can only be a numerical optimization artifact. Both the observed statistic and every simulated statistic are therefore floored at 0 (identically on both sides, which preserves the exchangeability underlying the Monte Carlo p-value); a warning reports the magnitude when it is non-negligible. For \code{k0 > 1}, the null log-likelihood is additionally floored at the one-regime (linear) fit on both sides. Ties at 0 are handled by the randomized tie-breaking rule of Dufour (2006) already implemented in \code{\link{MCpval}}; ties at the bottom of the support can only make the test conservative. The regime variances are bounded away from zero
+#'   during estimation (control \code{em_variance_constraint} of the model constructors, default \code{0.01} of the one-regime fit variance), because the Markov-switching likelihood is otherwise unbounded and degenerate solutions produce spurious likelihood-ratio spikes; the statistic is therefore a constrained-likelihood ratio, computed by the same rule for the observed and the simulated samples, which is all the Monte Carlo argument requires. Transition probabilities are not constrained.
 #'
 #' @return List of class \code{LMCLRTest} (\code{S3} object) with attributes including:
 #' \itemize{
@@ -260,6 +261,7 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   # Resolve the alternative's switching flags before the warm starts are built and
   # before the alternative is estimated, so the two cannot disagree.
   con$mdl_h1_control <- .inherit_ms_flags(con$mdl_h1_control, mdl_h0)
+  con$mdl_h1_control <- .inherit_stationarity_margin(con$mdl_h1_control, con$mdl_h0_control, "LMCLRTest", p)
   if ((con$init_method == "warmstart") && (k1 > 1)){
     # Warm-start the alternative model from the null fit (regime-duplication
     # embedding, see warmstart_theta); deterministic, so the RNG stream and the
@@ -282,6 +284,14 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   }
   con$mdl_h0_control <- mdl_h0$control
   con$mdl_h1_control <- mdl_h1$control
+  # The stationarity margin must be the same on both sides: with different
+  # margins the alternative no longer nests the null's constrained space and
+  # the LR statistic loses its constrained-ML meaning.
+  d0 <- con[["mdl_h0_control"]][["stationarity_constraint"]]
+  d1 <- con[["mdl_h1_control"]][["stationarity_constraint"]]
+  if (!is.null(d0) && !is.null(d1) && !isTRUE(all.equal(as.numeric(d0), as.numeric(d1)))){
+    warning("'stationarity_constraint' differs between mdl_h0_control (", d0, ") and mdl_h1_control (", d1, "); the same margin is required on both sides for the statistic to be a constrained-likelihood ratio.")
+  }
   # Strip the observed-data warm starts from the stored control: they are specific
   # to the observed null fit; the simulated side rebuilds them per draw.
   con$mdl_h1_control$init_theta_extra <- NULL
@@ -306,7 +316,14 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     # H0 linear floor: the one-regime model is a feasible point of the null space,
     # so its (closed-form) log-likelihood bounds logL0 from below. Applied
     # identically per draw when simulating the null (see LR_samp_dist).
-    mdl_lin <- estimMdl(Y, p, q, 1, Z, list(getSE = FALSE))
+    # The stationarity margin, when set on the null control, carries into the
+    # floor fit: the floor's nesting rationale needs the floor point feasible
+    # in the constrained space, by the same rule on both sides.
+    mdl_lin_con <- list(getSE = FALSE)
+    if (!is.null(con[["mdl_h0_control"]][["stationarity_constraint"]])){
+      mdl_lin_con$stationarity_constraint <- con[["mdl_h0_control"]][["stationarity_constraint"]]
+    }
+    mdl_lin <- estimMdl(Y, p, q, 1, Z, mdl_lin_con)
     if (is.finite(mdl_lin$logLike) && (mdl_lin$logLike > logL0)) logL0 <- mdl_lin$logLike
   }
   LRT_0 <- -2*(logL0-logL1)
@@ -505,6 +522,25 @@ LMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
         count_env$pd_hits <- count_env$pd_hits + 1L
         return(penalty_value)
       }
+    }
+    objfn(theta_full, ...)
+  }
+}
+
+# With an estimation stationarity margin in force (box_match_constraints), the
+# searched set is the box intersected with {companion spectral radius <= 1 -
+# delta}. At p = 1 the box clamp already enforces it; for p >= 2 that set is
+# not a box, so a candidate outside it is excluded here before any simulation,
+# consuming no random numbers, like the other inadmissible-candidate gates.
+# Wraps the FULL-coordinate objective; the reference evaluation at the fitted
+# theta bypasses it (a constrained fit satisfies the margin by construction).
+.mmc_margin_wrap <- function(objfn, phi_idx, radius_bound, penalty_value, count_env){
+  force(objfn); force(phi_idx); force(radius_bound); force(penalty_value); force(count_env)
+  function(theta_full, ...){
+    ph <- as.numeric(theta_full)[phi_idx]
+    if (!all(is.finite(ph)) || .phi_companion_radius(ph) > radius_bound + 1e-12){
+      count_env$margin_hits <- count_env$margin_hits + 1L
+      return(penalty_value)
     }
     objfn(theta_full, ...)
   }
@@ -914,6 +950,22 @@ MMC_bounds <- function(mdl_h0, con){
     inc_idx <- which(!is.na(box_inc))
     theta_low[inc_idx] <- pmin(c(theta_low)[inc_idx], box_inc[inc_idx])
     theta_upp[inc_idx] <- pmax(c(theta_upp)[inc_idx], box_inc[inc_idx])
+    # With the search set aligned to an estimation stationarity margin, a
+    # requested autoregressive point outside the margin can never be searched
+    # (the margin gate excludes it), so the request is contradictory and errors
+    # like a requested value excluded by an admissible-region clamp.
+    if (isTRUE(con$box_match_constraints) && mdl_h0$p > 0 && isTRUE(mdl_h0$q == 1)){
+      sc_inc <- .validate_stationarity_constraint(con[["mdl_h0_control"]][["stationarity_constraint"]], "MMC_bounds")
+      if (sc_inc > 0){
+        phi_pos_inc <- which(as.numeric(mdl_h0$theta_phi_ind) == 1)
+        phi_inc <- box_inc[phi_pos_inc]
+        phi_inc[is.na(phi_inc)] <- as.numeric(theta_0)[phi_pos_inc][is.na(phi_inc)]
+        if (.phi_companion_radius(phi_inc) > 1 - sc_inc + 1e-12){
+          stop("MMC_bounds: 'box_include' asks the search box to contain an autoregressive point with companion spectral radius ", signif(.phi_companion_radius(phi_inc), 6),
+               ", outside the stationarity margin (radius <= ", 1 - sc_inc, ") that 'stationarity_constraint' imposes on every fit -- contradictory controls. Set box_match_constraints = FALSE to search beyond the estimation constraint set.")
+        }
+      }
+    }
   }
   # ----- Check that bounds respect admissible regions
   # correct lower bound of variances to be in admissible region
@@ -1079,7 +1131,8 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item burnin: Number of simulated observations to remove from beginning. Default is \code{100}.
 #'   \item converge_check: String of NULL determining if convergence of model(s) should be verified. Allowed inputs are: "null", "alt", "both", or \code{NULL}. If \code{NULL} (default) no model convergence is verified.
 #'   \item workers: Integer determining the number of workers to use for parallel computing. Default is \code{0} (sequential). If \code{workers > N}, the effective count is capped at \code{N} and an informational message is printed (unless \code{silence = TRUE}).
-#'   \item mc_seed: Integer seed for reproducible Monte Carlo simulations and fixed-error MMC (Dufour 2006, Prop. 4.2). When set, seeds the RNG before observed-data estimation, pre-draws innovations once and holds them fixed across all optimizer evaluations, ensuring full reproducibility (including the observed LRT statistic) and theoretical size control. Internal seeds (optimizer trajectory, worker streams, CRN scheme) are drawn from the \code{mc_seed} stream rather than derived by arithmetic, so consecutive \code{mc_seed} values across replications of an outer simulation study do not produce colliding RNG streams; for studies with more than about 10^4 replications, well-separated seeds are still recommended. Default is \code{NULL}, in which case internal seeds are drawn from the ambient RNG state, so a script-level \code{set.seed()} placed before the call makes the procedure reproducible as well (sequential and parallel). Note: GenSA is deterministic given the fixed starting value used here, so its search trajectory does not depend on any seed; pso and GA use the optimizer seed.
+#'   \item mc_seed: Integer seed for reproducible Monte Carlo simulations and fixed-error MMC (Dufour 2006, Prop. 4.2). When set, seeds the RNG before observed-data estimation, pre-draws innovations once and holds them fixed across all optimizer evaluations, ensuring full reproducibility (including the observed LRT statistic) and theoretical size control. Internal seeds (optimizer trajectory, worker streams, CRN scheme) are drawn from the \code{mc_seed} stream rather than derived by arithmetic, so consecutive \code{mc_seed} values across replications of an outer simulation study do not produce colliding RNG streams; for studies with more than about 10^4 replications, well-separated seeds are still recommended. Default is \code{NULL}, in which case internal seeds are drawn from the ambient RNG state, so a script-level \code{set.seed()} placed before the call makes the procedure
+#'     reproducible as well (sequential and parallel). Note: GenSA is deterministic given the fixed starting value used here, so its search trajectory does not depend on any seed; pso and GA use the optimizer seed.
 #'   \item init_method: String determining how the alternative (\code{k1}-regime) model is initialized. \code{"warmstart"} (the default) adds deterministic warm starts built by embedding the null-model fit into the \code{k1}-regime space (see \code{\link{warmstart_theta}}) to the \code{use_diff_init} random starts, applied identically to the observed data and to every simulated draw. \code{"random"} reproduces the legacy behavior.
 #'   \item crn: Boolean determining whether common random numbers are used across the nuisance-parameter search (default \code{TRUE}): an identical estimation-RNG stream (EM starting values; master and worker streams) is replayed at every candidate theta evaluation, so that together with the pre-drawn innovations the MC p-value is a deterministic function of theta (Dufour 2006, Prop. 4.2, with the estimation randomness folded into the fixed disturbance vector). This removes optimizer objective noise and guarantees \code{pval >= pval_0} exactly. Set to \code{FALSE} for the legacy behavior (estimation randomness evolves across evaluations; still valid, but the objective is noisy and the reported maximum tends to be conservative). Note: with \code{init_method = "random"}, \code{crn = FALSE}, \code{workers = 0} and no \code{mc_seed}, a script-seeded call reproduces version 0.1.9 bit-for-bit.
 #'   \item type: String that determines the type of optimization algorithm used. Arguments allowed are: \code{"pso"}, \code{"GenSA"}, and \code{"GA"}. Default is \code{"pso"}.
@@ -1092,9 +1145,16 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item P_low: Value with lower bound for transition probabilities when optimizing. Default is \code{0}.
 #'   \item P_upp: Value with upper bound for transition probabilities when optimizing. Default is \code{1}.
 #'   \item variance_constraint: Double used to determine the lower bound for variance in parameter set for search. Value should be between \code{0} and \code{1} as it is multiplied by consistent point estimates of variances. Default is \code{0.01} (i.e., \code{1\%} of consistent point estimates.
-#'   \item box_include: Optional numeric vector of length \code{length(mdl_h0$theta)} giving, per parameter, a value the search box must contain (\code{NA} entries are left untouched). Applied after the \code{eps}/\code{CI_union} construction, so it only ever widens the box, and only where the ordinary construction does not already reach the value. The widening is TWO-SIDED: the coordinate's interval becomes the convex hull of the ordinary interval and the requested value, \code{[min(lower, v), max(upper, v)]}, so the value is covered even when the fitted estimate lies entirely on its far side -- under a true unit root the fitted autoregressive coefficient exceeds 1 in a non-negligible fraction of samples, and raising only the upper endpoint would then leave the unit root outside the box. The admissible-region controls (\code{variance_constraint}, \code{P_low}/\code{P_upp}, \code{phi_low}/\code{phi_upp}) keep their usual meaning; if one of them excludes a requested value the call errors (the controls are contradictory) rather than silently searching a box that misses the requested point. The main use is unit-root testing: with \code{stationary_constraint = FALSE} and \code{phi_upp} not binding below 1, setting the autoregressive coordinate(s) of \code{box_include} to the unit-root point guarantees the search set contains it in every sample, per Rodriguez-Rondon & Dufour (2026a); for \code{p > 1} pass the coefficients obtained by moving the long-run coefficient \code{sum(phi)} to 1 while holding the short-run (augmented Dickey-Fuller) coefficients fixed, as computed e.g. by \code{\link{aURfixLMCTest}}'s reported \code{theta_fix}. In this configuration keep the box tight above 1 (a small \code{eps}, e.g. \code{0.02}, or \code{phi_upp} slightly above 1, e.g. \code{1.02}): a box reaching far into the explosive region admits candidates whose simulated series overflow, so every one of their draws fails estimation and the candidate is only penalized after the full per-draw retry budget -- valid, but a large waste of computation per such candidate. Default is \code{NULL}.
-#'   \item box_boundary: Optional string enabling the boundary-setting search box for a null with \code{k0 >= 2} regimes, one of which may be absorbing. Requires \code{burnin = 0}: the boundary family simulates every candidate transient-start with no burn-in, and the regimes are relabeled canonically first via \code{\link{canonicalize_regimes}} so the absorbing regime is last. The family's initial condition is part of its definition: every candidate's chain is initialized in \strong{canonical state 1 of the fitted null} -- the least persistent transient regime at the fit -- and over the search box that initial state is inherited by index (candidates are never re-sorted, even where a candidate's persistence ordering differs from the fit's). With \code{k0 = 2} the transient regime is unique, so this pins the initial state with no choice made; with \code{k0 >= 3} it is a fixed-vertex family definition -- a maintained modeling statement about the data, on the same footing as transient-start itself -- and the procedure's finite-sample validity is conditional on it. At \code{p = 0} the chain is initialized in the transient regime at time 0 (the first observation's state is a draw from that state's transition distribution). Multivariate models are supported -- the transient block's ranges are built per series, and since a per-coordinate box cannot express positive definiteness, the search runs over the box intersected with the admissible parameter space (a candidate whose assembled regime covariance is not positive definite is excluded before simulation; see \code{pd_penalty_hits} in the output). Exogenous regressors are supported: their common coefficients belong to the clean block (identified by the whole sample, like the autoregressive coefficients), so they keep their ordinary range in \code{"union"} mode and are held at their estimates in \code{"face"} mode; \code{Z} must be fixed (deterministic) or strictly exogenous regressors -- dummy variables are deterministic and fully supported. One scope note for the clean-block ranges: the consistency argument behind them attaches per coefficient, to coefficients whose regressor's information grows with the sample; a coefficient identified only by a fixed observation window (e.g. a short-lived dummy) is instead covered through the maintained containment of its range, so widen that coordinate's range if it matters. \code{"union"} stretches the ordinary search box per coordinate: the transient (rough) block's ranges are widened to the moment-anchored ranges of \code{boundary_R}, and the absorbing regime's transition-matrix column is stretched so the boundary face (its diagonal equal to 1) is inside the box; one ordinary search runs over the stretched box. \code{"face"} searches the boundary face alone: the transient block over the \code{boundary_R} ranges with everything else fixed (the absorbing diagonal at exactly 1, the remaining parameters at their estimates); the reported \code{pval_proj} is then the evaluation at the (unclamped) boundary projection of the fitted parameters, and the search seed is that projection clamped into the box (for a multivariate model the clamped seed's transient covariance is repaired to positive definiteness by deterministic off-diagonal shrinkage when needed, reported in \code{seed_repair}). Default is \code{NULL} (off; the ordinary search).
+#'   \item box_include: Optional numeric vector of length \code{length(mdl_h0$theta)} giving, per parameter, a value the search box must contain (\code{NA} entries are left untouched). Applied after the \code{eps}/\code{CI_union} construction, so it only ever widens the box, and only where the ordinary construction does not already reach the value. The widening is TWO-SIDED: the coordinate's interval becomes the convex hull of the ordinary interval and the requested value, \code{[min(lower, v), max(upper, v)]}, so the value is covered even when the fitted estimate lies entirely on its far side -- under a true unit root the fitted autoregressive coefficient exceeds 1 in a non-negligible fraction of samples, and raising only the upper endpoint would then leave the unit root outside the box. The admissible-region controls (\code{variance_constraint}, \code{P_low}/\code{P_upp},
+#'     \code{phi_low}/\code{phi_upp}) keep their usual meaning; if one of them excludes a requested value the call errors (the controls are contradictory) rather than silently searching a box that misses the requested point. The main use is unit-root testing: with \code{stationary_constraint = FALSE} and \code{phi_upp} not binding below 1, setting the autoregressive coordinate(s) of \code{box_include} to the unit-root point guarantees the search set contains it in every sample, per Rodriguez-Rondon & Dufour (2026a); for \code{p > 1} pass the coefficients obtained by moving the long-run coefficient \code{sum(phi)} to 1 while holding the short-run (augmented Dickey-Fuller) coefficients fixed, as computed e.g. by \code{\link{aURfixLMCTest}}'s reported \code{theta_fix}. In this configuration keep the box tight above 1 (a small \code{eps}, e.g. \code{0.02}, or
+#'     \code{phi_upp} slightly above 1, e.g. \code{1.02}): a box reaching far into the explosive region admits candidates whose simulated series overflow, so every one of their draws fails estimation and the candidate is only penalized after the full per-draw retry budget -- valid, but a large waste of computation per such candidate. Default is \code{NULL}.
+#'   \item box_boundary: Optional string enabling the boundary-setting search box for a null with \code{k0 >= 2} regimes, one of which may be absorbing. Requires \code{burnin = 0}: the boundary family simulates every candidate transient-start with no burn-in, and the regimes are relabeled canonically first via \code{\link{canonicalize_regimes}} so the absorbing regime is last. The family's initial condition is part of its definition: every candidate's chain is initialized in \strong{canonical state 1 of the fitted null} -- the least persistent transient regime at the fit -- and over the search box that initial state is inherited by index (candidates are never re-sorted, even where a candidate's persistence ordering differs from the fit's). With \code{k0 = 2} the transient regime is unique, so this pins the initial state with no choice made; with \code{k0 >= 3} it is a fixed-vertex
+#'     family definition -- a maintained modeling statement about the data, on the same footing as transient-start itself -- and the procedure's finite-sample validity is conditional on it. At \code{p = 0} the chain is initialized in the transient regime at time 0 (the first observation's state is a draw from that state's transition distribution). Multivariate models are supported -- the transient block's ranges are built per series, and since a per-coordinate box cannot express positive definiteness, the search runs over the box intersected with the admissible parameter space (a candidate whose assembled regime covariance is not positive definite is excluded before simulation; see \code{pd_penalty_hits} in the output). Exogenous regressors are supported: their common coefficients belong to the clean block (identified by the whole sample, like the autoregressive
+#'     coefficients), so they keep their ordinary range in \code{"union"} mode and are held at their estimates in \code{"face"} mode; \code{Z} must be fixed (deterministic) or strictly exogenous regressors -- dummy variables are deterministic and fully supported. One scope note for the clean-block ranges: the consistency argument behind them attaches per coefficient, to coefficients whose regressor's information grows with the sample; a coefficient identified only by a fixed observation window (e.g. a short-lived dummy) is instead covered through the maintained containment of its range, so widen that coordinate's range if it matters. \code{"union"} stretches the ordinary search box per coordinate: the transient (rough) block's ranges are widened to the moment-anchored ranges of \code{boundary_R}, and the absorbing regime's transition-matrix column is stretched so the
+#'     boundary face (its diagonal equal to 1) is inside the box; one ordinary search runs over the stretched box. \code{"face"} searches the boundary face alone: the transient block over the \code{boundary_R} ranges with everything else fixed (the absorbing diagonal at exactly 1, the remaining parameters at their estimates); the reported \code{pval_proj} is then the evaluation at the (unclamped) boundary projection of the fitted parameters, and the search seed is that projection clamped into the box (for a multivariate model the clamped seed's transient covariance is repaired to positive definiteness by deterministic off-diagonal shrinkage when needed, reported in \code{seed_repair}). Default is \code{NULL} (off; the ordinary search).
 #'   \item boundary_R: List of moment-anchored ranges for the transient block when \code{box_boundary} is used: \code{mu_mult} (default \code{5}; each transient mean searched over its own series' \code{mean(y_i) +/- mu_mult * sd(y_i)}), \code{sigma_mult} (default \code{4}; each transient variance up to \code{sigma_mult * var(y_i)} and down to the EM regime-variance floor; transient covariances range over \code{+/- sqrt(U_i * U_j)} with \code{U_i} the realized variance upper ends, so any positive semi-definite covariance matrix whose variances fit the box has its covariances inside it automatically), and \code{p_range} (default \code{c(0.05, 0.95)}; transient-column transition probabilities). These ranges do the theory's coverage work for the parameters the pre-absorption era identifies, so a too-narrow choice loosens the size control; widen rather than narrow them.
+#'   \item box_match_constraints: Boolean. If \code{TRUE} (the default), the nuisance search set is aligned with the estimation constraints carried by \code{mdl_h0_control}: with a stationarity margin (\code{stationarity_constraint = delta}) the search stays inside the margin region -- the autoregressive box is clamped to \code{[-(1 - delta), 1 - delta]} at \code{p = 1}, and for any \code{p} a candidate whose companion spectral radius exceeds \code{1 - delta} is excluded before simulation (counted in \code{margin_penalty_hits}; the margin itself is defined for univariate models only); with a transition-probability bound (\code{em_transition_constraint = eps}, meaningful for \code{k0 > 1} and for EM nulls -- the bound is not part of the MLE path, so it is not aligned when \code{mdl_h0_control} sets \code{method = "MLE"}) \code{P_low} is raised to \code{eps} and \code{P_upp} lowered to \code{1 -
+#'     (k0 - 1) * eps}. A \code{box_include} autoregressive point outside the margin is contradictory and errors. The constrained fits obey these constraints on the observed and simulated sides, so this keeps the maximized test's search set equal to the maintained null parameter space, and the local test remains the search's seed point. It has no effect when no estimation constraint is set. A stationarity margin together with \code{stationary_constraint = FALSE} is contradictory and errors. If \code{FALSE}, the box is built as usual and a warning notes that the search set may extend beyond the constrained space. Default is \code{TRUE}.
 #'   \item silence: Boolean determining if optimization steps should be silenced (if \code{TRUE}) or not (if \code{FALSE}). Default is \code{FALSE}.
 #'   \item threshold_stop: Double determining the p-value level at which the nuisance-parameter search stops early (the search seeks the maximum p-value, so once a candidate reaches this level the test decision at any smaller significance level is settled). If the p-value at the initial values already satisfies \code{pval_0 >= threshold_stop}, the optimizer is skipped entirely and \code{pval = pval_0} is returned (with \code{mmc_optimout} set to an early-stop marker). Default is \code{1} (no early stopping).
 #'   \item mdl_h0_control: List with restricted model options. See \code{\link{Nmdl}}, \code{\link{ARmdl}}, \code{\link{VARmdl}}, \code{\link{HMmdl}}, \code{\link{MSARmdl}}, or \code{\link{MSVARmdl}} documentation for available and default values.
@@ -1118,11 +1178,12 @@ MMC_bounds <- function(mdl_h0, con){
 #'   \item mmc_optimout: Optimization output object returned by the selected optimizer (\code{pso}, \code{GenSA}, or \code{GA}). For \code{k0 >= 2} the search itself runs over a reduced parameter vector (the transition matrix contributes only its free entries), and the optimizer's reported solution (\code{$par} for \code{pso}/\code{GenSA}, \code{@solution} for \code{GA}) is mapped back to the full \code{theta} coordinates used everywhere else in the return value; other diagnostic fields inside \code{mmc_optimout} (e.g. \code{pso}'s \code{trace.stats$x}, \code{GenSA}'s \code{trace.mat}) are left in the reduced search coordinates.
 #'   \item pval_0: Monte Carlo p-value at the initial (estimated) nuisance parameter values \code{theta_0} -- the Local MC point of the search. Present for every estimate-centered search; the reported \code{pval} satisfies \code{pval >= pval_0} by construction (enforced directly, not merely relied on from the optimizer's own search). With \code{box_boundary = "face"} the fitted point lies outside the searched set, so this field is replaced by \code{pval_proj}: the evaluation at the unclamped boundary projection of the fitted parameters (reported as \code{theta_face_proj}), with \code{pval >= pval_proj} enforced the same way.
 #'   \item theta_low, theta_upp: The realized search box (full parameter coordinates, named) after every widening and clamp -- stored so it can be verified from saved output whether the box contained a target value.
-#'   \item optim_diagnostics: List with \code{type} (the optimizer, or \code{"early_stop"}), \code{convergence} (the optimizer's own exit code where it reports one), \code{feval} (exact number of objective evaluations, counted directly), \code{optimizer_feval} (the optimizer's own reported call count where one exists, as a cross-check), \code{pd_penalty_hits} (number of candidates excluded because an assembled regime covariance was not positive definite; \code{NA} when that gate is not active, i.e. for univariate models or when neither \code{box_boundary} nor \code{box_include} is in use), and \code{evaluated_range} (per-coordinate min/max of the candidates the optimizer evaluated, in the reduced search coordinates, named by the searched positions; \code{NULL} when the search was skipped by \code{threshold_stop}).
+#'   \item optim_diagnostics: List with \code{type} (the optimizer, or \code{"early_stop"}), \code{convergence} (the optimizer's own exit code where it reports one), \code{feval} (exact number of objective evaluations, counted directly), \code{optimizer_feval} (the optimizer's own reported call count where one exists, as a cross-check), \code{pd_penalty_hits} (number of candidates excluded because an assembled regime covariance was not positive definite; \code{NA} when that gate is not active, i.e. for univariate models or when neither \code{box_boundary} nor \code{box_include} is in use), \code{margin_penalty_hits} (number of candidates excluded by the stationarity-margin gate of \code{box_match_constraints}; \code{NA} when no margin is in force), and \code{evaluated_range} (per-coordinate min/max of the candidates the optimizer evaluated, in the reduced search coordinates, named by the searched positions; \code{NULL} when the search was skipped by \code{threshold_stop}).
 #'   \item boundary_mode, absorbing_regime, theta_face_proj, seed_repair: Present only when \code{box_boundary} is used -- the mode, the absorbing regime's index after canonical labeling (always \code{k0}), and (face mode) the unclamped boundary projection whose evaluation is \code{pval_proj} together with \code{seed_repair} (whether the clamped search seed's transient covariance needed the positive-definiteness repair, and the off-diagonal shrinkage factor applied). With \code{box_boundary} set, \code{mdl_h0} is returned in canonical regime order (see \code{\link{canonicalize_regimes}}).
 #' }
 #'
-#' @section Numerical policy for the LR statistic: For nested models the LR statistic is non-negative by construction (the null fit embeds into the alternative parameter space with equal likelihood), so a negative computed value can only be a numerical optimization artifact. Both the observed statistic and every simulated statistic are therefore floored at 0 (identically on both sides, which preserves the exchangeability underlying the Monte Carlo p-value); a warning reports the magnitude when it is non-negligible. For \code{k0 > 1}, the null log-likelihood is additionally floored at the one-regime (linear) fit on both sides. Ties at 0 are handled by the randomized tie-breaking rule of Dufour (2006) already implemented in \code{\link{MCpval}}; ties at the bottom of the support can only make the test conservative. The regime variances are bounded away from zero during estimation (control \code{em_variance_constraint} of the model constructors, default \code{0.01} of the one-regime fit variance), because the Markov-switching likelihood is otherwise unbounded and degenerate solutions produce spurious likelihood-ratio spikes; the statistic is therefore a constrained-likelihood ratio, computed by the same rule for the observed and the simulated samples, which is all the Monte Carlo argument requires. Transition probabilities are not constrained.
+#' @section Numerical policy for the LR statistic: For nested models the LR statistic is non-negative by construction (the null fit embeds into the alternative parameter space with equal likelihood), so a negative computed value can only be a numerical optimization artifact. Both the observed statistic and every simulated statistic are therefore floored at 0 (identically on both sides, which preserves the exchangeability underlying the Monte Carlo p-value); a warning reports the magnitude when it is non-negligible. For \code{k0 > 1}, the null log-likelihood is additionally floored at the one-regime (linear) fit on both sides. Ties at 0 are handled by the randomized tie-breaking rule of Dufour (2006) already implemented in \code{\link{MCpval}}; ties at the bottom of the support can only make the test conservative. The regime variances are bounded away from zero
+#'   during estimation (control \code{em_variance_constraint} of the model constructors, default \code{0.01} of the one-regime fit variance), because the Markov-switching likelihood is otherwise unbounded and degenerate solutions produce spurious likelihood-ratio spikes; the statistic is therefore a constrained-likelihood ratio, computed by the same rule for the observed and the simulated samples, which is all the Monte Carlo argument requires. Transition probabilities are not constrained.
 #'
 #' @references Rodriguez-Rondon, G., & Dufour, J.-M. 2026a. "Monte Carlo Likelihood-Ratio Tests for Markov Switching Models." \emph{Bank of Canada Staff Working Paper}, No. 2026-23. doi: 10.34989/swp-2026-23.
 #' @example /inst/examples/MMCLRTest_examples.R
@@ -1151,6 +1212,7 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
               box_include = NULL,
               box_boundary = NULL,
               boundary_R = NULL,
+              box_match_constraints = TRUE,
               mdl_h0_control = list(getSE = TRUE),
               mdl_h1_control = list(getSE = TRUE),
               use_diff_init_sim = NULL,
@@ -1182,6 +1244,43 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     con$mdl_h1_control$getSE <- TRUE
     warning("getSE was changed to be 'TRUE' because CI_union is 'TRUE'.")
   }
+  # ----- Align the nuisance search set with the estimation constraints
+  # (control box_match_constraints). An estimation constraint in the model
+  # controls (a stationarity margin on the autoregressive block, a bound on
+  # the transition probabilities) defines the maintained null parameter space;
+  # the constrained fits obey it on the observed and simulated sides alike, so
+  # by default the search runs over that same space. Where the constraint set
+  # is a box it is imposed through the existing clamps (phi_low/phi_upp at
+  # p = 1, P_low/P_upp); the margin for p >= 2 is a set on the companion
+  # spectral radius, not a box, and is imposed as a penalty in the objective
+  # wrapper below, next to the plain stationarity penalty.
+  if (!is.logical(con$box_match_constraints) || length(con$box_match_constraints) != 1L || is.na(con$box_match_constraints)){
+    stop("MMCLRTest: 'box_match_constraints' must be TRUE or FALSE.")
+  }
+  sc_delta <- .validate_stationarity_constraint(con$mdl_h0_control[["stationarity_constraint"]], "MMCLRTest")
+  P_eps <- con$mdl_h0_control[["em_transition_constraint"]]
+  # The transition-probability bound is an EM-path constraint (MLE fits do not
+  # impose it), so it is aligned for EM nulls only.
+  h0_is_mle <- isTRUE(toupper(as.character(con$mdl_h0_control[["method"]])[1]) == "MLE")
+  P_eps <- if (k0 > 1 && !h0_is_mle && is.numeric(P_eps) && length(P_eps) == 1L && isTRUE(P_eps > 0)) as.numeric(P_eps) else 0
+  margin_active <- con$box_match_constraints && sc_delta > 0 && p > 0 && q == 1
+  if (con$box_match_constraints){
+    if (sc_delta > 0 && p > 0){
+      if (!isTRUE(con$stationary_constraint)){
+        stop("MMCLRTest: 'stationarity_constraint' in mdl_h0_control keeps every fit inside the stationarity margin, but 'stationary_constraint = FALSE' asks the search to leave the stationary region -- contradictory controls. Set box_match_constraints = FALSE to search beyond the estimation constraint set (the search set then no longer matches the maintained null space).")
+      }
+      if (p == 1 && q == 1){
+        con$phi_upp <- if (is.null(con$phi_upp)) 1 - sc_delta else pmin(con$phi_upp, 1 - sc_delta)
+        con$phi_low <- if (is.null(con$phi_low)) -(1 - sc_delta) else pmax(con$phi_low, -(1 - sc_delta))
+      }
+    }
+    if (P_eps > 0){
+      con$P_low <- max(con$P_low, P_eps)
+      con$P_upp <- min(con$P_upp, 1 - (k0 - 1) * P_eps)
+    }
+  } else if ((sc_delta > 0 && p > 0) || P_eps > 0){
+    warning("MMCLRTest: box_match_constraints = FALSE with an estimation constraint in mdl_h0_control (stationarity_constraint / em_transition_constraint): the nuisance search set may extend beyond the constrained parameter space that the fits obey.")
+  }
   # ----- Boundary box toggle: scope checks before any estimation. The boundary
   # family convention (transient-start simulation, burnin 0, canonical regime
   # labeling) is a different maintained model of the data, so a call that
@@ -1195,7 +1294,7 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
       stop("MMCLRTest: 'box_boundary' requires burnin = 0 -- the boundary family simulates every candidate transient-start (the chain initialized in the transient regime), and a burnin would consume the transient era and compare against the wrong process. Set control$burnin = 0 explicitly.")
     }
     if (con$P_upp < 1 || con$P_low > 0){
-      stop("MMCLRTest: 'box_boundary' requires P_low = 0 and P_upp = 1 -- the stretched box must reach the absorbing face (p = 1 and 0 entries), and a tighter clamp contradicts it.")
+      stop("MMCLRTest: 'box_boundary' requires P_low = 0 and P_upp = 1 -- the stretched box must reach the absorbing face (p = 1 and 0 entries), and a tighter clamp contradicts it (an 'em_transition_constraint' in mdl_h0_control imposes such a clamp through box_match_constraints).")
     }
     if (identical(con$box_boundary, "face") && !is.null(con$box_include)){
       stop("MMCLRTest: 'box_include' is not meaningful with box_boundary = \"face\" -- the face set is defined by the boundary_R ranges and the pinned coordinates, not by the eps/CI box that box_include stretches.")
@@ -1218,6 +1317,7 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   # Resolve the alternative's switching flags before the warm starts are built and
   # before the alternative is estimated, so the two cannot disagree.
   con$mdl_h1_control <- .inherit_ms_flags(con$mdl_h1_control, mdl_h0)
+  con$mdl_h1_control <- .inherit_stationarity_margin(con$mdl_h1_control, con$mdl_h0_control, "MMCLRTest", p)
   if ((con$init_method == "warmstart") && (k1 > 1)){
     # Warm-start the alternative model from the null fit (regime-duplication
     # embedding, see warmstart_theta); deterministic, so the RNG stream and the
@@ -1240,6 +1340,14 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   }
   con$mdl_h0_control <- mdl_h0$control
   con$mdl_h1_control <- mdl_h1$control
+  # The stationarity margin must be the same on both sides: with different
+  # margins the alternative no longer nests the null's constrained space and
+  # the LR statistic loses its constrained-ML meaning.
+  d0 <- con[["mdl_h0_control"]][["stationarity_constraint"]]
+  d1 <- con[["mdl_h1_control"]][["stationarity_constraint"]]
+  if (!is.null(d0) && !is.null(d1) && !isTRUE(all.equal(as.numeric(d0), as.numeric(d1)))){
+    warning("'stationarity_constraint' differs between mdl_h0_control (", d0, ") and mdl_h1_control (", d1, "); the same margin is required on both sides for the statistic to be a constrained-likelihood ratio.")
+  }
   # Strip the observed-data warm starts from the stored control: they are specific
   # to the observed null fit; the simulated side rebuilds them per draw.
   con$mdl_h1_control$init_theta_extra <- NULL
@@ -1265,7 +1373,14 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     # H0 linear floor: the one-regime model is a feasible point of the null space,
     # so its (closed-form) log-likelihood bounds logL0 from below. Applied
     # identically per draw when simulating the null (see LR_samp_dist).
-    mdl_lin <- estimMdl(Y, p, q, 1, Z, list(getSE = FALSE))
+    # The stationarity margin, when set on the null control, carries into the
+    # floor fit: the floor's nesting rationale needs the floor point feasible
+    # in the constrained space, by the same rule on both sides.
+    mdl_lin_con <- list(getSE = FALSE)
+    if (!is.null(con[["mdl_h0_control"]][["stationarity_constraint"]])){
+      mdl_lin_con$stationarity_constraint <- con[["mdl_h0_control"]][["stationarity_constraint"]]
+    }
+    mdl_lin <- estimMdl(Y, p, q, 1, Z, mdl_lin_con)
     if (is.finite(mdl_lin$logLike) && (mdl_lin$logLike > logL0)) logL0 <- mdl_lin$logLike
   }
   LRT_0 <- -2*(logL0-logL1)
@@ -1438,7 +1553,7 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
   # positive-definiteness exclusion counter both write here. Pure bookkeeping
   # -- no RNG, no numeric change.
   mmc_rec <- new.env(parent = emptyenv())
-  mmc_rec$n <- 0L; mmc_rec$X <- list(); mmc_rec$v <- numeric(0); mmc_rec$pd_hits <- 0L
+  mmc_rec$n <- 0L; mmc_rec$X <- list(); mmc_rec$v <- numeric(0); mmc_rec$pd_hits <- 0L; mmc_rec$margin_hits <- 0L
   # ----- Positive-definiteness gate for multivariate covariance candidates:
   # a per-coordinate box (the boundary stretch, or a box_include hull on vech
   # coordinates) cannot express positive definiteness, so the searched set is
@@ -1455,6 +1570,12 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
     psd_blocks <- split(sig_pos, rep(seq_len(length(sig_pos) / Nsig), each = Nsig))
     obj_min_full <- .mmc_admissible_wrap(obj_min, psd_blocks, q, con$lambda, mmc_rec)
     obj_max_full <- .mmc_admissible_wrap(obj_max, psd_blocks, q, -(con$lambda), mmc_rec)
+  }
+  mmc_rec$margin_active <- margin_active
+  if (margin_active){
+    phi_pos <- which(as.numeric(mdl_h0$theta_phi_ind) == 1)
+    obj_min_full <- .mmc_margin_wrap(obj_min_full, phi_pos, 1 - sc_delta, con$lambda, mmc_rec)
+    obj_max_full <- .mmc_margin_wrap(obj_max_full, phi_pos, 1 - sc_delta, -(con$lambda), mmc_rec)
   }
   if (k0 > 1){
     obj_min_search <- .mmc_reduced_wrap(obj_min_full, reduced_idx, mmc_rp$derived_full_idx,
@@ -1678,6 +1799,7 @@ MMCLRTest <- function(Y, p, k0, k1, Z = NULL, control = list()){
                             feval = mmc_rec$n,
                             optimizer_feval = optimizer_feval,
                             pd_penalty_hits = if (isTRUE(mmc_rec$pd_active)) mmc_rec$pd_hits else NA_integer_,
+                            margin_penalty_hits = if (isTRUE(mmc_rec$margin_active)) mmc_rec$margin_hits else NA_integer_,
                             evaluated_range = eval_range)
   names(theta_low) <- names(mdl_h0$theta)
   names(theta_upp) <- names(mdl_h0$theta)

@@ -15,6 +15,8 @@ ARmdl(Y, p, control = list())
 \itemize{
   \item const: Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
   \item getSE: Boolean determining whether to compute standard errors of parameters if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
+  \item stationarity_constraint: Double giving a stationarity margin \code{delta} on the autoregressive coefficients: the fitted process satisfies companion spectral radius \code{<= 1 - delta}. \code{0} (the default) or a negative value disables the constraint and reproduces the ordinary least-squares fit, including a nonstationary one. At \code{p = 1} the constrained fit is exact -- the clip of the unconstrained coefficient, with the remaining coefficients re-solved exactly at the constrained value; for \code{p >= 2} the autoregressive block is moved by a root-scaling projection of the offending companion eigenvalues (a projection, not the constrained least-squares optimizer). Intended for comparability with procedures whose validity theory assumes stationarity, such as parametric bootstrap tests (Basawa, Mallik, McCormick, Reeves and Taylor, 1991); the Monte Carlo likelihood-ratio tests
+    themselves do not require it. Distinct from \code{MMCLRTest}'s \code{stationary_constraint} (the search's stationarity penalty); by default \code{MMCLRTest} aligns its nuisance search set with the margin (control \code{box_match_constraints}). A binding fit is flagged in \code{phi_constraint_binding} and the autoregressive block's standard errors are set to \code{NA} (the constraint couples the whole block). Markov-switching estimation controls forwarded by the testing functions (\code{use_diff_init}, \code{em_variance_constraint}, \code{em_transition_constraint}) are accepted and ignored without a warning.
 }}
 }
 \value{
@@ -73,6 +75,9 @@ control <- list(const  = TRUE,
 y_ar_mdl <- ARmdl(y_simu$y, p = 2, control)
 y_ar_mdl
 
+}
+\references{
+Basawa, I. V., Mallik, A. K., McCormick, W. P., Reeves, J. H., & Taylor, R. L. 1991. "Bootstrapping Unstable First-Order Autoregressive Processes." \emph{The Annals of Statistics} 19(2): 1098-1101.
 }
 \seealso{
 \code{\link{MSARmdl}}

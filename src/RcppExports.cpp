@@ -942,6 +942,18 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// phi_margin_project_cpp
+arma::vec phi_margin_project_cpp(arma::vec phi, double delta);
+RcppExport SEXP _MSTest_phi_margin_project_cpp(SEXP phiSEXP, SEXP deltaSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::vec >::type phi(phiSEXP);
+    Rcpp::traits::input_parameter< double >::type delta(deltaSEXP);
+    rcpp_result_gen = Rcpp::wrap(phi_margin_project_cpp(phi, delta));
+    return rcpp_result_gen;
+END_RCPP
+}
 // EMaximization_HMmdl
 List EMaximization_HMmdl(arma::vec theta, List mdl, List MSloglik_output, int k);
 RcppExport SEXP _MSTest_EMaximization_HMmdl(SEXP thetaSEXP, SEXP mdlSEXP, SEXP MSloglik_outputSEXP, SEXP kSEXP) {
@@ -1218,6 +1230,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_MSTest_ExpectationM_MSVARmdl", (DL_FUNC) &_MSTest_ExpectationM_MSVARmdl, 3},
     {"_MSTest_ExpectationM_MSVARXmdl", (DL_FUNC) &_MSTest_ExpectationM_MSVARXmdl, 3},
     {"_MSTest_constrain_P_col", (DL_FUNC) &_MSTest_constrain_P_col, 3},
+    {"_MSTest_phi_margin_project_cpp", (DL_FUNC) &_MSTest_phi_margin_project_cpp, 2},
     {"_MSTest_EMaximization_HMmdl", (DL_FUNC) &_MSTest_EMaximization_HMmdl, 4},
     {"_MSTest_EMaximization_MSARmdl", (DL_FUNC) &_MSTest_EMaximization_MSARmdl, 4},
     {"_MSTest_EMaximization_MSARXmdl", (DL_FUNC) &_MSTest_EMaximization_MSARXmdl, 4},

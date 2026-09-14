@@ -15,6 +15,7 @@ VARmdl(Y, p, control = list())
 \itemize{
  \item const: Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
  \item getSE: Boolean determining whether to compute standard errors of parameters if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
+  \item stationarity_constraint: Not implemented for multivariate models; a positive value is a loud error. Markov-switching estimation controls forwarded by the testing functions (\code{use_diff_init}, \code{em_variance_constraint}, \code{em_transition_constraint}) are accepted and ignored without a warning.
 }}
 }
 \value{

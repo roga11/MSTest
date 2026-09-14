@@ -333,12 +333,18 @@ Nmdl <- function(Y, Z = NULL, control = list()){
   # ----- Set control values
   con <- list(const = TRUE,
               getSE = TRUE)
+  # Estimation controls that the testing functions forward to the null
+  # model's constructor regardless of its class: recognized so a shared
+  # control list does not warn, and ignored (no meaning for this model; the
+  # stationarity margin has nothing to constrain at p = 0).
+  ms_inert <- c("use_diff_init", "em_variance_constraint", "em_transition_constraint", "stationarity_constraint")
   # Perform some checks for controls
-  nmsC <- names(con)
+  nmsC <- c(names(con), ms_inert)
   con[(namc <- names(control))] <- control
   if(length(noNms <- namc[!namc %in% nmsC])){
-    warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+    warning("unknown names in control: ", paste(noNms,collapse=", "))
   }
+  con[names(con) %in% ms_inert] <- NULL
   con$Z <- Z
   # ----- Get process dimensions
   n <- nrow(Y)
@@ -442,6 +448,8 @@ Nmdl <- function(Y, Z = NULL, control = list()){
 #' \itemize{
 #'   \item const: Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
 #'   \item getSE: Boolean determining whether to compute standard errors of parameters if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
+#'   \item stationarity_constraint: Double giving a stationarity margin \code{delta} on the autoregressive coefficients: the fitted process satisfies companion spectral radius \code{<= 1 - delta}. \code{0} (the default) or a negative value disables the constraint and reproduces the ordinary least-squares fit, including a nonstationary one. At \code{p = 1} the constrained fit is exact -- the clip of the unconstrained coefficient, with the remaining coefficients re-solved exactly at the constrained value; for \code{p >= 2} the autoregressive block is moved by a root-scaling projection of the offending companion eigenvalues (a projection, not the constrained least-squares optimizer). Intended for comparability with procedures whose validity theory assumes stationarity, such as parametric bootstrap tests (Basawa, Mallik, McCormick, Reeves and Taylor, 1991); the Monte Carlo likelihood-ratio tests
+#'     themselves do not require it. Distinct from \code{MMCLRTest}'s \code{stationary_constraint} (the search's stationarity penalty); by default \code{MMCLRTest} aligns its nuisance search set with the margin (control \code{box_match_constraints}). A binding fit is flagged in \code{phi_constraint_binding} and the autoregressive block's standard errors are set to \code{NA} (the constraint couples the whole block). Markov-switching estimation controls forwarded by the testing functions (\code{use_diff_init}, \code{em_variance_constraint}, \code{em_transition_constraint}) are accepted and ignored without a warning.
 #' }
 #' 
 #' @return List of class \code{ARmdl} (\code{S3} object) with model attributes including:
@@ -479,17 +487,24 @@ Nmdl <- function(Y, Z = NULL, control = list()){
 #' 
 #' @seealso \code{\link{MSARmdl}}
 #' @example /inst/examples/ARmdl_examples.R
+#' @references Basawa, I. V., Mallik, A. K., McCormick, W. P., Reeves, J. H., & Taylor, R. L. 1991. "Bootstrapping Unstable First-Order Autoregressive Processes." \emph{The Annals of Statistics} 19(2): 1098-1101.
 #' @export
 ARmdl <- function(Y, p, control = list()){
   # ----- Set control values
   con <- list(const = TRUE,
-              getSE = TRUE)
+              getSE = TRUE,
+              stationarity_constraint = 0)
+  # Markov-switching estimation controls that the testing functions forward to
+  # the null model's constructor regardless of its class: recognized so a
+  # shared control list does not warn, and ignored (no linear-model meaning).
+  ms_inert <- c("use_diff_init", "em_variance_constraint", "em_transition_constraint")
   # Perform some checks for controls
-  nmsC <- names(con)
+  nmsC <- c(names(con), ms_inert)
   con[(namc <- names(control))] <- control
   if(length(noNms <- namc[!namc %in% nmsC])){
-    warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+    warning("unknown names in control: ", paste(noNms,collapse=", "))
   }
+  con[names(con) %in% ms_inert] <- NULL
   # ----- transform data
   lagged_vals <- ts_lagged(Y, p)
   y <- lagged_vals$y
@@ -514,9 +529,29 @@ ARmdl <- function(Y, p, control = list()){
     inter <- 0
     phi   <- beta[1:p,1]
     betaZ <- NULL
-    mu    <- inter/(1-sum(phi)) 
+    mu    <- inter/(1-sum(phi))
     beta  <- as.matrix(c(inter,beta))
     zz    <- cbind(1,zz)
+  }
+  # Stationarity margin (control stationarity_constraint): when the fitted AR
+  # block violates the margin, it is replaced by the constrained value (p = 1:
+  # the exact constrained least-squares solution, a clip of the joint OLS
+  # coefficient; p >= 2: the root-scaling projection) and the intercept is
+  # re-solved exactly at the constrained value. Disabled (the default) leaves
+  # the ordinary fit untouched, including a nonstationary one.
+  sc <- .validate_stationarity_constraint(con[["stationarity_constraint"]], "ARmdl")
+  sc_applied <- TRUE
+  if (sc > 0){
+    cs <- .ols_stationarity_step(y, x, if (con$const) matrix(1, n, 1) else NULL, phi, sc)
+    if (!is.null(cs)){
+      sc_applied <- cs$applied
+      if (sc_applied){
+        phi   <- cs$phi
+        inter <- if (con$const) cs$gamma[1] else 0
+        mu    <- inter/(1-sum(phi))
+        beta  <- as.matrix(c(inter, phi))
+      }
+    }
   }
   npar <- length(beta)
   # ----- Obtain variables of interest
@@ -549,11 +584,17 @@ ARmdl <- function(Y, p, control = list()){
   # get information criterion
   out$AIC <- stats::AIC(out)
   out$BIC <- stats::BIC(out)
-  # names 
+  # names
   names(out$theta) <- c("mu", paste0("phi_",(1:p)), "sig")
+  # stationarity-margin reporting: the constraint couples the whole AR block,
+  # so a binding fit sets every phi coordinate's SE to NA (boundary estimate);
+  # NA when the constraint could not be applied (unidentified AR block)
+  out$stationarity_constraint <- con[["stationarity_constraint"]]
+  if (sc > 0) out$phi_constraint_binding <- if (sc_applied) .phi_margin_binding(out$phi, sc) else NA
   # get standard errors if 'con$getSE' is 'TRUE'
   if (con$getSE==TRUE){
     out <- thetaSE(out)
+    if (sc > 0) out <- .phi_margin_na_se(out)
   }
   return(out)
 }
@@ -571,6 +612,8 @@ ARmdl <- function(Y, p, control = list()){
 #' \itemize{
 #'   \item const: Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
 #'   \item getSE: Boolean determining whether to compute standard errors of parameters if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
+#'   \item stationarity_constraint: Double giving a stationarity margin \code{delta} on the autoregressive coefficients: the fitted process satisfies companion spectral radius \code{<= 1 - delta}. \code{0} (the default) or a negative value disables the constraint and reproduces the ordinary least-squares fit, including a nonstationary one. At \code{p = 1} the constrained fit is exact -- the clip of the unconstrained coefficient, with the remaining coefficients re-solved exactly at the constrained value; for \code{p >= 2} the autoregressive block is moved by a root-scaling projection of the offending companion eigenvalues (a projection, not the constrained least-squares optimizer). Intended for comparability with procedures whose validity theory assumes stationarity, such as parametric bootstrap tests (Basawa, Mallik, McCormick, Reeves and Taylor, 1991); the Monte Carlo likelihood-ratio tests
+#'     themselves do not require it. Distinct from \code{MMCLRTest}'s \code{stationary_constraint} (the search's stationarity penalty); by default \code{MMCLRTest} aligns its nuisance search set with the margin (control \code{box_match_constraints}). A binding fit is flagged in \code{phi_constraint_binding} and the autoregressive block's standard errors are set to \code{NA} (the constraint couples the whole block). Markov-switching estimation controls forwarded by the testing functions (\code{use_diff_init}, \code{em_variance_constraint}, \code{em_transition_constraint}) are accepted and ignored without a warning.
 #' }
 #' 
 #' @return List of class \code{ARmdl} (\code{S3} object) with model attributes including:
@@ -609,17 +652,24 @@ ARmdl <- function(Y, p, control = list()){
 #' 
 #' @seealso \code{\link{MSARmdl}}
 #' @example /inst/examples/ARmdl_examples.R
+#' @references Basawa, I. V., Mallik, A. K., McCormick, W. P., Reeves, J. H., & Taylor, R. L. 1991. "Bootstrapping Unstable First-Order Autoregressive Processes." \emph{The Annals of Statistics} 19(2): 1098-1101.
 #' @export
 ARXmdl <- function(Y, p, Z, control = list()){
   # ----- Set control values
   con <- list(const = TRUE,
-              getSE = TRUE)
+              getSE = TRUE,
+              stationarity_constraint = 0)
+  # Markov-switching estimation controls that the testing functions forward to
+  # the null model's constructor regardless of its class: recognized so a
+  # shared control list does not warn, and ignored (no linear-model meaning).
+  ms_inert <- c("use_diff_init", "em_variance_constraint", "em_transition_constraint")
   # Perform some checks for controls
-  nmsC <- names(con)
+  nmsC <- c(names(con), ms_inert)
   con[(namc <- names(control))] <- control
   if(length(noNms <- namc[!namc %in% nmsC])){
-    warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+    warning("unknown names in control: ", paste(noNms,collapse=", "))
   }
+  con[names(con) %in% ms_inert] <- NULL
   con$Z = Z
   # ----- transform data
   lagged_vals <- ts_lagged(Y, p)
@@ -646,10 +696,31 @@ ARXmdl <- function(Y, p, Z, control = list()){
     inter <- 0
     phi   <- beta[1:p,1]
     betaZ <- beta[(p+1):nrow(beta),1,drop=F]
-    Zbar  <- as.matrix(colMeans(Z)) 
-    mu    <- (inter+t(betaZ)%*%Zbar)/(1-sum(phi)) 
+    Zbar  <- as.matrix(colMeans(Z))
+    mu    <- (inter+t(betaZ)%*%Zbar)/(1-sum(phi))
     beta  <- as.matrix(c(inter,beta))
     zz    <- cbind(1,zz)
+  }
+  # Stationarity margin (control stationarity_constraint): as in ARmdl, but
+  # the exact re-solve at the constrained AR value covers the intercept AND
+  # the exogenous coefficients jointly (they are the profiled block).
+  sc <- .validate_stationarity_constraint(con[["stationarity_constraint"]], "ARXmdl")
+  sc_applied <- TRUE
+  if (sc > 0){
+    Zsl <- Z[(p+1):(n+p),,drop=F]
+    W   <- if (con$const) cbind(1, Zsl) else Zsl
+    cs  <- .ols_stationarity_step(y, x, W, phi, sc)
+    if (!is.null(cs)){
+      sc_applied <- cs$applied
+      if (sc_applied){
+        phi   <- cs$phi
+        inter <- if (con$const) cs$gamma[1] else 0
+        betaZ <- matrix(if (con$const) cs$gamma[-1] else cs$gamma, ncol = 1)
+        Zbar  <- as.matrix(colMeans(Z))
+        mu    <- (inter+t(betaZ)%*%Zbar)/(1-sum(phi))
+        beta  <- as.matrix(c(inter, phi, betaZ))
+      }
+    }
   }
   npar <- length(beta)
   # ----- Obtain variables of interest
@@ -684,9 +755,13 @@ ARXmdl <- function(Y, p, Z, control = list()){
   out$BIC <- stats::BIC(out)
   # names
   names(out$theta) <- c("mu", paste0("phi_",(1:p)), paste0("x_",1:length(betaZ)),"sig")
+  # stationarity-margin reporting (see ARmdl)
+  out$stationarity_constraint <- con[["stationarity_constraint"]]
+  if (sc > 0) out$phi_constraint_binding <- if (sc_applied) .phi_margin_binding(out$phi, sc) else NA
   # get standard errors if 'con$getSE' is 'TRUE'
   if (con$getSE==TRUE){
     out <- thetaSE(out)
+    if (sc > 0) out <- .phi_margin_na_se(out)
   }
   return(out)
 }
@@ -701,6 +776,7 @@ ARXmdl <- function(Y, p, Z, control = list()){
 #' \itemize{
 #'  \item const: Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
 #'  \item getSE: Boolean determining whether to compute standard errors of parameters if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
+#'   \item stationarity_constraint: Not implemented for multivariate models; a positive value is a loud error. Markov-switching estimation controls forwarded by the testing functions (\code{use_diff_init}, \code{em_variance_constraint}, \code{em_transition_constraint}) are accepted and ignored without a warning.
 #' }
 #' 
 #' @return List of class \code{VARmdl} (\code{S3} object) with model attributes including:
@@ -744,12 +820,21 @@ ARXmdl <- function(Y, p, Z, control = list()){
 VARmdl <- function(Y, p, control = list()){
   # ----- Set control values
   con <- list(const = TRUE,
-              getSE = TRUE)
+              getSE = TRUE,
+              stationarity_constraint = 0)
+  # Markov-switching estimation controls that the testing functions forward to
+  # the null model's constructor regardless of its class: recognized so a
+  # shared control list does not warn, and ignored (no linear-model meaning).
+  ms_inert <- c("use_diff_init", "em_variance_constraint", "em_transition_constraint")
   # Perform some checks for controls
-  nmsC <- names(con)
+  nmsC <- c(names(con), ms_inert)
   con[(namc <- names(control))] <- control
   if(length(noNms <- namc[!namc %in% nmsC])){
-    warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+    warning("unknown names in control: ", paste(noNms,collapse=", "))
+  }
+  con[names(con) %in% ms_inert] <- NULL
+  if (.validate_stationarity_constraint(con[["stationarity_constraint"]], "VARmdl") > 0){
+    stop("VARmdl: 'stationarity_constraint' is not implemented for multivariate models (the VAR stationarity region requires its own constrained-update design); it is available for the univariate AR classes.")
   }
   # ----- transform data
   lagged_vals <- ts_lagged(Y, p)
@@ -837,6 +922,7 @@ VARmdl <- function(Y, p, control = list()){
 #' \itemize{
 #'  \item const: Boolean determining whether to estimate model with constant if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
 #'  \item getSE: Boolean determining whether to compute standard errors of parameters if \code{TRUE} or not if \code{FALSE}. Default is \code{TRUE}.
+#'   \item stationarity_constraint: Not implemented for multivariate models; a positive value is a loud error. Markov-switching estimation controls forwarded by the testing functions (\code{use_diff_init}, \code{em_variance_constraint}, \code{em_transition_constraint}) are accepted and ignored without a warning.
 #' }
 #' 
 #' @return List of class \code{VARmdl} (\code{S3} object) with model attributes including:
@@ -881,12 +967,21 @@ VARmdl <- function(Y, p, control = list()){
 VARXmdl <- function(Y, p, Z, control = list()){
   # ----- Set control values
   con <- list(const = TRUE, 
-              getSE = TRUE)
+              getSE = TRUE,
+              stationarity_constraint = 0)
+  # Markov-switching estimation controls that the testing functions forward to
+  # the null model's constructor regardless of its class: recognized so a
+  # shared control list does not warn, and ignored (no linear-model meaning).
+  ms_inert <- c("use_diff_init", "em_variance_constraint", "em_transition_constraint")
   # Perform some checks for controls
-  nmsC <- names(con)
+  nmsC <- c(names(con), ms_inert)
   con[(namc <- names(control))] <- control
   if(length(noNms <- namc[!namc %in% nmsC])){
-    warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+    warning("unknown names in control: ", paste(noNms,collapse=", "))
+  }
+  con[names(con) %in% ms_inert] <- NULL
+  if (.validate_stationarity_constraint(con[["stationarity_constraint"]], "VARXmdl") > 0){
+    stop("VARXmdl: 'stationarity_constraint' is not implemented for multivariate models (the VAR stationarity region requires its own constrained-update design); it is available for the univariate AR classes.")
   }
   con$Z <- Z
   # ----- transform data
@@ -989,8 +1084,10 @@ VARXmdl <- function(Y, p, Z, control = list()){
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values. The last \code{k*k} entries must be \code{vec(P)} (column-major) with entries in [0,1] and columns summing to 1; invalid values raise an error.
 #'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
 #'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
-#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
-#'  \item em_transition_constraint: Double bounding the transition probabilities away from the boundary during EM estimation: \code{p_ij >= em_transition_constraint} for every entry of the transition matrix (which implies \code{p_ij <= 1 - em_transition_constraint}). Must be less than \code{1/k}; \code{0} (the default) or a negative value disables the constraint and reproduces the unconstrained update. Applies to \code{method = "EM"} only; \code{P_constraint_binding} is \code{NULL} for MLE fits. Because columns sum to 1, the bound implies each transition-matrix diagonal entry is at most \code{1 - (k-1)*em_transition_constraint}; at \code{k > 2} choose the bound with this cap in mind (a bound of 0.05 caps diagonal persistence at 0.90 for \code{k = 3}). The constrained update is the exact maximizer of the expected complete-data log-likelihood over the bounded simplex (a water-filling solution), so the EM monotone-ascent property is preserved (Kim and Taylor, 1995). Intended for comparability with procedures that require transition probabilities bounded away from 0 and 1 (Kasahara and Shimotsu, 2018; Qu and Zhuo, 2021). Applies to the EM path only; for \code{method = "MLE"} use \code{mle_theta_low}/\code{mle_theta_upp}. Fitted entries at the bound are reported in \code{P_constraint_binding} and their standard errors are set to \code{NA} (boundary estimates).
+#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and
+#'    Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
+#'  \item em_transition_constraint: Double bounding the transition probabilities away from the boundary during EM estimation: \code{p_ij >= em_transition_constraint} for every entry of the transition matrix (which implies \code{p_ij <= 1 - em_transition_constraint}). Must be less than \code{1/k}; \code{0} (the default) or a negative value disables the constraint and reproduces the unconstrained update. Applies to \code{method = "EM"} only; \code{P_constraint_binding} is \code{NULL} for MLE fits. Because columns sum to 1, the bound implies each transition-matrix diagonal entry is at most \code{1 - (k-1)*em_transition_constraint}; at \code{k > 2} choose the bound with this cap in mind (a bound of 0.05 caps diagonal persistence at 0.90 for \code{k = 3}). The constrained update is the exact maximizer of the expected complete-data log-likelihood over the bounded simplex (a water-filling solution), so
+#'    the EM monotone-ascent property is preserved (Kim and Taylor, 1995). Intended for comparability with procedures that require transition probabilities bounded away from 0 and 1 (Kasahara and Shimotsu, 2018; Qu and Zhuo, 2021). Applies to the EM path only; for \code{method = "MLE"} use \code{mle_theta_low}/\code{mle_theta_upp}. Fitted entries at the bound are reported in \code{P_constraint_binding} and their standard errors are set to \code{NA} (boundary estimates).
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation. Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -1076,11 +1173,15 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
               mle_theta_low = NULL,
               mle_theta_upp = NULL)
   # ----- Perform some checks for controls
-  nmsC <- names(con)
+  # The stationarity margin forwarded by the testing functions has nothing to
+  # constrain in a hidden Markov model (no autoregressive block): recognized
+  # and ignored so a shared control list does not warn.
+  nmsC <- c(names(con), "stationarity_constraint")
   con[(namc <- names(control))] <- control
   if(length(noNms <- namc[!namc %in% nmsC])){
-    warning("unknown names in control: ", paste(noNms,collapse=", ")) 
+    warning("unknown names in control: ", paste(noNms,collapse=", "))
   }
+  con[names(con) == "stationarity_constraint"] <- NULL
   if (k<2){
     stop("value for 'k' must be greater than or equal to 2.")
   }
@@ -1371,8 +1472,13 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values. The last \code{k*k} entries must be \code{vec(P)} (column-major) with entries in [0,1] and columns summing to 1; invalid values raise an error.
 #'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
 #'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
-#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
-#'  \item em_transition_constraint: Double bounding the transition probabilities away from the boundary during EM estimation: \code{p_ij >= em_transition_constraint} for every entry of the transition matrix (which implies \code{p_ij <= 1 - em_transition_constraint}). Must be less than \code{1/k}; \code{0} (the default) or a negative value disables the constraint and reproduces the unconstrained update. Applies to \code{method = "EM"} only; \code{P_constraint_binding} is \code{NULL} for MLE fits. Because columns sum to 1, the bound implies each transition-matrix diagonal entry is at most \code{1 - (k-1)*em_transition_constraint}; at \code{k > 2} choose the bound with this cap in mind (a bound of 0.05 caps diagonal persistence at 0.90 for \code{k = 3}). The constrained update is the exact maximizer of the expected complete-data log-likelihood over the bounded simplex (a water-filling solution), so the EM monotone-ascent property is preserved (Kim and Taylor, 1995). Intended for comparability with procedures that require transition probabilities bounded away from 0 and 1 (Kasahara and Shimotsu, 2018; Qu and Zhuo, 2021). Applies to the EM path only; for \code{method = "MLE"} use \code{mle_theta_low}/\code{mle_theta_upp}. Fitted entries at the bound are reported in \code{P_constraint_binding} and their standard errors are set to \code{NA} (boundary estimates).
+#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and
+#'    Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
+#'  \item em_transition_constraint: Double bounding the transition probabilities away from the boundary during EM estimation: \code{p_ij >= em_transition_constraint} for every entry of the transition matrix (which implies \code{p_ij <= 1 - em_transition_constraint}). Must be less than \code{1/k}; \code{0} (the default) or a negative value disables the constraint and reproduces the unconstrained update. Applies to \code{method = "EM"} only; \code{P_constraint_binding} is \code{NULL} for MLE fits. Because columns sum to 1, the bound implies each transition-matrix diagonal entry is at most \code{1 - (k-1)*em_transition_constraint}; at \code{k > 2} choose the bound with this cap in mind (a bound of 0.05 caps diagonal persistence at 0.90 for \code{k = 3}). The constrained update is the exact maximizer of the expected complete-data log-likelihood over the bounded simplex (a water-filling solution), so
+#'    the EM monotone-ascent property is preserved (Kim and Taylor, 1995). Intended for comparability with procedures that require transition probabilities bounded away from 0 and 1 (Kasahara and Shimotsu, 2018; Qu and Zhuo, 2021). Applies to the EM path only; for \code{method = "MLE"} use \code{mle_theta_low}/\code{mle_theta_upp}. Fitted entries at the bound are reported in \code{P_constraint_binding} and their standard errors are set to \code{NA} (boundary estimates).
+#'  \item stationarity_constraint: Double giving a stationarity margin \code{delta} on the (common, non-switching) autoregressive coefficients: the fitted process satisfies companion spectral radius \code{<= 1 - delta}. \code{0} (the default) or a negative value disables the constraint and reproduces the long-standing unconstrained update, including its margin-0 stationarity guard, decision-for-decision. At \code{p = 1} the constrained EM update is exact (the clip of the weighted-least-squares solve is the constrained maximizer of the expected complete-data log-likelihood, with the exogenous coefficients -- when present -- re-solved exactly at the clipped value); for \code{p >= 2} the update uses a root-scaling projection accepted only when it does not lower the M-step objective, so the autoregressive step never lowers the expected complete-data log-likelihood. Starting values are projected into
+#'    the margin region when the constraint is enabled. Intended for comparability with procedures whose validity theory assumes stationarity, such as parametric bootstrap tests (Basawa, Mallik, McCormick, Reeves and Taylor, 1991); the Monte Carlo likelihood-ratio tests themselves do not require it. Distinct from \code{MMCLRTest}'s \code{stationary_constraint} (the search's stationarity penalty); by default \code{MMCLRTest} aligns its nuisance search set with the margin (control \code{box_match_constraints}). A binding fit is flagged in \code{phi_constraint_binding} and the autoregressive block's standard errors are set to \code{NA}. For \code{method = "MLE"} the margin imposes the characteristic-root bound moduli \code{>= 1/(1 - delta)} whenever it is set (independently of \code{mle_stationary_constraint}), and a fit the solver leaves marginally outside the bound
+#'    (its constraint tolerance) is projected onto it.
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -1438,6 +1544,7 @@ HMmdl <- function(Y, k, Z = NULL, control = list()){
 #' 
 #' @seealso \code{\link{ARmdl}}
 #' @example /inst/examples/MSARmdl_examples.R
+#' @references Basawa, I. V., Mallik, A. K., McCormick, W. P., Reeves, J. H., & Taylor, R. L. 1991. "Bootstrapping Unstable First-Order Autoregressive Processes." \emph{The Annals of Statistics} 19(2): 1098-1101.
 #' @export
 MSARmdl <- function(Y, p, k, control = list()){
   # ----- Set control values
@@ -1449,6 +1556,7 @@ MSARmdl <- function(Y, p, k, control = list()){
               init_theta_extra = NULL,
               em_variance_constraint = 0.01,
               em_transition_constraint = 0,
+              stationarity_constraint = 0,
               init_method = NULL,
               method = "EM",
               maxit = 1000,
@@ -1502,6 +1610,12 @@ MSARmdl <- function(Y, p, k, control = list()){
     stop("em_transition_constraint must be less than 1/k.")
   }
   init_mdl$P_bound <- if (isTRUE(con$em_transition_constraint > 0)) con$em_transition_constraint else 0
+  # ----- Stationarity margin (control stationarity_constraint): the fitted
+  # AR block is constrained to companion spectral radius <= 1 - delta
+  # (0 disables; see the control documentation). Passed to the estimation
+  # routines as a model-list field, like the variance floor and the
+  # transition bound.
+  init_mdl$phi_margin <- .validate_stationarity_constraint(con[["stationarity_constraint"]], "MSARmdl")
   .validate_switching(k, con$msmu, con$msvar)
   if (!is.null(con$init_theta)){
     .validate_init_theta(con$init_theta, k, init_mdl$q, init_mdl$p,
@@ -1677,6 +1791,12 @@ MSARmdl <- function(Y, p, k, control = list()){
   }else{
     NULL
   }
+  out$stationarity_constraint <- con[["stationarity_constraint"]]
+  out$phi_constraint_binding <- if (isTRUE(init_mdl$phi_margin > 0)){
+    .phi_margin_binding(out$phi, init_mdl$phi_margin)
+  }else{
+    NULL
+  }
   if (con$getSE==TRUE){
     if (identical(con$se_method, "louis")) {
       out <- thetaSE_louis(out)
@@ -1691,6 +1811,7 @@ MSARmdl <- function(Y, p, k, control = list()){
     # not interpretable under the asymptotic normal approximation -> NA.
     out <- .floor_na_se(out)
     out <- .P_bound_na_se(out)
+    out <- .phi_margin_na_se(out)
   }
   if (is.null(con$init_theta)){
     out$trace <- output_all
@@ -1716,8 +1837,13 @@ MSARmdl <- function(Y, p, k, control = list()){
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix.This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values. The last \code{k*k} entries must be \code{vec(P)} (column-major) with entries in [0,1] and columns summing to 1; invalid values raise an error.
 #'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
 #'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
-#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
-#'  \item em_transition_constraint: Double bounding the transition probabilities away from the boundary during EM estimation: \code{p_ij >= em_transition_constraint} for every entry of the transition matrix (which implies \code{p_ij <= 1 - em_transition_constraint}). Must be less than \code{1/k}; \code{0} (the default) or a negative value disables the constraint and reproduces the unconstrained update. Applies to \code{method = "EM"} only; \code{P_constraint_binding} is \code{NULL} for MLE fits. Because columns sum to 1, the bound implies each transition-matrix diagonal entry is at most \code{1 - (k-1)*em_transition_constraint}; at \code{k > 2} choose the bound with this cap in mind (a bound of 0.05 caps diagonal persistence at 0.90 for \code{k = 3}). The constrained update is the exact maximizer of the expected complete-data log-likelihood over the bounded simplex (a water-filling solution), so the EM monotone-ascent property is preserved (Kim and Taylor, 1995). Intended for comparability with procedures that require transition probabilities bounded away from 0 and 1 (Kasahara and Shimotsu, 2018; Qu and Zhuo, 2021). Applies to the EM path only; for \code{method = "MLE"} use \code{mle_theta_low}/\code{mle_theta_upp}. Fitted entries at the bound are reported in \code{P_constraint_binding} and their standard errors are set to \code{NA} (boundary estimates).
+#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and
+#'    Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
+#'  \item em_transition_constraint: Double bounding the transition probabilities away from the boundary during EM estimation: \code{p_ij >= em_transition_constraint} for every entry of the transition matrix (which implies \code{p_ij <= 1 - em_transition_constraint}). Must be less than \code{1/k}; \code{0} (the default) or a negative value disables the constraint and reproduces the unconstrained update. Applies to \code{method = "EM"} only; \code{P_constraint_binding} is \code{NULL} for MLE fits. Because columns sum to 1, the bound implies each transition-matrix diagonal entry is at most \code{1 - (k-1)*em_transition_constraint}; at \code{k > 2} choose the bound with this cap in mind (a bound of 0.05 caps diagonal persistence at 0.90 for \code{k = 3}). The constrained update is the exact maximizer of the expected complete-data log-likelihood over the bounded simplex (a water-filling solution), so
+#'    the EM monotone-ascent property is preserved (Kim and Taylor, 1995). Intended for comparability with procedures that require transition probabilities bounded away from 0 and 1 (Kasahara and Shimotsu, 2018; Qu and Zhuo, 2021). Applies to the EM path only; for \code{method = "MLE"} use \code{mle_theta_low}/\code{mle_theta_upp}. Fitted entries at the bound are reported in \code{P_constraint_binding} and their standard errors are set to \code{NA} (boundary estimates).
+#'  \item stationarity_constraint: Double giving a stationarity margin \code{delta} on the (common, non-switching) autoregressive coefficients: the fitted process satisfies companion spectral radius \code{<= 1 - delta}. \code{0} (the default) or a negative value disables the constraint and reproduces the long-standing unconstrained update, including its margin-0 stationarity guard, decision-for-decision. At \code{p = 1} the constrained EM update is exact (the clip of the weighted-least-squares solve is the constrained maximizer of the expected complete-data log-likelihood, with the exogenous coefficients -- when present -- re-solved exactly at the clipped value); for \code{p >= 2} the update uses a root-scaling projection accepted only when it does not lower the M-step objective, so the autoregressive step never lowers the expected complete-data log-likelihood. Starting values are projected into
+#'    the margin region when the constraint is enabled. Intended for comparability with procedures whose validity theory assumes stationarity, such as parametric bootstrap tests (Basawa, Mallik, McCormick, Reeves and Taylor, 1991); the Monte Carlo likelihood-ratio tests themselves do not require it. Distinct from \code{MMCLRTest}'s \code{stationary_constraint} (the search's stationarity penalty); by default \code{MMCLRTest} aligns its nuisance search set with the margin (control \code{box_match_constraints}). A binding fit is flagged in \code{phi_constraint_binding} and the autoregressive block's standard errors are set to \code{NA}. For \code{method = "MLE"} the margin imposes the characteristic-root bound moduli \code{>= 1/(1 - delta)} whenever it is set (independently of \code{mle_stationary_constraint}), and a fit the solver leaves marginally outside the bound
+#'    (its constraint tolerance) is projected onto it.
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -1784,6 +1910,7 @@ MSARmdl <- function(Y, p, k, control = list()){
 #' 
 #' @seealso \code{\link{ARmdl}}
 #' @example /inst/examples/MSARmdl_examples.R
+#' @references Basawa, I. V., Mallik, A. K., McCormick, W. P., Reeves, J. H., & Taylor, R. L. 1991. "Bootstrapping Unstable First-Order Autoregressive Processes." \emph{The Annals of Statistics} 19(2): 1098-1101.
 #' @export
 MSARXmdl <- function(Y, p, k, Z, control = list()){
   # ----- Set control values
@@ -1795,6 +1922,7 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
               init_theta_extra = NULL,
               em_variance_constraint = 0.01,
               em_transition_constraint = 0,
+              stationarity_constraint = 0,
               init_method = NULL,
               method = "EM",
               maxit = 1000,
@@ -1849,6 +1977,12 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
     stop("em_transition_constraint must be less than 1/k.")
   }
   init_mdl$P_bound <- if (isTRUE(con$em_transition_constraint > 0)) con$em_transition_constraint else 0
+  # ----- Stationarity margin (control stationarity_constraint): the fitted
+  # AR block is constrained to companion spectral radius <= 1 - delta
+  # (0 disables; see the control documentation). Passed to the estimation
+  # routines as a model-list field, like the variance floor and the
+  # transition bound.
+  init_mdl$phi_margin <- .validate_stationarity_constraint(con[["stationarity_constraint"]], "MSARXmdl")
   .validate_switching(k, con$msmu, con$msvar)
   if (!is.null(con$init_theta)){
     .validate_init_theta(con$init_theta, k, init_mdl$q, init_mdl$p,
@@ -2021,6 +2155,12 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
   }else{
     NULL
   }
+  out$stationarity_constraint <- con[["stationarity_constraint"]]
+  out$phi_constraint_binding <- if (isTRUE(init_mdl$phi_margin > 0)){
+    .phi_margin_binding(out$phi, init_mdl$phi_margin)
+  }else{
+    NULL
+  }
   if (con$getSE==TRUE){
     if (identical(con$se_method, "louis")) {
       out <- thetaSE_louis(out)
@@ -2035,6 +2175,7 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
     # not interpretable under the asymptotic normal approximation -> NA.
     out <- .floor_na_se(out)
     out <- .P_bound_na_se(out)
+    out <- .phi_margin_na_se(out)
   }
   if (is.null(con$init_theta)){
     out$trace <- output_all
@@ -2060,8 +2201,10 @@ MSARXmdl <- function(Y, p, k, Z, control = list()){
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix. This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values. The last \code{k*k} entries must be \code{vec(P)} (column-major) with entries in [0,1] and columns summing to 1; invalid values raise an error.
 #'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
 #'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
-#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
-#'  \item em_transition_constraint: Double bounding the transition probabilities away from the boundary during EM estimation: \code{p_ij >= em_transition_constraint} for every entry of the transition matrix (which implies \code{p_ij <= 1 - em_transition_constraint}). Must be less than \code{1/k}; \code{0} (the default) or a negative value disables the constraint and reproduces the unconstrained update. Applies to \code{method = "EM"} only; \code{P_constraint_binding} is \code{NULL} for MLE fits. Because columns sum to 1, the bound implies each transition-matrix diagonal entry is at most \code{1 - (k-1)*em_transition_constraint}; at \code{k > 2} choose the bound with this cap in mind (a bound of 0.05 caps diagonal persistence at 0.90 for \code{k = 3}). The constrained update is the exact maximizer of the expected complete-data log-likelihood over the bounded simplex (a water-filling solution), so the EM monotone-ascent property is preserved (Kim and Taylor, 1995). Intended for comparability with procedures that require transition probabilities bounded away from 0 and 1 (Kasahara and Shimotsu, 2018; Qu and Zhuo, 2021). Applies to the EM path only; for \code{method = "MLE"} use \code{mle_theta_low}/\code{mle_theta_upp}. Fitted entries at the bound are reported in \code{P_constraint_binding} and their standard errors are set to \code{NA} (boundary estimates).
+#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and
+#'    Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
+#'  \item em_transition_constraint: Double bounding the transition probabilities away from the boundary during EM estimation: \code{p_ij >= em_transition_constraint} for every entry of the transition matrix (which implies \code{p_ij <= 1 - em_transition_constraint}). Must be less than \code{1/k}; \code{0} (the default) or a negative value disables the constraint and reproduces the unconstrained update. Applies to \code{method = "EM"} only; \code{P_constraint_binding} is \code{NULL} for MLE fits. Because columns sum to 1, the bound implies each transition-matrix diagonal entry is at most \code{1 - (k-1)*em_transition_constraint}; at \code{k > 2} choose the bound with this cap in mind (a bound of 0.05 caps diagonal persistence at 0.90 for \code{k = 3}). The constrained update is the exact maximizer of the expected complete-data log-likelihood over the bounded simplex (a water-filling solution), so
+#'    the EM monotone-ascent property is preserved (Kim and Taylor, 1995). Intended for comparability with procedures that require transition probabilities bounded away from 0 and 1 (Kasahara and Shimotsu, 2018; Qu and Zhuo, 2021). Applies to the EM path only; for \code{method = "MLE"} use \code{mle_theta_low}/\code{mle_theta_upp}. Fitted entries at the bound are reported in \code{P_constraint_binding} and their standard errors are set to \code{NA} (boundary estimates).
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -2139,6 +2282,7 @@ MSVARmdl <- function(Y, p, k, control = list()){
               init_theta_extra = NULL,
               em_variance_constraint = 0.01,
               em_transition_constraint = 0,
+              stationarity_constraint = 0,
               init_method = NULL,
               method = "EM",
               maxit = 1000,
@@ -2192,6 +2336,9 @@ MSVARmdl <- function(Y, p, k, control = list()){
     stop("em_transition_constraint must be less than 1/k.")
   }
   init_mdl$P_bound <- if (isTRUE(con$em_transition_constraint > 0)) con$em_transition_constraint else 0
+  if (.validate_stationarity_constraint(con[["stationarity_constraint"]], "MSVARmdl") > 0){
+    stop("MSVARmdl: 'stationarity_constraint' is not implemented for multivariate models (the VAR stationarity region requires its own constrained-update design); it is available for the univariate AR classes.")
+  }
   .validate_switching(k, con$msmu, con$msvar)
   if (!is.null(con$init_theta)){
     .validate_init_theta(con$init_theta, k, init_mdl$q, init_mdl$p,
@@ -2417,8 +2564,10 @@ MSVARmdl <- function(Y, p, k, control = list()){
 #'  \item init_theta: vector of initial values. vector must contain \code{(1 x q)} vector \code{mu}, \code{vech(sigma)}, and \code{vec(P)} where sigma is a \code{(q x q)} covariance matrix. This is optional. Default is \code{NULL}, in which case \code{\link{initVals_MSARmdl}} is used to generate initial values. The last \code{k*k} entries must be \code{vec(P)} (column-major) with entries in [0,1] and columns summing to 1; invalid values raise an error.
 #'  \item init_theta_extra: List of additional deterministic starting vectors (same parameter ordering as \code{theta}) that are attempted first and compete with the \code{use_diff_init} random starts on log-likelihood (used internally by the Monte Carlo LR tests for warm starts; see \code{\link{warmstart_theta}}). Unlike \code{init_theta}, these do not bypass the multi-start search. Non-finite vectors are dropped; a wrong-length vector falls back to a random start. Default is \code{NULL}.
 #'  \item init_method: Passive marker used by the Monte Carlo LR testing functions (\code{"warmstart"} or \code{"random"}); it has no effect on direct estimation. Default is \code{NULL}.
-#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
-#'  \item em_transition_constraint: Double bounding the transition probabilities away from the boundary during EM estimation: \code{p_ij >= em_transition_constraint} for every entry of the transition matrix (which implies \code{p_ij <= 1 - em_transition_constraint}). Must be less than \code{1/k}; \code{0} (the default) or a negative value disables the constraint and reproduces the unconstrained update. Applies to \code{method = "EM"} only; \code{P_constraint_binding} is \code{NULL} for MLE fits. Because columns sum to 1, the bound implies each transition-matrix diagonal entry is at most \code{1 - (k-1)*em_transition_constraint}; at \code{k > 2} choose the bound with this cap in mind (a bound of 0.05 caps diagonal persistence at 0.90 for \code{k = 3}). The constrained update is the exact maximizer of the expected complete-data log-likelihood over the bounded simplex (a water-filling solution), so the EM monotone-ascent property is preserved (Kim and Taylor, 1995). Intended for comparability with procedures that require transition probabilities bounded away from 0 and 1 (Kasahara and Shimotsu, 2018; Qu and Zhuo, 2021). Applies to the EM path only; for \code{method = "MLE"} use \code{mle_theta_low}/\code{mle_theta_upp}. Fitted entries at the bound are reported in \code{P_constraint_binding} and their standard errors are set to \code{NA} (boundary estimates).
+#'  \item em_variance_constraint: Double determining the lower bound imposed on the regime variances during EM estimation, as a fraction of the variance of the one-regime (linear) fit of the same data: \code{sigma_k^2 >= em_variance_constraint * sigma_linear^2} (for multivariate models, the smallest eigenvalue of each regime covariance is bounded by \code{em_variance_constraint * trace(Sigma_linear)/q}). Default is \code{0.01} (i.e. a regime standard deviation of at least 10\% of the linear-model standard deviation); \code{0} or a negative value disables the constraint and reproduces the unconstrained behaviour of earlier versions. The constraint is needed because the Gaussian mixture (and Markov-switching) likelihood is unbounded: driving a regime variance to zero on a few observations sends the likelihood to infinity, so the unconstrained maximum likelihood estimate does not exist (Kiefer and
+#'    Wolfowitz, 1956; Day, 1969; Hamilton, 1994, p. 689). Bounding the regime variances restores a well-defined maximizer (Hathaway, 1985, 1986, who instead bounds the ratios of the component scales); the data-dependent form used here follows Kasahara and Shimotsu (2018), on the variance rather than the standard-deviation scale. Clipping the variance update at the bound in each EM iteration is the exact constrained maximization step, so the algorithm retains its monotone ascent property. Fitted variances that end at the bound are reported in \code{sigma_floor_binding} and their standard errors are set to \code{NA} (they are boundary estimates).
+#'  \item em_transition_constraint: Double bounding the transition probabilities away from the boundary during EM estimation: \code{p_ij >= em_transition_constraint} for every entry of the transition matrix (which implies \code{p_ij <= 1 - em_transition_constraint}). Must be less than \code{1/k}; \code{0} (the default) or a negative value disables the constraint and reproduces the unconstrained update. Applies to \code{method = "EM"} only; \code{P_constraint_binding} is \code{NULL} for MLE fits. Because columns sum to 1, the bound implies each transition-matrix diagonal entry is at most \code{1 - (k-1)*em_transition_constraint}; at \code{k > 2} choose the bound with this cap in mind (a bound of 0.05 caps diagonal persistence at 0.90 for \code{k = 3}). The constrained update is the exact maximizer of the expected complete-data log-likelihood over the bounded simplex (a water-filling solution), so
+#'    the EM monotone-ascent property is preserved (Kim and Taylor, 1995). Intended for comparability with procedures that require transition probabilities bounded away from 0 and 1 (Kasahara and Shimotsu, 2018; Qu and Zhuo, 2021). Applies to the EM path only; for \code{method = "MLE"} use \code{mle_theta_low}/\code{mle_theta_upp}. Fitted entries at the bound are reported in \code{P_constraint_binding} and their standard errors are set to \code{NA} (boundary estimates).
 #'  \item method: string determining which method to use. Options are \code{'EM'} for EM algorithm or \code{'MLE'} for Maximum Likelihood Estimation.  Default is \code{'EM'}.
 #'  \item maxit: integer determining the maximum number of EM iterations.
 #'  \item thtol: double determining the convergence criterion for the relative change in the parameter estimates \code{theta} between iterations (used when \code{conv} is \code{"theta"}, \code{"both"}, or \code{"both-A"}). Default is \code{1e-6}.
@@ -2497,6 +2646,7 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
               init_theta_extra = NULL,
               em_variance_constraint = 0.01,
               em_transition_constraint = 0,
+              stationarity_constraint = 0,
               init_method = NULL,
               method = "EM",
               maxit = 1000,
@@ -2551,6 +2701,9 @@ MSVARXmdl <- function(Y, p, k, Z, control = list()){
     stop("em_transition_constraint must be less than 1/k.")
   }
   init_mdl$P_bound <- if (isTRUE(con$em_transition_constraint > 0)) con$em_transition_constraint else 0
+  if (.validate_stationarity_constraint(con[["stationarity_constraint"]], "MSVARXmdl") > 0){
+    stop("MSVARXmdl: 'stationarity_constraint' is not implemented for multivariate models (the VAR stationarity region requires its own constrained-update design); it is available for the univariate AR classes.")
+  }
   .validate_switching(k, con$msmu, con$msvar)
   if (!is.null(con$init_theta)){
     .validate_init_theta(con$init_theta, k, init_mdl$q, init_mdl$p,

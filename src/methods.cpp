@@ -3734,6 +3734,138 @@ arma::vec project_theta_P_bound(arma::vec theta_0, List mdl, int k){
   return theta_0;
 }
 
+// ------------------------------------------------------------------------------
+// Stationarity margin on the autoregressive block (control
+// stationarity_constraint). The margin delta is passed in the model list as
+// 'phi_margin' (0 or absent = disabled); a constrained fit satisfies
+// companion spectral radius <= 1 - delta. Needed for comparability with
+// procedures whose validity theory assumes stationarity (parametric bootstrap
+// tests: Basawa, Mallik, McCormick, Reeves and Taylor 1991).
+double get_phi_margin(List mdl){
+  if (mdl.containsElementNamed("phi_margin")){
+    Rcpp::RObject pm = mdl["phi_margin"];
+    if (!pm.isNULL()){
+      double val = Rcpp::as<double>(pm);
+      if (std::isfinite(val) && (val > 0.0)) return val;
+    }
+  }
+  return 0.0;
+}
+
+// Companion spectral radius of an AR coefficient vector.
+double phi_companion_radius(const arma::vec& phi){
+  int p = phi.n_elem;
+  if (p == 0) return 0.0;
+  if (p == 1) return std::abs(phi(0));
+  arma::mat F(p, p, arma::fill::zeros);
+  F.row(0) = phi.t();
+  F.submat(1, 0, p-1, p-2) = arma::eye(p-1, p-1);
+  return arma::max(arma::abs(arma::eig_gen(F)));
+}
+
+//' @title Stationarity-margin projection of AR coefficients
+//'
+//' @description Projects an autoregressive coefficient vector into the set
+//' with companion spectral radius at most \code{1 - delta}. At \code{p = 1}
+//' this is an exact clip. For \code{p >= 2} the offending companion
+//' eigenvalues are shrunk to a padded target radius and the coefficients are
+//' rebuilt from the scaled roots; roots already inside the margin are
+//' preserved. The pad absorbs the eigenvalue error of repeated roots (which
+//' grows like the m-th root of machine precision for an m-fold root), and the
+//' rebuild is exact because a companion matrix is nonderogatory, so its
+//' characteristic polynomial determines the coefficients. Conjugate pairs
+//' share a modulus exactly for a real input, hence share a scale factor, so
+//' the rebuilt coefficients are real; the imaginary residue is dropped and
+//' the radius re-checked with escalating pads. Root clusters of high
+//' multiplicity, whose eigenvalues carry too much error for the rebuild,
+//' fall back to scaling the coefficients \code{phi_j -> phi_j c^j}, which
+//' scales every companion eigenvalue by \code{c} exactly. This is a
+//' projection, not the constrained least-squares optimizer.
+//'
+//' @param phi AR coefficient vector.
+//' @param delta Stationarity margin in [0, 1); non-positive returns \code{phi} unchanged.
+//'
+//' @return Coefficient vector with companion spectral radius at most
+//'   \code{1 - delta} up to the radius evaluation's own floating-point error
+//'   (of order \code{1e-5} at the most degenerate root clusters).
+//'
+//' @keywords internal
+//'
+//' @export
+// [[Rcpp::export]]
+arma::vec phi_margin_project_cpp(arma::vec phi, double delta){
+  int p = phi.n_elem;
+  if (!(delta > 0.0) || p == 0) return phi;
+  double bound = 1.0 - delta;
+  if (p == 1){
+    if (phi(0) >  bound) phi(0) =  bound;
+    if (phi(0) < -bound) phi(0) = -bound;
+    return phi;
+  }
+  // The pad absorbs the eigenvalue error of repeated roots, which grows like
+  // the m-th root of machine precision for an m-fold root; the escalation
+  // covers multiplicities up to about 4, and the coefficient-scaling fallback
+  // below covers the rest.
+  const double pads[4] = {1e-8, 1e-6, 1e-4, 1e-3};
+  for (int attempt = 0; attempt < 4; attempt++){
+    if (phi_companion_radius(phi) <= bound) return phi;
+    arma::mat F(p, p, arma::fill::zeros);
+    F.row(0) = phi.t();
+    F.submat(1, 0, p-1, p-2) = arma::eye(p-1, p-1);
+    arma::cx_vec lam = arma::eig_gen(F);
+    double target = bound * (1.0 - pads[attempt]);
+    for (int i = 0; i < p; i++){
+      double m = std::abs(lam(i));
+      if (m > target) lam(i) = lam(i) * (target / m);
+    }
+    // characteristic polynomial z^p + c_1 z^(p-1) + ... + c_p from the scaled
+    // roots by sequential multiplication; phi_j = -c_j
+    arma::cx_vec cp(1);
+    cp(0) = arma::cx_double(1.0, 0.0);
+    for (int i = 0; i < p; i++){
+      arma::cx_vec nxt(cp.n_elem + 1, arma::fill::zeros);
+      for (arma::uword j = 0; j < cp.n_elem; j++){
+        nxt(j)     += cp(j);
+        nxt(j + 1) -= cp(j) * lam(i);
+      }
+      cp = nxt;
+    }
+    for (int j = 0; j < p; j++) phi(j) = -cp(j + 1).real();
+  }
+  // Fallback for root clusters the eigen rebuild cannot resolve: scaling the
+  // coefficients phi_j -> phi_j c^j multiplies every companion eigenvalue by
+  // c exactly (a change of variable in the characteristic polynomial), so
+  // with c = bound / radius the result is feasible in exact arithmetic
+  // without any rebuild; the small pad covers the radius evaluation itself.
+  double rho = phi_companion_radius(phi);
+  if (rho > bound){
+    double c = (bound / rho) * (1.0 - 1e-3);
+    double cj = 1.0;
+    for (int j = 0; j < p; j++){ cj *= c; phi(j) *= cj; }
+  }
+  return phi;
+}
+
+// Start from a feasible point w.r.t. the stationarity margin (univariate
+// MS-AR classes: theta = [mu block, phi, (betaZ,) sigma block, P]). Gated on
+// the margin being set: a disabled margin must leave every start bitwise
+// untouched, including nonstationary user starts, which the historical
+// (margin-0) guard deliberately holds rather than moves.
+arma::vec project_theta_phi_margin(arma::vec theta_0, List mdl, int k){
+  double delta = get_phi_margin(mdl);
+  if (!(delta > 0.0)) return theta_0;
+  int ar = mdl.containsElementNamed("p") ? Rcpp::as<int>(mdl["p"]) : 0;
+  if (ar <= 0) return theta_0;
+  bool msmu = mdl.containsElementNamed("msmu") ? Rcpp::as<bool>(mdl["msmu"]) : true;
+  int mu_len = 1 + (msmu ? (k-1) : 0);
+  int n = (int) theta_0.n_elem;
+  if (mu_len + ar > n) return theta_0;   // unexpected layout: leave as-is
+  arma::vec phi0 = theta_0.subvec(mu_len, mu_len + ar - 1);
+  if (phi_companion_radius(phi0) <= 1.0 - delta) return theta_0;  // feasible: bitwise untouched
+  theta_0.subvec(mu_len, mu_len + ar - 1) = phi_margin_project_cpp(phi0, delta);
+  return theta_0;
+}
+
 //' @title Maximization step of EM algorithm for Hidden Markov model
 //' 
 //' @description This function performs the maximization step of the Expectation Maximization algorithm for Hidden Markov models.
@@ -4116,14 +4248,39 @@ List EMaximization_MSARmdl(arma::vec theta, List mdl, List MSloglik_output, int 
   } catch (...) {
     phi_new = phi;  // Singular denom: keep previous phi
   }
-  // Stationarity check via companion matrix eigenvalues
+  // Stationarity handling. With a margin set ('phi_margin' in the model
+  // list), the update is constrained to companion spectral radius
+  // <= 1 - delta: at ar = 1 the clip of the WLS solve is the exact
+  // constrained maximizer of the concave quadratic M-step objective (the
+  // same one-line KKT argument as the variance floor's clip); at ar >= 2 an
+  // exact solution is unavailable (the constraint set is nonconvex), so the
+  // update is a root-scaling projection accepted only if it does not lower
+  // the M-step objective relative to the previous feasible iterate (a GEM
+  // step; the hold branch preserves ascent by Meng and Rubin's argument).
+  // The disabled state is a separate branch running the long-standing
+  // strict guard verbatim, so results without the control are unchanged
+  // decision-for-decision.
   if (ar > 0) {
-    arma::mat F_comp(ar, ar, arma::fill::zeros);
-    F_comp.row(0) = phi_new.t();
-    if (ar > 1) F_comp.submat(1, 0, ar-1, ar-2) = arma::eye(ar-1, ar-1);
-    arma::cx_vec eigvals = arma::eig_gen(F_comp);
-    if (arma::max(arma::abs(eigvals)) >= 1.0) {
-      phi_new = phi;  // revert to previous (stationary) phi
+    double phi_margin = get_phi_margin(mdl);
+    if (phi_margin > 0.0){
+      if (ar == 1){
+        double phb = 1.0 - phi_margin;
+        if (phi_new(0) >  phb) phi_new(0) =  phb;
+        if (phi_new(0) < -phb) phi_new(0) = -phb;
+      } else if (phi_companion_radius(phi_new) > 1.0 - phi_margin){
+        arma::vec phi_proj = phi_margin_project_cpp(phi_new, phi_margin);
+        double q_proj = arma::as_scalar(trans(num)*phi_proj - 0.5*trans(phi_proj)*denom*phi_proj);
+        double q_prev = arma::as_scalar(trans(num)*phi      - 0.5*trans(phi)*denom*phi);
+        phi_new = (q_proj >= q_prev) ? phi_proj : phi;
+      }
+    } else {
+      arma::mat F_comp(ar, ar, arma::fill::zeros);
+      F_comp.row(0) = phi_new.t();
+      if (ar > 1) F_comp.submat(1, 0, ar-1, ar-2) = arma::eye(ar-1, ar-1);
+      arma::cx_vec eigvals = arma::eig_gen(F_comp);
+      if (arma::max(arma::abs(eigvals)) >= 1.0) {
+        phi_new = phi;  // revert to previous (stationary) phi
+      }
     }
   }
   // ----- Update estimates for variance
@@ -4348,15 +4505,50 @@ List EMaximization_MSARXmdl(arma::vec theta, List mdl, List MSloglik_output, int
   }
   arma::vec phi_new   = beta_new.rows(0,ar-1);
   arma::vec betaZ_new = beta_new.rows(ar,ar+qz-1);
-  // Stationarity check via companion matrix eigenvalues
+  // Stationarity handling (see the MSARmdl block for the design). The phi
+  // and betaZ coordinates are solved JOINTLY here, so a constrained phi
+  // requires re-solving betaZ at the constrained value: with the joint
+  // quadratic partitioned as D = [[Dxx, Dxz], [Dzx, Dzz]], n = (nx, nz),
+  // the conditional maximizer is betaZ*(phi) = Dzz^{-1}(nz - Dzx phi) --
+  // clipping phi while keeping the jointly-solved betaZ would lower the
+  // M-step objective (a GEM ascent violation), whereas clip + re-solve is
+  // the exact constrained maximizer at ar = 1 by block elimination (the
+  // profiled quadratic's vertex is the joint solution's phi coordinate).
   if (ar > 0) {
-    arma::mat F_comp(ar, ar, arma::fill::zeros);
-    F_comp.row(0) = phi_new.t();
-    if (ar > 1) F_comp.submat(1, 0, ar-1, ar-2) = arma::eye(ar-1, ar-1);
-    arma::cx_vec eigvals = arma::eig_gen(F_comp);
-    if (arma::max(arma::abs(eigvals)) >= 1.0) {
-      phi_new = phi;      // revert to previous (stationary) phi
-      betaZ_new = betaZ;  // revert betaZ too (joint solve)
+    double phi_margin = get_phi_margin(mdl);
+    if (phi_margin > 0.0){
+      if (phi_companion_radius(phi_new) > 1.0 - phi_margin){
+        arma::vec phi_cand = phi_margin_project_cpp(phi_new, phi_margin);
+        arma::mat Dzz = denom.submat(ar, ar, ar+qz-1, ar+qz-1);
+        arma::mat Dzx = denom.submat(ar, 0, ar+qz-1, ar-1);
+        arma::vec nz  = num.rows(ar, ar+qz-1);
+        bool ok = true;
+        arma::vec betaZ_cand;
+        try {
+          betaZ_cand = arma::solve(Dzz, nz - Dzx*phi_cand, arma::solve_opts::allow_ugly);
+          if (!betaZ_cand.is_finite()) ok = false;
+        } catch (...) { ok = false; }
+        if (ok && ar == 1){
+          phi_new = phi_cand; betaZ_new = betaZ_cand;   // exact constrained maximizer
+        } else if (ok){
+          arma::vec b_cand = join_vert(phi_cand, betaZ_cand);
+          double q_cand = arma::as_scalar(trans(num)*b_cand    - 0.5*trans(b_cand)*denom*b_cand);
+          double q_prev = arma::as_scalar(trans(num)*prev_beta - 0.5*trans(prev_beta)*denom*prev_beta);
+          if (q_cand >= q_prev){ phi_new = phi_cand; betaZ_new = betaZ_cand; }
+          else { phi_new = phi; betaZ_new = betaZ; }    // hold the feasible previous pair
+        } else {
+          phi_new = phi; betaZ_new = betaZ;             // solve failure: hold
+        }
+      }
+    } else {
+      arma::mat F_comp(ar, ar, arma::fill::zeros);
+      F_comp.row(0) = phi_new.t();
+      if (ar > 1) F_comp.submat(1, 0, ar-1, ar-2) = arma::eye(ar-1, ar-1);
+      arma::cx_vec eigvals = arma::eig_gen(F_comp);
+      if (arma::max(arma::abs(eigvals)) >= 1.0) {
+        phi_new = phi;      // revert to previous (stationary) phi
+        betaZ_new = betaZ;  // revert betaZ too (joint solve)
+      }
     }
   }
   // ----- Update estimates for variance
@@ -5432,6 +5624,7 @@ List MSARmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   // ----- Start from a feasible point w.r.t. the EM variance floor
   theta_0 = project_theta_sigma_floor(theta_0, mdl, k);
   theta_0 = project_theta_P_bound(theta_0, mdl, k);
+  theta_0 = project_theta_phi_margin(theta_0, mdl, k);
   EMest_output["theta"] = theta_0;  // initial values for parameters
   EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_MSARmdl(mdl, EMest_output, k);
@@ -5524,6 +5717,7 @@ List MSARXmdl_em(arma::vec theta_0, List mdl, int k, List optim_options){
   // ----- Start from a feasible point w.r.t. the EM variance floor
   theta_0 = project_theta_sigma_floor(theta_0, mdl, k);
   theta_0 = project_theta_P_bound(theta_0, mdl, k);
+  theta_0 = project_theta_phi_margin(theta_0, mdl, k);
   EMest_output["theta"] = theta_0;  // initial values for parameters
   EMest_output["logLike"] = 0.0;     // initial log-likelihood
   EMest_output = EMiter_MSARXmdl(mdl, EMest_output, k);

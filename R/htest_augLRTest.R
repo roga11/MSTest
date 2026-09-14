@@ -112,6 +112,7 @@
     mdl_h0 <- canonicalize_regimes(mdl_h0, by = "persistence")
   }
   con$mdl_h1_control <- .inherit_ms_flags(con$mdl_h1_control, mdl_h0)
+  con$mdl_h1_control <- .inherit_stationarity_margin(con$mdl_h1_control, con$mdl_h0_control, fn_name, p)
   if ((con$init_method == "warmstart") && (k1 > 1)){
     con$mdl_h1_control$init_theta_extra <- warmstart_theta(mdl_h0, k1,
                                                            msmu = con$mdl_h1_control[["msmu"]],
@@ -127,6 +128,14 @@
   con$mdl_h0_control <- mdl_h0$control
   con$mdl_h1_control <- mdl_h1$control
   con$mdl_h1_control$init_theta_extra <- NULL
+  # The stationarity margin must be the same on both sides: with different
+  # margins the alternative no longer nests the null's constrained space and
+  # the LR statistic loses its constrained-ML meaning.
+  d0 <- con[["mdl_h0_control"]][["stationarity_constraint"]]
+  d1 <- con[["mdl_h1_control"]][["stationarity_constraint"]]
+  if (!is.null(d0) && !is.null(d1) && !isTRUE(all.equal(as.numeric(d0), as.numeric(d1)))){
+    warning("'stationarity_constraint' differs between mdl_h0_control (", d0, ") and mdl_h1_control (", d1, "); the same margin is required on both sides for the statistic to be a constrained-likelihood ratio.")
+  }
   if (is.null(con$converge_check) == FALSE){
     if ((con$converge_check == "null") & (mdl_h0$converged == FALSE)){
       stop("Model under null hypothesis did not converge. Run again to use different initial values and/or increase 'maxit' for restricted model.")
@@ -142,7 +151,14 @@
   logL0 <- mdl_h0$logLike
   logL1 <- mdl_h1$logLike
   if (k0 > 1){
-    mdl_lin <- estimMdl(Y, p, q, 1, Z, list(getSE = FALSE))
+    # H0 linear floor, by the same rule as LMCLRTest and the per-draw path:
+    # the stationarity margin on the null control carries into the floor fit,
+    # so the floor point is feasible in the constrained space on both sides.
+    mdl_lin_con <- list(getSE = FALSE)
+    if (!is.null(con[["mdl_h0_control"]][["stationarity_constraint"]])){
+      mdl_lin_con$stationarity_constraint <- con[["mdl_h0_control"]][["stationarity_constraint"]]
+    }
+    mdl_lin <- estimMdl(Y, p, q, 1, Z, mdl_lin_con)
     if (is.finite(mdl_lin$logLike) && (mdl_lin$logLike > logL0)) logL0 <- mdl_lin$logLike
   }
   LRT_0 <- -2*(logL0 - logL1)

@@ -1396,6 +1396,39 @@ constrain_P_col <- function(counts, eps, fallback) {
     .Call(`_MSTest_constrain_P_col`, counts, eps, fallback)
 }
 
+#' @title Stationarity-margin projection of AR coefficients
+#'
+#' @description Projects an autoregressive coefficient vector into the set
+#' with companion spectral radius at most \code{1 - delta}. At \code{p = 1}
+#' this is an exact clip. For \code{p >= 2} the offending companion
+#' eigenvalues are shrunk to a padded target radius and the coefficients are
+#' rebuilt from the scaled roots; roots already inside the margin are
+#' preserved. The pad absorbs the eigenvalue error of repeated roots (which
+#' grows like the m-th root of machine precision for an m-fold root), and the
+#' rebuild is exact because a companion matrix is nonderogatory, so its
+#' characteristic polynomial determines the coefficients. Conjugate pairs
+#' share a modulus exactly for a real input, hence share a scale factor, so
+#' the rebuilt coefficients are real; the imaginary residue is dropped and
+#' the radius re-checked with escalating pads. Root clusters of high
+#' multiplicity, whose eigenvalues carry too much error for the rebuild,
+#' fall back to scaling the coefficients \code{phi_j -> phi_j c^j}, which
+#' scales every companion eigenvalue by \code{c} exactly. This is a
+#' projection, not the constrained least-squares optimizer.
+#'
+#' @param phi AR coefficient vector.
+#' @param delta Stationarity margin in [0, 1); non-positive returns \code{phi} unchanged.
+#'
+#' @return Coefficient vector with companion spectral radius at most
+#'   \code{1 - delta} up to the radius evaluation's own floating-point error
+#'   (of order \code{1e-5} at the most degenerate root clusters).
+#'
+#' @keywords internal
+#'
+#' @export
+phi_margin_project_cpp <- function(phi, delta) {
+    .Call(`_MSTest_phi_margin_project_cpp`, phi, delta)
+}
+
 #' @title Maximization step of EM algorithm for Hidden Markov model
 #' 
 #' @description This function performs the maximization step of the Expectation Maximization algorithm for Hidden Markov models.

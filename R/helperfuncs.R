@@ -1056,6 +1056,7 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
   MSARmdl_mle_env$betaZ   <- mdl_in$betaZ
   MSARmdl_mle_env$mle_stationary_constraint <- mdl_in$mle_stationary_constraint
   MSARmdl_mle_env$mle_variance_constraint   <- mdl_in$mle_variance_constraint
+  MSARmdl_mle_env$phi_margin                <- if (isTRUE(mdl_in$phi_margin > 0)) mdl_in$phi_margin else 0
   # ----------- MSARmdl_mle equality constraint functions
   loglik_const_eq_MSARmdl <- function(theta){
     # ----- Load equality constraint parameters
@@ -1076,17 +1077,25 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     betaZ   <- get("betaZ", envir = MSARmdl_mle_env)
     mle_stationary_constraint <- get("mle_stationary_constraint", envir = MSARmdl_mle_env)
     mle_variance_constraint   <- get("mle_variance_constraint", envir = MSARmdl_mle_env)
+    phi_margin                <- get("phi_margin", envir = MSARmdl_mle_env)
     # ----- constraint
     # transition probabilities
     Pvec <- theta[(length(theta)-k*k+1):(length(theta))]
     ineq_constraint <- c(Pvec, 1-Pvec)
-    if (mle_stationary_constraint==TRUE){
-      # roots of characteristic function
+    # A stationarity margin implies the root constraint: it is enforced
+    # whenever the margin is set, independently of mle_stationary_constraint,
+    # so a fit cannot report a margin it did not impose.
+    if (mle_stationary_constraint==TRUE || phi_margin > 0){
+      # roots of characteristic function; with a stationarity margin set, the
+      # minimum root modulus must reach 1/(1-delta) (equivalent to companion
+      # spectral radius <= 1-delta; the characteristic roots are the
+      # companion eigenvalues' reciprocals)
       n_p <- 2 + msmu*(k-1)
       poly_fun <- c(1,-theta[n_p:(n_p+p-1)])
       if (any(!is.finite(poly_fun))) return(rep(Inf, length(poly_fun) - 1))
       roots <- Mod(polyroot(poly_fun))
-      ineq_constraint = c((roots-1), ineq_constraint)
+      root_floor <- if (phi_margin > 0) 1/(1 - phi_margin) else 1
+      ineq_constraint = c((roots-root_floor), ineq_constraint)
     }
     if (mle_variance_constraint>=0){
       # variances (lower bound is 1% of single regime variance)
@@ -1146,6 +1155,19 @@ MSARmdl_mle <- function(theta_0, mdl_in, k, optim_options){
     Pm[Pm < 0] <- 0; Pm[Pm > 1] <- 1
     cs <- colSums(Pm); cs[cs <= 0] <- 1
     par_use[Pblk] <- as.numeric(sweep(Pm, 2, cs, "/"))
+  }
+  # With a stationarity margin, slsqp satisfies the root constraint only to
+  # its tolerance, so a binding fit can sit a few 1e-9 outside the margin;
+  # project the autoregressive block onto it (exact clip at p = 1, root
+  # scaling otherwise) so the returned fit obeys the documented bound
+  # literally. Conditional, so fits inside the margin are untouched.
+  phi_margin_use <- get("phi_margin", envir = MSARmdl_mle_env)
+  if (phi_margin_use > 0 && mdl_in$p > 0){
+    n_p <- 2 + mdl_in$msmu*(k-1)
+    phi_blk <- n_p:(n_p + mdl_in$p - 1)
+    if (all(is.finite(par_use[phi_blk])) && .phi_companion_radius(par_use[phi_blk]) > 1 - phi_margin_use){
+      par_use[phi_blk] <- as.numeric(phi_margin_project_cpp(par_use[phi_blk], phi_margin_use))
+    }
   }
   if (length(mdl_in$betaZ)>0){
     output <- tryCatch(ExpectationM_MSARXmdl(par_use, mdl_in, k),
@@ -1647,6 +1669,24 @@ warmstart_theta <- function(mdl_h0, k1, msmu = NULL, msvar = NULL, c_pert = 0.5)
   return(mdl_h1_control)
 }
 
+# When the null control carries a stationarity margin and the alternative
+# control is silent about it, the alternative inherits the same margin: the
+# statistic is a constrained-likelihood ratio only if both fits obey the same
+# constraint. An explicit value in mdl_h1_control is left alone (a mismatch is
+# warned about by the caller after the fits).
+.inherit_stationarity_margin <- function(mdl_h1_control, mdl_h0_control, fn_name = "LMCLRTest", p = 1){
+  if ("stationarity_constraint" %in% names(mdl_h1_control)) return(mdl_h1_control)
+  if (!isTRUE(p > 0)) return(mdl_h1_control)   # no autoregressive block: the name is inert
+  d0 <- .validate_stationarity_constraint(mdl_h0_control[["stationarity_constraint"]], fn_name)
+  if (d0 <= 0) return(mdl_h1_control)
+  mdl_h1_control[["stationarity_constraint"]] <- d0
+  warning(sprintf(paste0("'stationarity_constraint = %s' was specified for the null and has been ",
+                         "applied to the alternative; set 'stationarity_constraint' in ",
+                         "'mdl_h1_control' to fit the alternative differently."), format(d0)),
+          call. = FALSE)
+  mdl_h1_control
+}
+
 # k x k logical matrix: TRUE where a fitted transition probability sits at the
 # em_transition_constraint bound (boundary estimate). NULL when the bound is off.
 .P_bound_binding <- function(P, eps){
@@ -1665,4 +1705,78 @@ warmstart_theta <- function(mdl_h0, k1, msmu = NULL, msvar = NULL, c_pert = 0.5)
   if (length(ind) != length(b)) return(mdl)
   mdl$theta_se[ind[as.vector(b)]] <- NA_real_
   mdl
+}
+
+# Stationarity margin (control stationarity_constraint): validation, the
+# binding check, and the boundary-SE rule. The constraint is a single scalar
+# restriction coupling the whole AR block (companion spectral radius
+# <= 1 - delta), so when it binds every phi coordinate's standard error is a
+# boundary estimate and all of them are set to NA -- the asymptotic normal
+# approximation fails for the block jointly, not coordinate-wise.
+.validate_stationarity_constraint <- function(delta, fn_name){
+  if (is.null(delta)) return(0)
+  if (!is.numeric(delta) || length(delta) != 1 || !is.finite(delta)){
+    stop(fn_name, ": 'stationarity_constraint' must be a single finite number in [0, 1).")
+  }
+  if (delta >= 1){
+    stop(fn_name, ": 'stationarity_constraint' must be less than 1 (it is a margin on the companion spectral radius, radius <= 1 - delta).")
+  }
+  if (delta <= 0) return(0)
+  delta
+}
+
+.phi_companion_radius <- function(phi){
+  p <- length(phi)
+  if (p == 0) return(0)
+  if (p == 1) return(abs(phi))
+  F <- matrix(0, p, p); F[1, ] <- phi
+  F[2:p, 1:(p - 1)] <- diag(p - 1)
+  max(Mod(eigen(F, only.values = TRUE)$values))
+}
+
+.phi_margin_binding <- function(phi, delta){
+  if (!isTRUE(delta > 0)) return(NULL)
+  .phi_companion_radius(as.numeric(phi)) >= (1 - delta) * (1 - 1e-6)
+}
+
+.phi_margin_na_se <- function(mdl){
+  if (!isTRUE(mdl$phi_constraint_binding) || is.null(mdl$theta_se)) return(mdl)
+  ind <- which(as.numeric(mdl$theta_phi_ind) == 1)
+  if (length(ind) > 0) mdl$theta_se[ind] <- NA_real_
+  mdl
+}
+
+# Constrained least-squares step for the linear AR classes: given the joint
+# OLS coefficients, if the fitted AR block violates the margin, replace it by
+# the constrained value (p = 1: the clip, which is the exact constrained
+# minimizer of the concentrated sum of squares -- the concentrated objective
+# is a strictly convex quadratic whose vertex is the joint OLS phi; p >= 2:
+# the root-scaling projection) and re-solve the remaining coefficients
+# exactly by least squares of (y - x phi*) on them. Returns NULL when the
+# constraint does not bind, so the caller keeps the ordinary fit bitwise.
+.ols_stationarity_step <- function(y, x, W, phi, delta){
+  if (!isTRUE(delta > 0)) return(NULL)
+  phi <- as.numeric(phi)
+  if (.phi_companion_radius(phi) <= 1 - delta) return(NULL)
+  has_W <- !is.null(W) && ncol(W) > 0
+  XW <- if (has_W) cbind(W, x) else x
+  # Identifiability check on the column-scaled design: the raw cross-product's
+  # condition number scales with the series level (a random walk far from
+  # zero would otherwise trip it), whereas unit-norm columns isolate genuine
+  # collinearity (the lagged series lying in the span of the other regressors).
+  XWs <- XW / rep(sqrt(colSums(XW^2)), each = nrow(XW))
+  if (rcond(crossprod(XWs)) < 1e-12){
+    warning("stationarity_constraint: the regressors are numerically collinear (the lagged series may lie in the span of the other regressors), so the autoregressive coefficient is not identified and the constraint was not applied.")
+    return(list(applied = FALSE))
+  }
+  phi_star <- as.numeric(phi_margin_project_cpp(phi, delta))
+  if (has_W){
+    y_adj  <- y - x %*% phi_star
+    gamma  <- crossprod(solve(crossprod(W)), crossprod(W, y_adj))
+    fitted <- W %*% gamma + x %*% phi_star
+  } else {
+    gamma  <- numeric(0)
+    fitted <- x %*% phi_star
+  }
+  list(applied = TRUE, phi = phi_star, gamma = as.numeric(gamma), fitted = fitted, resid = y - fitted)
 }

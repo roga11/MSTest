@@ -344,8 +344,17 @@ arma::vec LR_samp_dist(List mdl_h0, int k1, int N, int burnin,
   Rcpp::RObject ws_msvar = R_NilValue;
   if (mdl_h1_control_tmp.containsElementNamed("msmu"))  ws_msmu  = mdl_h1_control_tmp["msmu"];
   if (mdl_h1_control_tmp.containsElementNamed("msvar")) ws_msvar = mdl_h1_control_tmp["msvar"];
-  // Minimal control for the one-regime fit used by the H0 linear floor (k0 > 1)
+  // Minimal control for the one-regime fit used by the H0 linear floor (k0 > 1).
+  // The stationarity margin, when set on the null control, carries into the
+  // floor fit: the floor's nesting rationale needs the floor point feasible in
+  // the constrained space (an unconstrained floor on near-unit-root draws can
+  // exceed the constrained k1 fit, turning the LR >= 0 cap into a systematic
+  // repair instead of a numerical one), and the same rule must hold on the
+  // observed and simulated sides alike.
   List mdl_lin_control = List::create(Rcpp::Named("getSE") = false);
+  if (mdl_h0_control.containsElementNamed("stationarity_constraint")){
+    mdl_lin_control["stationarity_constraint"] = mdl_h0_control["stationarity_constraint"];
+  }
   // Diagnostics for the LR >= 0 cap
   int n_capped = 0;
   double worst_neg = 0.0;

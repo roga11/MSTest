@@ -1,3 +1,56 @@
+# MSTest 0.1.9.9014
+
+## Stationarity margin for estimation
+
+* New control `stationarity_constraint` (a margin `delta`; default `0` =
+  disabled, bit-identical to the previous behavior) on `ARmdl()`, `ARXmdl()`,
+  `MSARmdl()` and `MSARXmdl()`: the fitted autoregressive process satisfies
+  companion spectral radius `<= 1 - delta`. At `p = 1` the constrained fit is
+  exact (a clip of the unconstrained solve with the remaining coefficients
+  re-solved exactly, under both least squares and the EM M-step); for
+  `p >= 2` a root-scaling projection is used (a projection, not the
+  constrained optimizer: its likelihood shortfall relative to the constrained
+  optimum is typically a modest fraction of the constrained gap but can be
+  large on strongly nonstationary higher-order fits), accepted under EM only
+  when it does not lower the M-step objective, so the autoregressive step
+  never lowers the expected complete-data log-likelihood. Starting values
+  are projected into the margin region when the constraint is enabled.
+  Binding fits are flagged in `phi_constraint_binding` (`NA` when the
+  constraint could not be applied because the autoregressive block is
+  unidentified) and the autoregressive block's standard errors are set to
+  `NA`. For `method = "MLE"` the margin imposes the characteristic-root
+  bound whenever it is set. `LMCLRTest()`/`MMCLRTest()` warn when the two
+  model controls carry different margins. Intended for comparability with
+  procedures whose validity theory assumes stationarity (parametric bootstrap
+  tests); the Monte Carlo likelihood-ratio tests themselves do not require
+  it, and it does not interact with `MMCLRTest()`'s `stationary_constraint`
+  search control. When set on `LMCLRTest()`/`MMCLRTest()`'s
+  `mdl_h0_control`, the margin also carries into the one-regime fit used to
+  floor the null log-likelihood for `k0 > 1`, so every estimation feeding the
+  statistic follows the same rule on the observed and simulated sides alike.
+  Not implemented for the multivariate classes (loud error).
+* `MMCLRTest()` aligns its nuisance search set with the estimation constraints
+  in `mdl_h0_control` by default (new control `box_match_constraints = TRUE`):
+  with a stationarity margin the search stays inside the margin region (the
+  autoregressive box is clamped at `p = 1`, and candidates whose companion
+  spectral radius exceeds `1 - delta` are excluded for any `p`, counted in
+  `margin_penalty_hits`); with `em_transition_constraint` the transition-
+  probability box is clamped to the bounded simplex. The maximized test then
+  searches exactly the parameter space the constrained fits obey; `FALSE`
+  restores the unclamped box with a warning. No effect without an estimation
+  constraint. The transition-probability bound is aligned for EM nulls only;
+  a `box_include` point outside the margin errors as contradictory.
+* When `mdl_h0_control` sets `stationarity_constraint` and `mdl_h1_control` is
+  silent about it, the alternative inherits the same margin (with a warning),
+  as for `msmu`/`msvar`; an explicit different value still warns.
+* The linear constructors (`ARmdl()`, `ARXmdl()`, `VARmdl()`, `VARXmdl()`)
+  now accept the Markov-switching estimation controls that the testing
+  functions forward to the null model regardless of its class
+  (`use_diff_init`, `em_variance_constraint`, `em_transition_constraint`) as
+  recognized-and-ignored names, removing the spurious "unknown names in
+  control" warning that fired once per simulated draw; unrecognized names
+  still warn.
+
 # MSTest 0.1.9.9013
 
 ## Unit-root and boundary testing primitives
